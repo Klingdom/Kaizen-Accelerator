@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Start Intake — Kaizen Accelerator</title>
+  <meta name="description" content="Kaizen Accelerator" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <a class="brand" href="index.html" aria-label="Home">
+          <span class="logo" aria-hidden="true"></span>
+          <span>Kaizen Accelerator</span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a data-nav href="index.html">Home</a>
+          <a data-nav href="kaizen-accelerator.html">Standard</a>
+          <a data-nav href="premium.html">Premium</a>
+          <a data-nav href="how-it-works.html">How it works</a>
+          <a data-nav href="target-processes.html">Target processes</a>
+          <a data-nav href="roi.html">ROI</a>
+          <a data-nav href="faq.html">FAQ</a>
+          <a data-nav href="about.html">About</a>
+        </nav>
+        <div class="cta-row" style="margin:0">
+          <a class="btn primary" href="intake.html">Start Intake</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+<section class="hero">
+  <div class="container">
+    <div class="card">
+      <div class="kicker">Start intake</div>
+      <h1>Start Intake — ~6 minutes</h1>
+      <p class="muted">Answer a few questions and you’ll receive a recommended target process + next steps.</p>
+      <p class="notice">To make the form actually submit, replace the Formspree URL in the form <code>action</code> (or use the mailto fallback).</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="card">
+      <form data-intake method="POST" action="https://formspree.io/f/yourFormID" data-email="philklingmbb@gmail.com">
+        <h2>Contact</h2>
+        <div class="form-grid">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" name="name" required />
+          </div>
+          <div>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required />
+          </div>
+          <div>
+            <label for="company">Company</label>
+            <input id="company" name="company" required />
+          </div>
+          <div>
+            <label for="role">Role</label>
+            <input id="role" name="role" required />
+          </div>
+          <div>
+            <label for="linkedin">LinkedIn URL (optional)</label>
+            <input id="linkedin" name="linkedin" />
+          </div>
+          <div>
+            <label for="phone">Phone (optional)</label>
+            <input id="phone" name="phone" />
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>Business context</h2>
+        <div class="form-grid">
+          <div>
+            <label for="size">Company size</label>
+            <select id="size" name="company_size" required>
+              <option value="">Select…</option>
+              <option>1–20</option>
+              <option>21–50</option>
+              <option>51–100</option>
+              <option>101–300</option>
+              <option>301–1000</option>
+              <option>1000+</option>
+            </select>
+          </div>
+          <div>
+            <label for="industry">Industry</label>
+            <input id="industry" name="industry" required />
+          </div>
+          <div>
+            <label for="revenue">Monthly revenue range (optional)</label>
+            <select id="revenue" name="monthly_revenue">
+              <option value="">Select…</option>
+              <option>&lt;$50K</option>
+              <option>$50K–$250K</option>
+              <option>$250K–$1M</option>
+              <option>$1M–$5M</option>
+              <option>$5M+</option>
+            </select>
+          </div>
+          <div>
+            <label for="priority">Highest priority outcome</label>
+            <select id="priority" name="priority_outcome" required>
+              <option value="">Select…</option>
+              <option>Faster revenue / cash flow</option>
+              <option>Faster onboarding / retention</option>
+              <option>Faster product delivery</option>
+              <option>Lower defects / rework</option>
+              <option>Better cross‑functional execution</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>Process candidates</h2>
+        <label>Which process feels most painful? (choose any)</label>
+        <div class="grid-2">
+          <div class="card soft">
+            <div class="li"><input type="checkbox" name="process_sales_to_cash" value="yes" style="width:auto;margin-top:3px" /> <div><strong>Sales‑to‑Cash</strong><div class="muted small">Lead → close → invoice</div></div></div>
+          </div>
+          <div class="card soft">
+            <div class="li"><input type="checkbox" name="process_onboarding" value="yes" style="width:auto;margin-top:3px" /> <div><strong>Customer Onboarding</strong><div class="muted small">Signed → go‑live</div></div></div>
+          </div>
+          <div class="card soft">
+            <div class="li"><input type="checkbox" name="process_release_flow" value="yes" style="width:auto;margin-top:3px" /> <div><strong>Product / Release Flow</strong><div class="muted small">Commit → release</div></div></div>
+          </div>
+          <div class="card soft">
+            <div class="li"><input type="checkbox" name="process_support" value="yes" style="width:auto;margin-top:3px" /> <div><strong>Support / Service Delivery</strong><div class="muted small">Case → resolution</div></div></div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:10px">
+          <div>
+            <label for="cycle">Current cycle time (if known)</label>
+            <input id="cycle" name="current_cycle_time" placeholder="e.g., 45 days" />
+          </div>
+          <div>
+            <label for="stuck">Where does work get stuck?</label>
+            <input id="stuck" name="where_stuck" placeholder="e.g., approvals, handoffs, missing data" />
+          </div>
+        </div>
+        <label for="sponsor">Who would sponsor this internally? (name/title)</label>
+        <input id="sponsor" name="executive_sponsor" />
+
+        <div class="hr"></div>
+        <h2>Readiness</h2>
+        <div class="form-grid">
+          <div>
+            <label for="commit">Can you commit a core team for 4–5 days in one week?</label>
+            <select id="commit" name="team_commitment" required>
+              <option value="">Select…</option>
+              <option>Yes</option>
+              <option>No</option>
+              <option>Not sure</option>
+            </select>
+          </div>
+          <div>
+            <label for="start">When would you want to start?</label>
+            <select id="start" name="start_window" required>
+              <option value="">Select…</option>
+              <option>Within 2 weeks</option>
+              <option>2–4 weeks</option>
+              <option>Next quarter</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="notes">Anything else I should know?</label>
+        <textarea id="notes" name="notes" placeholder="Context, constraints, what success looks like…"></textarea>
+
+        <div class="cta-row" style="margin-top:14px">
+          <button class="btn primary" type="submit">Send Intake</button>
+          <a class="btn" href="roi.html">See ROI model</a>
+        </div>
+        <p class="notice">If you haven’t configured Formspree, the form will open your email client as a fallback.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="hr"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+        <div>
+          <div><strong>Philip Kling</strong> — Lean Six Sigma Master Black Belt | Product + Process Leader</div>
+          <div class="small">Confidential. Outcome-focused. Fixed-fee interventions.</div>
+        </div>
+        <div class="small">
+          <a class="btn" href="intake.html">Start intake</a>
+          <a class="btn ghost" href="philklingmbb@gmail.com?subject=Kaizen%20Accelerator%20Inquiry">Email</a>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="notice">© 2026 Philip Kling. Built for GitHub Pages. Update the email + form endpoint in <code>intake.html</code>.</div>
+    </div>
+  </footer>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
