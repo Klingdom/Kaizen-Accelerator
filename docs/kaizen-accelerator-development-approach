@@ -1,0 +1,909 @@
+You are a principal software architect, product strategist, AI systems designer, workflow automation expert, mobile/web platform architect, and continuous improvement operating system designer.
+
+Your job is to produce a COMPLETE TECHNICAL PLAN for a product called:
+
+30 Day Kaizen Accelerator OS
+
+This product is a web + smartphone operating system for process improvement that enables both:
+1. Human users
+2. AI agents
+
+to run a full 30-day Kaizen Accelerator from:
+Scope → Baseline → Goal → Charter → Scheduling → Event → Deliverables → Validation → Benefits → Next Intake
+
+This is not a simple app. It is an operating system for continuous improvement that can be used by:
+- consultants
+- internal business teams
+- process owners
+- enterprise transformation teams
+- AI agents operating inside digital environments
+
+The product must support both:
+- human-led Kaizen execution
+- agent-led autonomous or semi-autonomous Kaizen execution
+
+The AI agents should be able to use the operating system to:
+- discover candidate processes
+- capture process data
+- baseline current state
+- identify waste and bottlenecks
+- recommend or execute process redesign
+- automate Kaizen deliverables
+- monitor implementation
+- validate results
+- identify the next process to improve
+
+The output must be EXTREMELY DETAILED, PRACTICAL, and structured like a build-ready technical blueprint.
+
+==================================================
+CORE PRODUCT VISION
+==================================================
+
+The product should deliver this promise:
+
+Scope in days → baseline in a week → improve in a week → prove results in a month
+
+The platform should automate and orchestrate all phases of a 30-day Kaizen Accelerator.
+
+It should function as:
+- a process intelligence system
+- a Kaizen orchestration engine
+- an implementation tracking system
+- a validation and ROI engine
+- an operating system for both humans and AI agents
+
+The system should be inspired by:
+- Ledgerium-style automated process baselining
+- deterministic process intelligence
+- process mining
+- Lean / Kaizen / DMAIC
+- AI-assisted process streamlining
+- privacy-first workflow capture
+- agentic systems that act within governed boundaries
+
+==================================================
+PRODUCT CONTEXT
+==================================================
+
+The 30 Day Kaizen Accelerator phases are:
+
+1. Scoping
+   Duration: 1 day to 1 week
+   Objective: define the process, activity, or task to improve
+
+2. Baselining Primary Metric
+   Duration: 3 days to 2 weeks
+   Objective: establish evidence-based current state performance
+
+3. Establishing Metric Improvement Goal
+   Duration: 1 to 3 days
+   Objective: define measurable improvement target
+
+4. Finalizing Kaizen Event Project Charter
+   Duration: 1 to 5 days
+   Objective: finalize project charter, scope, problem statement, team, risks
+
+5. Scheduling and Coordination
+   Duration: 3 days to 2 weeks
+   Objective: secure participants, dates, logistics, tooling, communication
+
+6. Facilitation of Kaizen Event
+   Duration: 3 to 5 days
+   Objective: define current state, analyze process, redesign future state, create action plan
+
+7. Finalization of Kaizen Event Deliverables
+   Duration: 3 days to 2 weeks
+   Objective: finalize process maps, SOPs, action plans, metrics, documentation
+
+8. Validating Implementation
+   Duration: 3 days to 2 weeks
+   Objective: confirm process changes are actually implemented
+
+9. Measuring Primary Metric and Documenting Benefits
+   Duration: 2 days to 2 weeks
+   Objective: remeasure performance and document operational + financial benefits
+
+10. Intake for Another Process Kaizen Event
+   Duration: ongoing
+   Objective: identify the next process in the improvement pipeline
+
+Also use this simplified product positioning as a design constraint:
+
+Scope in days
+Baseline in a week
+Improve in a week
+Prove in a month
+
+==================================================
+AI-AUGMENTED USE CASES
+==================================================
+
+The product must include first-class support for identifying and operationalizing common AI-supported process use cases, including:
+
+1. Classification and triage
+2. Data extraction and structuring
+3. Decision support
+4. Workflow automation
+5. Exception detection
+6. Knowledge retrieval
+7. Process simplification recommendations
+8. Auto-documentation / SOP generation
+9. Communication automation
+10. Predictive throughput and bottleneck analysis
+
+These AI use cases should be treated as reusable capability modules inside the operating system.
+
+==================================================
+IMPORTANT DESIGN REQUIREMENTS
+==================================================
+
+Design this as a real product system with:
+
+- Web application
+- Smartphone app
+- Browser extension
+- Optional desktop capture agent
+- APIs
+- Agent SDK
+- Event-driven architecture
+- Human UI
+- Agent UI / API surface
+- Auditability
+- Governance
+- Security
+- Multi-tenant enterprise architecture
+- Deterministic core pipeline where possible
+- AI optional but powerful
+- Support for both human and agent identities
+- Strong permissions and role controls
+- Measurable before/after evidence
+
+The system must support:
+- process recording
+- system data ingestion
+- human input forms
+- AI agent input/output
+- workflow orchestration
+- collaborative Kaizen events
+- asynchronous Kaizen events
+- fully autonomous AI-driven Kaizen execution in constrained environments
+
+==================================================
+YOUR TASK
+==================================================
+
+Produce a COMPLETE technical plan for this product.
+
+Do not be shallow.
+Do not give vague advice.
+Do not summarize.
+Do not stay high level.
+Be concrete, opinionated, and implementation-ready.
+
+Assume the reader wants to actually build this system.
+
+==================================================
+REQUIRED OUTPUT FORMAT
+==================================================
+
+Use the following exact structure and fill it in thoroughly.
+
+# 1. Executive Summary
+- What the product is
+- Why it matters
+- Who it serves
+- What makes it different
+- Why it can become an operating system for humans and AI agents
+
+# 2. Product Vision and Operating Model
+- End-to-end product vision
+- How the 30-day Kaizen flow becomes software
+- Human-led mode
+- AI-assisted mode
+- Agent-led mode
+- Enterprise mode
+- Consultant mode
+- Internal CI team mode
+
+# 3. Core Product Principles
+Define principles such as:
+- deterministic before generative where possible
+- evidence before recommendation
+- no baseline, no improvement claim
+- no implementation, no value
+- agent actions must be governed
+- auditability and traceability
+- privacy-first capture
+- measurable operational definitions
+- human override and approval controls
+
+# 4. User Types, Agent Types, and Personas
+Include:
+- consultant / facilitator
+- process owner
+- subject matter expert
+- executive sponsor
+- operator / frontline worker
+- implementation owner
+- internal CI team
+- enterprise admin
+- AI process analyst agent
+- AI Kaizen facilitator agent
+- AI implementation tracking agent
+- AI ROI validation agent
+- AI intake / prioritization agent
+- external integration agents
+
+For each:
+- goals
+- permissions
+- workflows
+- required views
+- capabilities
+- risks
+
+# 5. Detailed End-to-End Lifecycle Design
+For each of the 10 phases:
+- goals
+- inputs
+- outputs
+- user flows
+- agent flows
+- screens
+- APIs
+- orchestration logic
+- data captured
+- AI opportunities
+- validation gates
+- risks
+- notifications
+- success metrics
+
+# 6. Full Feature Inventory
+Break into modules and submodules.
+At minimum include:
+- intake and scoping
+- process candidate scoring
+- automated baselining
+- process recording
+- event ingestion
+- process derivation engine
+- metrics engine
+- process map generation
+- SOP generation
+- AI opportunity detection
+- Kaizen charter builder
+- event scheduling
+- collaboration and workshop tooling
+- decision log
+- action tracker
+- implementation verification
+- validation engine
+- ROI engine
+- continuous intake pipeline
+- agent workspace
+- agent memory/context layer
+- governance and audit
+- admin controls
+- analytics and dashboards
+- mobile experience
+- browser extension experience
+- integration platform
+- template library
+- knowledge base
+- experiment/simulation tools
+- change tracking and versioning
+
+For each feature:
+- purpose
+- primary users
+- technical dependencies
+- core interactions
+- MVP version
+- advanced version
+- future version
+
+# 7. Human UX Architecture
+Design the UX in detail:
+- information architecture
+- navigation model
+- dashboards
+- workspaces
+- mobile flows
+- desktop flows
+- in-event flows
+- async collaboration flows
+- approvals
+- evidence review
+- before/after comparison views
+- agent supervision views
+- admin views
+
+Include key screens and what each screen contains.
+
+# 8. Agent UX / API Architecture
+Design the system for AI agents as first-class users.
+Include:
+- agent authentication model
+- agent identity
+- permissions
+- tool access
+- task submission
+- event ingestion
+- process discovery
+- recommendation submission
+- approval workflows
+- action execution model
+- simulation mode
+- dry-run mode
+- escalation model
+- audit logging
+- rate limits
+- sandboxing
+- agent memory/context model
+- inter-agent collaboration model
+
+Define how agents use the OS to automate Kaizen events in their own environments.
+
+# 9. System Architecture
+Provide a full proposed technical architecture:
+- frontend architecture
+- backend architecture
+- services architecture
+- event bus
+- storage layers
+- AI services layer
+- process derivation layer
+- workflow orchestration layer
+- integration layer
+- authentication/authorization layer
+- observability layer
+- admin/governance layer
+
+Be concrete.
+Name recommended technologies and explain why.
+
+# 10. Recommended Tech Stack
+Recommend specific technologies for:
+- web frontend
+- mobile app
+- browser extension
+- backend services
+- workflow orchestration
+- queue/event streaming
+- relational DB
+- analytical DB
+- object storage
+- vector store if needed
+- auth
+- search
+- AI model routing
+- monitoring
+- logging
+- feature flags
+- infrastructure as code
+- deployment platform
+- CI/CD
+- testing
+- security tooling
+
+For each choice:
+- why it fits
+- tradeoffs
+- alternatives
+
+# 11. Data Model and Domain Model
+Define the core entities in detail.
+At minimum include:
+- organization
+- workspace
+- user
+- agent
+- role
+- process
+- process candidate
+- process run/session
+- event stream
+- raw event
+- derived step
+- derived activity
+- process map
+- baseline metric
+- goal
+- charter
+- Kaizen event
+- participant
+- decision
+- improvement action
+- implementation task
+- validation run
+- benefit record
+- ROI record
+- SOP document
+- evidence artifact
+- automation opportunity
+- AI use case module
+- integration connection
+- notification
+- approval
+- audit log
+- version / revision
+- experiment / simulation
+- next intake item
+
+For each entity:
+- description
+- key fields
+- relationships
+- lifecycle
+- audit needs
+
+# 12. Database Schema Proposal
+Provide a detailed schema proposal.
+You may use:
+- PostgreSQL for transactional core
+- object storage for raw evidence
+- analytical/event store for high-volume events
+
+Include:
+- table list
+- suggested columns
+- primary keys
+- foreign keys
+- indexes
+- partitioning strategy
+- retention strategy
+- time-series considerations
+- event sourcing considerations
+- schema versioning strategy
+
+# 13. Process Recording and Baselining Design
+Design the process capture system in detail:
+- browser extension capture
+- mobile capture
+- optional desktop capture
+- API/system log ingestion
+- manual observation entry
+- privacy controls
+- redaction
+- screenshot strategy
+- user consent
+- session markers
+- event schemas
+- structured JSON event model
+- deterministic derivation pipeline from event → step → activity → process map
+- baseline metrics calculation
+- evidence review flow
+
+Explain exactly how automated process baselining works.
+
+# 14. Event Schema Design
+Define a robust event schema for captured digital workflows.
+Include:
+- common event envelope
+- browser events
+- UI interaction events
+- navigation events
+- form events
+- document events
+- timing events
+- agent action events
+- implementation events
+- metric observation events
+- approval events
+- validation events
+
+Show sample JSON structures.
+
+# 15. Process Derivation Engine
+Design the deterministic pipeline that converts captured events into:
+- steps
+- activities
+- handoffs
+- process maps
+- current state baseline
+- SOP draft
+- AI opportunity candidates
+
+Explain:
+- algorithms
+- heuristics
+- session grouping
+- activity clustering
+- sequence detection
+- anomaly detection
+- confidence scoring
+- human review points
+- agent review points
+
+# 16. AI Architecture
+Design the AI subsystem in detail.
+Include:
+- where AI is allowed
+- where deterministic logic is preferred
+- model routing
+- prompt orchestration
+- structured output requirements
+- tool-calling approach
+- validation layer
+- retrieval layer
+- planning layer
+- recommendation layer
+- simulation layer
+- documentation generation
+- agent-to-agent coordination
+
+Map AI to each product phase.
+
+# 17. AI Use Case Module Framework
+Design reusable AI capability modules for:
+- classification and triage
+- extraction and structuring
+- decision support
+- workflow automation
+- exception detection
+- knowledge retrieval
+- simplification recommendations
+- SOP/document generation
+- communication automation
+- predictive analytics
+
+For each module:
+- data needed
+- inputs
+- outputs
+- model type
+- approval needs
+- risk controls
+- example usage in Kaizen
+
+# 18. Agent Operating Model
+Design how AI agents operate inside the Kaizen OS.
+Include:
+- agent lifecycle
+- agent registration
+- task assignment
+- memory/context
+- agent permissions
+- action scopes
+- approval thresholds
+- execution modes
+- autonomous vs supervised modes
+- agent collaboration
+- escalation rules
+- auditability
+- rollback
+- trust levels
+
+Create specific agent roles such as:
+- Intake Agent
+- Baselining Agent
+- Process Analyst Agent
+- Kaizen Facilitator Agent
+- SOP Agent
+- Implementation Agent
+- Validation Agent
+- ROI Agent
+- Continuous Intake Agent
+
+# 19. Workflow Orchestration Design
+Design the orchestration engine for the 30-day lifecycle.
+Include:
+- state machine
+- milestones
+- timers
+- SLAs
+- approval checkpoints
+- handoffs between humans and agents
+- retry logic
+- notification logic
+- branching logic
+- rollback logic
+- exception handling
+- multi-process pipeline management
+
+# 20. Collaboration and Event Facilitation Design
+Design how virtual and on-site Kaizen events are supported.
+Include:
+- synchronous facilitation
+- asynchronous facilitation
+- whiteboarding
+- process review
+- evidence review
+- decision capture
+- action prioritization
+- workshop packs
+- mobile event tools
+- chat/comments
+- role-specific prompts
+- agent-assisted facilitation
+- post-event packaging
+
+# 21. SOP and Deliverables Engine
+Design automated generation of:
+- process definitions
+- SOPs
+- charters
+- current state maps
+- future state maps
+- action plans
+- implementation trackers
+- benefits reports
+- executive summaries
+- before/after comparisons
+
+Explain how these stay versioned, evidence-grounded, and editable.
+
+# 22. Validation and ROI Engine
+Design the proof system for:
+- implementation validation
+- remeasurement
+- before/after comparisons
+- operational metrics
+- cost savings
+- effort savings
+- quality improvement
+- confidence intervals
+- financial translation
+- benefit tracking over time
+
+Define how the product prevents false ROI claims.
+
+# 23. Governance, Security, and Privacy
+Design this in enterprise-grade detail.
+Include:
+- tenancy isolation
+- RBAC / ABAC
+- agent permissions
+- approval policies
+- audit trails
+- data retention
+- encryption
+- secrets management
+- privacy controls
+- screenshot/redaction policy
+- compliance considerations
+- internal/external sharing rules
+- human signoff requirements
+- governance dashboards
+
+# 24. Integration Strategy
+Design integrations with:
+- Jira / Asana / Linear
+- Slack / Teams
+- Google Workspace / Microsoft 365
+- CRM systems
+- HRIS systems
+- ERP systems
+- ticketing systems
+- BI tools
+- RPA platforms
+- LLM providers
+- custom APIs
+
+For each integration type:
+- purpose
+- key data exchanged
+- directionality
+- trigger patterns
+- common failure modes
+
+# 25. Analytics and Dashboard Strategy
+Define dashboards for:
+- executives
+- facilitators
+- process owners
+- CI teams
+- agents
+- admins
+
+Include:
+- funnel metrics
+- phase completion
+- baseline performance
+- implementation progress
+- benefits realized
+- agent actions
+- approval bottlenecks
+- next intake pipeline
+- portfolio-level improvement view
+
+# 26. Mobile Product Strategy
+Design the smartphone app in detail.
+Include:
+- capture workflows
+- observation workflows
+- workshop support
+- approvals
+- quick evidence review
+- action completion
+- notifications
+- implementation verification
+- photo/document capture
+- executive summaries on mobile
+
+# 27. Browser Extension Strategy
+Design the extension in detail.
+Include:
+- capture controls
+- privacy modes
+- session markers
+- process labeling
+- event capture
+- screenshot options
+- local buffering
+- upload/retry
+- enterprise deployment concerns
+
+# 28. API Design
+Propose major APIs.
+Include:
+- human app APIs
+- admin APIs
+- agent APIs
+- ingestion APIs
+- orchestration APIs
+- process derivation APIs
+- metrics APIs
+- deliverables APIs
+- validation APIs
+- audit APIs
+
+Show sample endpoint groupings and structured request/response shapes.
+
+# 29. SDK / Agent Tooling Strategy
+Design an SDK for AI agents to use this OS programmatically.
+Include:
+- auth
+- task APIs
+- event submission
+- process read APIs
+- recommendation APIs
+- approval APIs
+- execution APIs
+- deliverable generation APIs
+- validation APIs
+- webhooks
+- client libraries
+- schemas
+
+# 30. Deployment Architecture
+Design deployment for:
+- cloud SaaS
+- single-tenant enterprise
+- hybrid enterprise
+- on-prem / private VPC
+- edge or local capture
+
+Include infra topology and environment separation.
+
+# 31. Reliability and Observability
+Design:
+- monitoring
+- tracing
+- alerting
+- replayability
+- audit reconstruction
+- job health
+- capture health
+- agent action logging
+- failure diagnosis
+- data quality checks
+
+# 32. Testing Strategy
+Include:
+- unit tests
+- integration tests
+- contract tests
+- end-to-end tests
+- agent simulation tests
+- workflow tests
+- security tests
+- capture accuracy tests
+- derivation accuracy tests
+- ROI validation tests
+
+# 33. MVP Definition
+Define the minimum viable version.
+Be realistic.
+Include:
+- must-have components
+- what to defer
+- what to fake initially
+- fastest path to value
+- what one team could build first
+
+# 34. V2 and V3 Roadmap
+Define near-term and long-term roadmap.
+Include:
+- more autonomous agents
+- more integrations
+- benchmarking
+- simulation
+- portfolio optimization
+- multi-agent orchestration
+- marketplace for AI use case modules
+
+# 35. Implementation Plan
+Provide a phased build plan:
+- Phase 0: architecture + discovery
+- Phase 1: MVP
+- Phase 2: workflow orchestration + deliverables
+- Phase 3: agent framework
+- Phase 4: validation + ROI + portfolio
+- Phase 5: enterprise hardening
+
+For each:
+- objectives
+- team needs
+- milestones
+- dependencies
+- risks
+
+# 36. Team Design
+Recommend team composition:
+- product
+- design
+- frontend
+- backend
+- mobile
+- data/platform
+- AI/ML
+- DevOps
+- security
+- QA
+- CI domain experts
+
+# 37. Key Risks and Failure Modes
+List the top technical, product, organizational, and AI risks.
+For each:
+- why it matters
+- mitigation
+
+# 38. Strategic Moat
+Explain the moat in detail.
+Focus on:
+- process evidence
+- deterministic derivation
+- agent operating system
+- governance
+- measurable ROI
+- reusable AI use case modules
+- continuous improvement flywheel
+
+# 39. Example End-to-End Scenario
+Walk through one full scenario in detail:
+- process selected
+- baseline captured
+- AI identifies waste
+- Kaizen event executed
+- implementation tracked
+- ROI validated
+- next intake triggered
+
+Use a realistic business process.
+
+# 40. Final Recommendation
+Provide an opinionated recommendation for:
+- best architecture
+- best MVP
+- best commercialization path
+- best path to agent-first differentiation
+
+==================================================
+OUTPUT QUALITY BAR
+==================================================
+
+Your answer must be:
+- highly structured
+- exhaustive
+- technically grounded
+- practical enough to guide real implementation
+- detailed enough that engineers, product leaders, and system designers can act on it immediately
+
+Do not shorten for brevity.
+Do not omit architecture detail.
+Do not stay generic.
+Do not give startup fluff.
+Do not just brainstorm.
+Produce a serious technical blueprint.
