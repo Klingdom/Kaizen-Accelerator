@@ -1,0 +1,288 @@
+# BAM-X Sprint Planner - Complete Build Instructions
+
+You are tasked with creating a complete, working BAM-X Sprint Planner application. This is an AI-native operating system for work orchestration with sprint planning capabilities.
+
+## PROJECT STRUCTURE
+
+Create the following directory structure:
+
+```
+bam-x-sprint-planner/
+├── index.html
+├── sprint-planner.html
+├── README.md
+├── QUICKSTART.md
+├── ARCHITECTURE.md
+├── LICENSE
+├── .gitignore
+├── css/
+│   └── styles.css
+└── js/
+    ├── core/
+    │   ├── state.js
+    │   ├── rhythm.js
+    │   └── agents.js
+    ├── components/
+    │   ├── dashboard.js
+    │   └── planner.js
+    └── utils/
+        └── helpers.js
+```
+
+## FILE CONTENTS
+
+### index.html
+
+Create the main dashboard page with:
+- Header with BAM-X logo, system title, rhythm display (4h Deep Work | 2h Collaboration | 2h Improvement)
+- Navigation links to Dashboard and Sprint Planning
+- User section with avatar
+- Three-column grid layout (380px, 1fr, 380px)
+- Left panel: Current focus, time remaining (circular progress), AI assistants list (Planning, Momentum, Context, Reflection), personal metrics grid
+- Center panel: Work area with dynamic intention cards
+- Right panel: Upcoming events, continuous improvement suggestions
+- Timeline footer showing 4-2-2 rhythm phases with animated cursor
+- AI insight section at bottom with Investigate/Snooze/Dismiss buttons
+- Load CSS from css/styles.css
+- Load JS in order: state.js, rhythm.js, agents.js, helpers.js, dashboard.js
+
+### sprint-planner.html
+
+Create the sprint planning interface with:
+- Same header as dashboard
+- Three-column layout for planner (360px, 1fr, 360px)
+- Left sidebar: Intention creation form (name, outcome, hours, priority, phase affinity, dependencies), capacity overview (total/allocated/remaining), capacity breakdown by phase
+- Center: Week view with 5 columns (Mon-Fri), each having 3 phase slots (Deep/Comm/CI) that accept drag-and-drop
+- Right sidebar: Backlog list with draggable items, AI suggestions panel
+- "Generate AI Plan" button in header
+- Form fields: name (text), outcome (textarea), hours (number, default 2), priority (select: critical/high/medium/low), phase (select: deep/comm/ci/any), dependencies (multi-select)
+- Drag-and-drop enabled on all intention cards and phase slots
+- Load same JS files as index.html but use planner.js instead of dashboard.js
+
+### css/styles.css
+
+Create comprehensive styles with:
+- Dark theme: background #0a0e17, text #e4e4e7
+- Animated background with radial gradients (purple/blue/green)
+- Grid overlay with subtle lines
+- Glassmorphic panels: backdrop-filter blur, semi-transparent backgrounds
+- Header: gradient background, 80px height, flex layout
+- Logo: 48px gradient circle with emoji
+- System title: gradient text (green→blue→purple)
+- Rhythm header: phase items with dots, active state with glow
+- Navigation links with hover states
+- Panel base: rounded 16px, gradient background, border, shadow
+- Progress ring: SVG circle with gradient stroke
+- AI assistants: cards with hover effects, status dots (green/blue/gray) with pulse animation
+- Metrics grid: 2 columns, color-coded values (good/warning/critical)
+- Alert cards: yellow gradient background for warnings
+- Buttons: primary (green gradient), secondary (gray)
+- Timeline: 40px height, phase segments with different colors, animated cursor
+- Form inputs: dark background, purple borders, focus states
+- Capacity bar: gradient fill, percentage-based width
+- Week view: 5-column grid, phase slots with dashed borders, drag-over states
+- Backlog items: draggable cards with metadata
+- Intention mini cards: color-coded by priority (red/orange/blue/gray)
+- Scrollbar styling: thin, purple
+- Responsive breakpoints if needed
+- Color palette: primary #6366f1, success #10b981, warning #f59e0b, danger #ef4444
+- Animations: slideIn, pulse, pulse-cursor
+
+### js/core/state.js
+
+Create StateManager class that:
+- Manages all application state in a single object
+- Persists to localStorage as 'bam-x-state'
+- Implements observer pattern with subscribe/notify
+- Initial state includes: intentions[], schedule{mon/tue/wed/thu/fri: {deep/comm/ci: []}}, user{name, initials}, agents[], metrics{focusLevel, decisionConfidence, energy, interrupts}, currentPhase, currentDay
+- Intention structure: {id, name, outcome, estimatedHours, priority, phaseAffinity, dependencies, state (backlog/planned/active/blocked/completed), scheduledDay, scheduledPhase, progress, createdAt, updatedAt}
+- Methods: addIntention(), updateIntention(), deleteIntention(), getIntention(), getBacklogIntentions(), getScheduledIntentions(day, phase)
+- Schedule methods: scheduleIntention(id, day, phase), unscheduleIntention(id)
+- Capacity calculation: getCapacity() returns {total: 40h, allocated, remaining, percentage, byPhase{deep/comm/ci: {allocated, capacity, percentage}}}
+- Helper methods: generateId(), getMonday(), getFriday(), getCurrentDayKey(), formatDate()
+- Export/import: exportData(), importData(), reset()
+- Auto-save on every state change
+
+### js/core/rhythm.js
+
+Create RhythmManager class that:
+- Defines 4-2-2 rhythm: phases array with {name, label, duration (minutes), color, protection level}
+- Deep Work: 4h, #3b82f6, protection 0.95
+- Communication: 2h, #10b981, protection 0.3
+- Continuous Improvement: 2h, #8b5cf6, protection 0.5
+- Start time: 08:00
+- Methods: start() begins 1-minute timer, stop() clears timer
+- getCurrentPhase() calculates which phase we're in based on current time, returns {name, index, elapsed, remaining, progress}
+- updateCurrentPhase() checks for transitions and triggers events
+- getPhaseAtTime(minutes), getTimelinePosition() for cursor
+- formatMinutes(), formatDuration() for display
+- getNextPhaseInfo() returns next phase and time until it starts
+- shouldAllowInterrupt(urgency) compares to current protection level
+- getPhaseSchedule() returns array of phases with start/end times
+- Emits 'phaseTransition' events when phases change
+
+### js/core/agents.js
+
+Create AgentManager class that:
+- Manages four AI agents from state
+- Planning Agent: generatePlan() that sorts intentions by priority, allocates across week using allocateIntentions(), getBestPhase() heuristics (deep for analysis/design, comm for meetings, ci for planning), returns plan with confidence
+- applyPlan(plan) schedules all intentions
+- Momentum Agent: detectBlockers() finds unmet dependencies, suggestNextAction() recommends what to work on now based on current day/phase
+- Context Agent: findRelevantContext(intentionId) simulates retrieving similar work, docs, conversations
+- Reflection Agent: analyzeSprintHealth() calculates capacity utilization, completion rate, generates recommendations (over-allocated, under-allocated, low deep work usage)
+- generateInsight() returns random insight string for AI personality
+- All methods use state manager to read/write data
+
+### js/utils/helpers.js
+
+Create utils object with helper functions:
+- formatTime(date), formatDate(date), formatDateRange(start, end)
+- timeAgo(date) returns "X minutes/hours/days ago"
+- truncate(text, maxLength)
+- getPriorityColor(priority), getPhaseColor(phase)
+- debounce(func, wait)
+- generateId()
+- percentage(value, total)
+- clamp(value, min, max)
+- getDayName(dayKey), getPhaseName(phaseKey)
+- safeJSONParse(str, fallback)
+- createElement(tag, className, textContent)
+- showNotification(message, type)
+- deepClone(obj)
+
+### js/components/dashboard.js
+
+Create Dashboard class that:
+- Initializes on DOMContentLoaded
+- Starts rhythm manager
+- Subscribes to state changes
+- Renders all panels: renderHeader(), renderLeftPanel(), renderCenterPanel(), renderRightPanel(), renderTimeline()
+- updateTime() called every second to update countdown and progress ring
+- renderHeader() updates phase indicators, highlights current phase
+- renderLeftPanel() shows current working intention, time remaining, AI assistant status, metrics grid
+- renderCenterPanel() shows alerts for blockers, renders scheduled work as intention cards with view/complete actions
+- renderRightPanel() shows upcoming phase, improvement suggestions based on sprint health
+- renderTimeline() shows 4-2-2 timeline with phases and cursor position
+- renderIntentionCard(intention) creates detailed card with title, outcome, metadata, progress bar
+- getCurrentWorkingIntention() finds in-progress or next not-started intention
+- handlePhaseTransition(detail) updates UI when phase changes
+- maybeShowInsight() randomly shows AI insights
+- Actions: viewIntention(id), completeIntention(id), reviewBlockers()
+- Global functions: investigateInsight(), snoozeInsight(), dismissInsight()
+
+### js/components/planner.js
+
+Create SprintPlanner class that:
+- Initializes on DOMContentLoaded
+- Subscribes to state changes
+- Renders: renderSprintInfo() shows week dates, renderCapacity() shows utilization meters, renderWeekView() populates 5x3 grid with scheduled intentions, renderBacklog() shows unscheduled intentions
+- renderIntentionCardMini(intention) creates small draggable card with name, hours, priority color
+- Drag and drop: handleDragStart(event) stores draggedIntentionId, handleDragEnd(event) clears classes
+- updateDependenciesDropdown() populates select with all intentions
+- deleteIntention(id) with confirmation
+- Global functions:
+  - createIntention(event) reads form, calls state.addIntention(), resets form
+  - allowDrop(event) prevents default, adds drag-over class
+  - drop(event) reads day/phase from slot, calls scheduleIntention()
+  - generatePlan() calls agents.generatePlan(), confirms with user, applies plan
+  - setView(view) switches between week/list/graph views
+- Add event listeners to phase slots for dragleave to remove drag-over class
+
+### README.md
+
+Create comprehensive README with:
+- Project title and description
+- Features list (4-2-2 rhythm, sprint planning, AI agents, intention management, drag-and-drop)
+- Quick start (clone, open index.html)
+- File structure overview
+- Usage instructions (dashboard, planner)
+- Data persistence explanation (localStorage)
+- Browser support (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+- License (MIT)
+- Contributing section
+
+### QUICKSTART.md
+
+Create step-by-step guide with:
+- Installation (download, open)
+- First steps (view dashboard, plan sprint, create intention, schedule work, use AI)
+- Daily workflow (morning, deep work, communication, CI)
+- Features walkthrough (rhythm clock, AI agents, capacity, dependencies, priorities)
+- Data management (export, import, reset)
+- Tips & best practices (plan at right level, respect rhythm, build buffer, trust protection, iterate estimates)
+- Troubleshooting (common issues)
+- Next steps (customize, extend)
+
+### ARCHITECTURE.md
+
+Create technical documentation with:
+- Overview and core principles (time as primitive, intentions over tasks, AI specialists, progressive autonomy)
+- System architecture diagram (ASCII)
+- Data model with full state structure example
+- Key algorithms (phase detection, interrupt decision, AI plan generation, capacity calculation)
+- Event flow examples (creating intention, scheduling work, phase transition)
+- Extension points (adding agents, views, custom rhythms)
+- Performance considerations (localStorage limits, synchronous operations, re-render optimization)
+- Browser compatibility requirements
+- Future enhancements (backend sync, real AI, integrations, analytics, collaboration)
+
+### LICENSE
+
+Create MIT License with:
+- Copyright 2026 BAM-X Contributors
+- Standard MIT license text
+
+### .gitignore
+
+Create .gitignore with:
+- OS files (.DS_Store, Thumbs.db)
+- IDE files (.vscode/, .idea/, *.swp)
+- Logs (*.log)
+- Temp files (*.tmp)
+
+## CRITICAL IMPLEMENTATION DETAILS
+
+1. **State Persistence**: Every state change must call saveState() which writes to localStorage
+2. **Observer Pattern**: Components subscribe to state changes and re-render automatically
+3. **Drag and Drop**: Use HTML5 drag API with data-intention-id attributes
+4. **Time Updates**: Rhythm manager runs setInterval every 60 seconds, dashboard updates display every 1 second
+5. **Phase Transitions**: Emit custom 'phaseTransition' event, components listen and update
+6. **Capacity Tracking**: Calculate in real-time by summing hours from scheduled intentions
+7. **AI Plan Generation**: Sort by priority (critical>high>medium>low), then allocate to best phase, prefer early days for high priority
+8. **Gradient SVG**: Use linearGradient with id="gradient" for progress ring
+9. **Color Coding**: Intentions use priority colors, phases use distinct colors
+10. **Responsive Grid**: Container uses CSS Grid with 380px|1fr|380px columns
+11. **No Dependencies**: Pure vanilla JavaScript, no frameworks or build tools
+12. **Progressive Enhancement**: Works without JavaScript for basic viewing
+
+## TESTING CHECKLIST
+
+After creating all files, verify:
+- [ ] Opening index.html shows dashboard with rhythm clock
+- [ ] Time remaining updates every second
+- [ ] Phase cursor animates on timeline
+- [ ] Opening sprint-planner.html shows week view
+- [ ] Can create intention using form
+- [ ] Intention appears in backlog
+- [ ] Can drag intention to any day/phase slot
+- [ ] Capacity meters update when scheduling
+- [ ] Can delete intention from backlog
+- [ ] "Generate AI Plan" distributes work intelligently
+- [ ] Data persists after page reload
+- [ ] All AI agents show correct status
+- [ ] No console errors
+- [ ] Works in Chrome, Firefox, Safari
+
+## SUCCESS CRITERIA
+
+The application is complete when:
+1. Both pages (dashboard and planner) render without errors
+2. All interactive features work (forms, drag-drop, buttons)
+3. State persists to localStorage
+4. Rhythm clock updates in real-time
+5. AI agents provide suggestions
+6. Documentation is comprehensive
+7. Code is clean and well-commented
+8. Ready to upload to GitHub and use immediately
+
+Build this entire application following the specifications above. Create all files with complete, production-ready code. Do not create placeholders or partial implementations - every feature must be fully functional.

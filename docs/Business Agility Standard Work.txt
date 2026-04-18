@@ -1,0 +1,837 @@
+Business Agility Standard Work with Time Estimates per Sprint
+
+Activity Number (out of 50)
+Focus Areas
+Activity
+Hours per Sprint
+Procedures
+
+
+1
+Continuous Improvement
+Personal Learning and Development (L&D Tracker)
+2.0
+Continuous Activity: Discover and Evaluate new learning and development opportunity
+a. Define what you would like to achieve and the motivation to pursue it
+b. Discuss and evaluate the required skills to achieve your desired outcome
+c. Inventory the target skill(s) and assess your current knowledge/application of each skill
+d. Prioritize skills and select skill for development
+e. Evaluate and select appropriate training within quarter to support desired outcome
+f. Complete training and write Knowledge Sharing 1 Pager
+g. Present 1 Pager and save to Knowledge Wiki
+h. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome.
+ 
+ 
+ 
+ 
+2
+Continuous Improvement
+Team Learning and Development (L&D Tracker)
+2.0
+Continuous Activity: Discover and Evaluate new team learning and development opportunity
+a. Define what you would like to achieve and the motivation to pursue it
+b. Discuss and evaluate the required skills to achieve your desired outcome
+c. Inventory the target skill(s) and assess your current knowledge/application of each skill
+d. Prioritize skills and select skill for development
+e. Evaluate and select appropriate team training within quarter to support desired outcome
+f. Complete training and write Facilitate Team Retrospective
+g. Create Knowledge Wiki
+h. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome.
+ 
+ 
+ 
+ 
+3
+Continuous Improvement
+Company Compliance Training (L&D Tracker)
+0.5
+a. Track Company Compliance Training requirements in KNET, KNET2, and FastCap
+b. Complete training
+ 
+ 
+ 
+ 
+4
+Continuous Improvement
+Document Review
+2.0
+a. Receive Document (PRFAQ, MBR, 6 Pager)
+b. Schedule time to review and provide written feedback
+c. Review Document and Document Feedback
+d. Communicate feedback (live, email, chime)
+Writing is important at Company.  We take writing like an Amanian seriously and take great benefit when reading documents from our team and other partner teams.  We plan 30-60 minutes to read documents and provide thoughtful notes and feedback for authors.  This helps us improve our own writing and communication abilities, understand important topics, and improve how everyone is thinking about the topic.
+ 
+ 
+ 
+ 
+5
+Continuous Improvement
+Team Introductions and Engagements
+1.0
+a. Identify new partner team or PXT stakeholder
+b. Communicate interest for introduction and engagement
+c. Schedule Team Intro/Engagement Communication Cycle
+d. Review Team PRFAQs, MBRs, 6 Pagers, Wikis, and Data
+e. Discuss synergies for process improvement
+f. Coordinate intake of process improvement opportunities
+ 
+ 
+ 
+ 
+6
+Continuous Improvement
+Innovation Process - Explore Opportunities
+1.0
+Continuous Activity: Read about new processes, technologies, best practicesa.
+a.     	Add new Opportunity Name to row in Opportunity Tracker
+b. Provide a brief 1-2 sentence Opportunity Description of the opportunity.
+c. Select the Strategic Category for the opportunity
+d. Identify the Executive Sponsor for the opportunity
+e. Select the Desired Timeframe for the opportunity to be implemented
+f. Identify the Owner/Driver for the opportunity (the person completing opportunity deliverables)
+ 
+ 
+ 
+ 
+7
+Continuous Improvement
+Innovation Process - Evaluate Opportunity
+2.0
+Signal: Opportunity Assigned
+
+a. Document Target 3-7 Use Cases related to opportunity.  Use cases are based on activities in a process and specific scenarios encountered.
+b. Document the technologies proposed for this opportunity
+c. Define the primary customer impacted by the opportunity
+d. Document the flow of activities / steps in the process from start to finish
+e. Estimate opportunity benefit (target population with time, cost, quality benefits)
+
+Evaluation Review: Is this opportunity worth pursuing with a PRFAQ?
+ 
+ 
+ 
+ 
+8
+Continuous Improvement
+Innovation Process - PRFAQ
+2.0
+
+
+a. Update the Opportunity Status field to Active - PRFAQ
+b. Complete Writing Hub - Writing Like an Companyian (one time training)
+c.      	Reference Writing Hub PRFAQ Site for Template and Instructions
+d.     	Create a PRFAQ document based on PRFAQ Template
+i. Who is the customer?
+ii. What is the problem or opportunity we propose to solve?
+iii. What is the most important customer benefit?
+iv. What does the customer experience look like? 
+v. How do you know what customers need or want?
+vi. Identify the Business Case & Target Use Case(s)
+vii. Outline Technology Model - Add Link to Opportunity Tracker
+viii. Diagram the Customer Experience Workflow
+ix. Complete Frequently Asked Questions Template
+x. Complete Press Release 1 Pager
+c. Submit for Steering Committee PRFAQ Review & Proof of Concept Greenlight
+
+PRFAQ Review: Is this opportunity worth pursuing with a pilot or proof of concept?
+ 
+ 
+ 
+ 
+9
+Continuous Improvement
+Innovation Process - Proof of Concept/Prototype
+2.0
+a. Complete Prototype Plan based on Prototype Plan Template
+i. Purpose of Prototype
+ii. Scope of Prototype
+iii. Prototype Features (e.g., platform, targeted use cases, front end, backend)
+iv. User Experience Workflow
+v. Success Criteria
+vi. Future Use Cases
+b. Build Prototype to Success Criteria
+i. Prototype - Instructions for use
+ii. Prototype Test Results
+iii. Lessons Learned and Product Assessment
+c. Outline Implementation/Development Plan with Resource Type and FTE Requirements for implementation
+d. Estimate Annualized Net Benefit if Opportunity implemented
+e. Identify possible Risks to completing opportunity implementation and create Mitigation Plan for each risk
+
+Prototype Review: Is the success criteria and results worth pursuing this as a product or service?
+ 
+ 
+ 
+ 
+10
+Continuous Improvement
+Innovation Process - Product Assessment
+2.0
+4. Complete Product Assessment Document based on Product Assessment Template
+a. Business Scope
+b. Technical Scope
+c. Prototype Target Use Cases
+d. Prototype Success Criteria and Test Results
+e. Product Use Cases with Annualized Net Benefit
+f. Product Risks and Mitigation Plan
+g. Product Stakeholders
+h. Assumptions
+i. Constraints
+j. Dependencies
+k. User Experience Workflows
+ 
+ 
+ 
+ 
+11
+Continuous Improvement
+Innovation Process - Initiate New Product/Program
+1.0
+5. Cultivate Opportunity with internal/external stakeholders and executive committee approval
+a. Update Opportunity Discovery fields (section 3) as needed
+b. Update the Weekly Status field
+c. Update Opportunity Stage as required opportunity fields are finalized
+d. Finalize the Implementation Requirements based on prioritized business requirements and technical model
+ 
+ 
+ 
+ 
+12
+Continuous Improvement
+PDCA Cycle
+2.0
+a. Determine a target activity or process area of interest, the "theme" for the activity and a baseline current condition measurement of the activity.
+B. Establish a future state target condition measurement for the activity.
+C. Propose an experiment or improvement that can be worked on over the next 48 hours.
+D. Spend 10-60 minutes working on the proposed experiment/improvement.
+E. Meet every 48 hours to measure the current condition and document results of your experiment.
+F. If current condition meets target condition for 3 meetings, select a new process area for improvement. if current condition does not meet target condition go to step D. and propose a new experiment.
+ 
+ 
+ 
+ 
+13
+Continuous Improvement
+6S Email Activity
+0.5
+Step 1: Sort
+First things first, it’s time to get rid of all of the messages that are old and obsolete. Be aggressive
+in this step. Don’t keep messages that you know will never be returned. If there are attachments
+that need to be saved or printed, do so now. Get rid of as much as you can.
+Step 2: Straighten
+Now that what needs to be kept has been identified, the next task is to find a place for all of your e-mails. The easiest and most obvious way is to create folders based on tasks or other buckets of work where emails can be neatly filed for future use. The goal is to remove as much from your inbox as possible.
+Step 3: Shine
+Since we’re talking about computer applications, there really aren’t many necessary cleaning activities that would be required in a physical workspace. Still this is a good time to make sure your e-mail pages have the appropriate toolbars and proper layout. Clean-up anything that doesn’t look right.  Make sure you’re email signature and out-of-office reply are in an effective and professional format.
+Step 4: Standardize
+This step is critically important as you will now set rules for yourself to keep your e-mail account clean. Some rules you may consider are setting a maximum number of e-mails in your inbox. Once that number is exceeded, complete another sorting and straightening cycle. You can also set rules on how many emails are permissible in each folder. Another rule might be that any unopened e-mail will be automatically deleted after a certain number of days. The key is to set rules for yourself to keep things organized. If you are using Microsoft Outlook, you can manage your email rules using the Rules and Alerts function in the Tools menu.
+Example Email Process Rules:
+1. When number of inbox emails exceeds 20, identify:
+a. Immediate Action
+b. Planned Action/Keep Emails
+i. Save to Task/Project Email Folder
+ii. Archive
+c. Delete Emails
+2. When any email exceeds 90 days, identify:
+a. Any action to be taken
+b. Save to Task/Project Email Folder
+c. Archive
+d. Delete
+3. Set Rules and Alerts in Microsoft Office
+One of Outlook's best features is the capability to create and manage rules on how your email is handled. These rules can allow you to work with your email in any way that you like.
+For example when you receive a message you can handle it based on criteria such as subject, sender, your name in the CC list.
+§ Move messages to another folder
+§ Delete messages
+§ Mark messages - flags, colors, fonts etc.
+§ Play a sound
+§ Print the message
+§ Forward message
+Creating the rules is quite simple, as Microsoft has provided a wizard to do it and some templates to get you started.
+Basic Rule Creation
+With Outlook 2000 and later, you can create a basic move/copy rules and coloring rules (where a message is colored differently) from the main screen.
+Screenshots from Outlook XP - similar to other versions
+1. If you are creating a rule to move messages to another folder, make sure that you have created the folder before you start to create the rule using File, New, Folder.
+2. Find the message that you want to base the rule on in Outlook and select it so that it is highlighted.
+3. Click on the Organize button. You will find this on the top taskbar - it is a yellow button made up of lots of squares, or in the Tools menu.
+In Outlook 2003 it has been removed from the top taskbar in the default view - you will find it in the Tools menu.
+ 
+ 
+ 
+ 
+14
+Communications
+High-value Communication Time-blocking (30-60 minutes)
+10.0
+Best Practice: Science* shows that the tone of communication is more positive first thing in the morning and right after lunch. Therefore we plan 60 minutes of high-value communication to start the day and 30 minutes of high-value communication right after lunch.  This will keep us positive and focused on high-value proactive communication.
+ 
+ 
+ 
+ 
+15
+Communications
+High-value team and project meetings (15-30 minutes)
+5.0
+Most team operations meetings/communications should be handled by Sprint Planning, Daily Standups, Sprint Reviews, and Sprint Retrospectives.  Other team/project status meetings still happened but timeframes are reduced, recurring attendance scheduled, and agendas with desired outcomes of meetings communicated. Other meetings should be scheduled for 20 or 50 minute meetings.
+ 
+ 
+ 
+ 
+16
+Communications
+Connecting with other Companyians (15-60 minutes)
+2.0
+Best Practice: Science shows that more people are available in the office on Wednesdays and Thursdays. Therefore we plan time to connect with peers and teammates on those days by reaching out and scheduling time with the team or with efficient 1:1s with key stakeholders. 1:1s should be 20 minutes long and have dedicated agendas and outcomes. Maybe Companyians are busier on Wednesday than usual businesses for some reason.  Measure the success/outcomes of 1:1s.  How many get cancelled or rescheduled? How many don't have agendas?
+ 
+ 
+ 
+ 
+18
+Communications
+Document Writing (Backlog, Updates, Blurbs, Narratives)
+2.0
+Writing is a critical skill for Program Managers and leaders at Company. We plan time to write standard documents and information related to projects, programs, goals, and objectives.
+ 
+ 
+ 
+ 
+19
+Communications
+Refining Program Plan
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+Continuous Improvement
+Quarterly Planning
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+Continuous Improvement
+Sprint Planning
+2.0
+The Improvement Planning Meeting is time-boxed to 2 hours and consists of two segments that are time-boxed to 1 hour each.  The first segment is for selecting improvement backlog items; the second segment is for preparing the Improvement Sprint Backlog.
+• Attendees are Continuous Improvement Team Member, the Process Owner, and the Team.  Additional parties can be invited by any of these people to provide additional business domain or construction domain information and advice, but they are dismissed after this information is provided.  No kibitzers are allowed as observers of Phase 1 Planning.
+• The Process Owner must prepare the Improvement Backlog prior to the meeting.  In the absence of either the Process Owner or the Improvement Backlog, Continuous Improvement is required to construct an adequate Improvement Backlog that maps a look ahead of possible improvement work based on Failure Modes and Effect Analysis recommended actions and to stand in for the Process Owner.
+• The goal of the Phase 1 Planning, or the first 1 hour, is for the Team to select those Improvement  Backlog items that it believes it can commit to turning into an implemented and fully documented improvement.  The Team will demonstrate this functionality to the Process Owner and stakeholders at the Improvement Sprint Review meeting at the end of the Improvement Sprint.
+• The Team can make suggestions, but the decision of what Improvement Backlog can constitute the Improvement Sprint is the responsibility of the Process Owner.
+• The Team is responsible for determining how much of the Improvement Backlog that the Process Owner wants worked on the Team will attempt to do during the Improvement Sprint.
+• Time-boxing the first segment to 1 hour means that this is all of the time that is available for analyzing the Improvement Backlog.  Further analysis must be performed during the Improvement Sprint.  Large-grained, high-priority Improvement Backlog with imprecise estimates might not be thoroughly understood during this part of the Improvement Sprint planning meeting and might result in the Team not being able to complete all of the Improvement Backlog that it selects.
+• The second segment of the Sprint Planning meeting (Phase 2) occurs immediately after the first segment and is also time-boxed to 1 hour.
+• The Process Owner must be available to the Team during the second segment to answer questions that the Team might have about the Improvement Backlog.
+• It is up to the Team, acting solely on its own and without any direction from outside the Team, to figure out during the second segment how it will turn the selected Improvement Backlog into turning into an implemented and fully documented improvement.  No one else is allowed to do anything but observe or answer questions seeking further information.
+• The output of Phase 2 Planning is a list, called the Improvement Sprint Backlog, of tasks, task estimates, and assignments that will start the Team on the work of developing the improvements.  The task list might not be complete, but it must be complete enough to reflect mutual commitment on the part of all Team members and to carry them through the first part of the Improvement Sprint, while the Team devises more tasks in the Improvement Sprint Backlog.
+ 
+ 
+ 
+ 
+
+
+Continuous Improvement
+Daily Standup Meeting
+4.0
+The Daily Improvement Meeting is time-boxed to 15 minutes regardless of the number of Team Members.
+• Hold the Daily Improvement Meeting in the same place at the same time every work day.  The Daily Improvement Meeting is best held first thing in the day so that the first thing Team members do on arriving at work is think of what they did the day before and what they plan to do today.
+• All team members are required to attend.  If for some reason a Team member can’t attend in person, the absent member must either attend by telephone or by having another Team member report on the absent member’s status.
+• Team members must be prompt.  Continuous Improvement starts the meeting at the appointed time, regardless of who is present.  Any members who are late pay $100 to Continuous Improvement immediately.
+• Continuous Improvement begins the meeting by starting with the person immediately to his or her left and proceeding counterclockwise around the room until everyone has reported.
+• Each Team member should respond to three questions only:
+o What have you done since the last Daily Improvement Meeting regarding this project?
+o What will you do between now and the next Daily Improvement Meeting regarding this project?
+o What impedes you from performing your work as effectively as possible?
+• Team members should not digress beyond answering these three questions into issues, designs, discussions of problems, or gossip.  Continuous Improvement is responsible for moving the reporting along briskly, from person to person.
+• During the Daily Improvement Meeting, only one person talks at a time.  That person is the one who is reporting his or her status.  Everyone else listens.  There are no side conversations.
+• When a Team member reports something that is of interest to other Team members or needs the assistance of other Team members, any Team member can immediately arrange for all interested parties to get together after the Daily Improvement Meeting to set something up.
+• Non-Team members are not allowed to talk, make observations, make faces, or otherwise make their presence in the Daily improvement Meeting obtrusive.
+• Non-Team members stand on the periphery of the Team so as not to interfere with the meeting.
+• If too many Non-Team members attend the meeting, Continuous Improvement can limit attendance so that the meeting can remain orderly and focused.
+• Non-Team members are not allowed to talk with Team members after the meeting for clarification or to provide advice and instructions.
+• Any Non-Team members or Team members who cannot or will not conform to the above rules can be excluded from the meeting or removed from the Team.
+ 
+ 
+ 
+ 
+
+
+Continuous Improvement
+Sprint Review
+2.0
+The Improvement Sprint Review Meeting is time-boxed to 1 hour.
+• The Team should not spend more than 15 minutes preparing for the Improvement Sprint Review.
+• The purpose of the Improvement Sprint Review is for the Team to present to the Process Owner and stakeholders the recommended actions and improvements that were completed during the Improvement Sprint.
+• Artifacts that aren’t actual components cannot be presented except when used in support of understanding the demonstrated improvement.  Artifacts cannot be shown as work products, and their use must be minimized to avoid confusing stakeholders or requiring them to understand how the systems are designed, detailed, fabricated and installed.
+• Components should be presented by Team members.
+• The Improvement Sprint Review starts with a Team member presenting the Improvement Sprint Goal, the Improvement Sprint Backlog committed to, and the Improvement Sprint Backlog completed.  Different Team members can then discuss what went well and what didn’t go so well in the Improvement Sprint.
+• The majority of the Improvement Sprint Review is spent with Team members presenting their work, answering stakeholder questions regarding the presentation, and noting changes that may be required.
+• At the end of the presentations, the stakeholders are polled, one by one, to get their impressions, any required changes, and the priority of those changes.
+• The Process Owner discusses with the stakeholders and the Team potential rearrangement of the Improvement Backlog based on the feedback.
+• Stakeholders are free to voice any comments, observations, or criticisms regarding the increment of work between presentations.
+• Stakeholders can identify work that wasn’t delivered or wasn’t delivered as expected and request that such work be added to the Improvement Backlog for prioritization.
+• Stakeholders can identify any new backlog items that occur to them as they view the presentation and request that the work be added to the Improvement Backlog for prioritization.
+• Continuous Improvement should attempt to determine the number of people who expect to attend the Improvement Sprint Review meeting and set up the meeting to accommodate them.
+• At the end of the Improvement Sprint Review, Continuous Improvement announces the place and date of the next Improvement Review to the Process Owner and all stakeholders.
+ 
+ 
+ 
+ 
+
+
+Continuous Improvement
+Sprint Retrospective
+0.5
+The Improvement Sprint Retrospective Meeting is time-boxed to 30 minutes.
+• It is attended only by the Team, Continuous Improvement and the Process Owner.  The Process Owner is optional.
+• Start the meeting by having all Team members answer two questions:
+o What went well during the last Improvement Sprint?
+o What could be improved in the next Improvement Sprint?
+• Continuous Improvement writes down the Teams answers in summary form.
+• The Team prioritizes in which order it wants to talk about the potential improvements.
+• Continuous Improvement is not at this meeting to provide answers, but to facilitate the Team’s search for better ways for the Improvement process to work for it.
+• Actionable items that can be added to the next Improvement Sprint should be devised as high-priority Non-Project Backlog.  Retrospectives that don’t result in change are sterile and frustrating.
+Decision Point: Continue Business Agility Mechanism and Sprint Model?
+ 
+ 
+ 
+ 
+20
+DMAIC Project Work
+DMAIC Project Charter
+ 
+ 
+ 
+ 
+ 
+ 
+21
+DMAIC Project Work
+DMAIC SIPOC
+4.0
+FACILITAOR GUIDE: STEP 1 BRAINSTORM PROCESS STEPS
+*1.* Type participant names in Cell E2-N2
+*2.* Instruct participants to type 3-7 high level steps of the process based on their experience and knowledge of process
+*3.* Give participants 10-13 minutes to fill in their responses. Allow more time in needed.
+*4.* Copy each participant response and name. Then paste in tab "Step 2. Grouping Process Steps" cells C4-C30 (varies on number of responses from team)
+
+FACILITATOR GUIDE: STEP 2. GROUPING PROCESS STEPS
+*1.* Review each step listed with the participants and translate their responses into high level steps (verb + noun) under Column E. Some participants may have similar steps in their responses. Place similar steps under one high level step.
+*2.* Ask for further clarification from participant if needed when reviewing their responses and placing them into high level steps
+*3*. Repeat Steps 1 & 2 until all participant responses have been placed under a high level step (verb+noun)
+*4.* In column E highlight the final 3-7 process steps
+*5.* Type final 3-7 process steps in tab "Step 7: Final SIPOC" Row 7
+
+FACILITATOR GUIDE: STEP 3. OUTPUT BRAINSTORMING
+*1.* Type participant names in Cell F2-O2
+*2.* Type the final process steps in E3-E9.
+*3.* Explain what an Output is to participants: *Outputs are the results/work produced by each process step. We want to know what the output is for the Process Steps*
+*4.* Instruct participants to type 1-3 Outputs in 5-8 minutes under their name
+*5.* Review participants Outputs and paste the unique Outputs in tab "Step 7: Final SIPOC" column H
+
+FACILITATOR GUIDE: STEP 5. INPUT BRAINSTORMING
+*1.* Type participant names in Cell F2-O3
+*2.* Type the final process steps in E3-E9.
+*3.* Explain what the "Input" is to participants: *****Inputs are the requierments for the process steps to work . We want to know each input for the steps in this process.*****
+*4.* Instruct participants to type 3-7 Inputs in 5-8 minutes under their name
+*5.* Review participants Inputs and paste the unique Inputs in tab "Step 7: Final SIPOC" column F
+
+FACILITATOR GUIDE: STEP 6. SUPPLIER BRAINSTORMING
+*1.* Type participant names in Cell F2-O3
+*2.* Type the final process steps and corresponding inputs in Cells E3-E23. (Count of Inputs will vary by process-add more rows if needed)
+*3.* Explain what the "Supplier" is to participants: **Suppliers contribute the inputs to the process steps. We want to know the suppliers of each input in this process.*
+
+*
+*4.* Instruct participants to type 1-3 Suppliers in 5-8 minutes under their name
+*5.* Review participants Suppliers and paste the unique Inputs in tab "Step 7: Final SIPOC" column E
+ 
+ 
+ 
+ 
+22
+DMAIC Project Work
+DMAIC Output Data Collection Plan
+2.0
+Link to 16 Step Process:
+ 
+ 
+ 
+ 
+23
+DMAIC Project Work
+DMAIC Stakeholder Analysis
+1.0
+Missing - Asana Module?
+ 
+ 
+ 
+ 
+24
+DMAIC Project Work
+DMAIC Communication Plan
+1.0
+Missing - Asana Module?
+ 
+ 
+ 
+ 
+25
+DMAIC Project Work
+DMAIC Risk and Mitigation Plan
+1.0
+Asana Module?
+ 
+ 
+ 
+ 
+26
+DMAIC Project Work
+DMAIC VOC/VOB/VOA Analysis
+2.0
+Missing
+ 
+ 
+ 
+ 
+27
+DMAIC Project Work
+DMAIC Continuous Reporting Framework
+2.0
+Link to Benefits Translator SOP and Quip Template and Asana Optimization Form
+ 
+ 
+ 
+ 
+28
+DMAIC Project Work
+DMAIC Baseline Output Performance Data
+10.0
+Link to 16 Step Process:
+ 
+ 
+ 
+ 
+29
+DMAIC Project Work
+DMAIC Control Chart Graph
+2.0
+
+	Choose Stat > Control Charts > Variables Charts for Subgroups > Xbar.
+	Complete the dialog box as usual.
+	Click Xbar Options, then click the Tests tab.
+	Select the following:
+    	1 point > K standard deviations from center line
+    	K points in a row on same side of center line
+    	K points in a row within 1 standard deviation of center line (either side)
+	Next to 1 point > K standard deviations from center line, enter 2.5.
+	The control limits will be drawn at 2.5σ instead of 3σ. Points will fail test 1 if they are more than 2.5 sigma from the center line.
+	Click OK in each dialog box.
+ 
+ 
+ 
+ 
+30
+DMAIC Project Work
+DMAIC Process Capability Report
+1.0
+ 
+ 
+ 
+ 
+ 
+31
+DMAIC Project Work
+DMAIC MSA Report
+3.0
+ 
+ 
+ 
+ 
+ 
+32
+DMAIC Project Work
+DMAIC Detailed Process Maps
+4.0
+1. Complete high level process map (SIPOC)
+2. Detail 3-7 key sub-processes
+3. Estimate process times and wait times
+4. Define the inputs and outputs for each step
+5. Identify all steps in the process as value added and non-value added
+6. Identify 1-3 relevant measurement opportunities for each sub-process
+ 
+ 
+ 
+ 
+33
+DMAIC Project Work
+DMAIC Quick Win Improvements
+20.0
+ 
+ 
+ 
+ 
+ 
+34
+DMAIC Project Work
+DMAIC Cause and Effect Matrix/Analysis
+4.0
+FACILITAOR GUIDE: TAB 3. C&E
+*1.* List all unique Inputs from SIPOC in cell B5-B29 (Varies on number of Inputs from SIPOC)
+*2.* List all unique Outputs from SIPOC in cell C3-N3 (Varies on number of Outputs from SIPOC)
+FACILITATOR GUIDE: TAB 1. INPUT ANALYSIS
+*1.* Explain the purpose of Cause & Effect Analysis to project team
+*2.* Review the "How To" tab in this Quip with project team
+*3.* Type each project team member name in cell F4-F11
+*4.* List all unique Inputs from SIPOC in cell F13-F20 (Varies on number of Inputs from SIPOC)
+*5.* Take the first unique input from the list and place it in cell G3
+*6.* Place all unique Outputs from SIPOC in Cell H2-M2
+*7.* Allow 5-10 minutes for participants to rate the input in cell G3 to the outputs on a scale of 0,1,4,9
+*8.* Review and Align with the team on the final ratings of 0, 1, 4, or 9 for the input to each individual Output
+*9.* Copy and paste final ratings for each Input to Output to tab "3. C&E" cell C5-N5
+*10.* Mark Done in Tab 1 Cell G13
+*11.* Repeat steps 8-11 until all Inputs are correlated to the Outputs (Each final input rating should align with the input list in Tab 3)
+
+FACILITATOR GUIDE : TAB 2. OUTPUT ANALYSIS
+*1.* Type each project team member name in cell E4-E11
+*2.* List all unique Outputs from SIPOC in cell F3-K3 (Varies on number of Outputs from SIPOC)
+*3*. Allow 5-10 minutes for participants to rate each Output on a scale of 1-10 (Rating is dependent on how important is the Output to the Customer?)
+*4.* Review and Align with the team on the final ratings (Discuss any outliers in ratings)
+*5.* Copy and paste final Output average score and place in Tab 3 - Cell C1-N1
+ 
+ 
+ 
+ 
+35
+DMAIC Project Work
+DMAIC Inputs Data Collection Plan
+8.0
+ 
+ 
+ 
+ 
+ 
+36
+DMAIC Project Work
+DMAIC Correlation and Regression
+3.0
+ 
+ 
+ 
+ 
+ 
+37
+DMAIC Project Work
+DMAIC Failure Modes Effects Analysis
+4.0
+*1.* Type in final inputs from Cause & Effect Analysis template in FMEA Template tab - cell A3-A6 AND in each Participant tab
+*2.* Explain thepurpose and goal of each column on the FMEA template tab
+*3.* Explain to the team how each team member has their own tab for individual think to share how they know the inputs fail, identify root causes of failure modes, and actions to recommend the input from failing
+*3.* Give participants 15-20 minutes to answer each column (B-D) for each input. Allow more time in needed.
+*4.* Give team a 10-15 minute break. Copy each participant response from their own tab and paste into FMEA Template Tab
+*5.* As a team, review each response in Column B starting with Input #1 and remove duplicate responses . Ask for further clarification on responses if needed. 
+*6.* Move to Column C and ask the participants how each failure mode impacts the customers in the process. Type all responses the participants share with you.
+*7.* Move to Column D and as a team review participant responses. Remove duplicates and ask for further clarification if needed.
+*8.* Move to Column E and ask the team for any current controls in the process preventing the process from failing. Type all current controls the participants share with you.
+*9.* As a team, ** review column F with all improvements the team wrote down. Remove duplicates and ask for further clarification if needed.
+Move to the next row (input) and Repeat Steps 5-9 from above until all rows have been filled.
+*10.* Review each improvements items in Column F and bold the ones the team would work on to improve the process and implement when ready. 
+*11.* Final improvements will be organized on the Improvement Backlog template
+ 
+ 
+ 
+ 
+38
+DMAIC Project Work
+DMAIC Process Improvement Backlog
+1.0
+ 
+ 
+ 
+ 
+ 
+39
+DMAIC Project Work
+DMAIC Financial Benefit Translator
+10.0
+Link to Benefits Translator SOP and Quip Template and Asana Optimization Form
+ 
+ 
+ 
+ 
+40
+DMAIC Project Work
+DMAIC Implemented Improvements
+20.0
+1. Open Current Failure Modes Effect Analysis spreadsheet
+2. Review each recommended action for improvement of process inputs
+3. Identify Improvement Backlog Item(s)
+4. Document Improvement Backlog Item(s) Name, Description, and Day 2 Done Criteria
+ 
+ 
+ 
+ 
+41
+DMAIC Project Work
+DMAIC Project Results Narrative Document
+4.0
+ 
+ 
+ 
+ 
+ 
+42
+Kaizen Project Work
+Kaizen Project Charter
+2.0
+Missing
+ 
+ 
+ 
+ 
+43
+Kaizen Project Work
+Kaizen Output Data Collection Plan
+2.0
+Link to Benefits Translator SOP and Quip Template and Asana Optimization Form
+ 
+ 
+ 
+ 
+44
+Kaizen Project Work
+Kaizen Event Scheduling
+1.0
+1. Review the Desired Project Team Roles on Project Charter
+2. Select high performing subject matter experts to meet requirements of the team roles
+3. Identify general timeframe of window of opportunity and negotiate availability and commitment
+ 
+ 
+ 
+ 
+45
+Kaizen Project Work
+Kaizen Event SIPOC
+1.0
+FACILITAOR GUIDE: STEP 1 BRAINSTORM PROCESS STEPS
+*1.* Type participant names in Cell E2-N2
+*2.* Instruct participants to type 3-7 high level steps of the process based on their experience and knowledge of process
+*3.* Give participants 10-13 minutes to fill in their responses. Allow more time in needed.
+*4.* Copy each participant response and name. Then paste in tab "Step 2. Grouping Process Steps" cells C4-C30 (varies on number of responses from team)
+
+FACILITATOR GUIDE: STEP 2. GROUPING PROCESS STEPS
+*1.* Review each step listed with the participants and translate their responses into high level steps (verb + noun) under Column E. Some participants may have similar steps in their responses. Place similar steps under one high level step.
+*2.* Ask for further clarification from participant if needed when reviewing their responses and placing them into high level steps
+*3*. Repeat Steps 1 & 2 until all participant responses have been placed under a high level step (verb+noun)
+*4.* In column E highlight the final 3-7 process steps
+*5.* Type final 3-7 process steps in tab "Step 7: Final SIPOC" Row 7
+
+FACILITATOR GUIDE: STEP 3. OUTPUT BRAINSTORMING
+*1.* Type participant names in Cell F2-O2
+*2.* Type the final process steps in E3-E9.
+*3.* Explain what an Output is to participants: *Outputs are the results/work produced by each process step. We want to know what the output is for the Process Steps*
+*4.* Instruct participants to type 1-3 Outputs in 5-8 minutes under their name
+*5.* Review participants Outputs and paste the unique Outputs in tab "Step 7: Final SIPOC" column H
+
+FACILITATOR GUIDE: STEP 5. INPUT BRAINSTORMING
+*1.* Type participant names in Cell F2-O3
+*2.* Type the final process steps in E3-E9.
+*3.* Explain what the "Input" is to participants: *****Inputs are the requierments for the process steps to work . We want to know each input for the steps in this process.*****
+*4.* Instruct participants to type 3-7 Inputs in 5-8 minutes under their name
+*5.* Review participants Inputs and paste the unique Inputs in tab "Step 7: Final SIPOC" column F
+
+FACILITATOR GUIDE: STEP 6. SUPPLIER BRAINSTORMING
+*1.* Type participant names in Cell F2-O3
+*2.* Type the final process steps and corresponding inputs in Cells E3-E23. (Count of Inputs will vary by process-add more rows if needed)
+*3.* Explain what the "Supplier" is to participants: **Suppliers contribute the inputs to the process steps. We want to know the suppliers of each input in this process.*
+
+*
+*4.* Instruct participants to type 1-3 Suppliers in 5-8 minutes under their name
+*5.* Review participants Suppliers and paste the unique Inputs in tab "Step 7: Final SIPOC" column E
+ 
+ 
+ 
+ 
+46
+Kaizen Project Work
+Kaizen Event Prioritized Inputs
+0.5
+FACILITAOR GUIDE: TAB 3. C&E
+*1.* List all unique Inputs from SIPOC in cell B5-B29 (Varies on number of Inputs from SIPOC)
+*2.* List all unique Outputs from SIPOC in cell C3-N3 (Varies on number of Outputs from SIPOC)
+FACILITATOR GUIDE: TAB 1. INPUT ANALYSIS
+*1.* Explain the purpose of Cause & Effect Analysis to project team
+*2.* Review the "How To" tab in this Quip with project team
+*3.* Type each project team member name in cell F4-F11
+*4.* List all unique Inputs from SIPOC in cell F13-F20 (Varies on number of Inputs from SIPOC)
+*5.* Take the first unique input from the list and place it in cell G3
+*6.* Place all unique Outputs from SIPOC in Cell H2-M2
+*7.* Allow 5-10 minutes for participants to rate the input in cell G3 to the outputs on a scale of 0,1,4,9
+*8.* Review and Align with the team on the final ratings of 0, 1, 4, or 9 for the input to each individual Output
+*9.* Copy and paste final ratings for each Input to Output to tab "3. C&E" cell C5-N5
+*10.* Mark Done in Tab 1 Cell G13
+*11.* Repeat steps 8-11 until all Inputs are correlated to the Outputs (Each final input rating should align with the input list in Tab 3)
+
+FACILITATOR GUIDE : TAB 2. OUTPUT ANALYSIS
+*1.* Type each project team member name in cell E4-E11
+*2.* List all unique Outputs from SIPOC in cell F3-K3 (Varies on number of Outputs from SIPOC)
+*3*. Allow 5-10 minutes for participants to rate each Output on a scale of 1-10 (Rating is dependent on how important is the Output to the Customer?)
+*4.* Review and Align with the team on the final ratings (Discuss any outliers in ratings)
+*5.* Copy and paste final Output average score and place in Tab 3 - Cell C1-N1
+ 
+ 
+ 
+ 
+47
+Kaizen Project Work
+Kaizen Event Failure Modes Effects Analysis
+4.0
+*1.* Type in final inputs from Cause & Effect Analysis template in FMEA Template tab - cell A3-A6 AND in each Participant tab
+*2.* Explain thepurpose and goal of each column on the FMEA template tab
+*3.* Explain to the team how each team member has their own tab for individual think to share how they know the inputs fail, identify root causes of failure modes, and actions to recommend the input from failing
+*3.* Give participants 15-20 minutes to answer each column (B-D) for each input. Allow more time in needed.
+*4.* Give team a 10-15 minute break. Copy each participant response from their own tab and paste into FMEA Template Tab
+*5.* As a team, review each response in Column B starting with Input #1 and remove duplicate responses . Ask for further clarification on responses if needed. 
+*6.* Move to Column C and ask the participants how each failure mode impacts the customers in the process. Type all responses the participants share with you.
+*7.* Move to Column D and as a team review participant responses. Remove duplicates and ask for further clarification if needed.
+*8.* Move to Column E and ask the team for any current controls in the process preventing the process from failing. Type all current controls the participants share with you.
+*9.* As a team, ** review column F with all improvements the team wrote down. Remove duplicates and ask for further clarification if needed.
+Move to the next row (input) and Repeat Steps 5-9 from above until all rows have been filled.
+*10.* Review each improvements items in Column F and bold the ones the team would work on to improve the process and implement when ready. 
+*11.* Final improvements will be organized on the Improvement Backlog template
+ 
+ 
+ 
+ 
+48
+Kaizen Project Work
+Kaizen Implemented Improvements
+23.0
+1. Open Current Failure Modes Effect Analysis spreadsheet
+2. Review each recommended action for improvement of process inputs
+3. Identify Improvement Backlog Item(s)
+4. Document Improvement Backlog Item(s) Name, Description, and Day 2 Done Criteria
+ 
+ 
+ 
+ 
+49
+Kaizen Project Work
+Kaizen project Results Narrative 3 Pager
+2.0
+Link to Template and Instructions
+ 
+ 
+ 
+ 
+50
+Kaizen Project Work
+Kaizen Process Owner Transition
+1.0
+Missing
+ 
+ 
+ 
+ 
+
