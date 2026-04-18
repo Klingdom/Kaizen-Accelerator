@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — System Architecture
 
 Owner: System Architect Agent
-Status: Draft v0.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1.
+Status: Draft v0.2 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1. v0.2 closes 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolves 3 prior open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
 Scope: MVP (vanilla JS + localStorage, single-user) with a forward-compatible path to Next.js + PostgreSQL + API.
 
 > **Terminology reconciliation with the upstream prompt.**
@@ -279,8 +279,9 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 
 **Invariants:**
 - `state === 'CLOSED'` → `outputArtifactRef !== null` AND matches schema on CatalogEntry (blueprint: every completion is a measurement).
-- `state === 'CLOSED'` AND `catalogEntry.isNonOptional === true` → a `Reflection` row must exist (blueprint §4.1 item 4).
+- `state === 'CLOSED'` AND `catalogEntry.isNonOptional === true` → a `Reflection` row must exist (blueprint §4.1 item 4). The Reflection MAY be `pending=true` if the user dismissed the reflection sheet without completing it; see §2.6.
 - `state === 'SKIPPED'` AND `catalogEntry.isNonOptional === true` → `reasonCodeIfSkipped !== null` AND a `Variance` row is emitted (blueprint §3.4).
+- `reasonCodeIfSkipped === 'OTHER'` → `note !== null AND note.length > 0` on the emitted `Variance` row. Enforced in `ActivityService.skip()`.
 - `bucket` is frozen at schedule time, even if CatalogEntry.bucket is later edited.
 
 ### 2.6 Reflection
@@ -290,18 +291,21 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `id` | string (uuid) | PK |
 | `scheduledActivityId` | string | FK ScheduledActivity (required) |
 | `userId` | string | FK User |
-| `capturedAt` | timestamp | Must be within 15 min of activity close for "on-time" metric |
-| `planVsActualMinutes` | integer | `actualEndAt − actualStartAt − plannedDurationMinutes` |
-| `whatWentWell` | string | Optional free text |
-| `whatToImprove` | string | Optional free text |
-| `frictionFlag` | boolean | If true → creates a `FrictionSignal` |
+| `pending` | boolean | `true` when row is auto-stubbed at activity close but user has not captured text yet. Flips to `false` on capture. |
+| `capturedAt` | timestamp \| null | Timestamp when user actually captured the reflection. `null` while `pending=true`. On-time if `capturedAt - scheduledActivity.actualEndAt <= 15 min`. |
+| `planVsActualMinutes` | integer | `actualEndAt − actualStartAt − plannedDurationMinutes`. Computed at activity close; stable. |
+| `whatWentWell` | string \| null | Optional free text. Null while pending. |
+| `whatToImprove` | string \| null | Optional free text. Null while pending. |
+| `frictionFlag` | boolean | If true on capture → creates a `FrictionSignal` |
 | `frictionSignalId` | string \| null | FK FrictionSignal |
 | `kind` | enum | `END_OF_ACTIVITY` (60-sec) \| `WEEKLY` (20-min DMAIC) |
 | `dmaicDraft` | object \| null | Only for `kind === 'WEEKLY'`: `{ define, measure, analyze, improveSuggested }` |
 
 **Invariants:**
-- Exactly one `Reflection` per closed non-optional `ScheduledActivity`.
-- `kind === 'WEEKLY'` must be attached to a Weekly `Composition` (via `scheduledActivityId` pointing to the Weekly Reflection activity).
+- Exactly one `Reflection` row per closed non-optional `ScheduledActivity`. The row is auto-stubbed at close with `pending=true`; the reflection-rate KPI counts only `pending=false AND capturedAt - actualEndAt <= 15 min`.
+- `pending === false` → `capturedAt !== null` AND (`whatWentWell !== null` OR `whatToImprove !== null`) — at least one text field populated.
+- `kind === 'WEEKLY'` must be attached to a Weekly `Composition` (via `scheduledActivityId` pointing to the Weekly Reflection activity). Cannot be `pending=true` — the wizard cannot save until all four DMAIC fields are non-empty.
+- `frictionSignalId` can only be set when `pending=false` (no friction signal created from an empty reflection).
 
 ### 2.7 Variance (append-only)
 
@@ -319,6 +323,7 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 
 **Invariants:**
 - **Append-only.** No update, no delete. Corrections are new rows with `kind = OTHER` and a reference to the erroneous row in `note` (`"supersedes variance_id=…"`).
+- `reasonCode === 'OTHER'` → `note !== null AND note.length > 0`. Enforced at insert (MVP: `VarianceService.log()`; future: Postgres `CHECK` constraint).
 - Emitted automatically by `ActivityService` and `ComposerService`; never written by UI directly.
 
 ### 2.8 FrictionSignal
@@ -361,6 +366,9 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 - `state === 'CLOSED'` → `remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId` (blueprint HARD RULE).
 - MVP: at most one Kaizen with `state IN ('ACTIVE','IN_REMEASUREMENT')` per user.
 - `actions[].doneAt === null` does **not** block close; **only** the remeasurement does (so honest-failure close is possible).
+
+**Computed properties (derived, not stored):**
+- `readyToRemeasure: boolean` = `state === 'ACTIVE' AND actions.length > 0 AND actions.every(a => a.doneAt !== null)`. Surfaced on `KaizenCard` as "Ready to remeasure." Not a state — the user can start remeasurement at any time during `ACTIVE`; this is just a visibility hint.
 
 ### 2.10 BaselineMetric
 
@@ -712,11 +720,19 @@ Hard ceiling: `sum(all plannedDurationMinutes) <= userDailyCapacityMinutes`.
 - Target: 2 × 2400 = 4800 min per person per sprint.
 - Sprint Planning, Mid-Sprint Review, Sprint Review, Retrospective are deducted from COMMUNICATION bucket of their specific days.
 
-### 5.5 External calendar events (future state)
+### 5.5 External calendar capacity (MVP manual override + future auto-import)
 
-External events imported from Google / MS Calendar are modeled as `ScheduledActivity` instances of a generic `CatalogEntry` (`External Meeting` with `bucket=COMMUNICATION` and `isNonOptional=false`). They consume `COMMUNICATION` bucket capacity first; if overflow, they spill into user-confirmed displacement of configurable CI entries (never Deep or non-optional).
+Users already have real meetings on their calendar in MVP, before any calendar integration ships. MVP therefore supports a manual capacity reservation:
 
-Signal passed to composer: `externalMinutesBooked` per day. The composer subtracts this from the target `COMMUNICATION` allocation before packing.
+**MVP — manual override on the Daily composer:**
+- `Composition(DAILY)` carries an optional `externalMinutesToday: integer` field (default 0, capped at 240 so Deep cannot be zeroed out).
+- The user enters this in the Daily composer (flow 2.1) before tapping Accept / Edit. It can also be set retroactively when re-composing a day.
+- The composer subtracts `externalMinutesToday` from the `COMMUNICATION` target before packing. The resulting triple is `{ PROJECT: 240, COMMUNICATION: max(60, 120 - externalMinutesToday), CI: 120 }` — COMMUNICATION never drops below its 60-min floor.
+- If `externalMinutesToday > 60`, the composer warns via CycleCard error state: "Reserved 90 min of external meetings. COMMUNICATION bucket reduced to 30 min for today's composed blocks."
+- No automatic event creation for the external meetings themselves; they are treated as a capacity drain, not as individual ScheduledActivities. Users who want the external meetings visible on `/today` must add them as configurable Communication blocks manually.
+
+**Future state — auto-import from Google / MS Calendar:**
+External events imported from Google / MS Calendar are modeled as `ScheduledActivity` instances of a generic `CatalogEntry` (`External Meeting` with `bucket=COMMUNICATION` and `isNonOptional=false`). They consume `COMMUNICATION` bucket capacity first; if overflow, they spill into user-confirmed displacement of configurable CI entries (never Deep or non-optional). The import replaces the manual `externalMinutesToday` input with a computed value from real events.
 
 ### 5.6 Over-schedule prevention
 
@@ -766,7 +782,9 @@ Events are emitted by services after state transitions commit to the repository.
 | `CompositionStarted` | `{ compositionId }` | UI (highlight active day) |
 | `CompositionClosed` | `{ compositionId }` | ComposerService (triggers next cycle composition), MetricsService |
 | `ActivityStarted` | `{ scheduledActivityId, startedAt }` | UI (timer) |
-| `ActivityCompleted` | `{ scheduledActivityId, outputArtifactRef, actualDurationMinutes }` | ReflectionService (prompt for reflection), MetricsService |
+| `ActivityStartedLate` | `{ scheduledActivityId, minutesLate }` | MetricsService (start-on-time leading indicator per blueprint §7.3) |
+| `ActivityCompleted` | `{ scheduledActivityId, outputArtifactRef, actualDurationMinutes }` | ReflectionService (prompt for reflection, auto-stub pending Reflection), MetricsService |
+| `ReflectionStubbed` | `{ reflectionId, scheduledActivityId, pending: true }` | UI (show pending banner) |
 | `ReflectionCaptured` | `{ reflectionId, scheduledActivityId, onTime: boolean }` | MetricsService (reflection rate), FrictionService (if frictionFlag) |
 | `VarianceLogged` | `{ varianceId, kind, reasonCode, catalogEntryId }` | MetricsService (adherence), ComposerService (variance queue for next cycle) |
 | `FrictionSignalCaptured` | `{ frictionSignalId, reflectionId }` | KaizenCandidateQueue (cluster + score) |
@@ -778,10 +796,12 @@ Events are emitted by services after state transitions commit to the repository.
 
 ### 6.2 Subscriber responsibilities
 
-- **MetricsService** subscribes to `ActivityCompleted`, `VarianceLogged`, `ReflectionCaptured`, `CycleAccepted`, `CycleEdited`, `KaizenRemeasured`, `KaizenClosed` → recomputes the rolling 14-day `MetricsSnapshot` and writes it.
+- **MetricsService** subscribes to `ActivityCompleted`, `ActivityStartedLate`, `VarianceLogged`, `ReflectionCaptured`, `CycleAccepted`, `CycleEdited`, `KaizenRemeasured`, `KaizenClosed` → recomputes the rolling 14-day `MetricsSnapshot` and writes it. Also exposes `getLatestSnapshot(userId): MetricsSnapshot | null` for synchronous UI reads (e.g., `AdherenceDial` on every page load).
+- **ActivityService** emits `ActivityStartedLate` inside `start()` whenever `now - plannedStartAt > 5 min` (in the same transaction as the `ActivityStarted` emit).
+- **ReflectionService** subscribes to `ActivityCompleted` → auto-stubs a `Reflection` row with `pending=true` if the activity is non-optional. Subscribes to user's reflection-capture action → flips `pending=false` and emits `ReflectionCaptured`.
 - **ComposerService** subscribes to `CompositionClosed` → queues a proposal for the next cycle boundary.
 - **ComposerService** subscribes to `VarianceLogged` where `kind === SKIPPED_NON_OPTIONAL` → adds to `varianceQueue` input for next composition.
-- **KaizenCandidateQueue** (internal to KaizenService) subscribes to `FrictionSignalCaptured` → clusters by tag, surfaces at Weekly Reflection.
+- **KaizenCandidateQueue** (internal to KaizenService) subscribes to `FrictionSignalCaptured` → clusters by tag, surfaces at Weekly Reflection. Also tracks dismissed-cluster history per tag so the `WeeklyReflectionWizard` can show "similar cluster dismissed N weeks ago" when a re-surfacing cluster tag matches.
 - **UI** subscribes to every event to refresh affected views.
 
 ### 6.3 Event bus contract
@@ -1029,9 +1049,11 @@ REST, one resource per entity. Contracts mirror entity shapes exactly (no separa
 | Non-optional set present in Daily | `InvariantEngine.validateComposition()` | same |
 | Non-optional catalog entry not deletable | `CatalogService.delete()` rejects | `CatalogEntry.isNonOptional === true` |
 | Every completion produces required output artifact | `ActivityService.close()` guard | `ScheduledActivity.state === 'CLOSED'` |
-| Reflection required on non-optional close | `ActivityService.close()` guard | same |
+| Reflection row exists on non-optional close | `ActivityService.close()` + `ReflectionService` auto-stubs `pending=true` | `Reflection` |
+| Reflection-rate KPI counts only captured on-time | `MetricsService` (filter: `pending=false AND captured within 15 min`) | `Reflection`, `MetricsSnapshot` |
 | Variance append-only | `LocalStorageRepository.appendOnly()` (MVP); `REVOKE UPDATE, DELETE` (future) | `Variance` |
 | Skipped non-optional emits Variance | `ActivityService.skip()` atomic emit | `Variance.kind = SKIPPED_NON_OPTIONAL` |
+| `reasonCode = OTHER` requires `note` | `VarianceService.log()` guard + `ActivityService.skip()` guard; future Postgres `CHECK` | `Variance`, `ScheduledActivity` |
 | Kaizen close requires remeasurement | `KaizenService.close()` guard (MVP); DB `CHECK` (future) | `Kaizen.state === 'CLOSED'` |
 | Single active Kaizen per user (MVP) | `KaizenService.promote()` guard | `Kaizen.state ∈ {ACTIVE, IN_REMEASUREMENT}` |
 | Baseline locked | `BaselineMetric.locked === true` | `BaselineMetric` |
@@ -1040,8 +1062,24 @@ REST, one resource per entity. Contracts mirror entity shapes exactly (no separa
 
 ---
 
-## 9. Open Architectural Questions (for Coordinator / PM)
+## 9. Architectural Decisions Log (formerly open questions)
 
-1. **Team-mode collision in MVP.** Blueprint §4.1 scopes MVP to single-user; but Sprint Planning, Daily Standup, Review, and Retrospective are team ceremonies by definition. MVP either (a) models these as single-user placeholders with no team sync, or (b) drops them from the non-optional set until Next. Single-user placeholder is cheaper; need confirmation before locking.
-2. **Catalog-entry bucket assignment.** Blueprint implies every Daily-schedulable entry has a clear bucket, but the source `.txt` does not label entries with "PROJECT/COMMUNICATION/CI". `CATALOG_GAPS.md §E` does not fill this either. Need Phil-signed mapping before seed (e.g., is "Document Review (#4)" CI or PROJECT?). The composer cannot run without it.
-3. **External-calendar capacity in MVP.** Blueprint §5.2 says calendar integration is Next. But users will already have real meetings on their calendar that eat Daily capacity. Should MVP ship a "manual capacity override" input on the Daily composer (e.g., "I have 2h of meetings today, compose around that"), or ignore the real world and let users edit post-hoc? The former adds one input; the latter depresses composition-acceptance metric artificially.
+All open questions from draft v0.1 resolved by coordinator on 2026-04-18.
+
+1. **Team-mode collision in MVP — RESOLVED.** Team ceremonies (Daily Standup, Sprint Planning, Mid-Sprint Review, Sprint Review, Sprint Retrospective, Quarterly Planning) ship in MVP as solo blocks on the individual's calendar. Placeholder participant list. Output artifacts still required (standup notes, retro two-list, review narrative) per `CatalogEntry.outputArtifact.schema`. True multi-participant team mode (shared Sprint Backlog, team adherence rollup) ships in Next. See `CATALOG_GAPS.md §H.3`.
+
+2. **Catalog-entry bucket assignment — RESOLVED.** See `CATALOG_GAPS.md §H` for the approved mapping. `CatalogEntry.bucket` is seeded from that mapping; frozen on `ScheduledActivity.bucket` at schedule time.
+
+3. **External-calendar capacity in MVP — RESOLVED.** Ship a manual `externalMinutesToday` numeric input on the Daily composer; subtracts from COMMUNICATION target before packing. See §5.5 for details. Auto-import deferred to Next.
+
+4. **Reflection required-vs-captured — RESOLVED.** Auto-stub a `Reflection` row with `pending=true` at activity close for non-optional activities. The invariant "CLOSED non-optional has a Reflection row" remains. The reflection-rate KPI counts only `pending=false AND on-time`. See §2.6.
+
+5. **reasonCode=OTHER free-text requirement — RESOLVED.** `reasonCode === 'OTHER'` requires a non-empty `note`. Enforced at `VarianceService.log()` and `ActivityService.skip()`; future Postgres `CHECK` constraint. See §2.5, §2.7.
+
+6. **Start-on-time leading indicator — RESOLVED.** Added `ActivityStartedLate` event (emitted when `now - plannedStartAt > 5 min` at start). MetricsService subscribes; feeds the blueprint §7.3 leading indicator.
+
+7. **MetricsService snapshot read path — RESOLVED.** Added `getLatestSnapshot(userId)` to the interface explicitly. MVP reads from `bamx:v1:metrics` keyed by `latestFor:<userId>`; future reads from `metrics_snapshots` table with index on `(user_id, computed_at DESC)`.
+
+8. **Kaizen "ready to remeasure" indicator — RESOLVED.** Computed property on `Kaizen` (not a stored state). See §2.9. Surfaced on `KaizenCard`. Does not block close; does not block further action edits.
+
+9. **Friction signal dismiss-loop — RESOLVED.** `FrictionSignal.status=DISMISSED` is terminal. `KaizenCandidateQueue` retains dismissed-cluster history per tag; when a re-surfacing cluster in a new Weekly Reflection has the same tag as a previously dismissed cluster, `WeeklyReflectionWizard` step 4 shows "similar cluster dismissed N weeks ago" as a hint. Not a block; user can still dismiss or promote. No new state or FSM edge.
