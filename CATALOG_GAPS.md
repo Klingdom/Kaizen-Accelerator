@@ -395,3 +395,58 @@ The blueprint rule is that **no catalog activity can be closed without its requi
 - **If this doc is approved as-is:** the 23 rows with content gaps and all 50 rows' metadata are ready to be seeded into the Standard Work Catalog entity for MVP. The catalog seed passes downstream to `system-architect` (defines the Catalog Entry entity) and `backend-engineer` (ships the seed migration).
 - **If sections need rework:** mark edits inline in this file; re-run catalog completion before handing off.
 - **Out of scope here:** the four BAM ceremonies that already have full procedures in the source (Sprint Planning, Daily Standup, Sprint Review, Sprint Retrospective) only need the §E metadata fields appended — no procedure work required.
+
+---
+
+## H. Bucket Mapping (APPROVED — seed data)
+
+Each catalog entry is assigned exactly one bucket for the 4-2-2 Daily cycle: **PROJECT** (Deep Work, 4h), **COMMUNICATION** (2h), or **CI** (2h). The composer uses this field to decide which bucket an activity counts against when proposing a Daily cycle. Bucket is frozen on `ScheduledActivity` at schedule time (see `ARCHITECTURE.md` §2.2, §2.4).
+
+Approved 2026-04-18 by Phil. Changes from initial proposal: #13 6S Email moved from COMMUNICATION → CI.
+
+### H.1 Mapping table
+
+| # | Activity | Bucket | Notes |
+|---|---|---|---|
+| 1 | Personal Learning & Development | CI | |
+| 2 | Team Learning & Development | CI | |
+| 3 | Company Compliance Training | CI | |
+| 4 | Document Review (PRFAQ / MBR / 6 Pager) | COMMUNICATION | Reading to respond counts as comms work |
+| 5 | Team Introductions & Engagements | COMMUNICATION | |
+| 6 | Innovation — Explore Opportunities | CI | |
+| 7 | Innovation — Evaluate Opportunity | PROJECT | |
+| 8 | Innovation — PRFAQ | PROJECT | |
+| 9 | Innovation — Proof of Concept / Prototype | PROJECT | |
+| 10 | Innovation — Product Assessment | PROJECT | |
+| 11 | Innovation — Initiate New Product / Program | PROJECT | |
+| 12 | PDCA Cycle | CI | |
+| 13 | 6S Email Activity | **CI** | Lean 6S inbox hygiene practice |
+| 14 | High-value Communication Time-blocking | COMMUNICATION | |
+| 15 | High-value team & project meetings | COMMUNICATION | |
+| 16 | Connecting with other teammates (1:1s) | COMMUNICATION | |
+| 17 | RESERVED | — | No row in source |
+| 18 | Document Writing | PROJECT | Focused writing is Deep Work |
+| 19 | Refining Program Plan | PROJECT | |
+| — | Quarterly Planning | COMMUNICATION | Team ceremony |
+| — | Sprint Planning | COMMUNICATION | Team ceremony |
+| — | Daily Standup | COMMUNICATION | Team ceremony |
+| — | Mid-Sprint Review | COMMUNICATION | Team ceremony |
+| — | Sprint Review | COMMUNICATION | Team ceremony |
+| — | Sprint Retrospective | COMMUNICATION | Team ceremony |
+| 20–41 | All DMAIC Project Work | PROJECT | Fills Deep blocks as sprint payload when an active DMAIC project is the user's Kaizen payload |
+| 42–50 | All Kaizen Project Work | PROJECT | Fills Deep blocks during Kaizen event windows |
+
+### H.2 Generic catalog entries (seeded alongside the 50 source rows)
+
+These are not in `Business Agility Standard Work.txt` but are required for the composer to have something to schedule when no named activity fills a block.
+
+| Activity | Bucket | Duration | Purpose |
+|---|---|---|---|
+| Deep Work — Project Task (generic) | PROJECT | variable (up to 240 min / day) | Ad-hoc project work when no DMAIC / Kaizen payload is active |
+| Value-Added Communication (generic) | COMMUNICATION | variable | Ad-hoc comms not covered by a named ceremony or #14–#16 |
+| End-of-Activity Reflection | CI | 60 sec | Fires at close of every Scheduled Activity; feeds Friction Signal queue |
+| Weekly Reflection (20-min DMAIC) | CI | 20 min | Fri afternoon anchor; promotes at most one Kaizen candidate from the week's evidence |
+
+### H.3 Team-ceremony placement in single-user MVP
+
+Team ceremonies (Sprint Planning, Daily Standup, Mid-Sprint Review, Sprint Review, Sprint Retrospective, Quarterly Planning) remain in the catalog and can be scheduled on the individual user's calendar in single-user MVP. They are placed manually on the correct sprint day by the user (or auto-placed by the Weekly composer at sprint boundaries — see `ARCHITECTURE.md` §4). They consume COMMUNICATION bucket time on the days they fire. True multi-participant team mode (shared Sprint Backlog, team adherence view) ships in Next per blueprint §5.2.

@@ -1,0 +1,1047 @@
+# BAM-X Kaizen OS — System Architecture
+
+Owner: System Architect Agent
+Status: Draft v0.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1.
+Scope: MVP (vanilla JS + localStorage, single-user) with a forward-compatible path to Next.js + PostgreSQL + API.
+
+> **Terminology reconciliation with the upstream prompt.**
+> `02-system-architecture.md` uses the pre-blueprint vocabulary ("Intentions" as the primary object; "3 phases per day"). The blueprint supersedes that framing. This document models the system as:
+> - **Catalog Entry** — primitive (a vetted named standard-work activity)
+> - **Cycle Type** — kind of composition (Daily, Weekly, Sprint, Monthly)
+> - **Composition** — a time-bounded instance of a Cycle Type, filled with Scheduled Activities
+> - **Scheduled Activity** — an instance of a Catalog Entry placed inside a Composition
+> - **Reflection, Variance, Friction Signal, Kaizen, Baseline Metric, Remeasurement** — evidence and improvement artifacts
+> - **4-2-2** — a domain invariant on the Daily composition, not a standalone "phases" object
+> - **Intention** — a *field* on a Scheduled Activity (the declared outcome for that block), not a primary entity
+
+---
+
+## 1. System Architecture Diagram (ASCII)
+
+### 1.1 High-level module map (MVP, runnable as a single-page app)
+
+```
++-----------------------------------------------------------------------------------+
+|                              BROWSER (single-page app)                            |
+|                                                                                   |
+|  +-----------------------------+      +-------------------------------------+     |
+|  |       UI LAYER (views)      |      |        EVENT BUS (observer)         |     |
+|  |  - Composer view (D/W)      |<---->|  pub/sub; cross-module decoupling   |     |
+|  |  - Activity runner          |      |  (ActivityCompleted, VarianceLogged |     |
+|  |  - Reflection prompt        |      |   KaizenPromoted, CycleAccepted...) |     |
+|  |  - Kaizen record            |      +-------------------------------------+     |
+|  |  - Dashboard (adherence)    |                    ^       ^                     |
+|  +--------------+--------------+                    |       |                     |
+|                 |                                   |       |                     |
+|                 v                                   |       |                     |
+|  +-----------------------------+                    |       |                     |
+|  |    APPLICATION SERVICES     |--------------------+       |                     |
+|  |  (pure JS modules, no UI)   |                            |                     |
+|  |                             |                            |                     |
+|  |  ComposerService  ----+     |                            |                     |
+|  |  ActivityService  ----+     |                            |                     |
+|  |  ReflectionService ---+     |                            |                     |
+|  |  VarianceService  ----+-----+                            |                     |
+|  |  KaizenService    ----+     |                            |                     |
+|  |  MetricsService   ----+     |                            |                     |
+|  |  CatalogService   ----+     |                            |                     |
+|  +--------------+--------------+                            |                     |
+|                 |                                           |                     |
+|                 v                                           |                     |
+|  +-----------------------------+      +-------------------------------------+     |
+|  |       DOMAIN MODEL          |      |         INVARIANT ENGINE            |     |
+|  |  (pure data + validators)   |<---->|  - Daily 4-2-2 shape                |     |
+|  |  Catalog Entry, Cycle,      |      |  - Non-optional set in §3.4         |     |
+|  |  Composition, Scheduled     |      |  - Output-artifact-at-close         |     |
+|  |  Activity, Reflection,      |      |  - Kaizen close needs remeasurement |     |
+|  |  Variance, Friction Signal, |      |  - Variance log append-only         |     |
+|  |  Kaizen, Baseline Metric,   |      +-------------------------------------+     |
+|  |  Remeasurement              |                                                  |
+|  +--------------+--------------+                                                  |
+|                 |                                                                 |
+|                 v                                                                 |
+|  +-----------------------------+      +-------------------------------------+     |
+|  |   PERSISTENCE ADAPTER       |<---->|        MIGRATION ENGINE             |     |
+|  |  LocalStorageRepository     |      |  version check on load; run any     |     |
+|  |  (MVP)                      |      |  pending migration scripts in order |     |
+|  |                             |      +-------------------------------------+     |
+|  |  Interface: IRepository     |                                                  |
+|  |  so future backends drop in |                                                  |
+|  +--------------+--------------+                                                  |
+|                 |                                                                 |
+|                 v                                                                 |
+|  +----------------------------------------------------------------+               |
+|  |                         localStorage                           |               |
+|  |   bamx:v1:catalog, bamx:v1:compositions, bamx:v1:activities,   |               |
+|  |   bamx:v1:reflections, bamx:v1:variances, bamx:v1:frictions,   |               |
+|  |   bamx:v1:kaizens, bamx:v1:metrics, bamx:v1:user, bamx:v1:meta |               |
+|  +----------------------------------------------------------------+               |
++-----------------------------------------------------------------------------------+
+```
+
+### 1.2 Future-state layer (Next, not MVP)
+
+```
++---------------------------+      +---------------------------+
+|        Next.js Web        |      |     Mobile companion      |
+|  (same domain model,      |      |  (start activity,         |
+|   shared via /packages)   |      |   voice reflection)       |
++------------+--------------+      +-------------+-------------+
+             |                                   |
+             v                                   v
++---------------------------------------------------------------+
+|                        API BOUNDARY (REST)                    |
+|    /api/catalog  /api/compositions  /api/activities           |
+|    /api/reflections  /api/variances  /api/frictions           |
+|    /api/kaizens  /api/metrics                                 |
+|  JSON contracts = domain model shapes (1-to-1)                |
++------------+--------------------------------------------------+
+             |
+             v
++---------------------------+      +---------------------------+
+|     Application services  |      |   Background workers      |
+|     (same modules, now    |      |  (composer pre-computes   |
+|      server-side)         |      |   tomorrow's day overnight|
++------------+--------------+      +-------------+-------------+
+             |                                   |
+             v                                   v
++---------------------------------------------------------------+
+|                          PostgreSQL                           |
+|  catalog_entries, compositions, scheduled_activities,         |
+|  reflections, variances, friction_signals, kaizens,           |
+|  baseline_metrics, remeasurements, users, teams               |
++---------------------------------------------------------------+
+             |
+             v
++---------------------------------------------------------------+
+|              External integrations (Next / Later)             |
+|   Google / MS Calendar  |  Slack / Teams  |  Analytics store  |
++---------------------------------------------------------------+
+```
+
+### 1.3 MVP vs Future — layer-by-layer
+
+| Layer | MVP | Next / Future |
+|---|---|---|
+| UI | Vanilla JS views, 1 HTML shell, no build step | Next.js + TS, same domain model |
+| Event Bus | In-memory pub/sub | In-memory + server-side for worker jobs |
+| Services | Single browser tab | Same code, server-side execution |
+| Domain Model | Plain JS objects + JSDoc typedefs | TS types + Zod validators |
+| Invariant Engine | Same module, unchanged | Same module, unchanged |
+| Persistence | `localStorage` via `IRepository` | `pg` adapter implementing `IRepository` |
+| Sync | None | Optimistic client → server, server is authority |
+| AI agents | Not built | Owned by `06-ai-agent-optimization.md` |
+
+**Key design principle:** services, domain, and invariants never reference `localStorage` or `fetch` directly. They talk to `IRepository`. Swapping MVP → Future changes only the adapter.
+
+---
+
+## 2. Data Model (full schema)
+
+### 2.1 Entity overview
+
+| # | Entity | Purpose | Key invariant |
+|---|---|---|---|
+| 1 | `CatalogEntry` | Vetted named standard-work activity (the primitive) | Non-optional set cannot be deleted |
+| 2 | `User` | Single user in MVP; holds role(s), capacity defaults | Exactly one in MVP |
+| 3 | `Composition` | Instance of a Cycle Type (Daily / Weekly / Sprint / Monthly) | Daily must satisfy 4-2-2 + non-optional set |
+| 4 | `ScheduledActivity` | Instance of a `CatalogEntry` placed inside a `Composition` | Cannot close without required output artifact |
+| 5 | `Intention` | A *field* on `ScheduledActivity` (declared outcome for the block) | — (not a standalone entity) |
+| 6 | `Reflection` | Plan-vs-actual + optional friction signal captured at activity close | 1:1 with completed ScheduledActivity |
+| 7 | `Variance` | A logged skip / override of a non-optional activity | Append-only |
+| 8 | `FrictionSignal` | A tagged friction captured in a Reflection | Immutable once promoted |
+| 9 | `Kaizen` | A validated improvement project (single active in MVP) | Cannot close without a `Remeasurement` beating baseline |
+| 10 | `BaselineMetric` | Locked measurement at Kaizen start | Immutable once locked |
+| 11 | `Remeasurement` | Post-improvement metric tied to a Kaizen | Must reference same metric definition as baseline |
+| 12 | `MetricsSnapshot` | Rolled-up adherence / acceptance / Kaizen delta | Derived, recomputable |
+
+### 2.2 CatalogEntry
+
+Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable per user (enable/disable), but the non-optional set cannot be deleted.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `activityNumber` | integer \| null | Source `.txt` activity # (1–50); null for ceremonies |
+| `name` | string | e.g., "Daily Standup" |
+| `focusArea` | enum | `DEEP_WORK` \| `COMMUNICATION` \| `CONTINUOUS_IMPROVEMENT` \| `CEREMONY` \| `DMAIC` \| `KAIZEN` \| `INNOVATION` |
+| `defaultDurationMinutes` | integer | Catalog-defined duration |
+| `cadence` | enum | `DAILY` \| `WEEKLY` \| `SPRINT` \| `MONTHLY` \| `QUARTERLY` \| `CONTINUOUS` \| `ON_SIGNAL` \| `EVENT_DRIVEN` \| `EVERY_48H` |
+| `trigger` | string | Human-readable; rule in `CATALOG_GAPS.md` §E.5 |
+| `inputs` | string[] | Named artifacts / data sources |
+| `outputArtifact` | object | `{ name: string, schema: "TEXT"\|"TWO_LIST"\|"NUMERIC"\|"DOCUMENT"\|"CHART", required: true }` |
+| `participants` | string[] | Role labels |
+| `procedure` | string[] | Ordered steps (a, b, c…) |
+| `bucket` | enum | `PROJECT` (Deep) \| `COMMUNICATION` \| `CI` — which 4-2-2 bucket this entry counts against on the Daily cycle |
+| `isNonOptional` | boolean | Blueprint §3.4 set; UI cannot delete, cannot silently skip |
+| `appliesToRoles` | string[] | BAM roles: `PRACTITIONER` \| `FACILITATOR` \| `LEADER` \| `CHAMPION` |
+| `enabledByUser` | boolean | User preference; defaults true; non-optional entries cannot be disabled |
+| `version` | integer | Bumped when procedure / output schema changes |
+| `sourceRef` | string | e.g., "`Business Agility Standard Work.txt` row 12" |
+
+**Invariants:**
+- `isNonOptional === true` → `enabledByUser` is ignored (always enabled), delete rejected.
+- `outputArtifact.required === true` for every Catalog Entry (blueprint: every completion produces evidence).
+- `bucket === 'PROJECT' | 'COMMUNICATION' | 'CI'` must be set for any entry the Daily composer may schedule.
+
+**Example JSON:**
+
+```json
+{
+  "id": "ce_daily_standup",
+  "activityNumber": null,
+  "name": "Daily Standup",
+  "focusArea": "CEREMONY",
+  "defaultDurationMinutes": 15,
+  "cadence": "DAILY",
+  "trigger": "Same time each work day",
+  "inputs": ["Sprint Backlog", "Yesterday's reflections"],
+  "outputArtifact": { "name": "Standup notes", "schema": "TEXT", "required": true },
+  "participants": ["Team", "Agile Facilitator"],
+  "procedure": ["a. Each member: done / doing / blockers.", "b. Capture blockers in backlog.", "c. Close in 15 min."],
+  "bucket": "COMMUNICATION",
+  "isNonOptional": true,
+  "appliesToRoles": ["PRACTITIONER", "FACILITATOR", "LEADER", "CHAMPION"],
+  "enabledByUser": true,
+  "version": 1,
+  "sourceRef": "BAM Way Ch.6 + Business Agility Standard Work.txt"
+}
+```
+
+### 2.3 User
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `name` | string | |
+| `email` | string | |
+| `role` | string[] | Current active BAM roles |
+| `dailyCapacityMinutes` | integer | Default 480 (8h) |
+| `workDays` | integer[] | ISO day numbers, default `[1,2,3,4,5]` |
+| `sprintAnchorDate` | date (ISO) | First Monday of current sprint; drives sprint-phase computation |
+| `timezone` | string | IANA TZ string |
+| `createdAt` | timestamp | |
+
+### 2.4 Composition
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `userId` | string | FK User |
+| `cycleType` | enum | `DAILY` \| `WEEKLY` \| `SPRINT` \| `MONTHLY` |
+| `startAt` | timestamp | Inclusive |
+| `endAt` | timestamp | Exclusive |
+| `parentCompositionId` | string \| null | FK — Daily → Weekly → Sprint → Monthly chain |
+| `state` | enum | `PROPOSED` \| `ACCEPTED` \| `EDITED` \| `REJECTED` \| `ACTIVE` \| `CLOSED` |
+| `proposedAt` | timestamp | When composer produced it |
+| `decidedAt` | timestamp \| null | When user accepted / edited / rejected |
+| `closedAt` | timestamp \| null | |
+| `composerInputsSnapshot` | object | `{ role, capacityMinutes, sprintPhase, activeKaizenId, varianceCount }` frozen at proposal time |
+| `invariantChecks` | object | Last validation result (see §2.4.1) |
+
+**2.4.1 `invariantChecks` shape (Daily cycle):**
+
+```json
+{
+  "shape_4_2_2": { "ok": true, "projectMin": 240, "commMin": 120, "ciMin": 120 },
+  "nonOptionalPresent": { "ok": true, "missing": [] },
+  "overAllocated": { "ok": true, "totalMin": 480, "capacityMin": 480 }
+}
+```
+
+**Invariants (enforced in `InvariantEngine`, not UI):**
+- `cycleType === 'DAILY'` and `state IN ('ACCEPTED','EDITED','ACTIVE','CLOSED')` → 4-2-2 shape holds AND non-optional set present (Daily Standup, AM Comm block, post-lunch Comm block, Deep ≥ 4h, CI ≥ 30 min).
+- `cycleType === 'WEEKLY'` and accepted → contains exactly 5 Daily compositions + weekly non-optionals.
+- State transitions follow the FSM in §3.1.
+
+### 2.5 ScheduledActivity
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `compositionId` | string | FK Composition (the Daily one it lives in) |
+| `catalogEntryId` | string | FK CatalogEntry |
+| `bucket` | enum | Copied from `CatalogEntry.bucket` at schedule time; frozen |
+| `plannedStartAt` | timestamp | |
+| `plannedDurationMinutes` | integer | |
+| `actualStartAt` | timestamp \| null | |
+| `actualEndAt` | timestamp \| null | |
+| `intention` | string | The user's declared outcome for this block (**this is what the old prompt called "Intentions"**) |
+| `state` | enum | See FSM in §3.2 |
+| `outputArtifactRef` | object \| null | `{ schema, value }` matching `CatalogEntry.outputArtifact.schema` |
+| `reflectionId` | string \| null | FK Reflection |
+| `linkedKaizenId` | string \| null | If this block is Kaizen work, the Kaizen it advances |
+| `linkedDmaicStepRef` | object \| null | `{ kaizenId, catalogEntryId }` — ties Deep-block payload to DMAIC step |
+| `reasonCodeIfSkipped` | enum \| null | `ESCALATION` \| `MEETING_CONFLICT` \| `SICK` \| `BLOCKED` \| `DEPRIORITIZED` \| `OTHER` |
+| `sourceOfSchedule` | enum | `COMPOSER_AUTO` \| `USER_EDIT` \| `USER_ADD` — for composition-acceptance metric |
+| `createdAt` | timestamp | |
+| `updatedAt` | timestamp | |
+
+**Invariants:**
+- `state === 'CLOSED'` → `outputArtifactRef !== null` AND matches schema on CatalogEntry (blueprint: every completion is a measurement).
+- `state === 'CLOSED'` AND `catalogEntry.isNonOptional === true` → a `Reflection` row must exist (blueprint §4.1 item 4).
+- `state === 'SKIPPED'` AND `catalogEntry.isNonOptional === true` → `reasonCodeIfSkipped !== null` AND a `Variance` row is emitted (blueprint §3.4).
+- `bucket` is frozen at schedule time, even if CatalogEntry.bucket is later edited.
+
+### 2.6 Reflection
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `scheduledActivityId` | string | FK ScheduledActivity (required) |
+| `userId` | string | FK User |
+| `capturedAt` | timestamp | Must be within 15 min of activity close for "on-time" metric |
+| `planVsActualMinutes` | integer | `actualEndAt − actualStartAt − plannedDurationMinutes` |
+| `whatWentWell` | string | Optional free text |
+| `whatToImprove` | string | Optional free text |
+| `frictionFlag` | boolean | If true → creates a `FrictionSignal` |
+| `frictionSignalId` | string \| null | FK FrictionSignal |
+| `kind` | enum | `END_OF_ACTIVITY` (60-sec) \| `WEEKLY` (20-min DMAIC) |
+| `dmaicDraft` | object \| null | Only for `kind === 'WEEKLY'`: `{ define, measure, analyze, improveSuggested }` |
+
+**Invariants:**
+- Exactly one `Reflection` per closed non-optional `ScheduledActivity`.
+- `kind === 'WEEKLY'` must be attached to a Weekly `Composition` (via `scheduledActivityId` pointing to the Weekly Reflection activity).
+
+### 2.7 Variance (append-only)
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `scheduledActivityId` | string | FK |
+| `compositionId` | string | FK |
+| `catalogEntryId` | string | FK |
+| `userId` | string | FK |
+| `kind` | enum | `SKIPPED_NON_OPTIONAL` \| `OVERRAN` \| `UNDERRAN` \| `RESCHEDULED` \| `EDITED_FROM_PROPOSAL` |
+| `reasonCode` | enum | See §2.5 |
+| `note` | string \| null | |
+| `loggedAt` | timestamp | |
+
+**Invariants:**
+- **Append-only.** No update, no delete. Corrections are new rows with `kind = OTHER` and a reference to the erroneous row in `note` (`"supersedes variance_id=…"`).
+- Emitted automatically by `ActivityService` and `ComposerService`; never written by UI directly.
+
+### 2.8 FrictionSignal
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `reflectionId` | string | FK Reflection |
+| `scheduledActivityId` | string | FK |
+| `userId` | string | FK |
+| `summary` | string | ≤ 140 chars |
+| `tag` | enum \| null | `MEETING_LOAD` \| `CONTEXT_SWITCH` \| `BLOCKED_DEP` \| `TOOL_FRICTION` \| `PRIORITY_INVERSION` \| `OTHER` |
+| `status` | enum | `OPEN` \| `CLUSTERED` \| `PROMOTED_TO_KAIZEN` \| `DISMISSED` |
+| `kaizenId` | string \| null | FK when promoted |
+| `capturedAt` | timestamp | |
+
+**Invariants:**
+- Becomes immutable once `status === 'PROMOTED_TO_KAIZEN'` (cluster reference preserved for traceability).
+
+### 2.9 Kaizen
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `userId` | string | FK; MVP = exactly one `ACTIVE` per user (blueprint §4.1 item 4) |
+| `title` | string | |
+| `problemStatement` | string | |
+| `goalStatement` | string | Baseline X → target Y by date Z |
+| `sourceFrictionSignalIds` | string[] | Traceability to evidence |
+| `baselineMetricId` | string | FK BaselineMetric; required to leave `DRAFT` |
+| `remeasurementId` | string \| null | FK Remeasurement; required to `CLOSE` |
+| `actions` | object[] | `[{ name, ownerRef, dueDate, doneAt\|null }]` |
+| `state` | enum | See FSM in §3.3 |
+| `openedAt` | timestamp | |
+| `closedAt` | timestamp \| null | |
+| `closeKind` | enum \| null | `SUCCESS` (hit goal) \| `PARTIAL` (improved < goal) \| `FAILED_HONEST` (no improvement — blueprint §7.2) |
+| `resultsNarrativeRef` | object \| null | For catalog #49 — 3-pager narrative artifact |
+
+**Invariants:**
+- `state === 'CLOSED'` → `remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId` (blueprint HARD RULE).
+- MVP: at most one Kaizen with `state IN ('ACTIVE','IN_REMEASUREMENT')` per user.
+- `actions[].doneAt === null` does **not** block close; **only** the remeasurement does (so honest-failure close is possible).
+
+### 2.10 BaselineMetric
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `kaizenId` | string | FK |
+| `metricDefinition` | object | `{ name, unit, operationalDefinition, sampleSize, method }` |
+| `value` | number | |
+| `capturedAt` | timestamp | |
+| `capturedSampleRef` | object \| null | Link to raw samples or DCP (DMAIC #22) |
+| `locked` | boolean | Once true, immutable |
+
+**Invariants:** `locked === true` → row is immutable.
+
+### 2.11 Remeasurement
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `kaizenId` | string | FK |
+| `metricDefinitionId` | string | Must equal the Kaizen's baseline `metricDefinition` identity |
+| `value` | number | |
+| `deltaAbsolute` | number | Computed: `value − baseline.value` |
+| `deltaPercent` | number | Computed |
+| `beatsBaseline` | boolean | Computed against goal direction |
+| `capturedAt` | timestamp | |
+| `evidenceRef` | object \| null | Link to Control Chart (#29), Capability Report (#30), or Kaizen Narrative (#49) |
+
+### 2.12 MetricsSnapshot (derived, regenerable)
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `userId` | string | FK |
+| `windowStart` / `windowEnd` | timestamp | Rolling 14-day window for MVP |
+| `adherencePercent` | number | Non-optional activities completed with artifact / scheduled |
+| `compositionAcceptanceDaily` | number | Daily cycles accepted w/o edit / proposed |
+| `compositionAcceptanceWeekly` | number | |
+| `reflectionRatePercent` | number | Reflections captured within 15 min of close |
+| `activeKaizenDeltaPercent` | number \| null | |
+| `computedAt` | timestamp | |
+
+### 2.13 Relationship diagram (textual)
+
+```
+User 1—* Composition 1—* ScheduledActivity *—1 CatalogEntry
+                                |
+                                +—0..1 Reflection 0..1—0..1 FrictionSignal
+                                |
+                                +—0..* Variance  (append-only)
+                                |
+                                +—0..1 (linkedKaizenId) Kaizen
+
+Kaizen 1—1 BaselineMetric
+Kaizen 1—0..1 Remeasurement
+Kaizen 1—* FrictionSignal (sourceFrictionSignalIds)
+```
+
+---
+
+## 3. State Management Design
+
+All entities with non-trivial lifecycles are modeled as finite state machines. Transitions are the only way state changes; guards are enforced by the `InvariantEngine`.
+
+### 3.1 Composition FSM
+
+```
+          +------------+
+          |  PROPOSED  |   <-- composer emits; not yet seen by user
+          +-----+------+
+                |
+   user accepts | user edits     user rejects
+                v                v
+          +-----+------+   +-----+-------+
+          |  ACCEPTED  |   |  REJECTED   |   (terminal — rare)
+          +-----+------+   +-------------+
+                |
+                | clock reaches startAt
+                v
+          +-----+------+
+          |   ACTIVE   |
+          +-----+------+
+                |
+                | clock reaches endAt AND all non-optional activities
+                | terminal (CLOSED or SKIPPED-with-variance)
+                v
+          +-----+------+
+          |   CLOSED   |
+          +------------+
+
+         (EDITED is ACCEPTED with sourceOfSchedule != COMPOSER_AUTO
+          on ≥ 1 child ScheduledActivity; tracked as a flag, not a state,
+          so the composer-acceptance metric is computable.)
+```
+
+**Guards:**
+- `PROPOSED → ACCEPTED` requires invariant checks to pass (4-2-2, non-optional set, capacity).
+- `ACTIVE → CLOSED` requires every child `ScheduledActivity` to be in a terminal state (`CLOSED` or `SKIPPED`).
+
+### 3.2 ScheduledActivity FSM
+
+```
+   +-----------+    composition accepted    +-----------+
+   |  PROPOSED +--------------------------->| SCHEDULED |
+   +-----+-----+                            +-----+-----+
+         | rejected in composer                   |
+         v                                        | user starts
+   +-----+-----+                                  v
+   |  DROPPED  |                            +-----+-----+
+   +-----------+                            |IN_PROGRESS|
+                                            +--+---+----+
+                         user closes + output|   | user skips
+                           + reflection      |   | (non-optional → Variance)
+                                             v   v
+                                      +------+---+------+
+                                      | CLOSED | SKIPPED|
+                                      +--------+--------+
+                                        ^ (terminal)
+                                        |
+                   (late-reflection still allowed; reflection row
+                    just misses the 15-min "on-time" window)
+```
+
+**Guards on `IN_PROGRESS → CLOSED`:**
+1. `outputArtifactRef !== null` AND matches `CatalogEntry.outputArtifact.schema`.
+2. If `CatalogEntry.isNonOptional === true`, a `Reflection` row is supplied in the same transaction.
+3. `actualEndAt !== null`.
+
+**Guards on `SCHEDULED → SKIPPED` (non-optional only):**
+1. `reasonCodeIfSkipped !== null`.
+2. A `Variance` row is emitted in the same transaction (atomic).
+
+**Guard on `IN_PROGRESS → SKIPPED`:** disallowed. Once started, close with partial output or emit an `OVERRAN` variance.
+
+### 3.3 Kaizen FSM
+
+```
+                +--------+
+                | DRAFT  |  <-- promoted from FrictionSignal cluster
+                +---+----+
+                    |
+    baseline locked + goal set + actions declared
+                    v
+                +---+-----+
+                | ACTIVE  |
+                +---+-----+
+                    |
+      actions declared complete; user starts remeasurement
+                    v
+            +-------+----------+
+            | IN_REMEASUREMENT |
+            +-------+----------+
+                    |
+          remeasurement captured (beats, partial, or no improvement)
+                    v
+                +---+----+
+                | CLOSED |
+                +--------+
+                ^        ^
+                |        |
+         close=SUCCESS   close=FAILED_HONEST (still requires remeasurement!)
+```
+
+**Guards:**
+- `DRAFT → ACTIVE` requires `baselineMetricId !== null` AND `baseline.locked === true` AND `goalStatement` set.
+- `IN_REMEASUREMENT → CLOSED` requires `remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId`. This is the **HARD RULE** (blueprint §4.1 item 4, §7.2): no remeasurement → no close. A Kaizen cannot be "failed-and-closed" without measuring; it can only be abandoned, which is modeled by transitioning back to `DRAFT` with an `abandoned: true` flag, never to `CLOSED`.
+- MVP cap: system rejects a second transition to `ACTIVE` while another is not terminal.
+
+### 3.4 Variance (no FSM — append-only)
+
+`Variance` has no state transitions. It is always born in terminal state. Corrections are new rows.
+
+### 3.5 FrictionSignal FSM
+
+```
+   OPEN ──► CLUSTERED ──► PROMOTED_TO_KAIZEN   (immutable after promote)
+    │
+    └──► DISMISSED                              (terminal)
+```
+
+### 3.6 Where each transition is triggered
+
+| Transition | Trigger | Emits event |
+|---|---|---|
+| `Composition.PROPOSED → ACCEPTED` | User confirms composer output | `CycleAccepted` |
+| `Composition.PROPOSED → ACCEPTED` (edited) | User edits then confirms | `CycleEdited` |
+| `Composition.ACCEPTED → ACTIVE` | Clock ticks past `startAt` | `CompositionStarted` |
+| `ScheduledActivity.SCHEDULED → IN_PROGRESS` | User taps "Start" | `ActivityStarted` |
+| `ScheduledActivity.IN_PROGRESS → CLOSED` | User taps "Close" + passes guards | `ActivityCompleted`, `ReflectionCaptured` |
+| `ScheduledActivity.SCHEDULED → SKIPPED` (non-optional) | Composition ends with no start | `VarianceLogged` |
+| `FrictionSignal.OPEN → PROMOTED_TO_KAIZEN` | Weekly Reflection promotion | `KaizenPromoted` |
+| `Kaizen.IN_REMEASUREMENT → CLOSED` | Remeasurement captured | `KaizenClosed` |
+
+---
+
+## 4. Scheduling Engine Logic
+
+The composer is deterministic, inspectable, and free of AI in MVP. (AI coaching is a Next-state enhancement per blueprint §5.2.)
+
+### 4.1 Inputs
+
+```ts
+type ComposerInput = {
+  cycleType: 'DAILY' | 'WEEKLY' | 'SPRINT' | 'MONTHLY',
+  userId: string,
+  role: Role[],                // from User
+  capacityMinutes: number,     // from User minus external calendar (future)
+  sprintPhase:                 // computed from User.sprintAnchorDate vs. now
+    'PLANNING_DAY' | 'EXECUTION_WK1' | 'MID_SPRINT_DAY' |
+    'EXECUTION_WK2' | 'REVIEW_DAY' | 'RETRO_DAY',
+  activeKaizen: Kaizen | null,
+  varianceQueue: Variance[],   // unresolved non-optional skips from prior cycle
+  catalog: CatalogEntry[],     // enabled entries for user's roles
+  priorCompositions: Composition[]  // for variance signal + cadence tracking
+}
+```
+
+### 4.2 Daily composer — algorithm
+
+```
+fn composeDaily(input) -> Composition:
+  buckets = { PROJECT: 240, COMMUNICATION: 120, CI: 120 }  # minutes; 4-2-2
+
+  scheduled = []
+
+  # 1. Place non-optional set first (blueprint §3.4) — these anchor the day
+  add(scheduled, "Daily Standup", 15 min, bucket=COMMUNICATION)
+  add(scheduled, "AM High-value Communication block", 60 min, bucket=COMMUNICATION)
+  add(scheduled, "Post-lunch High-value Communication block", 30 min, bucket=COMMUNICATION)
+  add(scheduled, "End-of-day Reflection (meta)", 15 min, bucket=CI)    # ensures reflection fires
+  # Remaining: PROJECT 240, COMMUNICATION 15, CI 105
+
+  # 2. Rescue skipped non-optionals from prior cycle's variance queue
+  for v in input.varianceQueue where catalog(v).isNonOptional:
+      if fits in remaining bucket: add(scheduled, v.catalogEntry, …)
+
+  # 3. Place Deep Work payload = active Kaizen / DMAIC step (if any)
+  if input.activeKaizen:
+      step = nextDmaicOrKaizenStepFor(activeKaizen, input.sprintPhase)
+      add(scheduled, step, min(step.duration, 240) minutes, bucket=PROJECT,
+                     linkedKaizenId=activeKaizen.id,
+                     linkedDmaicStepRef={kaizenId, catalogEntryId: step.id})
+      # Slice into 2×2h or 4×1h per user preference (default 2×2h)
+  else:
+      add(scheduled, "Deep Work — Project Task (generic)", 240 min, bucket=PROJECT)
+
+  # 4. Phase-specific ceremonies
+  if sprintPhase == PLANNING_DAY:    add("Sprint Planning", 120, COMMUNICATION or PROJECT)
+  if sprintPhase == MID_SPRINT_DAY:  add("Mid-Sprint Review", 30, COMMUNICATION)
+  if sprintPhase == REVIEW_DAY:      add("Sprint Review", 60, COMMUNICATION)
+                                     add("Sprint Retrospective", 30, COMMUNICATION)
+
+  # 5. Fill remaining CI bucket with rotation heuristic
+  ciRotation = [PDCA_CYCLE, LnD_TICK, SIX_S_EMAIL, DOC_REVIEW_IF_PENDING]
+  while remaining(CI) >= 30:
+      pick next from ciRotation that hasn't fired in N days per its cadence
+      add(…, bucket=CI)
+
+  # 6. Fill any remaining COMMUNICATION minutes with configured 1:1 or team meeting
+  if remaining(COMMUNICATION) >= 15:
+      add("Connecting with teammates (1:1)" if Wed/Thu else "Team meeting", …)
+
+  # 7. Run invariants; reject if any fail (composer retries with relaxed heuristics)
+  return buildComposition(scheduled, state=PROPOSED)
+```
+
+### 4.3 Weekly composer — algorithm
+
+```
+fn composeWeekly(input) -> Composition:
+  week = []
+
+  for each workday in input.workDays:
+      daily = composeDaily({ …input, cycleType: DAILY, date: workday })
+      week.push(daily)
+
+  # Weekly non-optionals
+  attach("Mid-Sprint Review", Fri Wk1) if mid-sprint
+  attach("Weekly 1:1", Wed or Thu)
+  attach("Weekly L&D tick or Document Writing")
+  attach("6S Email", Mon-or-as-anchor) if inbox threshold tripped
+  attach("Weekly Reflection (20-min DMAIC)", Fri afternoon, bucket=CI, 20 min)
+
+  # Fold weekly non-optionals into the right Daily composition's CI/COMMUNICATION bucket
+  return buildComposition(week, state=PROPOSED, parent=none, cycleType=WEEKLY)
+```
+
+### 4.4 Sprint / Monthly composers (Next)
+
+Deferred per blueprint §4.1 (Sprint / Monthly composers are Next). Interfaces are reserved in `ComposerService`:
+
+```
+composeSprint(input)    // future: 10 daily compositions + sprint ceremonies
+composeMonthly(input)   // future: 2 sprints + monthly check-in + quarterly anchor
+```
+
+MVP users place Sprint Planning / Review / Retro manually via the Weekly composer's edit step.
+
+### 4.5 Decision rules (explicit)
+
+| Rule | Behavior |
+|---|---|
+| R1. Non-optional first | Never drop a non-optional to fit a configurable entry |
+| R2. Variance rescue | Unresolved non-optional variances from yesterday get slot preference today |
+| R3. Kaizen link | If an active Kaizen exists, Deep block is linked to its current DMAIC/Kaizen step |
+| R4. 1:1 anchor | Weekly 1:1 lands on Wed or Thu (catalog #16 default), not Mon or Fri |
+| R5. Reflection anchor | Weekly Reflection lands on Fri afternoon, protected |
+| R6. 6S Email threshold | Only scheduled if `inboxUnread > threshold` signal present |
+| R7. PDCA cadence | Fires at most every 48 hours |
+| R8. Over-capacity | If cumulative minutes > capacity, drop configurable entries in reverse priority order; if non-optionals still over, mark composition `INFEASIBLE` and surface to user — never silently truncate |
+
+### 4.6 Composer output
+
+A `Composition` in state `PROPOSED` with all child `ScheduledActivity` rows in state `PROPOSED`. The user sees a filled-in cycle and chooses Accept / Edit / Reject. Acceptance flips the composition and all children to `ACCEPTED` / `SCHEDULED` atomically.
+
+---
+
+## 5. Capacity Calculation Model
+
+### 5.1 Primitives
+
+- **Minute** is the unit of capacity. All durations are integer minutes.
+- **Bucket capacity** on a Daily cycle is a fixed triple `{ PROJECT: 240, COMMUNICATION: 120, CI: 120 }` = 480 min / 8h (the 4-2-2 invariant).
+- A user's `dailyCapacityMinutes` defaults to 480. If the user declares reduced availability (e.g., half-day), all three buckets scale proportionally (2-1-1 for a 4h day) rather than collapsing one bucket.
+
+### 5.2 Daily 4-2-2 invariant
+
+```
+ok if (
+  sum(plannedDurationMinutes where bucket=PROJECT)       >= 0.5 * userDailyCap * (240/480) AND
+  sum(plannedDurationMinutes where bucket=COMMUNICATION) >= 0.5 * userDailyCap * (120/480) AND
+  sum(plannedDurationMinutes where bucket=CI)            >= 0.5 * userDailyCap * (120/480)
+)
+```
+
+The 0.5 floor is a **minimum viable 4-2-2** guard to prevent over-scheduling one bucket; a fully-valid day hits 4-2-2 exactly. Above the floor, the composer may pack a bucket to 100% but no higher.
+
+Hard ceiling: `sum(all plannedDurationMinutes) <= userDailyCapacityMinutes`.
+
+### 5.3 Weekly capacity
+
+- Target: 5 × 480 = 2400 min (40h project-work capacity per blueprint §3.2).
+- Cross-day invariant: sum of PROJECT minutes across the week ≥ 5 × 240 = 1200 min (20h protected Deep).
+- No day's total may exceed `userDailyCapacityMinutes`.
+
+### 5.4 Sprint capacity (Next)
+
+- Target: 2 × 2400 = 4800 min per person per sprint.
+- Sprint Planning, Mid-Sprint Review, Sprint Review, Retrospective are deducted from COMMUNICATION bucket of their specific days.
+
+### 5.5 External calendar events (future state)
+
+External events imported from Google / MS Calendar are modeled as `ScheduledActivity` instances of a generic `CatalogEntry` (`External Meeting` with `bucket=COMMUNICATION` and `isNonOptional=false`). They consume `COMMUNICATION` bucket capacity first; if overflow, they spill into user-confirmed displacement of configurable CI entries (never Deep or non-optional).
+
+Signal passed to composer: `externalMinutesBooked` per day. The composer subtracts this from the target `COMMUNICATION` allocation before packing.
+
+### 5.6 Over-schedule prevention
+
+Enforced in `InvariantEngine.validateComposition()`:
+
+```js
+// PSEUDO
+function validateComposition(c) {
+  const total = sum(c.activities, a => a.plannedDurationMinutes);
+  if (total > user.dailyCapacityMinutes) return fail('OVER_CAPACITY', { total, cap });
+
+  if (c.cycleType === 'DAILY') {
+    const p = bucketSum(c, 'PROJECT'),
+          m = bucketSum(c, 'COMMUNICATION'),
+          i = bucketSum(c, 'CI');
+    if (p < 0.5 * 240) return fail('DEEP_UNDER_FLOOR');
+    if (m < 0.5 * 120) return fail('COMM_UNDER_FLOOR');
+    if (i < 0.5 * 120) return fail('CI_UNDER_FLOOR');
+    if (p > 240 * 1.10) return fail('PROJECT_OVERPACKED');  // 10% slack tolerated
+    if (m > 120 * 1.25) return fail('COMM_OVERPACKED');
+    if (i > 120 * 1.25) return fail('CI_OVERPACKED');
+  }
+
+  const nonOptMissing = requiredNonOptionals(c).filter(n => !c.has(n));
+  if (nonOptMissing.length) return fail('NON_OPTIONAL_MISSING', { missing: nonOptMissing });
+
+  return ok();
+}
+```
+
+A failed validation during composer auto-build triggers a retry with relaxed configurable entries; a failed validation during user edit is surfaced as a blocking error — the user can reject the day but cannot save a broken one.
+
+---
+
+## 6. Event System (observer pattern)
+
+Events are emitted by services after state transitions commit to the repository. Subscribers are idempotent.
+
+### 6.1 MVP event catalog
+
+| Event | Payload | Primary subscribers |
+|---|---|---|
+| `CycleProposed` | `{ compositionId, cycleType }` | UI (show Accept/Edit/Reject) |
+| `CycleAccepted` | `{ compositionId, cycleType, edited: boolean }` | MetricsService (composition acceptance), UI refresh |
+| `CycleEdited` | `{ compositionId, editedActivityIds }` | MetricsService (acceptance denominator) |
+| `CycleRejected` | `{ compositionId, reason }` | MetricsService |
+| `CompositionStarted` | `{ compositionId }` | UI (highlight active day) |
+| `CompositionClosed` | `{ compositionId }` | ComposerService (triggers next cycle composition), MetricsService |
+| `ActivityStarted` | `{ scheduledActivityId, startedAt }` | UI (timer) |
+| `ActivityCompleted` | `{ scheduledActivityId, outputArtifactRef, actualDurationMinutes }` | ReflectionService (prompt for reflection), MetricsService |
+| `ReflectionCaptured` | `{ reflectionId, scheduledActivityId, onTime: boolean }` | MetricsService (reflection rate), FrictionService (if frictionFlag) |
+| `VarianceLogged` | `{ varianceId, kind, reasonCode, catalogEntryId }` | MetricsService (adherence), ComposerService (variance queue for next cycle) |
+| `FrictionSignalCaptured` | `{ frictionSignalId, reflectionId }` | KaizenCandidateQueue (cluster + score) |
+| `WeeklyReflectionCompleted` | `{ reflectionId, compositionId, promotedKaizenId?: string }` | KaizenService |
+| `KaizenPromoted` | `{ kaizenId, fromFrictionSignalIds }` | UI (show active Kaizen), ComposerService (link Deep block) |
+| `KaizenBaselineLocked` | `{ kaizenId, baselineMetricId }` | UI (state change to ACTIVE) |
+| `KaizenRemeasured` | `{ kaizenId, remeasurementId, beatsBaseline }` | MetricsService |
+| `KaizenClosed` | `{ kaizenId, closeKind }` | MetricsService (Kaizen throughput), UI |
+
+### 6.2 Subscriber responsibilities
+
+- **MetricsService** subscribes to `ActivityCompleted`, `VarianceLogged`, `ReflectionCaptured`, `CycleAccepted`, `CycleEdited`, `KaizenRemeasured`, `KaizenClosed` → recomputes the rolling 14-day `MetricsSnapshot` and writes it.
+- **ComposerService** subscribes to `CompositionClosed` → queues a proposal for the next cycle boundary.
+- **ComposerService** subscribes to `VarianceLogged` where `kind === SKIPPED_NON_OPTIONAL` → adds to `varianceQueue` input for next composition.
+- **KaizenCandidateQueue** (internal to KaizenService) subscribes to `FrictionSignalCaptured` → clusters by tag, surfaces at Weekly Reflection.
+- **UI** subscribes to every event to refresh affected views.
+
+### 6.3 Event bus contract
+
+MVP implementation: single in-memory `EventBus` module with `subscribe(event, handler)` / `publish(event, payload)`. Synchronous dispatch. No event persistence (events are derived from state and can be replayed by re-emitting from current state if needed).
+
+```js
+// PSEUDO — MVP
+const EventBus = (() => {
+  const subs = new Map(); // event → handler[]
+  return {
+    subscribe(event, fn) { (subs.get(event) ?? subs.set(event, []).get(event)).push(fn); },
+    publish(event, payload) { (subs.get(event) ?? []).forEach(fn => fn(payload)); }
+  };
+})();
+```
+
+### 6.4 Future-state extension points
+
+- **Persisted event log** — events written to an `events` table for audit / replay (supports DMAIC Control Charts and Kaizen portfolio analytics).
+- **Async handlers** — background-job-based subscribers for Slack / Teams nudges and email digests.
+- **Event sourcing for Kaizens** — rebuild Kaizen state from its event history to satisfy auditability requirements for regulated customers.
+- **Outbound webhooks** — third parties subscribe to `KaizenClosed` for external benefits-tracking tools.
+
+---
+
+## 7. Persistence Strategy
+
+### 7.1 MVP — localStorage
+
+**Key layout (all prefixed `bamx:v1:` for schema versioning):**
+
+| Key | Shape | Notes |
+|---|---|---|
+| `bamx:v1:meta` | `{ schemaVersion: 1, lastMigratedAt, createdAt }` | Drives migrations |
+| `bamx:v1:user` | `User` object | Single row in MVP |
+| `bamx:v1:catalog` | `{ [catalogEntryId]: CatalogEntry }` | Keyed map |
+| `bamx:v1:compositions` | `{ [compositionId]: Composition }` | |
+| `bamx:v1:activities` | `{ [scheduledActivityId]: ScheduledActivity }` | |
+| `bamx:v1:reflections` | `{ [reflectionId]: Reflection }` | |
+| `bamx:v1:variances` | `{ [varianceId]: Variance }` | Append-only; writes are insert-only |
+| `bamx:v1:frictions` | `{ [frictionSignalId]: FrictionSignal }` | |
+| `bamx:v1:kaizens` | `{ [kaizenId]: Kaizen }` | |
+| `bamx:v1:baselines` | `{ [baselineMetricId]: BaselineMetric }` | |
+| `bamx:v1:remeasurements` | `{ [remeasurementId]: Remeasurement }` | |
+| `bamx:v1:metrics` | `{ [snapshotId]: MetricsSnapshot }` | Latest 30 kept; older evicted |
+| `bamx:v1:events-log` | `Event[]` (capped 1000) | Optional MVP ring buffer for debugging |
+
+**Access pattern:**
+
+```js
+// PSEUDO — IRepository MVP impl
+class LocalStorageRepository {
+  read(key) { return JSON.parse(localStorage.getItem(key) || 'null'); }
+  write(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+  upsert(mapKey, id, obj) {
+    const map = this.read(mapKey) ?? {};
+    map[id] = obj;
+    this.write(mapKey, map);
+  }
+  appendOnly(mapKey, id, obj) {
+    const map = this.read(mapKey) ?? {};
+    if (map[id]) throw new Error('APPEND_ONLY_VIOLATION');
+    map[id] = obj;
+    this.write(mapKey, map);
+  }
+}
+```
+
+`appendOnly` is used for `variances` writes; any attempt to overwrite throws.
+
+**Size budget:**
+- Assume ~5 MB localStorage ceiling.
+- Estimated footprint: 1 user · 90 days · ~10 scheduled activities/day · ~2 KB each ≈ 1.8 MB. Comfortable.
+- Mitigation if approached: archive compositions older than 90 days to an export-able JSON blob under `bamx:v1:archive:<yyyymm>` and remove from hot keys.
+
+### 7.2 Schema versioning & migration
+
+- `bamx:v1:meta.schemaVersion` is checked on every app boot.
+- Migration scripts live in `/js/persistence/migrations/` and are ordered by target version.
+- Boot flow:
+
+```
+readMeta() → currentVersion
+for each pending migration where migration.from == currentVersion:
+    migration.run(repo) // pure function over repo
+    update meta.schemaVersion = migration.to
+if no pending migration → resume boot
+```
+
+- Migrations are **forward-only**. A `bamx:v1:backup:preMigrate:<timestamp>` snapshot of all keys is written before any destructive migration so users can export.
+- Every migration must be deterministic and idempotent (re-runnable on partial failure).
+
+**Port-compatibility rule (critical):** The MVP shapes above are the same shapes that port to PostgreSQL. No MVP-only denormalizations that would require a rewrite. In particular:
+- Keyed maps in localStorage ↔ `SELECT * FROM t WHERE id IN (…)` in SQL. The transport differs; the entity shape does not.
+- Every FK in SQL already exists as an ID field on the MVP object.
+- No "embedded array of children" hacks on parent rows that prevent relational modeling.
+
+### 7.3 Future state — PostgreSQL + API
+
+**Table sketch** (1-to-1 with entity tables in §2):
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY, name TEXT, email TEXT UNIQUE,
+  roles TEXT[], daily_capacity_minutes INT NOT NULL DEFAULT 480,
+  work_days INT[] DEFAULT ARRAY[1,2,3,4,5],
+  sprint_anchor_date DATE, timezone TEXT, created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE catalog_entries (
+  id UUID PRIMARY KEY, activity_number INT, name TEXT NOT NULL,
+  focus_area TEXT NOT NULL, default_duration_minutes INT NOT NULL,
+  cadence TEXT NOT NULL, trigger TEXT, inputs JSONB, output_artifact JSONB,
+  participants TEXT[], procedure JSONB, bucket TEXT,
+  is_non_optional BOOLEAN NOT NULL DEFAULT FALSE,
+  applies_to_roles TEXT[], version INT NOT NULL DEFAULT 1, source_ref TEXT
+);
+
+CREATE TABLE compositions (
+  id UUID PRIMARY KEY, user_id UUID REFERENCES users(id),
+  cycle_type TEXT NOT NULL CHECK (cycle_type IN ('DAILY','WEEKLY','SPRINT','MONTHLY')),
+  start_at TIMESTAMPTZ NOT NULL, end_at TIMESTAMPTZ NOT NULL,
+  parent_composition_id UUID REFERENCES compositions(id),
+  state TEXT NOT NULL, proposed_at TIMESTAMPTZ, decided_at TIMESTAMPTZ,
+  closed_at TIMESTAMPTZ, composer_inputs_snapshot JSONB, invariant_checks JSONB
+);
+
+CREATE TABLE scheduled_activities (
+  id UUID PRIMARY KEY, composition_id UUID REFERENCES compositions(id),
+  catalog_entry_id UUID REFERENCES catalog_entries(id),
+  bucket TEXT NOT NULL, planned_start_at TIMESTAMPTZ,
+  planned_duration_minutes INT NOT NULL,
+  actual_start_at TIMESTAMPTZ, actual_end_at TIMESTAMPTZ,
+  intention TEXT, state TEXT NOT NULL, output_artifact_ref JSONB,
+  reflection_id UUID, linked_kaizen_id UUID,
+  linked_dmaic_step_ref JSONB, reason_code_if_skipped TEXT,
+  source_of_schedule TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE reflections (
+  id UUID PRIMARY KEY, scheduled_activity_id UUID REFERENCES scheduled_activities(id),
+  user_id UUID REFERENCES users(id), captured_at TIMESTAMPTZ NOT NULL,
+  plan_vs_actual_minutes INT, what_went_well TEXT, what_to_improve TEXT,
+  friction_flag BOOLEAN NOT NULL DEFAULT FALSE,
+  friction_signal_id UUID, kind TEXT NOT NULL, dmaic_draft JSONB
+);
+
+CREATE TABLE variances (
+  id UUID PRIMARY KEY, scheduled_activity_id UUID, composition_id UUID,
+  catalog_entry_id UUID, user_id UUID REFERENCES users(id),
+  kind TEXT NOT NULL, reason_code TEXT, note TEXT,
+  logged_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Enforce append-only at DB level:
+REVOKE UPDATE, DELETE ON variances FROM app_user;
+
+CREATE TABLE friction_signals (
+  id UUID PRIMARY KEY, reflection_id UUID REFERENCES reflections(id),
+  scheduled_activity_id UUID, user_id UUID REFERENCES users(id),
+  summary TEXT NOT NULL, tag TEXT, status TEXT NOT NULL DEFAULT 'OPEN',
+  kaizen_id UUID, captured_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE kaizens (
+  id UUID PRIMARY KEY, user_id UUID REFERENCES users(id),
+  title TEXT NOT NULL, problem_statement TEXT, goal_statement TEXT,
+  source_friction_signal_ids UUID[], baseline_metric_id UUID,
+  remeasurement_id UUID, actions JSONB, state TEXT NOT NULL,
+  opened_at TIMESTAMPTZ, closed_at TIMESTAMPTZ, close_kind TEXT,
+  results_narrative_ref JSONB,
+  CONSTRAINT kaizen_close_requires_remeasurement
+    CHECK (state <> 'CLOSED' OR remeasurement_id IS NOT NULL)
+);
+
+CREATE TABLE baseline_metrics (
+  id UUID PRIMARY KEY, kaizen_id UUID REFERENCES kaizens(id),
+  metric_definition JSONB NOT NULL, value NUMERIC NOT NULL,
+  captured_at TIMESTAMPTZ NOT NULL, captured_sample_ref JSONB,
+  locked BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE remeasurements (
+  id UUID PRIMARY KEY, kaizen_id UUID REFERENCES kaizens(id),
+  metric_definition_id TEXT NOT NULL, value NUMERIC NOT NULL,
+  delta_absolute NUMERIC, delta_percent NUMERIC, beats_baseline BOOLEAN,
+  captured_at TIMESTAMPTZ NOT NULL, evidence_ref JSONB
+);
+
+CREATE TABLE metrics_snapshots (
+  id UUID PRIMARY KEY, user_id UUID REFERENCES users(id),
+  window_start TIMESTAMPTZ, window_end TIMESTAMPTZ,
+  adherence_percent NUMERIC, composition_acceptance_daily NUMERIC,
+  composition_acceptance_weekly NUMERIC, reflection_rate_percent NUMERIC,
+  active_kaizen_delta_percent NUMERIC, computed_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Hard constraints enforced in DB:**
+- `CHECK (state <> 'CLOSED' OR remeasurement_id IS NOT NULL)` on `kaizens` — **the remeasurement-at-close HARD RULE, enforced at storage**.
+- `REVOKE UPDATE, DELETE ON variances` — variance append-only at storage.
+- `CHECK (is_non_optional = FALSE OR enabled_by_user = TRUE)` (conceptual) — user toggle ignored for non-optional entries.
+- Application-layer invariant: Daily composition 4-2-2 shape (too complex for a DB CHECK; lives in `InvariantEngine`).
+
+### 7.4 API boundary (Next)
+
+REST, one resource per entity. Contracts mirror entity shapes exactly (no separate "DTO" layer; domain model is the wire format, validated by Zod server-side).
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/catalog` | GET | List enabled catalog entries for user |
+| `/api/catalog/:id` | PATCH | Toggle `enabledByUser` (non-optional rejected at storage) |
+| `/api/compositions` | POST | Ask composer to propose a cycle |
+| `/api/compositions/:id/accept` | POST | Transition PROPOSED → ACCEPTED |
+| `/api/compositions/:id/edit` | PATCH | Edit activities before acceptance |
+| `/api/activities/:id/start` | POST | SCHEDULED → IN_PROGRESS |
+| `/api/activities/:id/close` | POST | IN_PROGRESS → CLOSED; body carries `outputArtifactRef` and `reflection` |
+| `/api/activities/:id/skip` | POST | Non-optional skip with `reasonCode`; emits Variance |
+| `/api/kaizens` | POST | Promote from friction signal cluster |
+| `/api/kaizens/:id/lock-baseline` | POST | Transition DRAFT → ACTIVE |
+| `/api/kaizens/:id/remeasure` | POST | Capture remeasurement |
+| `/api/kaizens/:id/close` | POST | Transition to CLOSED (rejected without remeasurement) |
+| `/api/metrics/snapshot` | GET | Current rolling window snapshot |
+
+### 7.5 Sync strategy (Next)
+
+- **Optimistic client, authoritative server.** Client writes to its local cache (IndexedDB in Next, not localStorage) immediately; POSTs to server; reconciles on response.
+- **Conflict resolution:** last-writer-wins for Reflection text and Intention fields; server-authoritative for state-machine transitions (client cannot force an illegal transition).
+- **Offline support:** MVP is offline-native by design (localStorage). Next: IndexedDB + mutation queue; flush on reconnect.
+- **Team sync (Next+):** compositions and reflections are user-scoped; team rollup views are computed server-side from the per-user rows; no cross-user write is required for MVP or Next.
+
+### 7.6 Backup / export
+
+- MVP: `exportData()` returns a single JSON blob covering all `bamx:v1:*` keys; `importData(blob)` replaces all keys (after backup snapshot). This is the user's only backup in MVP.
+- Next: server-side nightly logical backup; user-triggered export endpoint returns the same JSON shape so MVP exports import cleanly into the server.
+
+---
+
+## 8. Appendix — Invariant Cross-Reference
+
+| Blueprint / Gap rule | Enforced where | Entity / state |
+|---|---|---|
+| Daily 4-2-2 shape | `InvariantEngine.validateComposition()`, app-layer | `Composition.state ∈ {ACCEPTED, ACTIVE, CLOSED}` |
+| Non-optional set present in Daily | `InvariantEngine.validateComposition()` | same |
+| Non-optional catalog entry not deletable | `CatalogService.delete()` rejects | `CatalogEntry.isNonOptional === true` |
+| Every completion produces required output artifact | `ActivityService.close()` guard | `ScheduledActivity.state === 'CLOSED'` |
+| Reflection required on non-optional close | `ActivityService.close()` guard | same |
+| Variance append-only | `LocalStorageRepository.appendOnly()` (MVP); `REVOKE UPDATE, DELETE` (future) | `Variance` |
+| Skipped non-optional emits Variance | `ActivityService.skip()` atomic emit | `Variance.kind = SKIPPED_NON_OPTIONAL` |
+| Kaizen close requires remeasurement | `KaizenService.close()` guard (MVP); DB `CHECK` (future) | `Kaizen.state === 'CLOSED'` |
+| Single active Kaizen per user (MVP) | `KaizenService.promote()` guard | `Kaizen.state ∈ {ACTIVE, IN_REMEASUREMENT}` |
+| Baseline locked | `BaselineMetric.locked === true` | `BaselineMetric` |
+| Over-capacity prevention | `InvariantEngine.validateComposition()` | `Composition` |
+| Composer output inspectable | `Composition.composerInputsSnapshot` frozen | `Composition.state === 'PROPOSED'` |
+
+---
+
+## 9. Open Architectural Questions (for Coordinator / PM)
+
+1. **Team-mode collision in MVP.** Blueprint §4.1 scopes MVP to single-user; but Sprint Planning, Daily Standup, Review, and Retrospective are team ceremonies by definition. MVP either (a) models these as single-user placeholders with no team sync, or (b) drops them from the non-optional set until Next. Single-user placeholder is cheaper; need confirmation before locking.
+2. **Catalog-entry bucket assignment.** Blueprint implies every Daily-schedulable entry has a clear bucket, but the source `.txt` does not label entries with "PROJECT/COMMUNICATION/CI". `CATALOG_GAPS.md §E` does not fill this either. Need Phil-signed mapping before seed (e.g., is "Document Review (#4)" CI or PROJECT?). The composer cannot run without it.
+3. **External-calendar capacity in MVP.** Blueprint §5.2 says calendar integration is Next. But users will already have real meetings on their calendar that eat Daily capacity. Should MVP ship a "manual capacity override" input on the Daily composer (e.g., "I have 2h of meetings today, compose around that"), or ignore the real world and let users edit post-hoc? The former adds one input; the latter depresses composition-acceptance metric artificially.
