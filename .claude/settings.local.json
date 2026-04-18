@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C C:/Users/philk/kaizen status)",
+      "Bash(git ls-remote *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(git checkout *)",
+      "Bash(git reset *)",
+      "Bash(cp *)",
+      "Bash(git add *)"
+    ]
+  }
+}
