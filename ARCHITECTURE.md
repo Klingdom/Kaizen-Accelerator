@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — System Architecture
 
 Owner: System Architect Agent
-Status: Draft v0.3 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1. v0.3 closes 3 engine-flagged gaps (reflection naming canonicalization, `PdcaExperiment` entity added, `clusterDismissals` persistence key added) and resolves 3 prior engine questions (DMAIC payload = `CatalogEntry.dependsOn` DAG with async parallelism, INFEASIBLE guided resolution flow with `InfeasibleResult` shape, deep slicing preference on User). v0.2 closed 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolved 3 earlier open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
+Status: Draft v0.3.1 — v0.3.1 patches §7.1 to add `bamx:v1:agent-suggestions` and `bamx:v1:agent-telemetry` persistence keys for the AI layer cache + telemetry log (see `AI_AGENTS.md` §3). v0.3 closes 3 engine-flagged gaps (reflection naming canonicalization, `PdcaExperiment` entity added, `clusterDismissals` persistence key added) and resolves 3 prior engine questions (DMAIC payload = `CatalogEntry.dependsOn` DAG with async parallelism, INFEASIBLE guided resolution flow with `InfeasibleResult` shape, deep slicing preference on User). v0.2 closed 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolved 3 earlier open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
 Scope: MVP (vanilla JS + localStorage, single-user) with a forward-compatible path to Next.js + PostgreSQL + API.
 
 > **Terminology reconciliation with the upstream prompt.**
@@ -931,6 +931,8 @@ const EventBus = (() => {
 | `bamx:v1:metrics` | `{ [snapshotId]: MetricsSnapshot }` | Latest 30 kept; older evicted |
 | `bamx:v1:pdca` | `{ [pdcaExperimentId]: PdcaExperiment }` | Active + recently closed (last 10) |
 | `bamx:v1:clusterDismissals` | `{ [tag]: { lastDismissedAt, dismissedCount, lastReasonSummary } }` | Keyed by FrictionSignal.tag. Retained indefinitely in MVP so Weekly Reflection step 4 can render "similar cluster dismissed N weeks ago" per `ARCHITECTURE.md §6.2` decision |
+| `bamx:v1:agent-suggestions` | `{ [suggestionId]: AgentSuggestion }` | AI-layer output cache (see `AI_AGENTS.md` §3). Capped 500; evict oldest. Lifecycle: proposed → displayed → acted-on / dismissed / expired. |
+| `bamx:v1:agent-telemetry` | `AgentTelemetryEvent[]` (capped 1000) | Append-only ring buffer logging every (input entities, output suggestion, user action) triple so KPI lift can be measured. See `AI_AGENTS.md` §3. |
 | `bamx:v1:events-log` | `Event[]` (capped 1000) | Optional MVP ring buffer for debugging |
 
 **Access pattern:**

@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — UX Flows
 
 Owner: UX Designer Agent
-Status: Draft v0.2 — grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.2, `CATALOG_GAPS.md` v0.1 §H. All v0.1 open questions and architecture gaps resolved in this revision.
+Status: Draft v0.2.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3.1, `CATALOG_GAPS.md` v0.1 §H. v0.2.1 adds the AI-layer "why chip" on `ScheduledActivityBlock` (§3.3) for Composer Explainer microcopy, and introduces `ArtifactPreview` (§3.11) for Context agent output. v0.2 resolved all v0.1 open questions and architecture gaps.
 Scope: MVP (Daily + Weekly cycles only). Sprint, Monthly, and Team rollup surfaces are placeholder-only per blueprint §4.1.
 
 > This is a behavior spec, not a visual spec. It names screens, data bindings, and interaction rules. Visual design happens in build. Entities and states referenced by name are the ones defined in `ARCHITECTURE.md` §2–§3.
@@ -190,13 +190,14 @@ Ten components. Each binds to specific entities in `ARCHITECTURE.md` §2 and ren
 ### 3.3 ScheduledActivityBlock
 
 - **Purpose:** Render one `ScheduledActivity` on the day timeline. Carries start / work / close interactions.
-- **Binds to:** `ScheduledActivity`, its `CatalogEntry`, its `Reflection` (if closed).
+- **Binds to:** `ScheduledActivity`, its `CatalogEntry`, its `Reflection` (if closed), and (when in PROPOSED state) the Composer Explainer `AgentSuggestion` keyed to this `scheduledActivityId`.
 - **States:** 
   - **Empty** (never — a block exists only when a ScheduledActivity row exists), 
   - **Loading** (skeleton), 
   - **Success** (renders in one of five variant styles matching `state`: PROPOSED / SCHEDULED / IN_PROGRESS / CLOSED / SKIPPED), 
   - **Error** ("Failed to start activity; try again"), 
   - **Invariant violation** at close ("Output artifact required. Fill the form to close."). 
+- **Sub-elements (PROPOSED state only):** a small **why chip** (info chevron) tucked at the block's trailing edge. Tapping it reveals the Composer Explainer microcopy sourced from `Composition.composerInputsSnapshot.explain[]` matching this block (e.g., "Chosen because you have an active DMAIC project; SIPOC is closed, so C&E Matrix is next"). Read-only. Non-blocking. Dismissible. See `AI_AGENTS.md` §2 Agent 5 (Composer Explainer) for the data contract.
 - **Emits:** `ActivityStarted`, `ActivityCompleted` (via Close action; relays output artifact + reflection to services).
 
 ### 3.4 CatalogPicker
@@ -280,6 +281,19 @@ Ten components. Each binds to specific entities in `ARCHITECTURE.md` §2 and ren
   - **Error** ("Failed to load variance"), 
   - **Invariant violation** state not applicable — variances are born in terminal state. 
 - **Emits:** On "Add correction": creates a new `Variance` row via `VarianceService`. The original is never modified.
+
+### 3.11 ArtifactPreview (sub-component)
+
+- **Purpose:** Read-only preview card for a linked artifact (a prior `ScheduledActivity.outputArtifactRef` from the same Kaizen lineage, or a referenced `CatalogEntry.procedure` excerpt). Surfaced by the Context agent (`AI_AGENTS.md` §2 Agent 3) into the activity runner and the composer Edit mode so users don't have to page away to find prerequisites.
+- **Binds to:** a target `{ schema, value }` pair from `outputArtifactRef` OR a `CatalogEntry.procedure[]` slice.
+- **Surfaces in:** the activity runner (`/today/activity/:id`) as a collapsed "Related artifact" strip above the notes area; the composer Edit mode (`/week/day/:isoDate/compose`) as an inline chip attached to a configurable block when the Context agent has content.
+- **States:** 
+  - **Empty** (agent abstained — component does not render at all), 
+  - **Loading** (skeleton strip), 
+  - **Success** (renders preview by schema: TEXT → first 120 chars; TWO_LIST → first 3 items each list; NUMERIC → value + unit; DOCUMENT / CHART → title + link), 
+  - **Error** ("Couldn't load linked artifact"). 
+- **Non-blocking.** Never steals focus. Always dismissible with a small ×. Dismissal emits an `AgentTelemetryEvent` with `userAction='DISMISSED'` so the Context agent learns to suppress similar suggestions.
+- **Emits:** No state changes in the domain model — read-only. Only writes to `bamx:v1:agent-telemetry` on view / dismiss.
 
 ---
 
