@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — System Architecture
 
 Owner: System Architect Agent
-Status: Draft v0.2 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1. v0.2 closes 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolves 3 prior open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
+Status: Draft v0.3 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 and `CATALOG_GAPS.md` v0.1. v0.3 closes 3 engine-flagged gaps (reflection naming canonicalization, `PdcaExperiment` entity added, `clusterDismissals` persistence key added) and resolves 3 prior engine questions (DMAIC payload = `CatalogEntry.dependsOn` DAG with async parallelism, INFEASIBLE guided resolution flow with `InfeasibleResult` shape, deep slicing preference on User). v0.2 closed 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolved 3 earlier open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
 Scope: MVP (vanilla JS + localStorage, single-user) with a forward-compatible path to Next.js + PostgreSQL + API.
 
 > **Terminology reconciliation with the upstream prompt.**
@@ -178,11 +178,13 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `enabledByUser` | boolean | User preference; defaults true; non-optional entries cannot be disabled |
 | `version` | integer | Bumped when procedure / output schema changes |
 | `sourceRef` | string | e.g., "`Business Agility Standard Work.txt` row 12" |
+| `dependsOn` | string[] | Catalog entry IDs whose `ScheduledActivity` must be `CLOSED` before this entry becomes eligible as payload. Used for DMAIC DAG (e.g., `DMAIC C&E Matrix #34` depends on `DMAIC SIPOC #21`). Empty array for entries without prerequisites. |
 
 **Invariants:**
 - `isNonOptional === true` → `enabledByUser` is ignored (always enabled), delete rejected.
 - `outputArtifact.required === true` for every Catalog Entry (blueprint: every completion produces evidence).
 - `bucket === 'PROJECT' | 'COMMUNICATION' | 'CI'` must be set for any entry the Daily composer may schedule.
+- `dependsOn` is a DAG — no cycles. Validated at seed and at any catalog edit. A DMAIC step is eligible as payload iff every `dependsOn` entry has a `CLOSED` ScheduledActivity within the **same** `Kaizen.id` scope.
 
 **Example JSON:**
 
@@ -216,10 +218,11 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `name` | string | |
 | `email` | string | |
 | `role` | string[] | Current active BAM roles |
-| `dailyCapacityMinutes` | integer | Default 480 (8h) |
+| `dailyCapacityMinutes` | integer | Default 480 (8h). Composer accepts a per-day override without mutating this field (override lives on `Composition.externalMinutesToday` or a one-day capacity input). |
 | `workDays` | integer[] | ISO day numbers, default `[1,2,3,4,5]` |
 | `sprintAnchorDate` | date (ISO) | First Monday of current sprint; drives sprint-phase computation |
 | `timezone` | string | IANA TZ string |
+| `deepSlicePreference` | enum | `'2x2h'` \| `'4x1h'` — how the composer slices the Deep (PROJECT) bucket on the Daily cycle. Default `'2x2h'`. See §9 item 14. |
 | `createdAt` | timestamp | |
 
 ### 2.4 Composition
@@ -272,6 +275,7 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `reflectionId` | string \| null | FK Reflection |
 | `linkedKaizenId` | string \| null | If this block is Kaizen work, the Kaizen it advances |
 | `linkedDmaicStepRef` | object \| null | `{ kaizenId, catalogEntryId }` — ties Deep-block payload to DMAIC step |
+| `linkedPdcaExperimentId` | string \| null | For catalog #12 PDCA Cycle ticks; binds the tick to its parent experiment |
 | `reasonCodeIfSkipped` | enum \| null | `ESCALATION` \| `MEETING_CONFLICT` \| `SICK` \| `BLOCKED` \| `DEPRIORITIZED` \| `OTHER` |
 | `sourceOfSchedule` | enum | `COMPOSER_AUTO` \| `USER_EDIT` \| `USER_ADD` — for composition-acceptance metric |
 | `createdAt` | timestamp | |
@@ -412,7 +416,34 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `activeKaizenDeltaPercent` | number \| null | |
 | `computedAt` | timestamp | |
 
-### 2.13 Relationship diagram (textual)
+### 2.13 PdcaExperiment
+
+A PDCA experiment is the parent hypothesis entity that binds a series of 48-hour PDCA ticks (catalog #12) together so the Plan / Do / Check / Act state persists across ticks. Without this, each tick would be a disconnected reflection and the blueprint §3.1 commitment that "PDCA Cycle fires every 48 hours while an experiment is active" has no anchor.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (uuid) | PK |
+| `userId` | string | FK |
+| `hypothesis` | string | One-sentence "if we change X, Y should improve." |
+| `targetMetricName` | string | What the user is measuring (e.g., "daily Slack context-switch count") |
+| `targetMetricUnit` | string | e.g., "count/day", "minutes" |
+| `currentConditionBaseline` | number | Captured at open |
+| `targetCondition` | number | What the user is aiming for |
+| `state` | enum | `PLAN` \| `DO` \| `CHECK` \| `ACT` \| `CLOSED` — advances per tick |
+| `tickActivityIds` | string[] | FKs to `ScheduledActivity` rows of catalog #12 that ticked this experiment. Append-only; each new tick adds one. |
+| `consecutiveTargetHits` | integer | Count of consecutive ticks where measurement met `targetCondition`. Blueprint: 3 consecutive hits = graduate. |
+| `openedAt` / `closedAt` | timestamp | |
+| `closedReason` | enum \| null | `GRADUATED` (3 consecutive hits) \| `ABANDONED` (user gave up) \| `SUPERSEDED_BY_KAIZEN` (promoted to Kaizen) |
+
+**Invariants:**
+- At most one `PdcaExperiment` per user with `state !== 'CLOSED'`. (MVP; parallel experiments land in Next.)
+- A PDCA tick `ScheduledActivity` (catalog #12) must carry `linkedPdcaExperimentId`; orphan ticks are blocked by `ActivityService.start()` when a user has an open experiment.
+- `state === 'CLOSED'` AND `closedReason === 'GRADUATED'` → `consecutiveTargetHits >= 3` at close.
+- Transitions: `PLAN → DO` on first tick committed; `DO → CHECK` when a tick measurement is captured; `CHECK → ACT` when user commits an adjustment in the tick reflection; `ACT → DO` on next tick; terminal transition to `CLOSED` on graduation / abandonment / promotion.
+
+**Events:** `PdcaExperimentOpened`, `PdcaTickCommitted`, `PdcaExperimentClosed` (see §6.1).
+
+### 2.14 Relationship diagram (textual)
 
 ```
 User 1—* Composition 1—* ScheduledActivity *—1 CatalogEntry
@@ -422,6 +453,8 @@ User 1—* Composition 1—* ScheduledActivity *—1 CatalogEntry
                                 +—0..* Variance  (append-only)
                                 |
                                 +—0..1 (linkedKaizenId) Kaizen
+                                |
+                                +—0..1 (linkedPdcaExperimentId) PdcaExperiment
 
 Kaizen 1—1 BaselineMetric
 Kaizen 1—0..1 Remeasurement
@@ -599,20 +632,29 @@ fn composeDaily(input) -> Composition:
   add(scheduled, "Daily Standup", 15 min, bucket=COMMUNICATION)
   add(scheduled, "AM High-value Communication block", 60 min, bucket=COMMUNICATION)
   add(scheduled, "Post-lunch High-value Communication block", 30 min, bucket=COMMUNICATION)
-  add(scheduled, "End-of-day Reflection (meta)", 15 min, bucket=CI)    # ensures reflection fires
+  add(scheduled, "End-of-Activity Reflection (meta)", 15 min, bucket=CI)    # ensures reflection fires
   # Remaining: PROJECT 240, COMMUNICATION 15, CI 105
 
   # 2. Rescue skipped non-optionals from prior cycle's variance queue
   for v in input.varianceQueue where catalog(v).isNonOptional:
       if fits in remaining bucket: add(scheduled, v.catalogEntry, …)
 
-  # 3. Place Deep Work payload = active Kaizen / DMAIC step (if any)
+  # 3. Place Deep Work payload = eligible DMAIC/Kaizen step(s) from the DAG (if any)
+  # DMAIC payload is a DAG per CatalogEntry.dependsOn (not a strict numeric walk).
+  # An entry is "eligible" iff every dependsOn entry has a CLOSED ScheduledActivity in the same Kaizen.
+  # Multiple eligible entries may be placed in parallel across the sprint's Deep blocks.
   if input.activeKaizen:
-      step = nextDmaicOrKaizenStepFor(activeKaizen, input.sprintPhase)
-      add(scheduled, step, min(step.duration, 240) minutes, bucket=PROJECT,
-                     linkedKaizenId=activeKaizen.id,
-                     linkedDmaicStepRef={kaizenId, catalogEntryId: step.id})
-      # Slice into 2×2h or 4×1h per user preference (default 2×2h)
+      eligible = eligibleDmaicPayloadSteps(activeKaizen)  # DAG traversal; see §4.5 R9
+      if eligible.length > 0:
+          step = pickHighestPriority(eligible)  # priority = (phase match, dependsOn-satisfied recency, catalog order)
+          add(scheduled, step, min(step.duration, 240) minutes, bucket=PROJECT,
+                         linkedKaizenId=activeKaizen.id,
+                         linkedDmaicStepRef={kaizenId, catalogEntryId: step.id})
+          # Slice into 2×2h or 4×1h per user preference (default 2×2h)
+      else:
+          # All DAG entries for this phase done or blocked; fall through to generic Deep
+          add(scheduled, "Deep Work — Project Task (generic)", 240 min, bucket=PROJECT,
+                         linkedKaizenId=activeKaizen.id)
   else:
       add(scheduled, "Deep Work — Project Task (generic)", 240 min, bucket=PROJECT)
 
@@ -679,11 +721,46 @@ MVP users place Sprint Planning / Review / Retro manually via the Weekly compose
 | R5. Reflection anchor | Weekly Reflection lands on Fri afternoon, protected |
 | R6. 6S Email threshold | Only scheduled if `inboxUnread > threshold` signal present |
 | R7. PDCA cadence | Fires at most every 48 hours |
-| R8. Over-capacity | If cumulative minutes > capacity, drop configurable entries in reverse priority order; if non-optionals still over, mark composition `INFEASIBLE` and surface to user — never silently truncate |
+| R8. Over-capacity | If cumulative minutes > capacity, drop configurable entries in reverse priority order; if non-optionals still over, return `INFEASIBLE` response (see §4.7) — never silently truncate |
+| R9. DMAIC DAG traversal | A DMAIC/Kaizen catalog entry is eligible as Deep-block payload iff (a) it is in the active `Kaizen`'s project scope AND (b) every id in its `CatalogEntry.dependsOn` has a `CLOSED` `ScheduledActivity` in the same Kaizen. Multiple eligible entries may be placed in parallel across the same sprint's Deep blocks (async tasks). No strict numeric `#20 → #41` walk. |
 
 ### 4.6 Composer output
 
 A `Composition` in state `PROPOSED` with all child `ScheduledActivity` rows in state `PROPOSED`. The user sees a filled-in cycle and chooses Accept / Edit / Reject. Acceptance flips the composition and all children to `ACCEPTED` / `SCHEDULED` atomically.
+
+### 4.7 INFEASIBLE response shape + guided resolution flow
+
+When the composer cannot produce a valid proposal (non-optional set + ceremonies exceed capacity after relaxing all configurables), it does NOT return a `Composition`. Instead it returns a structured `InfeasibleResult` the UI renders as a CycleCard infeasibility state with guided remediation:
+
+```js
+// PSEUDO
+type InfeasibleResult = {
+  kind: 'INFEASIBLE',
+  totalRequiredMinutes: number,           // sum of non-optional + phase ceremonies
+  capacityMinutes: number,                // userDailyCap - externalMinutesToday
+  shortfallMinutes: number,               // totalRequired - capacity
+  bucketShortfalls: {                     // per-bucket diagnostic
+    PROJECT: number,                      // required vs available
+    COMMUNICATION: number,
+    CI: number,
+  },
+  suggestedActions: Array<                // ordered by product-preferred remediation
+    | { kind: 'RAISE_CAPACITY', currentMinutes, suggestedMinutes }
+    | { kind: 'REDUCE_EXTERNAL', currentExternalMinutes, suggestedExternalMinutes }
+    | { kind: 'SKIP_CEREMONY_WITH_REASON', catalogEntryId, ceremonyName, defaultReasonCode }
+    | { kind: 'DEFER_NON_OPTIONAL_TO_NEXT_DAY', catalogEntryId, rationale }
+  >,
+  explain: string[]                       // human-readable "why INFEASIBLE" lines
+}
+```
+
+**UI contract (per `UX_FLOWS.md` §2.1 infeasibility path):** the CycleCard renders the explain lines and the `suggestedActions` as action buttons in the given order. Each action, when taken, mutates the relevant input and re-invokes `composeDaily()`:
+
+- **Raise capacity** — opens a capacity input on the CycleCard; on save, updates `User.dailyCapacityMinutes` for today (a one-day override) or permanently, per the user's toggle; re-composes.
+- **Skip ceremony with reason** — shows the specific ceremony's name and the fixed reason-code picker (§2.5 enum). On submit, atomically logs a `Variance { kind: SKIPPED_NON_OPTIONAL, reasonCode, note }` and re-composes with that ceremony excluded for this day only. The next day's composer will re-queue the skipped non-optional from `varianceQueue` per R2.
+- **Defer non-optional to next day** — for non-optionals that are not phase-locked ceremonies (e.g., a deferrable Mid-Sprint Review can be pushed one day if scheduling conflict). Logs a `Variance { kind: RESCHEDULED }` and re-composes.
+
+The guided flow is **not a silent fallback to the prior day's composition**. Every remediation produces either a new proposed Composition or an explicit user decision to keep the day unscheduled.
 
 ---
 
@@ -793,6 +870,10 @@ Events are emitted by services after state transitions commit to the repository.
 | `KaizenBaselineLocked` | `{ kaizenId, baselineMetricId }` | UI (state change to ACTIVE) |
 | `KaizenRemeasured` | `{ kaizenId, remeasurementId, beatsBaseline }` | MetricsService |
 | `KaizenClosed` | `{ kaizenId, closeKind }` | MetricsService (Kaizen throughput), UI |
+| `PdcaExperimentOpened` | `{ pdcaExperimentId, userId, hypothesis }` | ComposerService (seed 48h tick cadence), UI |
+| `PdcaTickCommitted` | `{ pdcaExperimentId, scheduledActivityId, measurement, consecutiveTargetHits }` | PdcaService (advance PLAN/DO/CHECK/ACT), MetricsService |
+| `PdcaExperimentClosed` | `{ pdcaExperimentId, closedReason }` | UI, KaizenService (if SUPERSEDED_BY_KAIZEN) |
+| `ComposerInfeasible` | `{ userId, date, result: InfeasibleResult }` | UI (show guided remediation), MetricsService (count INFEASIBLE days as a leading indicator of chronic over-schedule) |
 
 ### 6.2 Subscriber responsibilities
 
@@ -848,6 +929,8 @@ const EventBus = (() => {
 | `bamx:v1:baselines` | `{ [baselineMetricId]: BaselineMetric }` | |
 | `bamx:v1:remeasurements` | `{ [remeasurementId]: Remeasurement }` | |
 | `bamx:v1:metrics` | `{ [snapshotId]: MetricsSnapshot }` | Latest 30 kept; older evicted |
+| `bamx:v1:pdca` | `{ [pdcaExperimentId]: PdcaExperiment }` | Active + recently closed (last 10) |
+| `bamx:v1:clusterDismissals` | `{ [tag]: { lastDismissedAt, dismissedCount, lastReasonSummary } }` | Keyed by FrictionSignal.tag. Retained indefinitely in MVP so Weekly Reflection step 4 can render "similar cluster dismissed N weeks ago" per `ARCHITECTURE.md §6.2` decision |
 | `bamx:v1:events-log` | `Event[]` (capped 1000) | Optional MVP ring buffer for debugging |
 
 **Access pattern:**
@@ -1054,6 +1137,10 @@ REST, one resource per entity. Contracts mirror entity shapes exactly (no separa
 | Variance append-only | `LocalStorageRepository.appendOnly()` (MVP); `REVOKE UPDATE, DELETE` (future) | `Variance` |
 | Skipped non-optional emits Variance | `ActivityService.skip()` atomic emit | `Variance.kind = SKIPPED_NON_OPTIONAL` |
 | `reasonCode = OTHER` requires `note` | `VarianceService.log()` guard + `ActivityService.skip()` guard; future Postgres `CHECK` | `Variance`, `ScheduledActivity` |
+| DMAIC DAG: `dependsOn` cycle-free + eligibility | `CatalogService` validates on seed/edit; `ComposerService.eligibleDmaicPayloadSteps()` enforces at payload selection | `CatalogEntry`, `ScheduledActivity` |
+| PDCA tick requires parent experiment | `ActivityService.start()` guard when catalog #12 and open experiment exists | `PdcaExperiment`, `ScheduledActivity` |
+| PDCA graduation requires 3 consecutive target hits | `PdcaService.tick()` guard | `PdcaExperiment.state === 'CLOSED'` with `closedReason='GRADUATED'` |
+| Composer never silently truncates | `ComposerService` returns `InfeasibleResult` (§4.7) when non-optionals exceed capacity | `Composition`, `ComposerInfeasible` event |
 | Kaizen close requires remeasurement | `KaizenService.close()` guard (MVP); DB `CHECK` (future) | `Kaizen.state === 'CLOSED'` |
 | Single active Kaizen per user (MVP) | `KaizenService.promote()` guard | `Kaizen.state ∈ {ACTIVE, IN_REMEASUREMENT}` |
 | Baseline locked | `BaselineMetric.locked === true` | `BaselineMetric` |
@@ -1082,4 +1169,14 @@ All open questions from draft v0.1 resolved by coordinator on 2026-04-18.
 
 8. **Kaizen "ready to remeasure" indicator — RESOLVED.** Computed property on `Kaizen` (not a stored state). See §2.9. Surfaced on `KaizenCard`. Does not block close; does not block further action edits.
 
-9. **Friction signal dismiss-loop — RESOLVED.** `FrictionSignal.status=DISMISSED` is terminal. `KaizenCandidateQueue` retains dismissed-cluster history per tag; when a re-surfacing cluster in a new Weekly Reflection has the same tag as a previously dismissed cluster, `WeeklyReflectionWizard` step 4 shows "similar cluster dismissed N weeks ago" as a hint. Not a block; user can still dismiss or promote. No new state or FSM edge.
+9. **Friction signal dismiss-loop — RESOLVED.** `FrictionSignal.status=DISMISSED` is terminal. `KaizenCandidateQueue` retains dismissed-cluster history per tag (persisted as `bamx:v1:clusterDismissals` — see §7.1); when a re-surfacing cluster in a new Weekly Reflection has the same tag as a previously dismissed cluster, `WeeklyReflectionWizard` step 4 shows "similar cluster dismissed N weeks ago" as a hint. Not a block; user can still dismiss or promote. No new state or FSM edge.
+
+10. **Reflection naming canonicalization — RESOLVED.** The generic catalog entry that closes every day is canonically **"End-of-Activity Reflection"** (matching `CATALOG_GAPS.md §H.2`). The older "End-of-day Reflection (meta)" label in §4 pseudo-code was aligned to the canonical name. No functional change.
+
+11. **PdcaExperiment entity — RESOLVED.** Added as new entity §2.13. A PDCA experiment is the parent hypothesis binding 48-hour catalog #12 ticks. State machine: PLAN → DO → CHECK → ACT, with graduation (3 consecutive target-met ticks), abandonment, or promotion-to-Kaizen as terminal paths. MVP cap: one open experiment per user. Events: `PdcaExperimentOpened`, `PdcaTickCommitted`, `PdcaExperimentClosed`. Persistence key: `bamx:v1:pdca`.
+
+12. **DMAIC payload ordering — RESOLVED.** Not a strict numeric walk through #20 → #41. `CatalogEntry.dependsOn: string[]` declares the DAG (e.g., C&E Matrix #34 depends on SIPOC #21 and Detailed Process Maps #32). The composer's eligibility check (R9 in §4.5) accepts any entry whose `dependsOn` is satisfied within the same Kaizen scope. Multiple eligible entries may fill different Deep blocks across the same sprint in parallel (async tasks OK). Priority within the eligible set: (phase match, then `dependsOn`-satisfied-most-recently, then catalog order as final stable tiebreak).
+
+13. **INFEASIBLE guided resolution flow — RESOLVED.** Added §4.7. Composer returns a structured `InfeasibleResult` with `shortfallMinutes`, `bucketShortfalls`, and `suggestedActions` (RAISE_CAPACITY, REDUCE_EXTERNAL, SKIP_CEREMONY_WITH_REASON, DEFER_NON_OPTIONAL_TO_NEXT_DAY). UI renders guided remediation actions in order. Every action produces a new proposal or a logged variance; no silent fallback. New event: `ComposerInfeasible`.
+
+14. **Deep slicing preference (`2×2h` vs `4×1h`) — COORDINATOR DEFAULT (revisit if needed).** Persisted as `User.deepSlicePreference: '2x2h' | '4x1h'`, default `'2x2h'`. Overridable per `Composition` via Edit mode (not a stored per-composition field in MVP — the user just rearranges blocks). Revisit at first-user feedback; if the preference changes frequently, promote to per-composition.
