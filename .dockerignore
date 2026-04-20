@@ -1,0 +1,57 @@
+# Keep the production image lean. Exclude anything a browser doesn't need.
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# CI / tooling
+.github
+.claude
+.vscode
+.idea
+
+# Design docs — useful in the repo, not in the runtime image
+ARCHITECTURE.md
+PRODUCT_BLUEPRINT.md
+UX_FLOWS.md
+ENGINE_DESIGN.md
+DELIVERY_PLAN.md
+AI_AGENTS.md
+CATALOG_GAPS.md
+PROJECT_TYPE_30D_KAIZEN.md
+docs
+
+# Tests — they run in CI (GitHub Actions), not at runtime
+tests
+tests/**
+
+# Secrets — never bake into images
+.env
+.env.*
+!.env.example
+
+# Stubs not yet in use
+process-service
+config
+
+# Scripts — deployed to the VPS directly, not inside the container
+scripts
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Node artifacts (if ever added)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Docker self-references
+Dockerfile
+docker-compose.yml
+.dockerignore
+README.md
+LICENSE

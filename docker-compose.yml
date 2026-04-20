@@ -1,0 +1,76 @@
+# BAM-X Kaizen OS — docker-compose orchestration
+#
+# Run locally:   DOMAIN=localhost docker compose up --build
+# Run on VPS:    DOMAIN=kaizen.example.com ACME_EMAIL=you@example.com \
+#                docker compose up -d --build
+#
+# The `web` service is the only active service in MVP. The `db` service is
+# commented out and ready to uncomment when Sprint 5+ moves data off
+# localStorage per ARCHITECTURE.md §7.3.
+
+name: bamx
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bamx/web:latest
+    container_name: bamx-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # DOMAIN=localhost disables TLS; DOMAIN=<real-domain> enables auto-HTTPS.
+      DOMAIN: ${DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@localhost}
+      HTTP_PORT: ${HTTP_PORT:-80}
+    volumes:
+      # Persist Caddy's Let's Encrypt certs and state across rebuilds.
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - bamx-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Uncomment when MVP graduates to the future-state architecture per
+  # ARCHITECTURE.md §7.3. The entity schema in js/domain/types.js already
+  # ports cleanly to this database (port-compat rule, ARCHITECTURE §7.2).
+  # ─────────────────────────────────────────────────────────────────────────
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: bamx-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB:-bamx}
+  #     POSTGRES_USER: ${POSTGRES_USER:-bamx}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+  #   volumes:
+  #     - bamx_pg:/var/lib/postgresql/data
+  #     # Schema migrations land here when Sprint 5+ authors them.
+  #     - ./db/migrations:/docker-entrypoint-initdb.d:ro
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bamx}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - bamx-net
+  #   # Do NOT expose ports to the host in production; only the Node/Next.js
+  #   # app service (future) will talk to Postgres over the internal network.
+
+volumes:
+  caddy_data:
+  caddy_config:
+  # bamx_pg:
+
+networks:
+  bamx-net:
+    driver: bridge
