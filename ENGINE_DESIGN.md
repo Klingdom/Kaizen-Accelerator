@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — Core Engine Design
 
 Owner: Backend + Logic Engineer Agent
-Status: Draft v0.2 — grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3, `CATALOG_GAPS.md` v0.1 §H, `UX_FLOWS.md` v0.2 §4. All v0.1 engine-flagged architecture gaps resolved in the architecture v0.3 bump.
+Status: Draft v0.3 — v0.3 extends the DMAIC payload selector (§4.2) with the project-type + phase-binding filter needed by the 30-Day Kaizen Accelerator (`PROJECT_TYPE_30D_KAIZEN.md §5.1`), preserves the existing priority-ranking function, and references `ARCHITECTURE.md` v0.4. v0.2 grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3, `CATALOG_GAPS.md` v0.1 §H, `UX_FLOWS.md` v0.2 §4. All v0.1 engine-flagged architecture gaps resolved in the architecture v0.3 bump.
 Scope: implementation-ready engine spec for MVP (vanilla JS + localStorage, single-user) with forward compatibility to Next.js + PostgreSQL.
 
 > **Terminology reconciliation (driving prompt vs blueprint).** Where the prompt says "intentions" read `ScheduledActivity.intention` (a field). Where it says "by phase" read "by bucket" (`PROJECT` / `COMMUNICATION` / `CI`). Where it says "recurring patterns" read "catalog cadence composed into Cycles". Where it says "PDCA / DMAIC / Kaizen" read the `Kaizen` entity (one active per user, MVP) with DMAIC catalog activities `#20–#41` or Kaizen catalog activities `#42–#50` as payload; PDCA is catalog entry `#12` with a 48-hour micro-cycle.
@@ -785,14 +785,16 @@ const phaseFor = (kaizen, catalog, scheduledActivities) => {
 };
 ```
 
-**Payload selection (`selectDeepPayload` for DMAIC).** Eligibility is **DAG-based** per `ARCHITECTURE.md §2.2` `CatalogEntry.dependsOn` and §4.5 R9. An entry is eligible iff (a) it belongs to the active `Kaizen`'s catalog set (#20–#41 for DMAIC, #42–#50 for Kaizen events) AND (b) every id in its `dependsOn` has a `CLOSED` `ScheduledActivity` within the same `Kaizen.id` scope AND (c) no `CLOSED` `ScheduledActivity` for this same entry already exists in this Kaizen (don't redo done steps).
+**Payload selection (`selectDeepPayload` for DMAIC / KAIZEN_EVENT / KAIZEN_ACCELERATOR_30D).** Eligibility is **DAG-based** per `ARCHITECTURE.md §2.2` `CatalogEntry.dependsOn` and §4.5 R9, AND filtered by project-type + phase binding per `ARCHITECTURE.md §2.2` invariants + `PROJECT_TYPE_30D_KAIZEN.md §5.1`. An entry is eligible iff (a) `c.projectTypeBinding === kaizen.projectType` (so a DMAIC Kaizen only sees #20–#41 + bound generics; a Kaizen-Event Kaizen only sees #42–#50; a 30-Day Accelerator only sees its 31 bound entries) AND (b) if `c.phaseBinding !== null`, `c.phaseBinding === kaizen.phase` (so a Phase 3 accelerator task never appears while the Kaizen is in Phase 1) AND (c) every id in its `dependsOn` has a `CLOSED` `ScheduledActivity` within the same `Kaizen.id` scope AND (d) no `CLOSED` `ScheduledActivity` for this same entry already exists in this Kaizen (don't redo done steps).
+
+For `projectType === 'KAIZEN_ACCELERATOR_30D'`, the eligible set is filtered by `Kaizen.phase` too — a Phase 3 task (e.g., `30d_3_3_execute_improvements`) never appears as payload while `kaizen.phase === 'PHASE_1'`. When the user advances phase via `KaizenService.advancePhase()`, the `ProjectPhaseAdvanced` event fires and the composer re-filters on the next `composeDaily()` invocation. This is the phase-binding filter that powers the Accelerator's 5-phase walk.
 
 Multiple eligible entries may fire in parallel across the sprint's Deep blocks — this is the "async tasks OK" resolution from the coordinator's decisions log (`ARCHITECTURE.md §9` item 12). For example: once `#20 Charter` closes, `#21 SIPOC` becomes eligible; once `#21 SIPOC` closes, `#23 Stakeholder Analysis` and `#24 Communication Plan` both become eligible and can be placed on different Deep blocks in the same sprint.
 
-**Priority among eligible entries** (deterministic tiebreak chain):
+**Priority among eligible entries** (deterministic tiebreak chain — unchanged from v0.2):
 1. Phase match — entries whose phase matches the project's current `phaseFor()` rank first.
 2. `dependsOn`-satisfied-most-recently — entries unlocked by the most recently closed step rank next (preserves momentum).
-3. `activityNumber` ASC — final stable tiebreak, so the same inputs always produce the same selection.
+3. `activityNumber` ASC (or `id` ASC for Accelerator entries without activity numbers) — final stable tiebreak, so the same inputs always produce the same selection.
 
 ```js
 const eligibleDmaicPayloadSteps = (kaizen, catalog, scheduledActivities) => {
@@ -801,10 +803,12 @@ const eligibleDmaicPayloadSteps = (kaizen, catalog, scheduledActivities) => {
       .filter(s => s.linkedKaizenId === kaizen.id && s.state === 'CLOSED')
       .map(s => s.catalogEntryId)
   );
-  const dmaicRange = catalog.filter(c =>
-    c.focusArea === 'DMAIC' || c.focusArea === 'KAIZEN'
+  // Project-type + phase binding — ARCHITECTURE.md §2.2 invariants.
+  const rangeForType = catalog.filter(c =>
+    c.projectTypeBinding === kaizen.projectType &&
+    (c.phaseBinding === null || c.phaseBinding === kaizen.phase)
   );
-  return dmaicRange.filter(step =>
+  return rangeForType.filter(step =>
     !closedInKaizen.has(step.id) &&                      // not already done
     step.dependsOn.every(dep => closedInKaizen.has(dep)) // all prerequisites closed
   );

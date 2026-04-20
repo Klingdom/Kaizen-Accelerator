@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — UX Flows
 
 Owner: UX Designer Agent
-Status: Draft v0.2.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3.1, `CATALOG_GAPS.md` v0.1 §H. v0.2.1 adds the AI-layer "why chip" on `ScheduledActivityBlock` (§3.3) for Composer Explainer microcopy, and introduces `ArtifactPreview` (§3.11) for Context agent output. v0.2 resolved all v0.1 open questions and architecture gaps.
+Status: Draft v0.2.2 — v0.2.2 extends `KaizenCard` (§3.8) with a `PhaseStepper` sub-element and introduces `RoiPanel` (§3.12) for the 30-Day Kaizen Accelerator (grounded in `ARCHITECTURE.md` v0.4 and `PROJECT_TYPE_30D_KAIZEN.md §7`). Adds `/kaizen/:id/phase/:phaseId` and `/kaizen/:id/roi` routes to §1.2. v0.2.1 added the AI-layer "why chip" on `ScheduledActivityBlock` (§3.3) for Composer Explainer microcopy, and introduced `ArtifactPreview` (§3.11) for Context agent output. v0.2 resolved all v0.1 open questions and architecture gaps.
 Scope: MVP (Daily + Weekly cycles only). Sprint, Monthly, and Team rollup surfaces are placeholder-only per blueprint §4.1.
 
 > This is a behavior spec, not a visual spec. It names screens, data bindings, and interaction rules. Visual design happens in build. Entities and states referenced by name are the ones defined in `ARCHITECTURE.md` §2–§3.
@@ -43,6 +43,8 @@ Five top-level surfaces are visible on login. The left nav (or top tab bar) rend
   ├── /kaizen/candidates                     [read-write]  FrictionSignal queue, only surfaced via Weekly Reflection
   ├── /kaizen/:id                            [read-write]  KaizenCard detail
   ├── /kaizen/:id/baseline                   [read-write]  BaselineMetric capture (locks on save)
+  ├── /kaizen/:id/phase/:phaseId             [read-write]  Accelerator phase detail view; lists the phase's catalog tasks + guard status (only when projectType='KAIZEN_ACCELERATOR_30D')
+  ├── /kaizen/:id/roi                        [read-write]  Accelerator ROI capture form (editable in PHASE_4; read-only after close)
   ├── /kaizen/:id/remeasure                  [read-write]  Remeasurement capture (unlocks Close)
   └── /kaizen/:id/close                      [read-write]  final close step (refused without remeasurement)
 
@@ -257,7 +259,10 @@ Ten components. Each binds to specific entities in `ARCHITECTURE.md` §2 and ren
   - **Success** (renders one of five sub-states matching `Kaizen.state`: DRAFT / ACTIVE / IN_REMEASUREMENT / CLOSED / abandoned), 
   - **Error** ("Failed to save Kaizen. Retry."), 
   - **Invariant violation** on close attempt ("Can't close without a remeasured number. Capture remeasurement first."). The Close button renders disabled with this microcopy directly above. 
-- **Emits:** `KaizenBaselineLocked`, `KaizenRemeasured`, `KaizenClosed`.
+- **Sub-elements (Accelerator-only):**
+  - **`PhaseStepper`** — renders only when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'`. A 5-node horizontal stepper labeled Phase 0 → Phase 4, each node showing: phase name (Pre-work / Baseline / Kaizen Event / Implementation / Validation+ROI), day range (e.g., "Days 1–7"), status (done / current / locked), and on the current node the guard status (e.g., "Advance blocked: Baseline not approved (30d_1_6 not closed)"). Non-blocking: clicking a locked future phase shows the guard list as a tooltip; the current phase exposes an **Advance to Phase N+1** button which calls `KaizenService.canAdvancePhase()` and, on false, renders an inline guard-check message naming the specific blocking catalog entry. Sourced from `Kaizen.phase`, `Kaizen.phaseDefinitions`, and `scheduledActivities.filter(s => s.linkedKaizenId === kaizen.id && s.state === 'CLOSED')`. See `PROJECT_TYPE_30D_KAIZEN.md §7.2`.
+  - **`RoiPanel`** — renders only when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'` AND (`Kaizen.phase === 'PHASE_4'` OR `Kaizen.state === 'CLOSED'`). Full spec in §3.12.
+- **Emits:** `KaizenBaselineLocked`, `KaizenRemeasured`, `KaizenClosed`, `ProjectPhaseAdvanced` (on Advance tap).
 
 ### 3.9 AdherenceDial
 
@@ -294,6 +299,20 @@ Ten components. Each binds to specific entities in `ARCHITECTURE.md` §2 and ren
   - **Error** ("Couldn't load linked artifact"). 
 - **Non-blocking.** Never steals focus. Always dismissible with a small ×. Dismissal emits an `AgentTelemetryEvent` with `userAction='DISMISSED'` so the Context agent learns to suppress similar suggestions.
 - **Emits:** No state changes in the domain model — read-only. Only writes to `bamx:v1:agent-telemetry` on view / dismiss.
+
+### 3.12 RoiPanel (sub-component)
+
+- **Purpose:** Capture and display the 30-Day Kaizen Accelerator's financial impact. Appears on `KaizenCard` (§3.8) when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'` AND (`Kaizen.phase === 'PHASE_4'` OR `Kaizen.state === 'CLOSED'`). Also the primary surface at the `/kaizen/:id/roi` route.
+- **Binds to:** `Kaizen.implementationCostDollars`, `Kaizen.annualBenefitsDollars`, and the computed `Kaizen.roi` getter (see `ARCHITECTURE.md §2.9` — `roi = (annualBenefitsDollars - implementationCostDollars) / implementationCostDollars`, null when either input is null or implementation cost is 0). Also surfaces baseline value (from `BaselineMetric.value`) and remeasured value (from `Remeasurement.value`) for side-by-side display.
+- **Renders:** baseline value, remeasured value, delta (absolute + %), implementation cost ($), annual benefits ($), ROI %.
+- **States:**
+  - **Empty** (PHASE_4 entered, neither dollar field captured): two editable number inputs (labels: "Implementation cost (USD)", "Annual benefits (USD)") + a "Compute ROI" button. ROI row shows "—".
+  - **Partial** (one dollar field captured): ROI row still "—" with inline text: "Both cost and benefits required before phase advancement to CLOSED."
+  - **Complete** (both fields set): ROI row shows the computed percent (e.g., "+233%"). Panel remains editable while `Kaizen.phase === 'PHASE_4'`.
+  - **Read-only** (`Kaizen.state === 'CLOSED'`): all inputs disabled; ROI row shows final value; footer shows capture metadata ("Captured: 30d_4_3 · 2026-05-14 · Signed off: Finance") pulled from the `30d_4_3_calculate_roi` scheduled activity's `outputArtifactRef`.
+  - **Error** ("Implementation cost must be > 0 for ROI to compute. Finance review required.") — fires when `implementationCostDollars === 0`.
+- **Inline validation:** Both dollar fields are required before phase advancement to CLOSED. The "Advance to CLOSED" button on `PhaseStepper` reads `Kaizen.roi !== null` as one of its guard conditions; when false, the button is disabled with microcopy above: "ROI not captured. Fill both cost and benefits in the ROI panel."
+- **Emits:** Writes to `Kaizen.implementationCostDollars` and `Kaizen.annualBenefitsDollars` via `KaizenService.applyRoiArtifact()` (see `PROJECT_TYPE_30D_KAIZEN.md §6.1`). On save, closes the `30d_4_3_calculate_roi` scheduled activity with a `NUMERIC` output artifact carrying the two values. No direct event emit beyond the `ActivityCompleted` from that close.
 
 ---
 

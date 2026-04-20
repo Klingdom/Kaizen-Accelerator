@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — Delivery Plan
 
 Owner: Product Manager (delivery-engineering bias)
-Status: v0.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2 (§4 MVP, §7 metrics), `ARCHITECTURE.md` v0.3, `ENGINE_DESIGN.md` v0.2, `CATALOG_GAPS.md` v0.1, `UX_FLOWS.md` v0.2.
+Status: v0.2 — v0.2 adds **E13 — 30-Day Kaizen Accelerator Project Type** per coordinator decision 2026-04-19 (see `ARCHITECTURE.md §9` item 15). Adds MVP hooks on E1 and E10 (Kaizen/CatalogEntry schema fields, disabled nav placeholder). Timeline extends from ~75 → ~100 project days. Adds R13 (procedure-text blocker) and R14 (Phase 2 4-2-2 pressure) to §5. Grounded in `PRODUCT_BLUEPRINT.md` v0.3, `ARCHITECTURE.md` v0.4, `ENGINE_DESIGN.md` v0.3, `CATALOG_GAPS.md` v0.1 + new §I, `UX_FLOWS.md` v0.2.2, and `PROJECT_TYPE_30D_KAIZEN.md` v0.1.
 Capacity assumption (global): 1 FTE engineer. 60% to this project per the BAM 4-2-2 model on a 40h/week — **24h PROJECT / week; 48h PROJECT / sprint (2 weeks).** This is the only capacity used below. No second engineer assumed.
 
 Estimate buckets: **S ≤ 2d**, **M 2–5d**, **L 5–10d**. "Day" = 6 PROJECT hours (standard BAM workday). An S task consumes ≤ 12h, an M 12–30h, an L 30–60h.
@@ -12,7 +12,7 @@ MVP scope is bounded by blueprint §4.1 (5 must-haves) + §4.2 Should-wait exclu
 
 ## 1. Epic Breakdown
 
-Twelve epics. Each is 5–15 engineer-days. Each names its MVP must-have, traces to source docs, names upstream dependencies, and states its DONE artifact.
+Thirteen epics. Each is 5–15 engineer-days. Each names its MVP must-have, traces to source docs, names upstream dependencies, and states its DONE artifact.
 
 | Epic | Title | MVP must-have served | Traces to | Depends on | DONE definition |
 |---|---|---|---|---|---|
@@ -28,6 +28,7 @@ Twelve epics. Each is 5–15 engineer-days. Each names its MVP must-have, traces
 | **E10** | UI Shell | (2)(3)(4)(5) — all UI surfaces | `UX_FLOWS §1.1–§1.4, §2.1–§2.5, §3, §4.1–§4.7, §6` | E3, E5, E6, E7, E9 | 5 top-level routes (`/today`, `/week`, `/catalog`, `/kaizen`, `/insights`) + sub-routes per §1.2. All 10 components (CycleCard, BucketStrip, ScheduledActivityBlock, CatalogPicker, IntentionField, ReflectionSheet, WeeklyReflectionWizard, KaizenCard, AdherenceDial, VarianceLogEntry) render empty/loading/success/error states. All 5 flows (§2.1–§2.5) demoable end-to-end. |
 | **E11** | Coaching Microcopy System | (4)(5) — reflection nudges + adherence coaching | `UX_FLOWS §4.6, §5.1–§5.10` | E9, E10 | 10 named triggers emit inline coaching strings per §5. Inline, non-blocking, ≤ 20 words, no emoji. Triggers wired to events (`CycleAccepted` first time, `CycleEdited` x3, `VarianceLogged` reasonCode=ESCALATION x2/week, reflection-capture lateness, `KaizenActivate` with 0 actions, composer drop-rule violations, `FrictionSignalCaptured` x3 same tag, 2-consecutive-pending reflections, `CycleRejected` confirm). |
 | **E12** | Persistence + Migration | Data integrity for (1)–(5) | `ARCHITECTURE §7.1, §7.2, §7.6`; `ENGINE_DESIGN §5.6` | E1 | `bamx:v1:meta.schemaVersion` read on boot; migration runner executes pending steps forward-only with pre-migrate backup. `exportData()` / `importData()` round-trip passes golden-blob test. Port-compat validator confirms no "embedded children" hacks. `bamx:v1:variances` `appendOnly` enforced. `bamx:v1:clusterDismissals` + `bamx:v1:pdca` keys provisioned. |
+| **E13** | 30-Day Kaizen Accelerator Project Type | (6) 30-Day Kaizen Accelerator — phased Kaizen with ROI gate | `PROJECT_TYPE_30D_KAIZEN.md §1–§11`; `ARCHITECTURE §2.2, §2.9, §3.4, §6.1, §8, §9 item 15`; `ENGINE_DESIGN §4.2`; `UX_FLOWS §3.8, §3.12, §1.2`; `CATALOG_GAPS §I` | E2 (catalog seed), E7 (Kaizen lifecycle), E10 (UI shell) | 31 Accelerator catalog entries seeded with `projectTypeBinding` + `phaseBinding`; Phase FSM + `canAdvancePhase()` + `advancePhase()` land + unit-tested per `PROJECT_TYPE_30D_KAIZEN.md §4`; composer `eligibleDmaicPayloadSteps` filters by phase; `RoiEngine.computeRoi` + `KaizenService.applyRoiArtifact` pure-function-tested; `KaizenCard` renders `PhaseStepper` + `RoiPanel` gated on `projectType`; `/kaizen/:id/phase/:phaseId` and `/kaizen/:id/roi` routes live; `AcceleratorPaceWarning` emits on prior-phase duration over target; close refused without captured ROI. |
 
 **Dependency graph (execution order):**
 
@@ -43,6 +44,10 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
     └─ E12 (parallel w/ E1 from day 1)
                           │
                           └─ E9 (after E5/E6/E7)
+
+E2 ─┐
+E7 ─┼─► E13 (30-Day Accelerator — after E2 + E7 + E10)
+E10 ┘
 ```
 
 ---
@@ -62,8 +67,9 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
 | E1-T7 | Composition FSM guard module | Pure functions that assert legal transitions per `ARCHITECTURE §3.1`. | `/js/domain/fsm/composition.js`: `canTransition(from, to, ctx)` | E1-T1 | Illegal transitions (PROPOSED → ACTIVE direct) throw; legal ones return `{ok:true}`. Unit tested against the full table in §3.1. | S |
 | E1-T8 | ScheduledActivity FSM guard module | Same, for SA. Includes IN_PROGRESS → SKIPPED disallow per §3.2. | `/js/domain/fsm/scheduledActivity.js` | E1-T1 | Unit test: IN_PROGRESS → SKIPPED throws; close requires outputArtifact+reflection (non-optional); skip requires reasonCode. | M |
 | E1-T9 | Kaizen FSM guard module (HARD RULE) | Close requires `remeasurementId !== null` AND matching metric. Abandon → DRAFT only. | `/js/domain/fsm/kaizen.js` | E1-T1 | Unit test: close without remeasurement throws `REMEASUREMENT_REQUIRED`. Abandon never reaches CLOSED. | M |
+| E1-T10 | Schema typedefs for Accelerator project-type fields | Add `ProjectType` enum + `Kaizen.projectType/phase/phaseDefinitions/implementationCostDollars/annualBenefitsDollars/startDate/controlPlanArtifactRef`, plus `CatalogEntry.projectTypeBinding/phaseBinding`. MVP hook for Next's E13. | Edits to `/js/domain/types.js` | E1-T1 | Typedefs match `ARCHITECTURE.md §2.2, §2.9`. Default `projectType='AD_HOC'` on legacy-Kaizen migration. | S (≤ 0.5d) |
 
-**E1 total: 9 tasks (1S + 3S + 1M + ...) ≈ 8–10d (L epic).**
+**E1 total: 10 tasks (1S + 3S + 1M + ...) ≈ 8.5–10.5d (L epic).**
 
 ---
 
@@ -224,8 +230,9 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
 | E10-T13 | `/today/activity/:id/skip` reason-code modal | 5 radios + OTHER text field. Submit disabled until reason selected. | Modal overlay in Shell | E5-T4 | Flow 2.5 demoable. | S |
 | E10-T14 | `/today` layout with top-strip PROJECT + Deep emphasis | PROJECT top bar; Deep blocks 1.5× visual weight; Deep block interruption warning per `UX_FLOWS §6.4`. | `/js/ui/pages/Today.js` | E10-T2, E10-T3, E10-T4 | Deep-displacement confirm modal fires per §6.4 rule 3. | M |
 | E10-T15 | `/week` view with 5 daily BucketStrip miniatures + Deep headline | Deep minutes KPI; 5 miniatures; `/week/compose`, `/week/reflect`, `/week/day/:isoDate/compose` sub-routes. | `/js/ui/pages/Week.js` | E10-T3, E10-T8 | Demoable Monday-morning Weekly compose + Friday Weekly Reflection. | M |
+| E10-T16 | Disabled `/kaizen/accelerator` nav route placeholder | "Ships in Sprint N" placeholder route to avoid 404s during Sprint 1 while E13 task surfaces haven't landed. Nav item disabled with one-line explanation. | `/js/ui/router.js` addition | E10-T1 | Nav shows disabled "30-Day Accelerator" item; tapping shows "Accelerator lands with E13 — start from the Kaizen detail view." | S (≤ 0.5d) |
 
-**E10 total: 15 tasks ≈ 14–15d.**
+**E10 total: 16 tasks ≈ 14.5–15.5d.**
 
 ---
 
@@ -261,7 +268,27 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
 
 ---
 
-**Grand total: 104 tasks** across 12 epics (E1 9, E2 9, E3 12, E4 7, E5 7, E6 7, E7 8, E8 7, E9 9, E10 15, E11 5, E12 9).
+### E13 — 30-Day Kaizen Accelerator Project Type
+
+Traces to `PROJECT_TYPE_30D_KAIZEN.md §11`. Depends on E2 (catalog seed), E7 (Kaizen lifecycle), E10 (UI shell). **Blocker:** the 31 entries' procedure text must be authored by Phil / Black-Belt partner before E13-T1 starts — see `CATALOG_GAPS §I.2` + R13 in §5.
+
+| ID | Title | Scope | Artifact | Deps | Output | Estimate |
+|---|---|---|---|---|---|---|
+| E13-T1 | Seed 31 Accelerator catalog entries | Write rows per `PROJECT_TYPE_30D_KAIZEN.md §3` + `CATALOG_GAPS §I.1`: name, bucket, `defaultDurationMinutes`, `cadence`, `trigger`, `inputs`, `outputArtifact`, `participants`, `procedure`, `dependsOn`, `projectTypeBinding='KAIZEN_ACCELERATOR_30D'`, `phaseBinding`, `isNonOptional`, `focusArea='KAIZEN_ACCELERATOR_30D'`. | Seed patch in `/js/catalog/seed/accelerator30d.js` | E2-T9, E1-T10, **procedure-text blocker resolved** | 31 entries loaded; DAG cycle-free; phase-gate entries flagged `isNonOptional=true`. | M |
+| E13-T2 | Add `ProjectType` enum + `Kaizen.projectType/phase/phaseDefinitions` fields | Land schema extensions in domain model and migrations; backfill existing Kaizens to `projectType='AD_HOC'`. | Edits to `/js/domain/types.js`, migration script in `/js/persistence/migrations/` | E1-T10, E12-T3 | Legacy Kaizens read with `projectType='AD_HOC'`; new promotion path accepts a `projectType` argument. | S |
+| E13-T3 | Add `CatalogEntry.projectTypeBinding + phaseBinding` fields | Land fields on CatalogEntry; update CatalogService validators; add DAG validator that rejects phase-binding across phase boundaries. | Edits to `CatalogService`, `/js/catalog/validate.js` | E1-T10, E2-T9 | Seeded entries round-trip the new fields; validator rejects a `dependsOn` edge that crosses phase with a null `phaseBinding` on one side. | S |
+| E13-T4 | Phase FSM + `KaizenService.advancePhase()` / `canAdvancePhase()` | Implement the 5-state FSM + abandoned path per `ARCHITECTURE §3.4` and `PROJECT_TYPE_30D_KAIZEN.md §4.3`. Emits `ProjectPhaseAdvanced`. | Edits to `/js/services/KaizenService.js`, new `/js/domain/fsm/acceleratorPhase.js` | E13-T2, E7 | All 5 guard transitions unit-tested; failing guard throws named error (`BASELINE_NOT_APPROVED`, `ROOT_CAUSE_MISSING`, `UNOWNED_ACTION`, `ROI_NOT_VALIDATED`). | M |
+| E13-T5 | Extend composer `eligibleDmaicPayloadSteps` with phase filter | Per `ENGINE_DESIGN §4.2` revision. Preserve priority-ranking function. Add Phase 1 / Phase 3 payload-isolation test from `PROJECT_TYPE_30D_KAIZEN.md §5.4`. | Edits to `/js/composer/eligibleDmaic.js` | E13-T3, E3-T5 | Unit test: during PHASE_1 a Phase 3 entry never appears in eligible set; after `advancePhase()` to PHASE_3 the Phase 3 entries appear. | S |
+| E13-T6 | `RoiEngine.computeRoi()` pure function + ROI capture flow | Implement `computeRoi(impCost, annualBenefits) -> number|null` per `PROJECT_TYPE_30D_KAIZEN.md §6.1`. Wire `KaizenService.applyRoiArtifact()` to the `30d_4_3_calculate_roi` close path. | `/js/engine/RoiEngine.js`, edits to `KaizenService` | E13-T2, E13-T4 | Three-variant pure-function test (positive, zero, negative ROI); `null` when either input missing or cost=0. | S |
+| E13-T7 | `KaizenCard` PhaseStepper sub-element | Render only when `projectType='KAIZEN_ACCELERATOR_30D'`. 5-node stepper, guard-status on current node, inline advance button. Per `UX_FLOWS §3.8`. | `/js/ui/components/PhaseStepper.js` + wiring in `KaizenCard` | E13-T4, E10-T9 | All 5 phase nodes render; advance fires `canAdvancePhase()` and either advances or shows guard message. | M |
+| E13-T8 | `RoiPanel` sub-component + `/kaizen/:id/roi` route | Editable in PHASE_4, read-only after close. Binds to `Kaizen.implementationCostDollars`, `annualBenefitsDollars`, `roi`. Per `UX_FLOWS §3.12`. | `/js/ui/components/RoiPanel.js`, route entry in router | E13-T6, E10-T9 | Save path invokes `applyRoiArtifact`; inline validation ("both fields required") shown before phase advancement to CLOSED. | M |
+| E13-T9 | `AcceleratorPaceWarning` event emission + inline warning microcopy | Compute pace per `PROJECT_TYPE_30D_KAIZEN.md §9`: `User.workDays` intersected with elapsed calendar days. No holiday model. Emit event on `advancePhase()` when prior phase's elapsed working days > spec target. Inline coaching string on KaizenCard per `UX_FLOWS §5` pattern. | Edits to `KaizenService.advancePhase()` + `/js/ui/coaching/registry.js` | E13-T4, E11-T1 | Unit test: 9-working-day Phase 1 emits `AcceleratorPaceWarning { phase:'PHASE_1', expectedMaxDays:7, actualDays:9 }`; 7-day Phase 1 emits nothing. | S |
+
+**E13 total: 9 tasks ≈ 5–8d (depends on procedure-text blocker clearing before T1 starts).**
+
+---
+
+**Grand total: 115 tasks** across 13 epics (E1 10, E2 9, E3 12, E4 7, E5 7, E6 7, E7 8, E8 7, E9 9, E10 16, E11 5, E12 9, E13 9).
 
 ---
 
@@ -295,6 +322,15 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
 | 90-day end state vs blueprint §7.4 | **Yes — the launch metric is computable.** Each signup's composed-and-accepted Daily cycles, each day's `Reflection(kind=END_OF_ACTIVITY) pending=false`, and the `Reflection(kind=WEEKLY)` row are all persisted entities. `MetricsService` can compute "% of signups who by day 14 have ≥ 7 accepted-or-edited Daily compositions + ≥ 1 END_OF_ACTIVITY reflection on each + 1 WEEKLY reflection." Denominator = signups (all users in repo). Numerator = query over compositions/reflections per the above. |
 
 **Net:** at day 90, a real single user can run a full Daily + Weekly cycle end-to-end, capture evidence, promote a Kaizen, close it with remeasurement, and see their three dashboard numbers. The launch metric is measurable.
+
+### Window 4 — Days 91–~100 — "Accelerator project type (E13)"
+
+| | |
+|---|---|
+| Theme | Land the 30-Day Kaizen Accelerator project type on the MVP backbone. Stretches the project timeline from ~75 to ~100 project days per coordinator decision 15 (`ARCHITECTURE.md §9`). |
+| Epics worked on | E13 (100%). Depends on E2, E7, E10 (all 100% by Day 90). |
+| Demoable outcomes at window end | (a) A user promotes a Kaizen with `projectType='KAIZEN_ACCELERATOR_30D'`; `KaizenCard` renders the 5-node `PhaseStepper` with Phase 0 current. (b) Closing `30d_0_6_approve_charter` with a DOCUMENT artifact advances to Phase 1. (c) During Phase 1 the composer's Deep payload comes only from the six Phase 1 entries; no Phase 3 task appears. (d) `30d_4_3_calculate_roi` close captures `implementationCostDollars` and `annualBenefitsDollars`; `RoiPanel` renders the computed ROI. (e) Close refused until both ROI inputs captured AND `30d_4_5_control_plan` + `30d_4_6_final_report` closed AND Remeasurement captured. (f) `AcceleratorPaceWarning` emits on a deliberately-slow Phase 1 fixture (9 working days vs 7 target). |
+| Launch-metric preservation | Blueprint §7.4 launch metric (day-14 composition + reflection rate) remains computable at day 90 exactly as before. **Accelerator completion doesn't need to be demonstrated for the launch metric** — it only needs to be *open-able* at day 90 (user can start an Accelerator; phase advance works; ROI capture works). Full 30-day Accelerator run-through is not required for launch success. |
 
 ---
 
@@ -343,7 +379,9 @@ E1 ─┬─ E2 ─┬─ E3 ─┬─ E8 ─┐
 | R9 | **DMAIC walk in Deep block surfaces user as homework** — engineering-heavy terminology frustrates non-CI-Champion users | PRODUCT | M | M | Catalog entry view (`/catalog/:id`) names each DMAIC step in plain language next to its number. `selectDeepPayload` falls back to `Deep Work — Project Task (generic)` when activeKaizen is null, so Practitioners don't see #26 VOC/VOB/VOA. Champion role unlocks the heavier entries; others won't see them by default (E8-T5 + role gating in `ENGINE_DESIGN §3.6`). | PM | Users ask "what's VOC" in first 7 days |
 | R10 | **Reflection 15-min on-time window is too tight** | PRODUCT | M | M | Engineering instruments `onTime` as a boolean on each reflection. If < 30% of reflections are `onTime=true` across the first 5 users after day 7, reassess the window (e.g., extend to 30 min) before launch. Microcopy 5.4 already frames late-capture as "fine, just note it" to avoid guilt spirals. | PM | `onTime=true` < 30% across first 5 users |
 | R11 | **MVP cap of 1 active Kaizen feels restrictive to CI Champion persona** | PRODUCT | L | M | MVP cap is explicit. Champion persona is a blueprint §6.4 user — not prioritized for MVP launch. Multiple concurrent Kaizens ship in Next per §5.2. If a Champion signs up and complains, that's qualitative data for the Next scope decision, not an MVP change. | PM | Champion-role signup complains about cap |
-| R12 | **1 FTE engineer timeline pressure** — 12 epics × 5–15d = 60–180 engineer days; 90 days of 4-2-2 = ~75 project days | OPS | H | H | Capacity math is tight. Two buffers: (a) E11 coaching microcopy scope is strictly the 10 named triggers — no extras. (b) E10-T14 Deep emphasis is "full-width treatment" only; drag gestures are basic. Hard cut if slipping: descope AdherenceDial sparklines (save 2d) and `/week` Deep-minutes headline (save 3d) to Next. Do NOT cut any invariant enforcement or the HARD RULE. | PM | Sprint 1 or 2 burndown slips >20% |
+| R12 | **1 FTE engineer timeline pressure** — 13 epics (incl. E13) × 5–15d = 65–188 engineer days; stretched to ~100 project days per decision 15 | OPS | H | H | Capacity math is tight. Three buffers: (a) E11 coaching microcopy scope is strictly the 10 named triggers — no extras. (b) E10-T14 Deep emphasis is "full-width treatment" only; drag gestures are basic. (c) E13 sized M (5–8d); Window 4 is dedicated to it. Hard cut if slipping: descope AdherenceDial sparklines (save 2d) and `/week` Deep-minutes headline (save 3d) to Next. Do NOT cut any invariant enforcement, the HARD RULE, or the Accelerator phase/ROI guards. | PM | Sprint 1 or 2 burndown slips >20% |
+| R13 | **Accelerator procedure-text not authored by Phil before E13-T1.** `CATALOG_GAPS §I.2` names 31 procedure blocks to write; if they aren't reviewed before E13 begins, the Accelerator ships with placeholder procedures that users will see in-product. | SCOPE | M | H | PM / Black-Belt dedicated authoring sprint before E13 starts (Sprint 12 or Window 4 Day 1–3). Drafts exist in `PROJECT_TYPE_30D_KAIZEN.md §3` as a starting point. Fallback: ship placeholder procedure text with a "DRAFT" flag rendered in the catalog detail view; patch real procedures in before Accelerator GA. Do NOT block E13-T1 on procedure review if it means missing the 100-day mark; ship draft with flag. | PM / Black-Belt partner | Window 4 Day 1 check: if procedure authoring not at ≥ 90% by Day 1 AM, engineering proceeds with DRAFT flag. |
+| R14 | **Phase 2 4-2-2 pressure.** Phase 2 packs PROJECT-bucket Deep blocks with Phase 2 catalog entries for 3–5 consecutive days. The 4-2-2 invariant is preserved (no per-day override, per decision 15) but users running a Kaizen Event virtually may hit `ComposerInfeasible` when real external meetings overflow COMMUNICATION. | PRODUCT | M | M | Expose capacity settings prominently during Phase 2 (settings link inline on `PhaseStepper` when `phase='PHASE_2'`); users can raise `dailyCapacityMinutes` for the event window. Instrument `ComposerInfeasible` fired count during Phase 2. **Trigger:** `ComposerInfeasible` fires > 2× during any user's Phase 2 → prompt user to raise capacity or trim the external-meeting load for the event window. Do NOT add a Phase 2 per-day 4-2-2 override; that defeats the product. | PM | `ComposerInfeasible` count > 2 during any user's Phase 2 window |
 
 ---
 

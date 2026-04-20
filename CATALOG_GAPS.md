@@ -21,6 +21,9 @@ Count summary:
 - 6 rows with duration but only a link, no steps (§C)
 - 7 rows with duration but completely blank procedure (§D)
 - 50 rows missing cross-cutting metadata (§E)
+- 31 new 30-Day Kaizen Accelerator entries pending procedure authoring (§I)
+
+**Total:** ~23 rows need content work + all 50 need metadata augmentation + **31 new Accelerator entries pending procedure-text authoring** (build-start blocker for `DELIVERY_PLAN.md` E13-T1 — see §I.2 and `DELIVERY_PLAN.md §5 R13`).
 
 ---
 
@@ -450,3 +453,62 @@ These are not in `Business Agility Standard Work.txt` but are required for the c
 ### H.3 Team-ceremony placement in single-user MVP
 
 Team ceremonies (Sprint Planning, Daily Standup, Mid-Sprint Review, Sprint Review, Sprint Retrospective, Quarterly Planning) remain in the catalog and can be scheduled on the individual user's calendar in single-user MVP. They are placed manually on the correct sprint day by the user (or auto-placed by the Weekly composer at sprint boundaries — see `ARCHITECTURE.md` §4). They consume COMMUNICATION bucket time on the days they fire. True multi-participant team mode (shared Sprint Backlog, team adherence view) ships in Next per blueprint §5.2.
+
+---
+
+## I. 30-Day Kaizen Accelerator Catalog Entries
+
+**Status:** 31 new catalog entries bound to `projectTypeBinding='KAIZEN_ACCELERATOR_30D'`, `focusArea='KAIZEN_ACCELERATOR_30D'`. Authoritative source for the full specs (inputs, output artifact schema, participants, procedure steps, `dependsOn` edges, duration, cadence, trigger): **`PROJECT_TYPE_30D_KAIZEN.md §3`**.
+
+Each entry is also bound to a phase (`phaseBinding='PHASE_0'|'PHASE_1'|'PHASE_2'|'PHASE_3'|'PHASE_4'`) and is only eligible as Deep-block payload while `Kaizen.phase === entry.phaseBinding` (see `ARCHITECTURE.md §2.2` invariants and `ENGINE_DESIGN.md §4.2`).
+
+### I.1 Compact summary — 31 entries
+
+| Task # | Name | Phase | Bucket | Duration (min) | isNonOptional |
+|---|---|---|---|---|---|
+| 0.1 | Identify Candidate Process | PHASE_0 | COMMUNICATION | 60 | false |
+| 0.2 | Define Project Scope | PHASE_0 | PROJECT | 90 | false |
+| 0.3 | Define Problem Statement | PHASE_0 | PROJECT | 60 | false |
+| 0.4 | Define Success Metrics | PHASE_0 | PROJECT | 60 | false |
+| 0.5 | Identify Stakeholders + Team | PHASE_0 | COMMUNICATION | 60 | false |
+| 0.6 | Approve Project Charter | PHASE_0 | COMMUNICATION | 60 | **true** (phase gate) |
+| 1.1 | Collect Workflow Data | PHASE_1 | PROJECT | 240 | false |
+| 1.2 | Build Current-State Process Map | PHASE_1 | PROJECT | 180 | false |
+| 1.3 | Define Activity-Level Metrics | PHASE_1 | PROJECT | 120 | false |
+| 1.4 | Identify Waste (TIMWOODS) | PHASE_1 | PROJECT | 120 | false |
+| 1.5 | Generate Current-State SOPs | PHASE_1 | PROJECT | 180 | false |
+| 1.6 | Validate Baseline with Stakeholders | PHASE_1 | COMMUNICATION | 60 | **true** (phase gate) |
+| 2.1 | Prepare Kaizen Event | PHASE_2 | COMMUNICATION | 60 | false |
+| 2.2 | Review Current State | PHASE_2 | COMMUNICATION | 120 | false |
+| 2.3 | Perform Root Cause Analysis | PHASE_2 | PROJECT | 180 | false |
+| 2.4 | Design Future-State Workflow | PHASE_2 | PROJECT | 180 | false |
+| 2.5 | Define Improvements | PHASE_2 | PROJECT | 120 | false |
+| 2.6 | Create Implementation Backlog | PHASE_2 | PROJECT | 120 | **true** (phase gate) |
+| 2.7 | Define Future-State SOPs | PHASE_2 | PROJECT | 180 | **true** (phase gate) |
+| 3.1 | Assign Ownership | PHASE_3 | COMMUNICATION | 60 | **true** (phase gate) |
+| 3.2 | Schedule Work Blocks | PHASE_3 | COMMUNICATION | 60 | false |
+| 3.3 | Execute Improvements | PHASE_3 | PROJECT | 240 | false |
+| 3.4 | Track Progress Daily | PHASE_3 | CI | 15 | false |
+| 3.5 | Resolve Blockers | PHASE_3 | COMMUNICATION | 60 | false |
+| 3.6 | Update SOPs in Real-Time | PHASE_3 | CI | 30 | **true** (phase gate) |
+| 4.1 | Rebaseline Workflow | PHASE_4 | PROJECT | 180 | **true** (phase gate) |
+| 4.2 | Compare Before vs After | PHASE_4 | PROJECT | 90 | false |
+| 4.3 | Calculate Financial Impact | PHASE_4 | PROJECT | 120 | **true** (phase gate — writes ROI) |
+| 4.4 | Validate Results with Stakeholders | PHASE_4 | COMMUNICATION | 60 | **true** (phase gate) |
+| 4.5 | Create Control Plan | PHASE_4 | PROJECT | 120 | **true** (phase gate) |
+| 4.6 | Final Report | PHASE_4 | PROJECT | 180 | **true** (phase gate) |
+
+Bucket mapping follows §H rules: stakeholder conversations / approvals → `COMMUNICATION`; analytical / authoring / execution work → `PROJECT`; tracking / adjustment / reflection → `CI`.
+
+### I.2 Authoring backlog — PENDING procedure-text authoring (blocker for E13-T1)
+
+**Same blocker class as §F question 3** (DMAIC "Asana Module?" rows needed inline procedures). The 31 Accelerator entries all have a proposed procedure in `PROJECT_TYPE_30D_KAIZEN.md §3`, but those drafts need black-belt review and sign-off before they are seeded into the live catalog.
+
+- **Missing field:** `procedure` (ordered step list, a / b / c …) — the drafts in `PROJECT_TYPE_30D_KAIZEN.md §3` are the starting point; each needs Phil / Black-Belt partner review, tightening for the operational definition, and sign-off.
+- **Owner:** Phil / Black-Belt partner.
+- **Scope:** All 31 entries above. No other field blocks seed; the spec fully specifies `inputs`, `outputArtifact`, `participants`, `trigger`, `dependsOn`, `projectTypeBinding`, `phaseBinding`, `isNonOptional`, `bucket`, `defaultDurationMinutes`, and `cadence`.
+- **Blocker target:** Must resolve **before `DELIVERY_PLAN.md` E13-T1** ("Seed 31 Accelerator catalog entries") begins. Tracked as `DELIVERY_PLAN §5 R13` with a dedicated authoring sprint before E13 starts; fallback is placeholder procedure text with a "DRAFT" flag in-product if unresolved.
+
+### I.3 Cadence inference rule addition
+
+Append to §E.1 rule-table (implicitly): **"30-Day Accelerator step gated by prior step completion → Event-driven within Accelerator phase"** applies to all 31 entries (same pattern as DMAIC #20–#41 under `Event-driven within DMAIC project phase`). Daily-cadenced exception: `30d_3_4_track_progress_daily` fires once per day during Phase 3 (CI bucket, 15 min).

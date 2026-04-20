@@ -1,7 +1,7 @@
 # BAM-X Kaizen Operating System — Product Blueprint
 
 Owner: Product Manager / CTO Agent
-Status: Draft v0.2 — grounded in `docs/Business Agility Standard Work.txt`, `docs/BAM-X-COMPLETE-BUILD-INSTRUCTIONS.txt`, and `docs/📘 The BAM Way_ Agile Project Mastery.pdf`. Downstream agents (system-architect, ux-designer, backend, frontend, analytics) should treat this as the authoritative scope document.
+Status: Draft v0.3 — v0.3 pulls the 30-Day Kaizen Accelerator project type into MVP: adds project-type framing to §3, a sixth MVP must-have in §4.1, and a corresponding MVP feature-hierarchy entry in §5.1. See `PROJECT_TYPE_30D_KAIZEN.md` for the authoritative spec and `ARCHITECTURE.md` v0.4 / `DELIVERY_PLAN.md` v0.2 for data-model and delivery impact. v0.2 grounded in `docs/Business Agility Standard Work.txt`, `docs/BAM-X-COMPLETE-BUILD-INSTRUCTIONS.txt`, and `docs/📘 The BAM Way_ Agile Project Mastery.pdf`. Downstream agents (system-architect, ux-designer, backend, frontend, analytics) should treat this as the authoritative scope document.
 
 > **Assumption:** "BAM-X Kaizen OS" is the executable product surface for the BAM framework described in *The BAM Way* and the 50-activity Standard Work catalog. The marketing site (`index.html`, `kaizen-accelerator.html`) and the 30-Day Accelerator consulting offering are treated as a sibling delivery layer that can later consume this OS, not as the scope of this blueprint.
 
@@ -130,21 +130,26 @@ Output is a filled cycle the user can **Accept**, **Edit**, or **Reject**. Accep
 - **Non-optional (standard work — cannot be silently skipped):** Daily Standup; morning and post-lunch High-value Communication blocks; Sprint Planning; Mid-Sprint Review; Sprint Review; Sprint Retrospective; end-of-cycle reflection (daily / weekly). Skipping any of these requires a reason code and is logged as a variance event.
 - **Configurable (user or team may choose):** which CI activity fills the daily 2h CI bucket; which DMAIC/Kaizen payload fills Deep Work; 1:1 participants and timing; whether a Document Review appears on a given day; whether Sprint 7 reset fires this quarter.
 
+### 3.5 Project types — composing catalog entries into multi-sprint workflows
+
+The catalog is the primitive; **project types** are the compositions that sequence catalog entries into multi-sprint project workflows. Four project types ship as first-class discriminators on the `Kaizen` entity: **DMAIC** (multi-sprint walk through catalog #20–#41 as a DAG), **Kaizen Event** (time-boxed composition over #42–#50), **30-Day Kaizen Accelerator** (phased 30-day engagement format with 31 dedicated catalog entries, a 5-phase FSM, and an ROI gate), and **Ad-Hoc** (user-promoted Kaizen from a friction cluster with no fixed timeline). Each project type has its own eligibility scope over the catalog — an entry bound to a project type is only available as Deep-block payload when the user's active Kaizen matches. See `PROJECT_TYPE_30D_KAIZEN.md` for the first fully specified project template (the 30-Day Accelerator).
+
 ---
 
 ## 4. MVP Scope (strict)
 
 The MVP is a single-user, single-team web application that runs one person's Daily and Weekly cycles end-to-end from the Standard Work catalog, and produces one validated Kaizen per month from captured evidence. Sprint and Monthly composers ship in Next.
 
-### 4.1 Must-have (MVP) — five items
+### 4.1 Must-have (MVP) — six items
 
 1. **Standard Work Catalog as seeded data.** The catalog from §3.1 ships with the product as editable data (name, focus area, duration, cadence, procedure, inputs, outputs, participants). Users can enable / disable entries for their role but cannot delete the non-optional set. The catalog is the source of truth for every scheduled block.
 2. **Daily cycle auto-composer.** Given role, capacity, and active Kaizen, the composer proposes tomorrow's day as a filled 4-2-2 composition of catalog activities, respecting the non-optional set in §3.4. The user can Accept / Edit / Reject before save. A saved day is the commitment artifact.
 3. **Weekly cycle auto-composer.** At week open (or Sunday evening), the composer proposes the week as five Daily cycles plus the weekly non-optional activities (Mid-Sprint Review if mid-sprint, one 1:1, one L&D tick, 6S Email if tripped). User accepts or edits.
 4. **End-of-cycle reflection tied to Kaizen promotion.** 60-second reflection at close of each catalog activity (plan vs actual + one friction signal), and a guided 20-minute Weekly Reflection that pulls the week's variances and friction signals into a DMAIC worksheet. A single active Kaizen per user is promoted from this queue with baseline / goal / actions / remeasurement. No Kaizen can be closed without a remeasured number.
 5. **Adherence + composition dashboard.** Three numbers visible on login: (a) standard-work adherence % over last 14 days (non-optional activities completed vs scheduled), (b) composition acceptance rate % (cycles accepted without edit vs proposed), (c) delta on the active Kaizen's primary metric vs. baseline.
+6. **30-Day Kaizen Accelerator project type — phased (Phase 0 → Phase 4), with ROI validation required for close.** Users may run one active Accelerator at a time under the MVP one-Kaizen cap. The Accelerator is a `Kaizen` with `projectType='KAIZEN_ACCELERATOR_30D'`, 31 dedicated catalog entries, a phase FSM with guard-checked advancement, and a close step that refuses without both remeasurement and captured ROI (`implementationCostDollars` + `annualBenefitsDollars`). Authoritative spec: `PROJECT_TYPE_30D_KAIZEN.md`.
 
-> **Assumption:** Sprint and Monthly composers are pushed to Next. Justification: the Daily + Weekly composers already cover >80% of a user's scheduled time, and both Sprint Planning and Sprint Review are themselves catalog activities that can be placed manually on the correct week in MVP. Shipping the Sprint composer correctly requires modeling sprint phase state, two-week rollovers, and the 6+1 monthly pattern — none of which add behavior that a user can't get from a hand-placed Sprint Planning block in MVP. If the Sprint composer is required at GA, the priority cut goes against dashboard breadth (only (a) ships), not against the composers themselves.
+> **Assumption:** Sprint and Monthly composers are pushed to Next. Justification: the Daily + Weekly composers already cover >80% of a user's scheduled time, and both Sprint Planning and Sprint Review are themselves catalog activities that can be placed manually on the correct week in MVP. Shipping the Sprint composer correctly requires modeling sprint phase state, two-week rollovers, and the 6+1 monthly pattern — none of which add behavior that a user can't get from a hand-placed Sprint Planning block in MVP. If the Sprint composer is required at GA, the priority cut goes against dashboard breadth (only (a) ships), not against the composers themselves. The six MVP must-haves above are the full scope; nothing else ships in MVP without a coordinator decision.
 
 ### 4.2 Should-wait (Next — not MVP)
 
@@ -184,6 +189,7 @@ The MVP is a single-user, single-team web application that runs one person's Dai
 - End-of-activity reflection (60-second structured prompt)
 - Weekly Reflection (guided 20-minute DMAIC flow producing one Kaizen candidate)
 - Single active Kaizen record (baseline, goal, actions, remeasurement, close-with-evidence)
+- 30-Day Kaizen Accelerator (phased Kaizen with ROI gate) — `projectType='KAIZEN_ACCELERATOR_30D'`, 5-phase FSM, 31 bound catalog entries, ROI capture required for close; see `PROJECT_TYPE_30D_KAIZEN.md`
 - Friction signal capture (any reflection can tag "friction" → Kaizen candidate queue)
 - Variance log (every skip or override of a non-optional activity has a reason code, queryable)
 - Adherence + composition dashboard (three numbers, always visible on login)
