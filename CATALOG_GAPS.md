@@ -1,7 +1,7 @@
 # Standard Work Catalog — Gaps & Proposed Defaults
 
 Owner: Product Manager / CTO Agent
-Status: Draft v0.1 — companion to `PRODUCT_BLUEPRINT.md` §3.1
+Status: Draft v0.2 — §A-§D procedure text approved; §F open questions resolved; §I Accelerator procedures pending v0.2 review (see `PROJECT_TYPE_30D_KAIZEN.md` §3)
 Source: `docs/Business Agility Standard Work.txt`
 
 ## Purpose
@@ -29,11 +29,11 @@ Count summary:
 
 ## A. Fully missing (no hours, no procedure) — 4 rows
 
-### A.1 Activity #17 — RESERVED
+### A.1 Activity #17 — RESERVED ✓ Approved
 
-> **Needs Phil.** The source skips from #16 to #18 with no row. Both neighbors are Communications. Either (a) the number was skipped intentionally and the catalog is 49 items numbered 1–50 with #17 reserved; or (b) a Communications activity is missing (likely candidates: Inbox / Chat Management, Written Status Update, Escalation Handling). Do not seed until resolved.
+**Coordinator decision (2026-04-19, §F Q1):** RESERVED. The BAM source intentionally skipped #17. The catalog is **49 numbered items** with #17 as a reserved slot. **Do not invent a new Communications activity.** Seed the catalog as a 49-entry set; #17 is simply absent.
 
-### A.2 Activity #19 — Refining Program Plan
+### A.2 Activity #19 — Refining Program Plan ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -46,7 +46,7 @@ Count summary:
 | Trigger | Mid-Sprint Review (Fri Wk1) OR program-plan-drift signal (milestone slipped, scope changed) |
 | Procedure | a. Open current Program Plan and latest sprint outcomes. b. Identify gaps: slipped milestones, changed scope, new dependencies, resource shifts. c. Incorporate stakeholder feedback from last week's 1:1s and reviews. d. Update milestone dates, owners, and dependency links. e. Note the diff in a short changelog block. f. Publish updated plan to team channel. |
 
-### A.3 Quarterly Planning (unnumbered row, between #19 and Sprint Planning)
+### A.3 Quarterly Planning (unnumbered row, between #19 and Sprint Planning) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -59,7 +59,7 @@ Count summary:
 | Trigger | First working day of each quarter |
 | Procedure | a. Review prior quarter: OKR confidence vs actual, Kaizens closed with validated benefit, sprint-goal completion rate. b. Align to org priorities and externally imposed constraints for the coming quarter. c. Draft quarterly OKRs (3–5). d. Lay out 6 sprints + 1 reset sprint (Sprint 7) on the calendar. e. Allocate Kaizen portfolio across sprints (which DMAIC / Kaizen projects land in which sprints). f. Identify Sprint 7 reset scope (backlog hygiene, L&D catch-up, retros of retros). g. Publish to team, schedule Sprint 1 Planning. |
 
-### A.4 Activity #20 — DMAIC Project Charter
+### A.4 Activity #20 — DMAIC Project Charter ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -78,7 +78,7 @@ Count summary:
 
 Hours and name are declared; procedure is blank or says "Missing - Asana Module?". Proposing procedure text below; metadata defaults follow §E.
 
-### B.1 Activity #23 — DMAIC Stakeholder Analysis (1.0h)
+### B.1 Activity #23 — DMAIC Stakeholder Analysis (1.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -89,7 +89,7 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 | Trigger | DMAIC Charter signed |
 | Procedure | a. List all stakeholders impacted by or influencing the project (customers, process partners, approvers, users, downstream consumers). b. For each, rate Influence (H/M/L) and Interest (H/M/L). c. Plot on 2x2 grid (High-Influence-High-Interest = manage closely; H-Inf-L-Int = keep satisfied; L-Inf-H-Int = keep informed; L-Inf-L-Int = monitor). d. Assign engagement approach and owner per quadrant. e. Document in Stakeholder Analysis template; feed into Communication Plan (#24). |
 
-### B.2 Activity #24 — DMAIC Communication Plan (1.0h)
+### B.2 Activity #24 — DMAIC Communication Plan (1.0h) ✓ Approved (v0.2 polish)
 
 | Field | Proposed default |
 |---|---|
@@ -98,9 +98,9 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 | Output | Communication Plan matrix (stakeholder × frequency × channel × format × owner) |
 | Participants | Project Lead |
 | Trigger | Stakeholder Analysis complete |
-| Procedure | a. For each stakeholder quadrant from #23, define: cadence (weekly / biweekly / monthly), channel (chime, email, meeting, dashboard), format (status note, dashboard link, slides), owner, and acceptance criterion ("did the stakeholder read / acknowledge?"). b. Schedule recurring updates on the project calendar (e.g., sponsor monthly 30-min review, team weekly 15-min sync). c. Publish Communication Plan to project space; revisit at each sprint boundary. |
+| Procedure | a. Open the Stakeholder Analysis from #23; copy the four quadrants into the Communication Plan matrix. b. For each stakeholder row, define: cadence (daily / weekly / biweekly / monthly), channel (chat, email, meeting, dashboard, 1:1), format (status note, dashboard link, slide deck, verbal), and owner. c. Write an acceptance criterion per row (e.g., "sponsor opens the dashboard at least once per month" or "team member acknowledges weekly status in chat"). d. Book recurring calendar holds for every synchronous touchpoint (e.g., sponsor monthly 30-min review, team weekly 15-min sync). e. Publish the Communication Plan to the project space; revisit and update the matrix at each Sprint Retrospective. |
 
-### B.3 Activity #25 — DMAIC Risk and Mitigation Plan (1.0h)
+### B.3 Activity #25 — DMAIC Risk and Mitigation Plan (1.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -111,7 +111,7 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 | Trigger | Post-Charter; refresh at each Sprint Retrospective |
 | Procedure | a. Brainstorm risks in four buckets: technical, organizational, timeline, resource. b. For each risk, rate Probability (1–5) and Impact (1–5); compute score = P × I. c. For risks with score ≥ 12, write a mitigation plan and assign a risk owner. d. For risks with score 6–11, write a monitoring plan. e. Record in Risk Register template. f. Review at every Sprint Retrospective; retire mitigated risks and add new ones. |
 
-### B.4 Activity #26 — DMAIC VOC/VOB/VOA Analysis (2.0h)
+### B.4 Activity #26 — DMAIC VOC/VOB/VOA Analysis (2.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -122,7 +122,7 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 | Trigger | Post-Charter |
 | Procedure | a. **Voice of Customer (VOC):** Interview 3–5 customers, capture complaints, requests, pain points, and delight moments. b. **Voice of Business (VOB):** Interview 2–3 business leaders, capture strategic, financial, and compliance needs. c. **Voice of Associate (VOA):** Interview 3–5 associates running the process, capture pain points, workarounds, and waste observations. d. Translate each raw voice item into a CTQ requirement (measurable attribute — e.g., "response time < 4h" not "fast response"). e. Prioritize CTQs by frequency, severity, and strategic fit. f. Document in VOC/VOB/VOA template; feed into Output DCP (#22) and C&E Matrix (#34). |
 
-### B.5 Activity #42 — Kaizen Project Charter (2.0h)
+### B.5 Activity #42 — Kaizen Project Charter (2.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -133,7 +133,7 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 | Trigger | Kaizen candidate approved for event (typically from weekly reflection or CI Practitioner review) |
 | Procedure | a. State problem in one paragraph with scope and pain observed. b. Document business case (current waste / cost / risk; expected benefit). c. Define event scope (process, boundaries, in/out). d. Set goal statement: baseline X → target Y by event end + 30 days. e. Identify event team: Lead, Process Owner, SMEs, Sponsor. f. Schedule event window (typically 1–5 consecutive days, or 3 sprints with event-mode blocks). g. Identify top 3 risks and initial mitigations. h. Obtain Sponsor signature. |
 
-### B.6 Activity #50 — Kaizen Process Owner Transition (1.0h)
+### B.6 Activity #50 — Kaizen Process Owner Transition (1.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -148,9 +148,9 @@ Hours and name are declared; procedure is blank or says "Missing - Asana Module?
 
 ## C. Only a template link, no procedure — 6 rows
 
-Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Benefits Translator SOP" but no inline steps. Proposing inline procedures below; metadata in §E.
+Each row originally had hours and a pointer like "Link to 16 Step Process" or "Link to Benefits Translator SOP" but no inline steps. Per §F Q6 (Coordinator-Approved 2026-04-19), MVP ships **self-contained inline procedures** — no external template links. Metadata defaults follow §E.
 
-### C.1 Activity #22 — DMAIC Output Data Collection Plan (2.0h)
+### C.1 Activity #22 — DMAIC Output Data Collection Plan (2.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -161,7 +161,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Post-SIPOC, before Baseline (#28) |
 | Procedure | a. List CTQ output metrics (Y's) from VOC/VOB/VOA. b. For each metric, document: operational definition, unit of measure, measurement method (manual / instrument / extract), sampling plan (n, frequency, stratification), collection owner, tool, data storage location. c. If measurement risk exists (subjective rating, manual gage), run MSA (#31) before locking. d. Pilot DCP for one cycle (e.g., 1 week) to catch ambiguity. e. Lock DCP and proceed to Baseline (#28). |
 
-### C.2 Activity #27 — DMAIC Continuous Reporting Framework (2.0h)
+### C.2 Activity #27 — DMAIC Continuous Reporting Framework (2.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -172,7 +172,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Post-Baseline (#28) |
 | Procedure | a. Define reporting cadence (weekly or monthly). b. Select metrics to report: baseline, current, target, delta, trend direction, sigma level, financial delta. c. Build dashboard (Quip / Looker / Tableau / equivalent) linked to DCP data source. d. Assign dashboard owner and monthly review slot. e. Publish link to stakeholders per Communication Plan (#24). |
 
-### C.3 Activity #28 — DMAIC Baseline Output Performance Data (10.0h)
+### C.3 Activity #28 — DMAIC Baseline Output Performance Data (10.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -183,7 +183,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Output DCP locked |
 | Procedure | a. Execute DCP for baseline period (30 working days OR 30 samples, whichever produces stable statistics). b. Collect data per plan; log any deviations. c. If manual measurement, verify with MSA (#31) before accepting. d. Compute summary statistics: n, mean, median, standard deviation, min, max, Cp / Cpk (if spec limits), process sigma. e. Build baseline Control Chart (#29). f. Record baseline value and statistics in the Charter (#20) as the locked reference point for remeasurement. |
 
-### C.4 Activity #39 — DMAIC Financial Benefit Translator (10.0h)
+### C.4 Activity #39 — DMAIC Financial Benefit Translator (10.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -194,18 +194,18 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Baseline complete (projection) OR post-improvement (actual) |
 | Procedure | a. Identify benefit categories: hard-dollar cost reduction, revenue lift, quality / rework reduction, risk avoidance. b. Quantify current cost / loss per period at baseline performance. c. Project post-improvement cost / loss at target performance. d. Compute annualized net benefit = 12 × monthly delta. e. Apply confidence rating: **Hard** (directly in P&L), **Soft** (time / capacity freed), **Cost Avoidance** (prevented future loss). f. Obtain Finance-partner sign-off. g. Register benefit in portfolio benefits ledger; revisit at project close and 90 days post-close. |
 
-### C.5 Activity #43 — Kaizen Output Data Collection Plan (2.0h)
+### C.5 Activity #43 — Kaizen Output Data Collection Plan (2.0h) ✓ Approved (v0.2 — shorthand expanded)
 
 | Field | Proposed default |
 |---|---|
 | Cadence | Event-driven (Kaizen event Day 1) |
 | Inputs | Kaizen Charter (#42), Event SIPOC (#45) |
-| Output | Kaizen DCP (same structure as DMAIC Output DCP #22, scoped to event window) |
+| Output | Kaizen DCP document with one row per CTQ output metric (operational definition, measurement method, pre/post sampling plan, owner, tool) |
 | Participants | Kaizen Lead + Team |
 | Trigger | Event start |
-| Procedure | Same as #22 DMAIC Output DCP, but scoped to the Kaizen event window (typically 1–5 days), with lighter sampling plan. Emphasis on capturing pre-event and post-event snapshots rather than a 30-sample rolling baseline. |
+| Procedure | a. List the 1–3 CTQ output metrics (Y's) named in the Kaizen Charter (#42) goal statement. b. For each metric, document: operational definition, unit of measure, measurement method (manual observation, system extract, stopwatch, instrument), pre-event sampling plan (n ≥ 10 observations or 1 representative event window), post-event sampling plan (same method, same n, collected within 30 days of event end), collection owner, tool, and storage location. c. If measurement is subjective or manual, run a quick 3-appraiser MSA (#31 pattern, compressed to 1 hour) on 5 samples before collecting pre-event baseline. d. Execute pre-event collection on Day 1 of the event; lock the dataset before any improvements are made. e. Schedule post-event collection on the calendar for event end + 30 days; owner receives the reminder. f. Store DCP alongside the Kaizen Charter; feed pre/post data into the Results Narrative (#49). |
 
-### C.6 Activity #49 — Kaizen Project Results Narrative 3 Pager (2.0h)
+### C.6 Activity #49 — Kaizen Project Results Narrative 3 Pager (2.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -220,7 +220,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 
 ## D. Hours present, procedure completely blank — 7 rows
 
-### D.1 Activity #30 — DMAIC Process Capability Report (1.0h)
+### D.1 Activity #30 — DMAIC Process Capability Report (1.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -231,7 +231,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Baseline data locked |
 | Procedure | a. Verify data normality (histogram, normal-probability plot, Anderson-Darling). If non-normal, transform or use non-parametric method. b. Define spec limits (USL / LSL) from CTQ or customer requirement. c. Calculate short-term capability: Cp = (USL − LSL) / 6σ̂, Cpk = min((USL − μ) / 3σ̂, (μ − LSL) / 3σ̂). d. Calculate long-term performance: Pp, Ppk using overall standard deviation. e. Compute DPMO and process sigma. f. Document in Capability Report template; flag if Cpk < 1.33. |
 
-### D.2 Activity #31 — DMAIC MSA Report (3.0h)
+### D.2 Activity #31 — DMAIC MSA Report (3.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -242,7 +242,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Output DCP drafted; before locking |
 | Procedure | a. Select 10 samples that cover the expected process range. b. Have 2–3 appraisers measure each sample 2–3 times in randomized order. c. Compute Gage R&R: repeatability (equipment variation) and reproducibility (appraiser variation). d. Acceptance: %R&R < 10% excellent, 10–30% marginal (acceptable if cost-justified), > 30% unacceptable. e. If unacceptable, fix the measurement system (retrain, recalibrate, redefine operational definition) and re-run MSA before proceeding. f. Document results and decision. |
 
-### D.3 Activity #33 — DMAIC Quick Win Improvements (20.0h)
+### D.3 Activity #33 — DMAIC Quick Win Improvements (20.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -253,7 +253,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Quick-win candidate identified (lead time < 1 week, cost < $1K, effort < 2 person-days) |
 | Procedure | a. Candidate filter: lead time < 1 week AND cost < $1K AND effort < 2 person-days AND reversible. b. Get Process Owner approval (verbal is fine if reversible). c. Implement change. d. Measure impact on primary metric before and after (min 5 observations each side). e. Log in Quick Wins log: name, hypothesis, before / after, decision (keep / revert). f. Feed kept wins into Improvement Backlog (#38) for scaling; log reverted ones as learnings. |
 
-### D.4 Activity #35 — DMAIC Inputs Data Collection Plan (8.0h)
+### D.4 Activity #35 — DMAIC Inputs Data Collection Plan (8.0h) ✓ Approved (v0.2 — shorthand expanded)
 
 | Field | Proposed default |
 |---|---|
@@ -262,9 +262,9 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Output | Input DCP filled (one row per prioritized X) |
 | Participants | Project Lead + Team |
 | Trigger | Post-C&E Matrix, before Correlation / Regression (#36) |
-| Procedure | Same structure as Output DCP (#22) but for input variables (X's) instead of output variables (Y's). For each prioritized input: operational definition, unit, measurement method, sampling plan, collection owner, tool, storage. Lock DCP. Execute for minimum 30 paired observations (X, Y) to support correlation and regression analysis in #36. |
+| Procedure | a. Take the top-scored X variables from the C&E Matrix (#34) — typically the 4–6 inputs with the highest Y-impact scores. b. For each prioritized X, document: operational definition, unit of measure, measurement method (manual / instrument / extract / observational), sampling plan (n ≥ 30 paired X-Y observations, frequency, stratification rules), collection owner, tool, and data storage location. c. For each X-Y pair, confirm the time-stamp key that joins the X observation to its corresponding Y observation. d. If any X is measured by a subjective or manual method, run MSA (#31) for that X before locking. e. Pilot the Input DCP for one cycle (typically 1 week) to catch ambiguity in the operational definition; fix and re-pilot if n < 80% of plan. f. Lock the Input DCP. g. Execute for a minimum of 30 paired X-Y observations; store the joined dataset for Correlation and Regression (#36). |
 
-### D.5 Activity #36 — DMAIC Correlation and Regression (3.0h)
+### D.5 Activity #36 — DMAIC Correlation and Regression (3.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -275,7 +275,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Input DCP data collected (min 30 paired observations) |
 | Procedure | a. Load paired X (input) and Y (output) data. b. Run pairwise correlation matrix; note |r| > 0.4 for potential drivers. c. Fit regression: start with simple linear per significant X, escalate to multiple regression or non-linear as diagnostics warrant. d. Check R² (> 0.7 strong), p-values (< 0.05 significant), residual plots (homoscedasticity, normality, no pattern). e. Identify the vital few X's (Pareto principle — typically 2–3 X's explain most of Y variation). f. Document model, vital X's, and leverage points in Correlation & Regression report. g. Feed vital X's into FMEA (#37) and Improve phase. |
 
-### D.6 Activity #38 — DMAIC Process Improvement Backlog (1.0h)
+### D.6 Activity #38 — DMAIC Process Improvement Backlog (1.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -286,7 +286,7 @@ Each row has hours and a pointer like "Link to 16 Step Process" or "Link to Bene
 | Trigger | Post-FMEA or at each sprint boundary |
 | Procedure | a. Aggregate all improvement candidates from FMEA (#37), Quick Wins pending (#33), VOC gaps (#26), and retro action items. b. For each item: name, one-sentence description, Day-2-Done criteria (observable acceptance), effort estimate (hours or t-shirt size), impact estimate on primary metric. c. Score priority (RICE, WSJF, or simple Impact × Confidence ÷ Effort). d. Publish prioritized list to Sprint Planning (#Sprint Planning) for Process Owner selection. e. Carry unfinished items to next sprint. |
 
-### D.7 Activity #41 — DMAIC Project Results Narrative Document (4.0h)
+### D.7 Activity #41 — DMAIC Project Results Narrative Document (4.0h) ✓ Approved
 
 | Field | Proposed default |
 |---|---|
@@ -382,22 +382,41 @@ The blueprint rule is that **no catalog activity can be closed without its requi
 
 ---
 
-## F. Open questions for Phil before seed
+## F. Coordinator-Approved Decisions (2026-04-19)
 
-1. **Activity #17:** reserved (catalog is 49 numbered items), or missing a Communications activity that should be added? (See §A.1.)
-2. **Activities #19, Quarterly Planning, #20:** accept proposed durations (2.0h, 4.0h, 2.0h)? (See §A.2–A.4.)
-3. **DMAIC "Asana Module?" rows (#23, #24, #25):** accept inline procedures above, or keep as "external tool reference" and let the MVP link out to Asana / similar?
-4. **BAM Way Ch. 14 role-based standard work:** should Practitioner / Facilitator / Leader / Champion daily and sprint commitments be merged into the catalog as additional rows before MVP seed, or kept as a separate role-overlay layer?
-5. **Bulk-fill metadata (§E):** accept the rule-based defaults for cadence / inputs / outputs / participants / trigger as the MVP seed, then refine per-row in-product, or require Phil-signed defaults for each of the 50 rows before seed?
-6. **Output artifacts that reference external templates ("Writing Hub PRFAQ", "Benefits Translator SOP", "16 Step Process", "Quip Template"):** are these templates still the canonical artifact source, or should MVP ship its own templates and deprecate the external links?
+Decisions locked by coordinator ruling on 2026-04-19. **Do not re-open.** Each decision has a one-line rationale.
+
+| # | Question | Decision | Rationale |
+|---|---|---|---|
+| Q1 | **Activity #17 — reserved, or new Communications activity?** | **RESERVED.** Catalog seed = **49 numbered items**; #17 is a reserved slot with no row. Do not invent a Communications activity. | The BAM source (`docs/Business Agility Standard Work.txt`) intentionally skipped #17; inventing a new activity would depart from canonical source. |
+| Q2 | **Durations for #19 / Quarterly Planning / #20?** | **ACCEPT** 2.0h / 4.0h / 2.0h. | Durations align with BAM siblings (#18 = 2h; BAM Way Ch. 5 quarter kickoff = half-day; Sprint Planning = 2h). |
+| Q3 | **DMAIC "Asana Module?" rows (#23, #24, #25) — inline procedures or external Asana links?** | **ACCEPT inline procedures** in §B.1–B.3. MVP is standalone; no external Asana Module dependency. | Customer environments may not have the referenced Asana modules; MVP ships self-contained procedures. |
+| Q4 | **BAM Way Ch. 14 role-based standard work — merge into catalog now?** | **DEFER to Next.** Not needed for MVP seed. | Role-overlay layer is additive; MVP can ship the 49-row catalog + 31 Accelerator entries without it. |
+| Q5 | **Bulk-fill metadata rules in §E — accept for MVP?** | **ACCEPT as MVP default.** Iterate in-product based on first-user feedback. | Per-row Phil review of all 50 rows would delay seed; rule-based defaults are reversible. |
+| Q6 | **External template links ("Writing Hub", "Benefits Translator SOP", "16 Step Process", "Quip Template")?** | **DEPRECATE in MVP.** Ship own inline procedures. | MVP is standalone; external links create brittle dependencies and break in customer environments. |
+
+### F.1 Impact on §A–§D
+
+All §A.2–A.4, §B, §C, §D procedures above are now marked **✓ Approved** and are ready for seed. Two entries were expanded in v0.2 to remove shorthand references:
+
+- **§C.5 Activity #43 Kaizen DCP** — was "Same as #22"; expanded to 6 explicit steps scoped to the Kaizen event window.
+- **§D.4 Activity #35 Inputs DCP** — was "Same structure as Output DCP (#22)"; expanded to 7 explicit steps for X-variable collection with MSA gate.
+
+One entry was polished for clarity:
+- **§B.2 Activity #24 Communication Plan** — expanded from 3 to 5 steps; added explicit stakeholder-matrix copy step and Retrospective refresh cadence.
+
+All other §A–§D procedures were left as-is; they were already complete and usable.
 
 ---
 
 ## G. Handoff
 
-- **If this doc is approved as-is:** the 23 rows with content gaps and all 50 rows' metadata are ready to be seeded into the Standard Work Catalog entity for MVP. The catalog seed passes downstream to `system-architect` (defines the Catalog Entry entity) and `backend-engineer` (ships the seed migration).
-- **If sections need rework:** mark edits inline in this file; re-run catalog completion before handing off.
+**Status (2026-04-19):** §A–§D procedures are **APPROVED and ready for seed**. §F open questions **RESOLVED** (see §F table above). The build-start blocker for `DELIVERY_PLAN.md` **E2-T1 is RESOLVED**; Sprint 1 may proceed.
+
+- **Ready for seed now:** the ~23 rows with content gaps (§A.2, §A.3, §A.4, §B.1–B.6, §C.1–C.6, §D.1–D.7) and the bulk-fill metadata rules in §E apply to all 49 rows. The catalog seed passes downstream to `system-architect` (defines the Catalog Entry entity) and `backend-engineer` (ships the seed migration).
+- **§I 30-Day Accelerator procedures:** see `PROJECT_TYPE_30D_KAIZEN.md §3` for the 31 Accelerator entries, now at v0.2 and authored to Black-Belt standard. Phil review is requested on §3 content; treated as locked for E13-T1 unless Phil redlines.
 - **Out of scope here:** the four BAM ceremonies that already have full procedures in the source (Sprint Planning, Daily Standup, Sprint Review, Sprint Retrospective) only need the §E metadata fields appended — no procedure work required.
+- **Future rework path:** if any approved procedure needs revision post-seed, mark edits inline in this file and bump the row's version; catalog supports in-product refinement.
 
 ---
 
