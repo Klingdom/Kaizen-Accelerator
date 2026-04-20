@@ -15,7 +15,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: bamx/web:latest
+    # No `image:` — compose builds locally only. Setting image:bamx/web:latest
+    # caused Hostinger's panel to try Docker Hub pulls on redeploy (bamx/web
+    # doesn't exist there), failing before the local build could run.
     container_name: bamx-web
     restart: unless-stopped
     ports:
