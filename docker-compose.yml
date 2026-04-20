@@ -54,8 +54,20 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    logging:
+      # Cap logs so a chatty container can't eat VPS disk.
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
+      # bamx-net: private, reserved for future internal services (e.g., db)
+      # proxy-net: shared with Nginx Proxy Manager so NPM can route
+      #   <yourdomain> → bamx-web:80 directly over the Docker network,
+      #   without going through the host-bound 8090 port. Let's Encrypt
+      #   termination happens in NPM.
       - bamx-net
+      - proxy-net
 
   # ─────────────────────────────────────────────────────────────────────────
   # Uncomment when MVP graduates to the future-state architecture per
@@ -92,3 +104,10 @@ volumes:
 networks:
   bamx-net:
     driver: bridge
+  proxy-net:
+    # External: declared by another compose project (Nginx Proxy Manager) and
+    # shared across projects. Create once on the VPS if it doesn't exist:
+    #   docker network create proxy-net
+    # If NPM was deployed with a different shared-network name, change it here.
+    external: true
+    name: proxy-net
