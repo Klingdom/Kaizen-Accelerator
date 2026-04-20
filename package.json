@@ -1,0 +1,13 @@
+{
+  "name": "bamx-kaizen-os",
+  "version": "0.0.1",
+  "description": "BAM-X Kaizen Operating System MVP — vanilla JS, zero runtime dependencies.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
