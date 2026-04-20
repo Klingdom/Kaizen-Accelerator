@@ -94,14 +94,12 @@ Future state (when Sprint 5+ migrates off localStorage): uncomment the `db` serv
 
 ### Multi-project deployment (sharing a VPS with other apps)
 
-If the VPS already runs other projects on ports 80 / 443, bamx needs alternate host ports. Set these in the Hostinger panel's environment variables for the compose project:
+Default host-side ports are `8080` / `8443` (not `80` / `443`) so bamx can be deployed on a VPS that already runs other projects. The container still listens on 80 / 443 internally; only the host-side binding changes. After deploy, bamx is reachable at `http://<VPS_IP>:8080`.
 
-```
-HTTP_PORT_HOST=8080
-HTTPS_PORT_HOST=8443
-```
+**Overriding ports:** host-port mapping is driven by docker-compose variable substitution, which reads from a `.env` file at the repo root. It does NOT read from Hostinger panel env vars (those go into the container, not the shell). To change host ports on Hostinger, either:
 
-The container still listens on 80 / 443 internally; only the host-side binding changes. After a redeploy, bamx is reachable at `http://<VPS_IP>:8080`.
+- Commit a `.env` file at the repo root with `HTTP_PORT_HOST=80` and `HTTPS_PORT_HOST=443` (only safe on a dedicated VPS — don't commit to a public repo if it conflicts with other deployments).
+- Fork the repo and edit `docker-compose.yml` port lines directly.
 
 **Auto-HTTPS caveat:** Caddy's default Let's Encrypt flow uses ACME HTTP-01 (needs port 80 publicly reachable on this container) or TLS-ALPN-01 (needs port 443). When bamx is on alt ports, pick one:
 

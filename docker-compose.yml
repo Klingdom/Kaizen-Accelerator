@@ -19,12 +19,18 @@ services:
     container_name: bamx-web
     restart: unless-stopped
     ports:
-      # Host-side ports are configurable so bamx can co-exist with other projects
-      # on the same VPS. The container ALWAYS listens on 80/443 internally; only
-      # the host binding changes. If your VPS has 80/443 free, leave defaults.
-      # If taken, set HTTP_PORT_HOST and HTTPS_PORT_HOST to free ports.
-      - "${HTTP_PORT_HOST:-80}:80"
-      - "${HTTPS_PORT_HOST:-443}:443"
+      # Host-side ports default to 8080 / 8443 so bamx can co-exist with other
+      # projects on a shared VPS without colliding on 80 / 443. The container
+      # ALWAYS listens on 80 / 443 internally; only the host binding changes.
+      #
+      # Override via a committed .env file at the repo root if you want
+      # different host ports (e.g., HTTP_PORT_HOST=80 for dedicated VPSes):
+      #   echo 'HTTP_PORT_HOST=80' > .env
+      #   echo 'HTTPS_PORT_HOST=443' >> .env
+      # Hostinger panel env vars become CONTAINER env vars, not shell-scope
+      # vars for compose substitution, so they cannot change host ports.
+      - "${HTTP_PORT_HOST:-8080}:80"
+      - "${HTTPS_PORT_HOST:-8443}:443"
     environment:
       # DOMAIN=localhost disables TLS; DOMAIN=<real-domain> enables auto-HTTPS.
       # NOTE: Caddy's automatic Let's Encrypt HTTP-01 / TLS-ALPN-01 challenges
