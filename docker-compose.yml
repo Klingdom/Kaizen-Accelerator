@@ -29,7 +29,7 @@ services:
       #   echo 'HTTPS_PORT_HOST=443' >> .env
       # Hostinger panel env vars become CONTAINER env vars, not shell-scope
       # vars for compose substitution, so they cannot change host ports.
-      - "${HTTP_PORT_HOST:-8080}:80"
+      - "${HTTP_PORT_HOST:-8090}:80"
       - "${HTTPS_PORT_HOST:-8443}:443"
     environment:
       # DOMAIN=localhost disables TLS; DOMAIN=<real-domain> enables auto-HTTPS.
