@@ -50,12 +50,14 @@
 
 	# Do not serve the design docs, tests, config, CI, or git plumbing even
 	# if they leak into the image. Defense in depth on top of .dockerignore.
+	# Caddy named matchers allow only one unnamed path_regexp, so multiple
+	# regexes must each carry a name.
 	@forbidden {
 		path /ARCHITECTURE.md /PRODUCT_BLUEPRINT.md /UX_FLOWS.md /ENGINE_DESIGN.md
 		path /DELIVERY_PLAN.md /AI_AGENTS.md /CATALOG_GAPS.md /PROJECT_TYPE_30D_KAIZEN.md
 		path /Dockerfile /Caddyfile /docker-compose.yml /.env* /.dockerignore
-		path_regexp ^/(\.git|\.github|\.claude|tests|docs|process-service|config)(/.*)?$
-		path_regexp ^/package(-lock)?\.json$
+		path_regexp dirs ^/(\.git|\.github|\.claude|tests|docs|process-service|config)(/.*)?$
+		path_regexp pkgfiles ^/package(-lock)?\.json$
 	}
 	respond @forbidden 404
 
