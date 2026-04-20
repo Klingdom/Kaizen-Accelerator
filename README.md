@@ -92,6 +92,24 @@ Current MVP:
 
 Future state (when Sprint 5+ migrates off localStorage): uncomment the `db` service in `docker-compose.yml` and add an `app` service for the Next.js API layer. The entity shapes in `js/domain/types.js` already port cleanly to the Postgres schema sketched in `ARCHITECTURE.md` §7.3 (port-compat rule, §7.2).
 
+### Multi-project deployment (sharing a VPS with other apps)
+
+If the VPS already runs other projects on ports 80 / 443, bamx needs alternate host ports. Set these in the Hostinger panel's environment variables for the compose project:
+
+```
+HTTP_PORT_HOST=8080
+HTTPS_PORT_HOST=8443
+```
+
+The container still listens on 80 / 443 internally; only the host-side binding changes. After a redeploy, bamx is reachable at `http://<VPS_IP>:8080`.
+
+**Auto-HTTPS caveat:** Caddy's default Let's Encrypt flow uses ACME HTTP-01 (needs port 80 publicly reachable on this container) or TLS-ALPN-01 (needs port 443). When bamx is on alt ports, pick one:
+
+- **Recommended — host-level reverse proxy.** Run [Nginx Proxy Manager](https://nginxproxymanager.com/) or Traefik on ports 80 / 443 of the VPS. Route `kaizen.yourdomain.com` → `bamx-web:80` on the internal Docker network. The proxy terminates TLS; Caddy inside bamx serves plain HTTP (set `DOMAIN=localhost` on the bamx container so its own Caddy skips TLS).
+- **DNS-01 challenge.** Configure Caddy with your DNS provider's API credentials so it can complete the ACME DNS-01 challenge without needing public port 80 / 443 on this container. Works across any port setup but requires DNS API secrets.
+
+For the simplest first-run, deploy HTTP-only on alt ports (`DOMAIN=localhost`, `HTTP_PORT_HOST=8080`), verify the app works, then add a reverse proxy.
+
 ### Routine operations
 
 ```bash

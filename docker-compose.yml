@@ -19,10 +19,20 @@ services:
     container_name: bamx-web
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      # Host-side ports are configurable so bamx can co-exist with other projects
+      # on the same VPS. The container ALWAYS listens on 80/443 internally; only
+      # the host binding changes. If your VPS has 80/443 free, leave defaults.
+      # If taken, set HTTP_PORT_HOST and HTTPS_PORT_HOST to free ports.
+      - "${HTTP_PORT_HOST:-80}:80"
+      - "${HTTPS_PORT_HOST:-443}:443"
     environment:
       # DOMAIN=localhost disables TLS; DOMAIN=<real-domain> enables auto-HTTPS.
+      # NOTE: Caddy's automatic Let's Encrypt HTTP-01 / TLS-ALPN-01 challenges
+      # require the public internet to reach THIS container on ports 80 / 443.
+      # If you have bamx on alt host ports (e.g., 8080 / 8443), you MUST front
+      # it with a host-level reverse proxy that terminates TLS and routes by
+      # Host header, OR switch Caddy to the ACME DNS-01 challenge. See README
+      # "Multi-project deployment" for both patterns.
       DOMAIN: ${DOMAIN:-localhost}
       ACME_EMAIL: ${ACME_EMAIL:-admin@localhost}
       HTTP_PORT: ${HTTP_PORT:-80}
