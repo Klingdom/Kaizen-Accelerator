@@ -42,9 +42,17 @@ export const PdcaExperimentClosed = 'PdcaExperimentClosed';
 // --- Composer -----------------------------------------------------------------
 export const ComposerInfeasible = 'ComposerInfeasible';
 
-// --- Accelerator project type (30-Day Kaizen) --------------------------------
+// --- Phased project types (Accelerator + Kaizen 90 + AD_HOC) -----------------
 export const ProjectPhaseAdvanced = 'ProjectPhaseAdvanced';
-export const AcceleratorPaceWarning = 'AcceleratorPaceWarning';
+// ProjectPaceWarning generalizes AcceleratorPaceWarning (ARCHITECTURE v0.5 §6.1
+// + decisions log item 19). Payload carries a `projectType` discriminator. For
+// AD_HOC projects the emitter is `targetCloseDate`-based with
+// `kind='AD_HOC_OVERRUN'` (ARCHITECTURE v0.6 decisions log item 23).
+export const ProjectPaceWarning = 'ProjectPaceWarning';
+
+// Scope-change audit event (ARCHITECTURE v0.5 §6.1 + decisions log item 20).
+// Informational/audit only — does NOT auto-pause the Kaizen.
+export const ScopeChangeRequested = 'ScopeChangeRequested';
 
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
@@ -74,7 +82,8 @@ export const EVENT_NAMES = Object.freeze([
   PdcaExperimentClosed,
   ComposerInfeasible,
   ProjectPhaseAdvanced,
-  AcceleratorPaceWarning
+  ProjectPaceWarning,
+  ScopeChangeRequested
 ]);
 
 /**
@@ -104,6 +113,7 @@ export default Object.freeze({
   PdcaExperimentClosed,
   ComposerInfeasible,
   ProjectPhaseAdvanced,
-  AcceleratorPaceWarning,
+  ProjectPaceWarning,
+  ScopeChangeRequested,
   EVENT_NAMES
 });

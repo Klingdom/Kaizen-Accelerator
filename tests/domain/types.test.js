@@ -95,12 +95,13 @@ describe('types.js — entity introspection', () => {
 });
 
 describe('types.js — enum values', () => {
-  test('ProjectType has exactly the four spec values', () => {
+  test('ProjectType has exactly the five spec values (v0.5: KAIZEN_EVENT_90D added)', () => {
     assert.deepEqual(Object.values(ProjectType).sort(), [
       'AD_HOC',
       'DMAIC',
       'KAIZEN_ACCELERATOR_30D',
-      'KAIZEN_EVENT'
+      'KAIZEN_EVENT',
+      'KAIZEN_EVENT_90D'
     ]);
   });
 
@@ -371,7 +372,19 @@ describe('types.js — required fields appear in source', () => {
       'implementationCostDollars',
       'annualBenefitsDollars',
       'startDate',
-      'controlPlanArtifactRef'
+      'controlPlanArtifactRef',
+      // v0.5 fields folded from operating standards
+      'controlPlanDraftArtifactRef',
+      'implementationLeadUserId',
+      'roiPassNumber',
+      'roiProjections',
+      'validatedRootCauseArtifactRef',
+      'sustainmentCheckIns',
+      'sustainmentGatePassed',
+      'scopeChanges',
+      // v0.6 fields from ADHOC_PDCA_STANDARD
+      'targetCloseDate',
+      'sourcePdcaExperimentId'
     ],
     BaselineMetric: [
       'id',

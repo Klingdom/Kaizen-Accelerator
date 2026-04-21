@@ -19,11 +19,17 @@
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {'DMAIC' | 'KAIZEN_EVENT' | 'KAIZEN_ACCELERATOR_30D' | 'AD_HOC'} ProjectType
+ * ProjectType (ARCHITECTURE §2.9). v0.5 adds KAIZEN_EVENT_90D as the 5th
+ * value — the 90-day Kaizen Event project per Option B recommendation in
+ * KAIZEN_EVENT_STANDARD v1.0. KAIZEN_EVENT remains the standalone 1–5 day
+ * burst semantics from ENGINE_DESIGN §4.3.
+ *
+ * @typedef {'DMAIC' | 'KAIZEN_EVENT' | 'KAIZEN_EVENT_90D' | 'KAIZEN_ACCELERATOR_30D' | 'AD_HOC'} ProjectType
  */
 export const ProjectType = Object.freeze({
   DMAIC: 'DMAIC',
   KAIZEN_EVENT: 'KAIZEN_EVENT',
+  KAIZEN_EVENT_90D: 'KAIZEN_EVENT_90D',
   KAIZEN_ACCELERATOR_30D: 'KAIZEN_ACCELERATOR_30D',
   AD_HOC: 'AD_HOC'
 });
@@ -259,12 +265,16 @@ export const PdcaClosedReason = Object.freeze({
  */
 
 /**
- * Kaizen action row (§2.9).
+ * Kaizen action row (§2.9). `strategic` flag (v0.5) weights the Accelerator
+ * Phase 3→4 advancement guard: strategic items veto the advance regardless of
+ * overall action-count completion. Optional; absent = false.
+ *
  * @typedef {object} KaizenAction
  * @property {string} name
  * @property {string} ownerRef
  * @property {string} dueDate   // ISO date
  * @property {string|null} doneAt
+ * @property {boolean} [strategic]   // Accelerator Phase 3→4 weighted guard
  */
 
 /**
@@ -318,8 +328,8 @@ export const PdcaClosedReason = Object.freeze({
  * @property {number} version
  * @property {string} sourceRef
  * @property {string[]} dependsOn                        // DMAIC DAG parent CatalogEntry ids
- * @property {ProjectType|null} projectTypeBinding       // E1-T10
- * @property {string|null} phaseBinding                  // E1-T10 — e.g. 'PHASE_0'..'PHASE_4'
+ * @property {ProjectType|ProjectType[]|null} projectTypeBinding   // v0.5: set-valued when an entry serves multiple project types (e.g. #42–#50 bind to KAIZEN_EVENT and KAIZEN_EVENT_90D per CATALOG_GAPS §K)
+ * @property {string|null} phaseBinding                  // E1-T10 — e.g. 'PHASE_0'..'PHASE_4' (Accelerator) or 'PRE_EVENT'|'EVENT'|'POST_EVENT'|'SUSTAIN' (Kaizen 90)
  */
 export const CatalogEntry = null;
 
@@ -471,12 +481,26 @@ export const FrictionSignal = null;
  *
  * // ---- E1-T10 / §2.9 Accelerator project-type fields ----
  * @property {ProjectType} projectType                   // default 'AD_HOC' on legacy migration
- * @property {string|null} phase                         // 'PHASE_0'..'PHASE_4' for Accelerator; null otherwise
+ * @property {string|null} phase                         // 'PHASE_0'..'PHASE_4' for Accelerator; 'PRE_EVENT'|'EVENT'|'POST_EVENT'|'SUSTAIN' for Kaizen 90; null otherwise
  * @property {ProjectPhaseDefinition[]|null} phaseDefinitions
  * @property {number|null} implementationCostDollars
  * @property {number|null} annualBenefitsDollars
  * @property {string} startDate                          // ISO date; required on create
- * @property {object|null} controlPlanArtifactRef        // Phase 4.5 output artifact ref
+ * @property {object|null} controlPlanArtifactRef        // signed Control Plan output artifact ref
+ *
+ * // ---- v0.5: folded from ACCELERATOR / DMAIC / KAIZEN_EVENT_90D standards ----
+ * @property {object|null} controlPlanDraftArtifactRef   // Accelerator: Phase 2 draft output of 30d_2_5. DMAIC: Improve-phase draft. Null for other types.
+ * @property {string|null} implementationLeadUserId      // FK User. Required non-null for projectType='KAIZEN_EVENT_90D'. Null otherwise.
+ * @property {number|null} roiPassNumber                 // DMAIC two-pass: 1 (projected at Improve) or 2 (actual at Control). Null for single-pass types.
+ * @property {object[]|null} roiProjections              // DMAIC audit trail: [{passNumber, implementationCostDollars, annualBenefitsDollars, confidenceTier, financePartnerUserId, capturedAt}]. Null for single-pass.
+ * @property {object|null} validatedRootCauseArtifactRef // DMAIC: {schema, value, confoundCheckPassed, validatedBy, validatedAt}. Required before Analyze→Improve.
+ * @property {object[]|null} sustainmentCheckIns         // Post-CLOSED 30/60/90 day check-ins: [{dueDate, kind, completedAt, observedMetricValue, adherenceOk, notes}]. Null for FAILED_HONEST / abandoned.
+ * @property {boolean|null} sustainmentGatePassed        // Kaizen 90: Facilitator attestation at Day 70 (adoption ≥80% × 2 consecutive weeks, no rollbacks). Required true before ACTIVE→IN_REMEASUREMENT for KAIZEN_EVENT_90D.
+ * @property {object[]} scopeChanges                     // Append-only audit log: [{changeRequestedAt, reason, impactAssessment, approved, approvedBy, approvedAt}]. Populated from ScopeChangeRequested events.
+ *
+ * // ---- v0.6: folded from ADHOC_PDCA_STANDARD v1.0 ----
+ * @property {string|null} targetCloseDate               // ISO date. Required non-null for projectType='AD_HOC'. Drives ProjectPaceWarning(kind='AD_HOC_OVERRUN') emission.
+ * @property {string|null} sourcePdcaExperimentId        // FK PdcaExperiment. Set when promoted from PDCA via closedReason='SUPERSEDED_BY_KAIZEN'. Distinct from sourceFrictionSignalIds.
  */
 export const Kaizen = null;
 

@@ -12,8 +12,8 @@ import * as events from '../../js/events/events.js';
 import { EVENT_NAMES } from '../../js/events/events.js';
 
 // This is the authoritative list — verbatim from ARCHITECTURE §6.1.
-// The backlog spec also requires ProjectPhaseAdvanced + AcceleratorPaceWarning
-// (22 + 2 = 24 total).
+// v0.5 renamed AcceleratorPaceWarning → ProjectPaceWarning and added
+// ScopeChangeRequested (22 + 3 = 25 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -38,7 +38,8 @@ const EXPECTED = [
   'PdcaExperimentClosed',
   'ComposerInfeasible',
   'ProjectPhaseAdvanced',
-  'AcceleratorPaceWarning'
+  'ProjectPaceWarning',
+  'ScopeChangeRequested'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {
