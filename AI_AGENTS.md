@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — AI Agents Layer
 
 Owner: AI Systems Designer Agent
-Status: Draft v0.1 — grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3, `ENGINE_DESIGN.md` v0.2, `UX_FLOWS.md` v0.2, `CATALOG_GAPS.md` v0.1 §H, and `DELIVERY_PLAN.md` (12 epics, Next-window additions).
+Status: Draft v0.1.1 — v0.1.1 extends the Reflection Agent (§2.4) with R5: PDCA tick-10 mandatory-review prompt. Agent now subscribes to `PdcaTickCommitted` and surfaces a persistent `/today` banner with four action chips (Graduate / Abandon / Promote / Continue-revised) when an experiment reaches 10 ticks without graduating. Not a hard block; acknowledgment is logged to `bamx:v1:agent-telemetry`. Per `ADHOC_PDCA_STANDARD §10` refinement + `ARCHITECTURE §2.13` invariant. Grounded in `ARCHITECTURE.md` v0.6. v0.1 original: grounded in `PRODUCT_BLUEPRINT.md` v0.2, `ARCHITECTURE.md` v0.3, `ENGINE_DESIGN.md` v0.2, `UX_FLOWS.md` v0.2, `CATALOG_GAPS.md` v0.1 §H, and `DELIVERY_PLAN.md` (12 epics, Next-window additions).
 Scope: the AI layer that sits **beside** the deterministic engine. It never replaces the engine. MVP ships scripted heuristics inside `UX_FLOWS §4.6 + §5` coaching; LLM-powered variants and cross-week pattern agents ship in Next per blueprint §4.2 and §5.2 ("AI coach inside composer", "AI weekly DMAIC draft").
 
 > **Terminology reconciliation.** All entities, events, routes, services, and components referenced below use the names from the upstream docs (`ARCHITECTURE.md` §2–§6, `UX_FLOWS.md` §1–§5, `ENGINE_DESIGN.md` §1–§5, `CATALOG_GAPS.md §H`). No new names. Discovered shortfalls are flagged as `> **Architecture gap:** …` with a proposed resolution and referred back to `ARCHITECTURE.md §9` for landing.
@@ -375,6 +375,7 @@ fn contextAgent(ctx) -> AgentSuggestion[]:
 - `ReflectionCaptured { onTime }` — throughout the week, maintain a running cluster count.
 - `FrictionSignalCaptured { frictionSignalId }` — add to `KaizenCandidateQueue` cluster map by `tag`.
 - `VarianceLogged` — contributes to the "3 escalation variances this week" hint for Thu close-of-day (step 4 pre-selection rationale).
+- `PdcaTickCommitted { pdcaExperimentId, consecutiveTargetHits }` — maintain per-experiment tick count; on the 10th tick without graduation, emit the mandatory-review prompt (R5 below).
 - Scheduled runs:
   - Thursday afternoon (close-of-Thu or Thu 16:00 local) — emit an advance hint `MICROCOPY` on `/today` ("3 escalation variances this week; Friday's reflection will cluster these.").
   - Friday morning on `/today` load — surface the week's 5 Friction Signals as pre-read.
@@ -452,6 +453,28 @@ fn reflectionAgent(ctx, trigger) -> AgentSuggestion[]:
       }
     return [suggestion]
 
+  # R5 — PDCA tick-10 mandatory review (per ARCHITECTURE §2.13 + ADHOC_PDCA_STANDARD §2.B)
+  # Fires on the 10th PdcaTickCommitted event for an experiment that has not yet CLOSED.
+  # Not a hard block — user may tick 11+ after explicit acknowledgment logged to telemetry.
+  if trigger.kind == 'PdcaTickCommitted':
+    exp = PdcaExperimentRepo.get(trigger.pdcaExperimentId)
+    if exp.state != 'CLOSED' and exp.tickActivityIds.length == 10:
+      return [REFLECTION_PROMPT_AUGMENT {
+        kind: 'REFLECTION_PROMPT_AUGMENT', slot: 'Today.banner.pdcaReview',
+        mandatoryReview: {
+          experimentId: exp.id,
+          hypothesis: exp.hypothesis,
+          consecutiveTargetHits: exp.consecutiveTargetHits,
+          options: ['GRADUATE', 'ABANDON', 'PROMOTE', 'CONTINUE_REVISED'],
+          rationale: "Experiment reached 10 ticks without graduation. Pick one before scheduling tick 11."
+        },
+        basisEntityRefs: [exp.id, ...exp.tickActivityIds]
+      }]
+    # On further ticks (11+), suppress — the user already acknowledged.
+    if exp.state != 'CLOSED' and exp.tickActivityIds.length > 10 and !exp.tickTenReviewAcknowledged:
+      # Re-surface if never acknowledged (stale banner).
+      return [/* same REFLECTION_PROMPT_AUGMENT as above, stickier slot */]
+
   return []
 ```
 
@@ -471,7 +494,7 @@ CONTEXT (entity excerpts only):
 TASK: produce the three drafts. If evidence count < 3 per field, abstain (null).
 ```
 
-**UI surface.** `REFLECTION_PROMPT_AUGMENT` is consumed by `WeeklyReflectionWizard` (`UX_FLOWS §3.7`) at step 1 (preread list), step 2 (variance count aid), step 3 (top-3 clustered tags read-only aid), step 4 (pre-selected cluster + dismissed hint). `MICROCOPY` renders on `/today` banner per `§5.8` / `§5.9`.
+**UI surface.** `REFLECTION_PROMPT_AUGMENT` is consumed by `WeeklyReflectionWizard` (`UX_FLOWS §3.7`) at step 1 (preread list), step 2 (variance count aid), step 3 (top-3 clustered tags read-only aid), step 4 (pre-selected cluster + dismissed hint). The PDCA tick-10 variant (R5) renders as a persistent banner at the top of `/today` with four action chips (Graduate / Abandon / Promote / Continue with revised hypothesis) — the user's chip selection is logged to `bamx:v1:agent-telemetry` as `userAction='ACKNOWLEDGED'` with a `reviewDecision` payload field, which flips `exp.tickTenReviewAcknowledged=true` (UI-only flag; not a stored PdcaExperiment field, tracked via the agent-suggestion's lifecycle state). `MICROCOPY` renders on `/today` banner per `§5.8` / `§5.9`.
 
 **KPI lift target.** Validated Kaizens / MAU / month (blueprint §7.5 target ≥1.0). Secondary: First Weekly Reflection by end of week 2 (§7.3 leading indicator).
 

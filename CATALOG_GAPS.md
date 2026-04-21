@@ -1,7 +1,7 @@
 # Standard Work Catalog — Gaps & Proposed Defaults
 
 Owner: Product Manager / CTO Agent
-Status: Draft v0.3 — v0.3 adds §J (authoritative DMAIC DAG edges for `#20`–`#41` with two-pass `#39` Financial Benefit Translator semantics) and §K (Kaizen 90 catalog bindings for `#42`–`#50` to `KAIZEN_EVENT_90D` with phase mapping), per operating-standard recommendations in `DMAIC_STANDARD §11.2` item 7 and `KAIZEN_EVENT_STANDARD §11.5` item 9. Updates §F count summary to include §J + §K. Grounded in `ARCHITECTURE.md` v0.5. v0.2 approved §A–§D procedure text; §F open questions resolved; §I Accelerator procedures pending v0.2 review (see `PROJECT_TYPE_30D_KAIZEN.md` §3).
+Status: Draft v0.3.1 — v0.3.1 adds a 5th generic catalog entry in §H.2: **Lessons Learned** (CI bucket, 30–60 min), seeded as the artifact that `KaizenService.close()` requires before transitioning any Kaizen to `CLOSED` (applies across every `projectType` and every `closeKind`). Grounded in `ARCHITECTURE.md` v0.6 Lessons-Learned-at-CLOSED invariant. Per `ADHOC_PDCA_STANDARD §10` refinement #2. v0.3 adds §J (authoritative DMAIC DAG edges for `#20`–`#41` with two-pass `#39` Financial Benefit Translator semantics) and §K (Kaizen 90 catalog bindings for `#42`–`#50` to `KAIZEN_EVENT_90D` with phase mapping), per operating-standard recommendations in `DMAIC_STANDARD §11.2` item 7 and `KAIZEN_EVENT_STANDARD §11.5` item 9. Updates §F count summary to include §J + §K. v0.2 approved §A–§D procedure text; §F open questions resolved; §I Accelerator procedures pending v0.2 review (see `PROJECT_TYPE_30D_KAIZEN.md` §3).
 Source: `docs/Business Agility Standard Work.txt`
 
 ## Purpose
@@ -472,6 +472,7 @@ These are not in `Business Agility Standard Work.txt` but are required for the c
 | Value-Added Communication (generic) | COMMUNICATION | variable | Ad-hoc comms not covered by a named ceremony or #14–#16 |
 | End-of-Activity Reflection | CI | 60 sec | Fires at close of every Scheduled Activity; feeds Friction Signal queue |
 | Weekly Reflection (20-min DMAIC) | CI | 20 min | Fri afternoon anchor; promotes at most one Kaizen candidate from the week's evidence |
+| Lessons Learned | CI | 30–60 min | Fires at every Kaizen close (every `projectType`, every `closeKind`). `outputArtifact.schema=DOCUMENT` capturing what-worked / what-didn't / next-to-try. **`KaizenService.close()` refuses to transition `Kaizen.state` to `CLOSED` unless a CLOSED `ScheduledActivity` of this entry with matching `linkedKaizenId` and non-null `outputArtifactRef` exists.** Per `ARCHITECTURE §2.9` Lessons Learned invariant + `ADHOC_PDCA_STANDARD §10` refinement #2. |
 
 ### H.3 Team-ceremony placement in single-user MVP
 
