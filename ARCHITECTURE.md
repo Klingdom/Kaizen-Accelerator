@@ -1,7 +1,7 @@
 # BAM-X Kaizen OS — System Architecture
 
 Owner: System Architect Agent
-Status: Draft v0.4 — v0.4 pulls the 30-Day Kaizen Accelerator project type into MVP: adds `CatalogEntry.projectTypeBinding` + `phaseBinding`, `Kaizen.projectType` + `phase` + `phaseDefinitions` + `implementationCostDollars` + `annualBenefitsDollars` + `startDate` (and computed `roi`), adds new §3.4 Phase FSM for `KAIZEN_ACCELERATOR_30D`, adds `focusArea='KAIZEN_ACCELERATOR_30D'` enum value, adds `ProjectPhaseAdvanced` + `AcceleratorPaceWarning` events (§6.1), adds three invariant cross-reference rows (§8), and logs decision 15 (§9). See `PROJECT_TYPE_30D_KAIZEN.md` for the authoritative spec. v0.3.1 patches §7.1 to add `bamx:v1:agent-suggestions` and `bamx:v1:agent-telemetry` persistence keys for the AI layer cache + telemetry log (see `AI_AGENTS.md` §3). v0.3 closes 3 engine-flagged gaps (reflection naming canonicalization, `PdcaExperiment` entity added, `clusterDismissals` persistence key added) and resolves 3 prior engine questions (DMAIC payload = `CatalogEntry.dependsOn` DAG with async parallelism, INFEASIBLE guided resolution flow with `InfeasibleResult` shape, deep slicing preference on User). v0.2 closed 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolved 3 earlier open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
+Status: Draft v0.5 — v0.5 folds the three operating standards (`ACCELERATOR_STANDARD.md` v1.0, `DMAIC_STANDARD.md` v1.0, `KAIZEN_EVENT_STANDARD.md` v1.0) back into the architecture. Adds `KAIZEN_EVENT_90D` as a distinct `projectType` (per Kaizen 90 Option B); extends phase support to both `KAIZEN_ACCELERATOR_30D` and `KAIZEN_EVENT_90D`; adds new Kaizen fields (`sustainmentCheckIns[]`, `sustainmentGatePassed`, `validatedRootCauseArtifactRef`, `roiPassNumber`, `scopeChanges[]`); generalizes `AcceleratorPaceWarning` → `ProjectPaceWarning`; adds `ScopeChangeRequested` event; adds Sustainment Gate + weighted Phase 3→4 + Control-Plan-at-Phase-2 + MSA-before-Baseline + two-pass Financial Benefit + Finance-partner-mandatory invariants; formalizes `FINANCE_PARTNER` and `IMPLEMENTATION_LEAD` roles. Logs decisions 16–22 (§9). v0.4 pulled the 30-Day Kaizen Accelerator project type into MVP: adds `CatalogEntry.projectTypeBinding` + `phaseBinding`, `Kaizen.projectType` + `phase` + `phaseDefinitions` + `implementationCostDollars` + `annualBenefitsDollars` + `startDate` (and computed `roi`), adds new §3.4 Phase FSM for `KAIZEN_ACCELERATOR_30D`, adds `focusArea='KAIZEN_ACCELERATOR_30D'` enum value, adds `ProjectPhaseAdvanced` + `AcceleratorPaceWarning` events (§6.1), adds three invariant cross-reference rows (§8), and logs decision 15 (§9). See `PROJECT_TYPE_30D_KAIZEN.md` for the authoritative spec. v0.3.1 patches §7.1 to add `bamx:v1:agent-suggestions` and `bamx:v1:agent-telemetry` persistence keys for the AI layer cache + telemetry log (see `AI_AGENTS.md` §3). v0.3 closes 3 engine-flagged gaps (reflection naming canonicalization, `PdcaExperiment` entity added, `clusterDismissals` persistence key added) and resolves 3 prior engine questions (DMAIC payload = `CatalogEntry.dependsOn` DAG with async parallelism, INFEASIBLE guided resolution flow with `InfeasibleResult` shape, deep slicing preference on User). v0.2 closed 5 UX-flagged gaps (pending reflection, reason-code OTHER, ActivityStartedLate event, MetricsService.getLatestSnapshot, Kaizen readyToRemeasure computed property) and resolved 3 earlier open questions (team ceremonies single-user, catalog bucket mapping, external calendar capacity in MVP).
 Scope: MVP (vanilla JS + localStorage, single-user) with a forward-compatible path to Next.js + PostgreSQL + API.
 
 > **Terminology reconciliation with the upstream prompt.**
@@ -164,7 +164,7 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `id` | string (uuid) | PK |
 | `activityNumber` | integer \| null | Source `.txt` activity # (1–50); null for ceremonies |
 | `name` | string | e.g., "Daily Standup" |
-| `focusArea` | enum | `DEEP_WORK` \| `COMMUNICATION` \| `CONTINUOUS_IMPROVEMENT` \| `CEREMONY` \| `DMAIC` \| `KAIZEN` \| `INNOVATION` \| `KAIZEN_ACCELERATOR_30D` |
+| `focusArea` | enum | `DEEP_WORK` \| `COMMUNICATION` \| `CONTINUOUS_IMPROVEMENT` \| `CEREMONY` \| `DMAIC` \| `KAIZEN` \| `INNOVATION` \| `KAIZEN_ACCELERATOR_30D` \| `KAIZEN_EVENT_90D` |
 | `defaultDurationMinutes` | integer | Catalog-defined duration |
 | `cadence` | enum | `DAILY` \| `WEEKLY` \| `SPRINT` \| `MONTHLY` \| `QUARTERLY` \| `CONTINUOUS` \| `ON_SIGNAL` \| `EVENT_DRIVEN` \| `EVERY_48H` |
 | `trigger` | string | Human-readable; rule in `CATALOG_GAPS.md` §E.5 |
@@ -179,15 +179,15 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `version` | integer | Bumped when procedure / output schema changes |
 | `sourceRef` | string | e.g., "`Business Agility Standard Work.txt` row 12" |
 | `dependsOn` | string[] | Catalog entry IDs whose `ScheduledActivity` must be `CLOSED` before this entry becomes eligible as payload. Used for DMAIC DAG (e.g., `DMAIC C&E Matrix #34` depends on `DMAIC SIPOC #21`). Empty array for entries without prerequisites. |
-| `projectTypeBinding` | enum \| null | `DMAIC` \| `KAIZEN_EVENT` \| `KAIZEN_ACCELERATOR_30D` \| `AD_HOC` \| `null`. When non-null, this entry is eligible as Deep-block payload only for a Kaizen of the matching `projectType`. Null for cross-project entries (most of catalog #1–#19, plus all BAM ceremonies). See `PROJECT_TYPE_30D_KAIZEN.md §2.3`. |
-| `phaseBinding` | string \| null | For phased project types, the phase id this entry belongs to (e.g., `'PHASE_0' \| 'PHASE_1' \| 'PHASE_2' \| 'PHASE_3' \| 'PHASE_4'` for the 30-Day Accelerator). Null for non-phased entries. Composer uses this to filter Deep-block payload to the active Kaizen's current phase. |
+| `projectTypeBinding` | enum \| enum[] \| null | `DMAIC` \| `KAIZEN_EVENT` \| `KAIZEN_EVENT_90D` \| `KAIZEN_ACCELERATOR_30D` \| `AD_HOC` \| `null`. When non-null, this entry is eligible as Deep-block payload only for a Kaizen of the matching `projectType`. Null for cross-project entries (most of catalog #1–#19, plus all BAM ceremonies). Catalog `#42`–`#50` bind to both `KAIZEN_EVENT` (standalone 1–5 day burst) and `KAIZEN_EVENT_90D` (90-day phased) — stored as a string[] of two values per `KAIZEN_EVENT_STANDARD.md §11.1` recommendation (set-valued binding preferred over row duplication). See `PROJECT_TYPE_30D_KAIZEN.md §2.3` and `CATALOG_GAPS.md §K`. |
+| `phaseBinding` | string \| null | For phased project types, the phase id this entry belongs to (e.g., `'PHASE_0' \| 'PHASE_1' \| 'PHASE_2' \| 'PHASE_3' \| 'PHASE_4'` for the 30-Day Accelerator; `'PRE_EVENT' \| 'EVENT' \| 'POST_EVENT' \| 'SUSTAIN'` for the 90-Day Kaizen Event). Null for non-phased entries and for entries whose binding is `KAIZEN_EVENT` only (standalone 1–5 day burst). Composer uses this to filter Deep-block payload to the active Kaizen's current phase. |
 
 **Invariants:**
 - `isNonOptional === true` → `enabledByUser` is ignored (always enabled), delete rejected.
 - `outputArtifact.required === true` for every Catalog Entry (blueprint: every completion produces evidence).
 - `bucket === 'PROJECT' | 'COMMUNICATION' | 'CI'` must be set for any entry the Daily composer may schedule.
 - `dependsOn` is a DAG — no cycles. Validated at seed and at any catalog edit. A DMAIC step is eligible as payload iff every `dependsOn` entry has a `CLOSED` ScheduledActivity within the **same** `Kaizen.id` scope.
-- An entry with `projectTypeBinding !== null` is eligible as Deep-block payload ONLY when the active `Kaizen.projectType === entry.projectTypeBinding` AND (if `phaseBinding !== null`) `Kaizen.phase === entry.phaseBinding`. Enforced in `ComposerService.eligibleDmaicPayloadSteps()` — see `ENGINE_DESIGN.md §4.2`.
+- An entry with `projectTypeBinding !== null` is eligible as Deep-block payload ONLY when the active `Kaizen.projectType` matches `entry.projectTypeBinding` (either equals the string, or is included in the binding array) AND (if `phaseBinding !== null`) `Kaizen.phase === entry.phaseBinding`. Enforced in `ComposerService.eligibleDmaicPayloadSteps()` — see `ENGINE_DESIGN.md §4.2`.
 
 **Example JSON:**
 
@@ -220,7 +220,7 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `id` | string (uuid) | PK |
 | `name` | string | |
 | `email` | string | |
-| `role` | string[] | Current active BAM roles |
+| `roles` | string[] | Current active BAM + project-partner roles. Canonical role set: `PRACTITIONER` \| `FACILITATOR` \| `LEADER` \| `CHAMPION` \| `FINANCE_PARTNER` \| `MASTER_BLACK_BELT` \| `IMPLEMENTATION_LEAD` \| `PROCESS_OWNER` \| `ANALYST` \| `SME` \| `EXECUTIVE_SPONSOR`. `FINANCE_PARTNER` is required for ROI co-sign on any Kaizen with non-null `implementationCostDollars` or `annualBenefitsDollars` (per `ACCELERATOR_STANDARD §1.6` refinement #1 + `DMAIC_STANDARD §1.6` CSF #5). `IMPLEMENTATION_LEAD` is the named dedicated role for `KAIZEN_EVENT_90D` projects' Post-Event Implementation window, distinct from `FACILITATOR` and `PROCESS_OWNER` (per `KAIZEN_EVENT_STANDARD §1`). MVP single-user field retained as `role` string[] for backward compatibility; both names read identically. |
 | `dailyCapacityMinutes` | integer | Default 480 (8h). Composer accepts a per-day override without mutating this field (override lives on `Composition.externalMinutesToday` or a one-day capacity input). |
 | `workDays` | integer[] | ISO day numbers, default `[1,2,3,4,5]` |
 | `sprintAnchorDate` | date (ISO) | First Monday of current sprint; drives sprint-phase computation |
@@ -362,19 +362,27 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 | `sourceFrictionSignalIds` | string[] | Traceability to evidence |
 | `baselineMetricId` | string | FK BaselineMetric; required to leave `DRAFT` |
 | `remeasurementId` | string \| null | FK Remeasurement; required to `CLOSE` |
-| `actions` | object[] | `[{ name, ownerRef, dueDate, doneAt\|null }]` |
+| `actions` | object[] | `[{ name, ownerRef, dueDate, doneAt\|null, strategic: boolean (optional, default false) }]`. The `strategic: true` flag marks multi-week high-impact items that veto phase advance per `ACCELERATOR_STANDARD §1.6` refinement #5 — any strategic action with `doneAt === null` blocks PHASE_3 → PHASE_4 advance regardless of overall completion ratio. For `KAIZEN_EVENT_90D` a richer backlog schema (acceptance criterion, size, sprint, priority score, before/after link) lands in the separate `ImplementationBacklog` entity in the E18 epic — see `KAIZEN_EVENT_STANDARD §11.5` item 5; until that ships, the Kaizen 90 adoption layer reads `actions[]` with `strategic` + optional `sprint` + `acceptanceCriterion` extension fields. |
 | `state` | enum | See FSM in §3.3 |
 | `openedAt` | timestamp | |
 | `closedAt` | timestamp \| null | |
 | `closeKind` | enum \| null | `SUCCESS` (hit goal) \| `PARTIAL` (improved < goal) \| `FAILED_HONEST` (no improvement — blueprint §7.2) |
 | `resultsNarrativeRef` | object \| null | For catalog #49 — 3-pager narrative artifact |
-| `projectType` | enum | `DMAIC` \| `KAIZEN_EVENT` \| `KAIZEN_ACCELERATOR_30D` \| `AD_HOC`. Formalizes the previously-implicit "mode" on Kaizen. Default `AD_HOC` for legacy / backward-compatible promotion from a friction cluster with no fixed timeline. Required on create; immutable once set. See `PROJECT_TYPE_30D_KAIZEN.md §2.1`. |
-| `phase` | string \| null | Current phase discriminator for phased project types. For `KAIZEN_ACCELERATOR_30D`: `'PHASE_0' \| 'PHASE_1' \| 'PHASE_2' \| 'PHASE_3' \| 'PHASE_4'`. Null for non-phased types (`DMAIC` derives phase from DAG; `AD_HOC` and `KAIZEN_EVENT` have no phase). Advanced via `KaizenService.advancePhase()`. |
-| `phaseDefinitions` | object[] \| null | Frozen-at-start snapshot of phase structure: `[{ id, name, days, nonOptionalCatalogEntryIds[] }]`. For `KAIZEN_ACCELERATOR_30D`, seeded with the 5 phases from `PROJECT_TYPE_30D_KAIZEN.md §3`. Immutable once written. Null for non-phased project types. |
-| `implementationCostDollars` | number \| null | Captured during Phase 4.3 of a 30-Day Accelerator (catalog entry `30d_4_3_calculate_roi`). Null until captured. Drives the computed `roi` getter. |
+| `projectType` | enum | `DMAIC` \| `KAIZEN_EVENT` \| `KAIZEN_EVENT_90D` \| `KAIZEN_ACCELERATOR_30D` \| `AD_HOC`. Formalizes the previously-implicit "mode" on Kaizen. Default `AD_HOC` for legacy / backward-compatible promotion from a friction cluster with no fixed timeline. Required on create; immutable once set. `KAIZEN_EVENT_90D` added per `KAIZEN_EVENT_STANDARD.md §11.1` Option B. See `PROJECT_TYPE_30D_KAIZEN.md §2.1` and `KAIZEN_EVENT_STANDARD.md §2`. |
+| `phase` | string \| null | Current phase discriminator for phased project types. For `KAIZEN_ACCELERATOR_30D`: `'PHASE_0' \| 'PHASE_1' \| 'PHASE_2' \| 'PHASE_3' \| 'PHASE_4'`. For `KAIZEN_EVENT_90D`: `'PRE_EVENT' \| 'EVENT' \| 'POST_EVENT' \| 'SUSTAIN'` (per `KAIZEN_EVENT_STANDARD §2`). Non-null for BOTH phased project types; null for `DMAIC` (derives phase from DAG via `phaseFor()`), `AD_HOC`, and `KAIZEN_EVENT` (standalone 1–5 day burst has no phase). Advanced via `KaizenService.advancePhase()`. |
+| `phaseDefinitions` | object[] \| null | Frozen-at-start snapshot of phase structure: `[{ id, name, days, nonOptionalCatalogEntryIds[] }]`. For `KAIZEN_ACCELERATOR_30D`, seeded with the 5 phases from `PROJECT_TYPE_30D_KAIZEN.md §3`. For `KAIZEN_EVENT_90D`, seeded with the 4 macro-phases from `KAIZEN_EVENT_STANDARD §2` (PRE_EVENT Days 1–14, EVENT Days 15–19, POST_EVENT Days 20–70, SUSTAIN Days 71–90). Immutable once written. Null for non-phased project types. Phase names shown in UI come from this snapshot, not hard-coded constants. |
+| `implementationCostDollars` | number \| null | Captured during Phase 4.3 of a 30-Day Accelerator (catalog entry `30d_4_3_calculate_roi`), during SUSTAIN phase of a Kaizen 90, or at Improve-close (pass 1) and Control-close (pass 2) for DMAIC. Null until captured. Drives the computed `roi` getter. |
 | `annualBenefitsDollars` | number \| null | Captured alongside `implementationCostDollars`. Null until captured. |
-| `startDate` | date (ISO) | When the project started (Day 0 for `KAIZEN_ACCELERATOR_30D`). Drives pace-warning calculations and the "30 days to ROI" banner. Required on create. |
-| `controlPlanArtifactRef` | object \| null | For `KAIZEN_ACCELERATOR_30D`: the `30d_4_5_control_plan` scheduled activity's `outputArtifactRef`. Null until Phase 4.5 closes. |
+| `roiPassNumber` | integer \| null | DMAIC two-pass Financial Benefit Translator counter: `1` at Improve-close (projected ROI), `2` at Control-close (actual ROI with reconciliation delta). Null for single-pass project types (`KAIZEN_ACCELERATOR_30D`, `KAIZEN_EVENT_90D`, `KAIZEN_EVENT`, `AD_HOC`). Per `DMAIC_STANDARD §1.5` refinement #4. |
+| `roiProjections` | object[] \| null | DMAIC audit trail: `[{ passNumber, implementationCostDollars, annualBenefitsDollars, computedRoi, financePartnerUserId, capturedAt, reconciliationDeltaPercent (pass 2 only) }]`. Append-only. Both pass-1 and pass-2 rows retained; on pass 2, `reconciliationDeltaPercent = (pass2.roi - pass1.roi) / pass1.roi`. Null for non-DMAIC projects. |
+| `validatedRootCauseArtifactRef` | object \| null | For DMAIC: `{ schema, value, confoundCheckPassed: boolean, validatedBy, validatedAt }`. Required non-null with `confoundCheckPassed === true` before DMAIC Analyze → Improve transition. Captured as the output artifact of `#36 Correlation & Regression` plus the confound-check table per `DMAIC_STANDARD §1.5` refinement #2 + §11.5 item 4. Null for non-DMAIC projects. |
+| `sustainmentCheckIns` | object[] \| null | `[{ dueDate, kind: '30_DAY' \| '60_DAY' \| '90_DAY', completedAt, observedMetricValue, adherenceOk: boolean, notes }]`. Auto-seeded by `KaizenService.close()` when `state` transitions to `CLOSED` with `closeKind ∈ {SUCCESS, PARTIAL}`. Null for `FAILED_HONEST`-closed or abandoned Kaizens. Append-only once a due date passes; a missed check-in stays on the record. Per `DMAIC_STANDARD §11.2` item 3 and `ACCELERATOR_STANDARD §10.2` item 8. |
+| `sustainmentGatePassed` | boolean \| null | For `KAIZEN_EVENT_90D`: set `true` by Facilitator attestation at Day 70 when adoption ≥80% held for 2 consecutive working weeks AND no rollback events. Required `true` before Kaizen 90 may transition `ACTIVE → IN_REMEASUREMENT`. Null for other project types. Per `KAIZEN_EVENT_STANDARD §2.17` + §11.5 item 8. |
+| `scopeChanges` | object[] \| null | Append-only log: `[{ changeRequestedAt, requestedBy, reason, impactAssessment, approved: boolean, approvedBy, approvedAt }]`. Populated from `ScopeChangeRequested` events (§6.1). Informational/audit — does NOT auto-pause the project. Per `ACCELERATOR_STANDARD §1.6` refinement #4. Null until first scope change. |
+| `startDate` | date (ISO) | When the project started (Day 0 for `KAIZEN_ACCELERATOR_30D`; Day 1 for `KAIZEN_EVENT_90D`). Drives pace-warning calculations and the "30 days to ROI" / "90 days to rebaseline" banners. Required on create. |
+| `controlPlanArtifactRef` | object \| null | For `KAIZEN_ACCELERATOR_30D`: the `30d_4_5_control_plan` scheduled activity's `outputArtifactRef` (signed at Phase 4.5; **authored at Phase 2** per `ACCELERATOR_STANDARD §1.6` refinement #2 — see A8 invariants below). For `KAIZEN_EVENT_90D`: the SUSTAIN-phase Control Plan. For `DMAIC`: the `#41` Control Plan finalized-and-signed version. Null until the appropriate signing step closes. |
+| `controlPlanDraftArtifactRef` | object \| null | For `KAIZEN_ACCELERATOR_30D`: the Phase 2 draft captured as an output of `30d_2_5_define_improvements` (monitoring metric, frequency, threshold, response per strategic item). Enables Process Owner to challenge sustainment design before it is signed in Phase 4. Per `ACCELERATOR_STANDARD §1.6` refinement #2. For DMAIC: the Improve-phase draft per `DMAIC_STANDARD §1.5` refinement #3. Null for other project types and until the authoring step closes. |
+| `implementationLeadUserId` | string \| null | FK User. Required non-null at create for `projectType='KAIZEN_EVENT_90D'` (per `KAIZEN_EVENT_STANDARD §1`). Must be a user with `IMPLEMENTATION_LEAD` in their roles. Distinct from `FACILITATOR` and `PROCESS_OWNER` — cannot be the same user. Null for other project types. |
 
 **Computed properties (derived, not stored):**
 - `readyToRemeasure: boolean` = `state === 'ACTIVE' AND actions.length > 0 AND actions.every(a => a.doneAt !== null)`. Surfaced on `KaizenCard` as "Ready to remeasure." Not a state — the user can start remeasurement at any time during `ACTIVE`; this is just a visibility hint.
@@ -382,11 +390,23 @@ Seeded from `PRODUCT_BLUEPRINT.md` §3.1 + `CATALOG_GAPS.md` defaults. Editable 
 
 **Invariants:**
 - `state === 'CLOSED'` → `remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId` (blueprint HARD RULE).
-- MVP: at most one Kaizen with `state IN ('ACTIVE','IN_REMEASUREMENT')` per user. A `KAIZEN_ACCELERATOR_30D` Kaizen counts against this cap like any other — users may run one active Accelerator at a time.
-- `actions[].doneAt === null` does **not** block close; **only** the remeasurement does (so honest-failure close is possible).
+- MVP: at most one Kaizen with `state IN ('ACTIVE','IN_REMEASUREMENT')` per user. A `KAIZEN_ACCELERATOR_30D` or `KAIZEN_EVENT_90D` Kaizen counts against this cap like any other — users may run one active phased project at a time.
+- `actions[].doneAt === null` does **not** block close; **only** the remeasurement does (so honest-failure close is possible). **Exception for strategic items on Accelerator Phase 3→4 advance:** see below.
 - `projectType === 'KAIZEN_ACCELERATOR_30D'` AND `state === 'CLOSED'` → `roi !== null` AND `controlPlanArtifactRef !== null` (stored on a Phase 4.5 ScheduledActivity's `outputArtifactRef`). Enforced in `KaizenService.close()`.
-- "No ROI without validated remeasurement" — closing a `KAIZEN_ACCELERATOR_30D` requires BOTH the existing `Kaizen.close` remeasurement guard AND `implementationCostDollars !== null` AND `annualBenefitsDollars !== null`. Throws `ROI_NOT_VALIDATED` if either ROI input is missing at close.
+- `projectType === 'KAIZEN_EVENT_90D'` AND `state === 'CLOSED'` → `roi !== null` AND `controlPlanArtifactRef !== null` AND `remeasurementId !== null` AND `sustainmentGatePassed === true`. Enforced in `KaizenService.close()`. Per `KAIZEN_EVENT_STANDARD §11.2` items 5 + 8.
+- `projectType === 'KAIZEN_EVENT_90D'` AND `phase === null` is illegal once the record is activated; `KaizenService.promote()` seeds `phase='PRE_EVENT'` and `phaseDefinitions` atomically at create.
+- `projectType === 'KAIZEN_EVENT_90D'` at create → `implementationLeadUserId !== null` AND the referenced user has `IMPLEMENTATION_LEAD` in their roles AND is not the same user as Facilitator / Process Owner. Enforced in `KaizenService.promote()`.
+- "No ROI without validated remeasurement" — closing a `KAIZEN_ACCELERATOR_30D` or `KAIZEN_EVENT_90D` requires BOTH the existing `Kaizen.close` remeasurement guard AND `implementationCostDollars !== null` AND `annualBenefitsDollars !== null`. Throws `ROI_NOT_VALIDATED` if either ROI input is missing at close.
 - `projectType === 'KAIZEN_ACCELERATOR_30D'` AND `phase === null` is illegal once the record is activated; `KaizenService.promote()` seeds `phase='PHASE_0'` and `phaseDefinitions` atomically at create.
+- **Finance partner co-sign on ROI.** Any Kaizen with non-null `implementationCostDollars` OR `annualBenefitsDollars` requires at least one ROI co-sign by a user with `FINANCE_PARTNER` in their roles; the co-signer's `userId` is recorded in `roiProjections[].financePartnerUserId` for DMAIC, or on the `30d_4_3_calculate_roi` / Kaizen 90 ROI ScheduledActivity's `outputArtifactRef` for Accelerator / Kaizen 90. Enforced in `KaizenService.applyRoiArtifact()`. Per `ACCELERATOR_STANDARD §1.6` refinement #1 + `DMAIC_STANDARD §1.6` CSF #5.
+- **MSA before Baseline (DMAIC).** For `projectType='DMAIC'`: the Baseline ScheduledActivity (`#28`) cannot transition to `CLOSED` until an MSA ScheduledActivity (`#31`) in the same Kaizen is `CLOSED` with an acceptable Gage R&R rating (%R&R < 30% OR Kappa ≥ 0.7). Enforced via `CatalogEntry.dependsOn` DAG edge `#28 → [#31]` (see `CATALOG_GAPS §J`) and the close-guard in `ActivityService.close()` checking the MSA artifact's acceptance field. Per `DMAIC_STANDARD §1.5` refinement #1.
+- **Validated root cause before DMAIC Analyze → Improve.** For `projectType='DMAIC'`: advancing out of Analyze (making Improve-phase entries eligible as payload) requires `validatedRootCauseArtifactRef !== null` AND `validatedRootCauseArtifactRef.confoundCheckPassed === true`. Enforced in `KaizenService.canAdvanceDmaicPhase()` / `ComposerService.eligibleDmaicPayloadSteps()` for Improve-phase entries. Per `DMAIC_STANDARD §1.5` refinement #2.
+- **Two-pass Financial Benefit Translator (DMAIC).** `state === 'CLOSED'` AND `projectType === 'DMAIC'` → `roiPassNumber === 2` AND `roiProjections.length === 2` (both pass-1 projected and pass-2 actual rows retained). Enforced in `KaizenService.close()`. Per `DMAIC_STANDARD §1.5` refinement #4.
+- **Control Plan draft by Phase 2 exit (Accelerator).** `projectType === 'KAIZEN_ACCELERATOR_30D'` AND phase-advance from `PHASE_2` → `PHASE_3` requires `controlPlanDraftArtifactRef !== null` (captured as the draft output of `30d_2_5_define_improvements`). The signed `controlPlanArtifactRef` is still required at CLOSED but is authored in Phase 2, not Phase 4. Enforced in `KaizenService.canAdvancePhase()`. Per `ACCELERATOR_STANDARD §1.6` refinement #2.
+- **Weighted Phase 3→4 advance (Accelerator).** `projectType === 'KAIZEN_ACCELERATOR_30D'` AND phase-advance from `PHASE_3` → `PHASE_4` requires (`closedActionCount / totalActionCount >= 0.80`) AND `!actions.some(a => a.strategic === true && a.doneAt === null)` — i.e., every strategic action is closed. Strategic items veto phase advance regardless of overall completion count. Enforced in `KaizenService.canAdvancePhase()`. Per `ACCELERATOR_STANDARD §1.6` refinement #5.
+- **Sustainment Gate (Kaizen 90).** `projectType === 'KAIZEN_EVENT_90D'` AND transition `ACTIVE → IN_REMEASUREMENT` requires `sustainmentGatePassed === true`. Pass is attested by the Facilitator after verifying adoption ≥80% for 2 consecutive working weeks AND no rollback events logged in `scopeChanges[]` or adoption log. Enforced in `KaizenService.startRemeasurement()`. Per `KAIZEN_EVENT_STANDARD §2.17` + §11.5 item 8.
+- **Sustainment check-ins append-only.** `sustainmentCheckIns[]` entries are append-only once their `dueDate` passes: a missed check-in stays on the record with `completedAt === null` and `adherenceOk === false`. Facilitator may later add a retrospective entry (new row) but not overwrite. Per `DMAIC_STANDARD §11.2` item 3.
+- **Scope changes are informational, not blocking.** `scopeChanges[]` entries are append-only. A `ScopeChangeRequested` event (§6.1) is logged for audit; the Kaizen state is not auto-paused. Abandonment path remains the only way to halt a project. Per `ACCELERATOR_STANDARD §1.6` refinement #4.
 
 ### 2.10 BaselineMetric
 
@@ -582,12 +602,13 @@ All entities with non-trivial lifecycles are modeled as finite state machines. T
 
 **Guards:**
 - `DRAFT → ACTIVE` requires `baselineMetricId !== null` AND `baseline.locked === true` AND `goalStatement` set.
+- `ACTIVE → IN_REMEASUREMENT` base rule is unguarded (a hint-only `readyToRemeasure` computed property exists). **Additional guard for `projectType === 'KAIZEN_EVENT_90D'`:** `sustainmentGatePassed === true` — Sustainment Gate pass required before rebaseline is attempted (adoption ≥80% × 2 consecutive working weeks, no rollback events). Enforced in `KaizenService.startRemeasurement()`. Per `KAIZEN_EVENT_STANDARD §11.5` item 8.
 - `IN_REMEASUREMENT → CLOSED` requires `remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId`. This is the **HARD RULE** (blueprint §4.1 item 4, §7.2): no remeasurement → no close. A Kaizen cannot be "failed-and-closed" without measuring; it can only be abandoned, which is modeled by transitioning back to `DRAFT` with an `abandoned: true` flag, never to `CLOSED`.
 - MVP cap: system rejects a second transition to `ACTIVE` while another is not terminal.
 
-### 3.4 Phase FSM for `KAIZEN_ACCELERATOR_30D`
+### 3.4 Phase FSM for phased project types (`KAIZEN_ACCELERATOR_30D` + `KAIZEN_EVENT_90D`)
 
-Applies only when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'`. Composes with the Kaizen FSM in §3.3: phase advances drive the Kaizen FSM's `DRAFT → ACTIVE → IN_REMEASUREMENT → CLOSED` transitions at the gate boundaries. Full spec: `PROJECT_TYPE_30D_KAIZEN.md §4`.
+Applies to both `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'` and `Kaizen.projectType === 'KAIZEN_EVENT_90D'`. The two types have **different phase structures** (Accelerator: `PHASE_0..PHASE_4`; Kaizen 90: `PRE_EVENT / EVENT / POST_EVENT / SUSTAIN` per `KAIZEN_EVENT_STANDARD.md §2`). Phase names displayed in the UI come from each Kaizen's `phaseDefinitions` snapshot set at project create — never hard-coded constants. Composes with the Kaizen FSM in §3.3: phase advances drive the Kaizen FSM's `DRAFT → ACTIVE → IN_REMEASUREMENT → CLOSED` transitions at the gate boundaries. Full Accelerator spec: `PROJECT_TYPE_30D_KAIZEN.md §4`. Full Kaizen 90 spec: `KAIZEN_EVENT_STANDARD.md §2` + §11.2.
 
 **Phase advancement is user-driven, not auto-advance.** Each transition is fired by an explicit user action on `KaizenCard` (the "Advance to Phase N+1" button); `KaizenService.canAdvancePhase(kaizenId, toPhase)` blocks the transition if prior-phase closure conditions are not met.
 
@@ -649,12 +670,69 @@ Applies only when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'`. Composes wi
 | (create) | PHASE_0 | `KaizenService.promote()` with `projectType='KAIZEN_ACCELERATOR_30D'` | Always | Freezes `phaseDefinitions`; sets `startDate`; schedules `30d_0_1` on next Daily composition | `KaizenPromoted`, `ProjectPhaseAdvanced{from:null, to:'PHASE_0'}` |
 | PHASE_0 | PHASE_1 | User taps "Advance to Phase 1" on KaizenCard | `30d_0_6_approve_charter` CLOSED AND `outputArtifactRef.schema === 'DOCUMENT'` with non-null value | Composer eligible payload set flips to Phase 1 entries | `ProjectPhaseAdvanced` |
 | PHASE_1 | PHASE_2 | User taps "Advance to Phase 2" | `30d_1_6_validate_baseline` CLOSED AND `Kaizen.baselineMetricId !== null` AND `BaselineMetric.locked === true` | Kaizen transitions `DRAFT → ACTIVE` (baseline locked + goal implied by `30d_0_4`). Composer enters "Kaizen Event week" mode for Phase 2 days. | `ProjectPhaseAdvanced`, `KaizenBaselineLocked` |
-| PHASE_2 | PHASE_3 | User taps "Advance to Phase 3" | `30d_2_6_create_backlog` CLOSED AND `30d_2_7_define_future_sops` CLOSED | `Kaizen.actions[]` populated from backlog entries (each backlog line item becomes an action) | `ProjectPhaseAdvanced` |
-| PHASE_3 | PHASE_4 | User taps "Advance to Phase 4" (or system auto-prompts at Day 24) | `30d_3_1_assign_ownership` CLOSED AND `30d_3_6_update_sops_realtime` CLOSED AND `actions.filter(a=>a.doneAt!==null).length / actions.length >= 0.80` | Kaizen transitions `ACTIVE → IN_REMEASUREMENT` — Phase 4 is the remeasurement window | `ProjectPhaseAdvanced` |
+| PHASE_2 | PHASE_3 | User taps "Advance to Phase 3" | `30d_2_6_create_backlog` CLOSED AND `30d_2_7_define_future_sops` CLOSED AND `controlPlanDraftArtifactRef !== null` (draft output of `30d_2_5_define_improvements` per `ACCELERATOR_STANDARD §1.6` refinement #2) | `Kaizen.actions[]` populated from backlog entries (each backlog line item becomes an action; items tagged strategic in backlog carry `strategic: true`) | `ProjectPhaseAdvanced` |
+| PHASE_3 | PHASE_4 | User taps "Advance to Phase 4" (or system auto-prompts at Day 24) | `30d_3_1_assign_ownership` CLOSED AND `30d_3_6_update_sops_realtime` CLOSED AND `actions.filter(a=>a.doneAt!==null).length / actions.length >= 0.80` AND `!actions.some(a => a.strategic === true && a.doneAt === null)` — **weighted guard: strategic items veto advance regardless of overall completion ratio** (per `ACCELERATOR_STANDARD §1.6` refinement #5) | Kaizen transitions `ACTIVE → IN_REMEASUREMENT` — Phase 4 is the remeasurement window | `ProjectPhaseAdvanced` |
 | PHASE_4 | CLOSED | User taps "Close Kaizen" on KaizenCard | `30d_4_1_rebaseline` CLOSED AND `Kaizen.remeasurementId !== null` AND `remeasurement.metricDefinitionId === baseline.metricDefinitionId` AND `Kaizen.roi !== null` AND `30d_4_5_control_plan` CLOSED AND `30d_4_6_final_report` CLOSED | Existing Kaizen close: `closeKind ∈ {SUCCESS, PARTIAL, FAILED_HONEST}` computed from `remeasurement.beatsBaseline` + `roi` sign | `ProjectPhaseAdvanced{to:'CLOSED'}`, `KaizenClosed` |
 | ANY | abandoned (DRAFT) | User taps "Abandon" | — | Sets `abandoned=true`, never `CLOSED` (per §3.3) | `KaizenAbandoned` |
 
 **Phase 2 preserves the 4-2-2 shape.** The Phase 2 "virtual Kaizen event window" packs PROJECT-bucket Deep blocks with Phase 2 catalog entries but does NOT override per-day invariants. Users who need multi-hour deep sessions during Phase 2 schedule them via the normal composer Edit flow across the Phase 2 days — no per-day 4-2-2 exemption. See `ENGINE_DESIGN.md §4.2` composer behavior and `PROJECT_TYPE_30D_KAIZEN.md §5.3`.
+
+#### 3.4.1 Phase FSM for `KAIZEN_EVENT_90D` (Kaizen 90)
+
+Applies when `Kaizen.projectType === 'KAIZEN_EVENT_90D'`. Phase structure is the four macro-phases from `KAIZEN_EVENT_STANDARD §2`:
+
+```
+        (Kaizen created; projectType='KAIZEN_EVENT_90D')
+                          │
+                          v
+                    +------------+
+                    | PRE_EVENT  |  ← seeded at create (Days 1–14; intake → charter → baseline → event prep)
+                    +-----+------+
+                          |
+           kze_preevent_N (last sub-phase 08) CLOSED
+           AND Kaizen.baselineMetricId set AND BaselineMetric.locked === true
+                          v
+                    +------------+
+                    |   EVENT    |  ← 1 week (Days 15–19) — Kaizen Week; sub-phases 09–13
+                    +-----+------+            (Kaizen FSM: DRAFT → ACTIVE here)
+                          |
+           kze_event_17 (Day 5 close + commitments memo) CLOSED
+                          v
+                    +------------+
+                    | POST_EVENT |  ← 50 days (Days 20–70) — backlog execution + change mgmt + adoption monitor
+                    +-----+------+            (sub-phases 14–17)
+                          |
+           kze_postevent_22 CLOSED
+           AND sustainmentGatePassed === true
+           (adoption ≥80% × 2 consecutive working weeks; no rollback events)
+                          v
+                    +------------+
+                    |  SUSTAIN   |  ← 20 days (Days 71–90) — rebaseline + ROI + control plan + readout
+                    +-----+------+            (Kaizen FSM: ACTIVE → IN_REMEASUREMENT)
+                          |
+           kze_sustain_N (exec readout + PO transition) CLOSED
+           AND Kaizen.remeasurementId !== null AND Kaizen.roi !== null
+           AND controlPlanArtifactRef !== null
+                          v
+                    +------------+
+                    |   CLOSED   |
+                    +------------+
+
+  ABANDONED path (any phase): Kaizen.state → DRAFT with abandoned=true, never CLOSED.
+```
+
+**Transition table** (parallels the Accelerator table above):
+
+| FROM | TO | Trigger | Guard (`canAdvancePhase()`) | Side effects | Emits |
+|---|---|---|---|---|---|
+| (create) | PRE_EVENT | `KaizenService.promote()` with `projectType='KAIZEN_EVENT_90D'` + `implementationLeadUserId` present | `implementationLeadUserId !== null` AND referenced user has `IMPLEMENTATION_LEAD` role AND is distinct from Facilitator / Process Owner | Freezes `phaseDefinitions` (4 phases per `KAIZEN_EVENT_STANDARD §2`); sets `startDate`; schedules PRE_EVENT intake entries | `KaizenPromoted`, `ProjectPhaseAdvanced{from:null, to:'PRE_EVENT'}` |
+| PRE_EVENT | EVENT | User taps "Advance to Event Week" on KaizenCard | Last PRE_EVENT gate task CLOSED AND `Kaizen.baselineMetricId !== null` AND `BaselineMetric.locked === true` | Kaizen transitions `DRAFT → ACTIVE`; composer filters Deep payload to EVENT-phase entries (`#45`, `#46`, `#47` + `kze_event_*`) | `ProjectPhaseAdvanced`, `KaizenBaselineLocked` |
+| EVENT | POST_EVENT | Facilitator calls "Advance to Post-Event" (Day 5 close of Kaizen Week) | `kze_event_17` CLOSED AND commitments memo (A22) attached | `Kaizen.actions[]` populated from backlog; sprint cadence starts (weekly Mon plan / Wed check / Fri demo-retro) | `ProjectPhaseAdvanced` |
+| POST_EVENT | SUSTAIN | User taps "Advance to Sustainment" (Day 70) | `kze_postevent_22` CLOSED AND `sustainmentGatePassed === true` | Kaizen transitions `ACTIVE → IN_REMEASUREMENT`; SUSTAIN phase begins rebaseline | `ProjectPhaseAdvanced` |
+| SUSTAIN | CLOSED | User taps "Close Kaizen" on KaizenCard (Day 85–90) | Remeasurement captured AND matching metric AND `roi !== null` AND `controlPlanArtifactRef !== null` AND exec readout + PO transition entries CLOSED | Existing Kaizen close: `closeKind ∈ {SUCCESS, PARTIAL, FAILED_HONEST}`; seeds `sustainmentCheckIns[]` at Day 30/60/90 post-close if closeKind ∈ {SUCCESS, PARTIAL} | `ProjectPhaseAdvanced{to:'CLOSED'}`, `KaizenClosed` |
+| ANY | abandoned (DRAFT) | User taps "Abandon" | — | Sets `abandoned=true`, never `CLOSED` (per §3.3) | `KaizenAbandoned` |
+
+**Sustainment Gate semantics.** The POST_EVENT → SUSTAIN guard's `sustainmentGatePassed` boolean is NOT computed automatically — it is set by explicit Facilitator attestation after verifying the adoption log shows ≥80% on each of 10 consecutive working days AND no rollback events. The engine provides a helper (`canAttemptRebaseline(kaizen, adoptionLog)` — see `ENGINE_DESIGN §4.4.1`) that computes "eligible for attestation" but the final flag flip is a user action. Per `KAIZEN_EVENT_STANDARD §2.17` + §11.5 item 8.
 
 ### 3.5 Variance (no FSM — append-only)
 
@@ -680,8 +758,9 @@ Applies only when `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'`. Composes wi
 | `ScheduledActivity.SCHEDULED → SKIPPED` (non-optional) | Composition ends with no start | `VarianceLogged` |
 | `FrictionSignal.OPEN → PROMOTED_TO_KAIZEN` | Weekly Reflection promotion | `KaizenPromoted` |
 | `Kaizen.IN_REMEASUREMENT → CLOSED` | Remeasurement captured | `KaizenClosed` |
-| `Kaizen.phase` advance (Accelerator) | User taps "Advance to Phase N" on KaizenCard AND `canAdvancePhase()` passes | `ProjectPhaseAdvanced` |
-| Accelerator phase pace warning | `KaizenService.advancePhase()` detects elapsed working days > spec target for prior phase | `AcceleratorPaceWarning` |
+| `Kaizen.phase` advance (Accelerator or Kaizen 90) | User taps "Advance to Phase N" on KaizenCard AND `canAdvancePhase()` passes | `ProjectPhaseAdvanced` |
+| Project pace warning (Accelerator or Kaizen 90) | `KaizenService.advancePhase()` detects elapsed working days > spec target for prior phase, OR Kaizen 90 sprint velocity < 60% | `ProjectPaceWarning` |
+| Scope change logged | User files a scope change through `KaizenCard` → Scope Change form | `ScopeChangeRequested` |
 
 ---
 
@@ -961,8 +1040,9 @@ Events are emitted by services after state transitions commit to the repository.
 | `PdcaTickCommitted` | `{ pdcaExperimentId, scheduledActivityId, measurement, consecutiveTargetHits }` | PdcaService (advance PLAN/DO/CHECK/ACT), MetricsService |
 | `PdcaExperimentClosed` | `{ pdcaExperimentId, closedReason }` | UI, KaizenService (if SUPERSEDED_BY_KAIZEN) |
 | `ComposerInfeasible` | `{ userId, date, result: InfeasibleResult }` | UI (show guided remediation), MetricsService (count INFEASIBLE days as a leading indicator of chronic over-schedule) |
-| `ProjectPhaseAdvanced` | `{ kaizenId, fromPhase, toPhase, advancedAt }` | ComposerService (re-filters Deep-block payload selector by new phase), UI (re-render `KaizenCard` PhaseStepper), MetricsService (phase-duration leading indicator). Fires only for `Kaizen.projectType === 'KAIZEN_ACCELERATOR_30D'`. |
-| `AcceleratorPaceWarning` | `{ kaizenId, phase, expectedMaxDays, actualDays, kind }` | UI (inline microcopy on KaizenCard; soft warning, not a block). Pace math: `User.workDays` intersected with elapsed calendar days; no holiday model in MVP. See `PROJECT_TYPE_30D_KAIZEN.md §9`. |
+| `ProjectPhaseAdvanced` | `{ kaizenId, projectType, fromPhase, toPhase, advancedAt }` | ComposerService (re-filters Deep-block payload selector by new phase), UI (re-render `KaizenCard` PhaseStepper variant for the current `projectType`), MetricsService (phase-duration leading indicator). Fires for BOTH `KAIZEN_ACCELERATOR_30D` and `KAIZEN_EVENT_90D`. |
+| `ProjectPaceWarning` | `{ kaizenId, projectType, phase, expectedMaxDays, actualDays, kind }` | UI (inline microcopy on KaizenCard; soft warning, not a block). Pace math: `User.workDays` intersected with elapsed calendar days; no holiday model in MVP. For Kaizen 90, `kind` may also flag `'SPRINT_VELOCITY_UNDER_60'` when a POST_EVENT weekly sprint retrospective shows velocity < 60%. See `PROJECT_TYPE_30D_KAIZEN.md §9` and `KAIZEN_EVENT_STANDARD.md §11.5` item 7. **Breaking event rename from v0.4**: this replaces `AcceleratorPaceWarning`. Downstream code in `js/events/events.js` needs to update the constant name — see decisions log item 19 below. |
+| `ScopeChangeRequested` | `{ kaizenId, requestedBy, reason, impactAssessment, approved: boolean, approvedAt, approvedBy }` | `KaizenService.appendScopeChange()` (appends to `Kaizen.scopeChanges[]`), UI (renders entry on KaizenCard scope-change log), MetricsService (counts scope changes as project-discipline leading indicator). Informational/audit — does NOT auto-pause the project. Complements the existing abandonment path as the only way to halt a project. Per `ACCELERATOR_STANDARD §1.6` refinement #4. |
 
 ### 6.2 Subscriber responsibilities
 
@@ -1240,6 +1320,17 @@ REST, one resource per entity. Contracts mirror entity shapes exactly (no separa
 | 30-Day Accelerator phase advance requires prior-phase guard conditions | `KaizenService.advancePhase()` / `canAdvancePhase()` | `Kaizen.phase` transition for `projectType === 'KAIZEN_ACCELERATOR_30D'` |
 | 30-Day Accelerator close requires ROI captured | `KaizenService.close()` for `projectType === 'KAIZEN_ACCELERATOR_30D'` | `Kaizen.state === 'CLOSED'` with `roi !== null` AND `controlPlanArtifactRef !== null` |
 | Catalog entry project/phase binding enforces composer eligibility | `ComposerService.eligibleDmaicPayloadSteps()` extended | `CatalogEntry.projectTypeBinding` + `phaseBinding` matched against active `Kaizen.projectType` + `Kaizen.phase` |
+| Accelerator PHASE_3 → PHASE_4 weighted guard: ≥80% actions closed AND no open strategic items | `KaizenService.canAdvancePhase()` | `Kaizen.phase` transition; `Kaizen.actions[].strategic === true` veto |
+| Accelerator Control Plan drafted at Phase 2 exit | `KaizenService.canAdvancePhase('PHASE_3')` | `Kaizen.controlPlanDraftArtifactRef !== null` at PHASE_2 → PHASE_3 |
+| Kaizen 90 close requires Sustainment Gate pass | `KaizenService.close()` + `KaizenService.startRemeasurement()` for `projectType === 'KAIZEN_EVENT_90D'` | `Kaizen.sustainmentGatePassed === true` before `ACTIVE → IN_REMEASUREMENT` and at CLOSED; ≥80% adoption for 2 consecutive working weeks before rebaseline attempted |
+| Kaizen 90 close requires ROI + Control Plan + Remeasurement | `KaizenService.close()` for `projectType === 'KAIZEN_EVENT_90D'` | `Kaizen.state === 'CLOSED'` with `roi !== null` AND `controlPlanArtifactRef !== null` AND `remeasurementId !== null` AND `sustainmentGatePassed === true` |
+| Kaizen 90 requires Implementation Lead assigned at create | `KaizenService.promote()` for `projectType === 'KAIZEN_EVENT_90D'` | `Kaizen.implementationLeadUserId !== null` AND user has `IMPLEMENTATION_LEAD` role AND user distinct from Facilitator / Process Owner |
+| DMAIC Baseline (`#28`) requires MSA (`#31`) closed with acceptable Gage R&R / Kappa | `ActivityService.close()` via `CatalogEntry.dependsOn` DAG edge `#28 → [#31]` + MSA acceptance check | `ScheduledActivity` for `#28` cannot reach CLOSED until MSA artifact's `acceptanceRating` ∈ `{'ACCEPTABLE', 'MARGINAL_ACCEPTABLE'}` |
+| DMAIC Analyze → Improve requires validated root cause with confound check | `KaizenService.canAdvanceDmaicPhase()` + `ComposerService.eligibleDmaicPayloadSteps()` | `Kaizen.validatedRootCauseArtifactRef !== null AND confoundCheckPassed === true` before Improve-phase entries become eligible |
+| DMAIC close requires two-pass Financial Benefit Translator | `KaizenService.close()` for `projectType === 'DMAIC'` | `Kaizen.state === 'CLOSED'` with `roiPassNumber === 2` AND `roiProjections.length === 2` |
+| Finance partner co-sign required when ROI fields populated | `KaizenService.applyRoiArtifact()` | Any Kaizen with non-null `implementationCostDollars` or `annualBenefitsDollars` → at least one co-signer with `FINANCE_PARTNER` role recorded |
+| Sustainment check-ins append-only after due date | `KaizenService.recordSustainmentCheckIn()` | `Kaizen.sustainmentCheckIns[]` — missed entries remain with `completedAt === null, adherenceOk === false` |
+| Scope changes informational/audit-only, do not auto-pause | `KaizenService.appendScopeChange()` | `Kaizen.scopeChanges[]` append-only log; `ScopeChangeRequested` event emitted |
 
 ---
 
@@ -1276,3 +1367,17 @@ All open questions from draft v0.1 resolved by coordinator on 2026-04-18.
 14. **Deep slicing preference (`2×2h` vs `4×1h`) — COORDINATOR DEFAULT (revisit if needed).** Persisted as `User.deepSlicePreference: '2x2h' | '4x1h'`, default `'2x2h'`. Overridable per `Composition` via Edit mode (not a stored per-composition field in MVP — the user just rearranges blocks). Revisit at first-user feedback; if the preference changes frequently, promote to per-composition.
 
 15. **30-Day Kaizen Accelerator pulled into MVP — RESOLVED (Phil, 2026-04-19).** Adds ~5–8 engineering days to the MVP plan; timeline stretches from ~75 to ~100 project days. Accelerator is modeled as a Kaizen with `projectType='KAIZEN_ACCELERATOR_30D'`, preserving the MVP 1-active-Kaizen cap. Phase 2 (virtual Kaizen Event) preserves 4-2-2 — no per-day invariant override; users schedule multi-hour Deep sessions via normal composer Edit across Phase 2 days. Pace warnings compute on `User.workDays` intersected with elapsed calendar days; no holiday model in MVP. Authoritative spec: `PROJECT_TYPE_30D_KAIZEN.md`. The 31 new catalog entries need procedure-text authored by Phil / Black-Belt partner before E13-T1 begins (see `CATALOG_GAPS.md §I.2` and `DELIVERY_PLAN.md §5 R13`).
+
+16. **`KAIZEN_EVENT_90D` added as distinct projectType — RESOLVED.** Per `KAIZEN_EVENT_STANDARD.md §11.1` Option B recommendation. Distinct from `KAIZEN_EVENT` (which remains the 1–5 day standalone burst). Rationale: Option B preserves all current invariants and costs only one enum value + service-routing branches, vs. Option A which would have inverted "KAIZEN_EVENT has no phase" invariant and required data migration. Catalog `#42`–`#50` bind to both `KAIZEN_EVENT` and `KAIZEN_EVENT_90D` via set-valued `projectTypeBinding` (see `CATALOG_GAPS.md §K`). Phases: `PRE_EVENT / EVENT / POST_EVENT / SUSTAIN` per `KAIZEN_EVENT_STANDARD §2`. Authoritative spec: `KAIZEN_EVENT_STANDARD.md`.
+
+17. **Phase support extended to `KAIZEN_EVENT_90D` — RESOLVED.** `Kaizen.phase` and `Kaizen.phaseDefinitions` now non-null for BOTH `KAIZEN_ACCELERATOR_30D` and `KAIZEN_EVENT_90D`; the two have different phase structures. §3.4 retitled and a §3.4.1 Phase FSM for Kaizen 90 added with 4 phases. Phase names come from the per-Kaizen `phaseDefinitions` snapshot, not hard-coded constants — enables future phased project types without further refactoring. Per `KAIZEN_EVENT_STANDARD §11.5` item 1.
+
+18. **`sustainmentCheckIns[]` + `sustainmentGatePassed` fields added to Kaizen — RESOLVED.** `sustainmentCheckIns[]` is auto-seeded on CLOSED for DMAIC, Accelerator, and Kaizen 90 with `closeKind ∈ {SUCCESS, PARTIAL}`; holds the Day 30/60/90 post-close check-in rows with adherence observation + notes. Append-only once due date passes. `sustainmentGatePassed` is a Kaizen-90-specific boolean set by Facilitator attestation; required true for `ACTIVE → IN_REMEASUREMENT`. Per `DMAIC_STANDARD §11.2` item 3 + `ACCELERATOR_STANDARD §10.2` item 8 + `KAIZEN_EVENT_STANDARD §11.5` item 8. Resolves the prior Accelerator flag about "no post-CLOSED sustainment state" (`ACCELERATOR_STANDARD §10.3`) without introducing a new FSM state — check-ins live as an append-only list on the CLOSED Kaizen record.
+
+19. **`AcceleratorPaceWarning` renamed to `ProjectPaceWarning` — RESOLVED (breaking event rename).** Payload adds a `projectType` discriminator; applies to both Accelerator and Kaizen 90 pacing. Kaizen 90 `kind` may include `'SPRINT_VELOCITY_UNDER_60'` when a POST_EVENT weekly sprint retrospective shows velocity < 60%. Downstream code in `js/events/events.js` and any subscriber must rename the constant from `AcceleratorPaceWarning` to `ProjectPaceWarning`. Per `KAIZEN_EVENT_STANDARD §11.5` item 7.
+
+20. **`ScopeChangeRequested` event + `Kaizen.scopeChanges[]` field added — RESOLVED.** Scope changes on any project type (Accelerator, DMAIC, Kaizen 90) now have an explicit audit path: a user fires the scope-change form on KaizenCard; the event is logged; the entry is appended to `Kaizen.scopeChanges[]`. **Informational only** — does NOT auto-pause the Kaizen. Abandonment (Kaizen → DRAFT with `abandoned=true`) remains the only path to halt a project. Per `ACCELERATOR_STANDARD §1.6` refinement #4. Prevents "scope rotation happens silently" — a named failure mode in `ACCELERATOR_STANDARD §1.7` item 1 and `DMAIC_STANDARD §1.7` item 3.
+
+21. **Finance-partner + Implementation-Lead roles formalized, two-pass ROI + MSA-before-Baseline + validated-root-cause + weighted-Phase-3→4 + Control-Plan-at-Phase-2 invariants added — RESOLVED.** A block of refinements from `ACCELERATOR_STANDARD §1.6` (#1, #2, #5), `DMAIC_STANDARD §1.5` (#1, #2, #3, #4) + §1.6 CSF #5, and `KAIZEN_EVENT_STANDARD §1`. New Kaizen fields: `roiPassNumber`, `roiProjections[]`, `validatedRootCauseArtifactRef`, `controlPlanDraftArtifactRef`, `implementationLeadUserId`. New invariants enforce Finance co-sign when ROI fields populated; two-pass Financial Benefit Translator for DMAIC (pass 1 projected at Improve, pass 2 actual at Control with reconciliation delta); MSA acceptance gate before Baseline close (DAG edge in `CATALOG_GAPS §J`); validated-root-cause-with-confound-check before DMAIC Analyze → Improve; weighted Phase 3→4 strategic-item veto for Accelerator; Control Plan drafted by Phase 2 exit (signed at Phase 4) for Accelerator. Canonical role set documented on `User.role[]`. All invariants name their enforcement service method (see §8 invariant cross-reference).
+
+22. **Cross-doc effort summary — RESOLVED.** Applying the 26 coordinator-mandated refinements adds five new epics (E14–E18) worth ~35 engineer-days to the delivery plan (`DELIVERY_PLAN §3.1` updated): E14 Validated Kaizen Portfolio (5d, MVP), E15 Statistical Analysis Surfaces (10d, post-launch with DMAIC), E16 MSA Workflow (5d, post-launch with DMAIC), E17 Kaizen 90 Phase Support (5d, with Kaizen 90 activation), E18 Implementation Backlog Tracker (10d, MVP). Timeline extends from ~100 to ~135 project days; Window 4 of the 30-60-90 plan becomes Windows 4–5 of a 30-60-90-120-150 plan. See `DELIVERY_PLAN §3` for the new window breakdown.

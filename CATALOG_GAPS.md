@@ -1,7 +1,7 @@
 # Standard Work Catalog — Gaps & Proposed Defaults
 
 Owner: Product Manager / CTO Agent
-Status: Draft v0.2 — §A-§D procedure text approved; §F open questions resolved; §I Accelerator procedures pending v0.2 review (see `PROJECT_TYPE_30D_KAIZEN.md` §3)
+Status: Draft v0.3 — v0.3 adds §J (authoritative DMAIC DAG edges for `#20`–`#41` with two-pass `#39` Financial Benefit Translator semantics) and §K (Kaizen 90 catalog bindings for `#42`–`#50` to `KAIZEN_EVENT_90D` with phase mapping), per operating-standard recommendations in `DMAIC_STANDARD §11.2` item 7 and `KAIZEN_EVENT_STANDARD §11.5` item 9. Updates §F count summary to include §J + §K. Grounded in `ARCHITECTURE.md` v0.5. v0.2 approved §A–§D procedure text; §F open questions resolved; §I Accelerator procedures pending v0.2 review (see `PROJECT_TYPE_30D_KAIZEN.md` §3).
 Source: `docs/Business Agility Standard Work.txt`
 
 ## Purpose
@@ -22,8 +22,10 @@ Count summary:
 - 7 rows with duration but completely blank procedure (§D)
 - 50 rows missing cross-cutting metadata (§E)
 - 31 new 30-Day Kaizen Accelerator entries pending procedure authoring (§I)
+- **DMAIC DAG edges authoritative spec (22 catalog entries #20–#41 + two-pass #39) — §J (new v0.3)**
+- **Kaizen 90 catalog bindings (catalog #42–#50 phase-binding to KAIZEN_EVENT_90D's 4 macro-phases) — §K (new v0.3)**
 
-**Total:** ~23 rows need content work + all 50 need metadata augmentation + **31 new Accelerator entries pending procedure-text authoring** (build-start blocker for `DELIVERY_PLAN.md` E13-T1 — see §I.2 and `DELIVERY_PLAN.md §5 R13`).
+**Total:** ~23 rows need content work + all 50 need metadata augmentation + **31 new Accelerator entries pending procedure-text authoring** (build-start blocker for `DELIVERY_PLAN.md` E13-T1 — see §I.2 and `DELIVERY_PLAN.md §5 R13`) + **22 DMAIC edges + 9 Kaizen 90 bindings authoritative spec in §J / §K** (seed input to `E2-T8` and the new `E8-T0` DAG seed task in `DELIVERY_PLAN §2 E8`).
 
 ---
 
@@ -426,6 +428,8 @@ Each catalog entry is assigned exactly one bucket for the 4-2-2 Daily cycle: **P
 
 Approved 2026-04-18 by Phil. Changes from initial proposal: #13 6S Email moved from COMMUNICATION → CI.
 
+**Note on DAG edges.** The `CatalogEntry.dependsOn` DAG edges for DMAIC (`#20`–`#41`) are in §J; the phase-bindings for Kaizen 90 (`#42`–`#50`) are in §K. Bucket assignment in §H.1 and DAG edges in §J / phase-bindings in §K are independent orthogonal data layers on the catalog entry — a single row has both a bucket AND (optionally) `dependsOn` edges AND (optionally) `projectTypeBinding` + `phaseBinding`.
+
 ### H.1 Mapping table
 
 | # | Activity | Bucket | Notes |
@@ -528,6 +532,110 @@ Bucket mapping follows §H rules: stakeholder conversations / approvals → `COM
 - **Scope:** All 31 entries above. No other field blocks seed; the spec fully specifies `inputs`, `outputArtifact`, `participants`, `trigger`, `dependsOn`, `projectTypeBinding`, `phaseBinding`, `isNonOptional`, `bucket`, `defaultDurationMinutes`, and `cadence`.
 - **Blocker target:** Must resolve **before `DELIVERY_PLAN.md` E13-T1** ("Seed 31 Accelerator catalog entries") begins. Tracked as `DELIVERY_PLAN §5 R13` with a dedicated authoring sprint before E13 starts; fallback is placeholder procedure text with a "DRAFT" flag in-product if unresolved.
 
+**Cross-reference to §J.** The 31 Accelerator entries use `30d_*` IDs, not `#20`–`#41`, so they do NOT overlap with the DMAIC DAG edges documented in §J. Accelerator entries' `dependsOn` edges are phase-internal (each phase has its own mini-DAG ending at the phase gate) and fully specified in `PROJECT_TYPE_30D_KAIZEN.md §3`. The DAG-validator (`CatalogService.validateDag()`) runs across the full catalog — DMAIC + Accelerator + Kaizen 90 — in a single pass and rejects cross-project cycles.
+
 ### I.3 Cadence inference rule addition
 
 Append to §E.1 rule-table (implicitly): **"30-Day Accelerator step gated by prior step completion → Event-driven within Accelerator phase"** applies to all 31 entries (same pattern as DMAIC #20–#41 under `Event-driven within DMAIC project phase`). Daily-cadenced exception: `30d_3_4_track_progress_daily` fires once per day during Phase 3 (CI bucket, 15 min).
+
+---
+
+## J. DMAIC DAG edges — authoritative spec
+
+**Status (v0.3):** authoritative. Derived from `DMAIC_STANDARD §11.2` item 7 and the refinements in `DMAIC_STANDARD §1.5`. Each row below specifies the `CatalogEntry.dependsOn` array that the seed data must carry for catalog entries `#20`–`#41`. Validator: `CatalogService.validateDag()` runs on seed and any catalog edit; cycle-free.
+
+**Key refinement edges** (called out explicitly):
+- **`#28` Baseline `dependsOn [#22, #31]`** — MSA-before-Baseline. Enforced in addition via `ActivityService.close()` checking MSA artifact's `acceptanceRating` field (per `DMAIC_STANDARD §1.5` refinement #1).
+- **`#33` Quick Wins `dependsOn [#22, #36]`** — no quick wins until Baseline AND validated causes (per `DMAIC_STANDARD §1.5` refinement #2 + §11.5 item 1). Tighter than the current `§D.3` cadence text which permits Quick Wins earlier — coordinator-approved tightening.
+- **`#39` Financial Benefit Translator two-pass** — `#39` is scheduled twice in a DMAIC project: once after Improve-phase backlog closes (`passNumber=1`, projected), once after Control-phase implementation + remeasurement (`passNumber=2`, actual). Seeded as a single catalog entry; the engine schedules two `ScheduledActivity` rows with distinct `linkedDmaicStepRef.passNumber`. Per `DMAIC_STANDARD §1.5` refinement #4 + §11.5 item 2.
+
+### J.1 Edge table (all 22 DMAIC entries)
+
+| Catalog entry | `dependsOn` | Rationale |
+|---|---|---|
+| `#20 DMAIC Project Charter` | `[]` | Entry point of DMAIC phase walk |
+| `#21 DMAIC SIPOC` | `[#20]` | SIPOC requires Charter scope |
+| `#22 Output DCP` | `[#21, #26]` | DCP needs process boundaries (SIPOC) + CTQ output metrics (VOC) |
+| `#23 Stakeholder Analysis` | `[#20]` | Stakeholder map built from Charter's named roles |
+| `#24 Communication Plan` | `[#23]` | Comm plan rows are per stakeholder from #23 |
+| `#25 Risk Plan` | `[#20, #21]` | Risk register needs scope (Charter) + process steps (SIPOC) |
+| `#26 VOC/VOB/VOA` | `[#23]` | Requires stakeholder list to know whom to interview |
+| `#27 Continuous Reporting Framework` | `[#28]` | Reporting dashboard needs a Baseline data source |
+| `#28 Baseline Output Performance Data` | `[#22, #31]` | **MSA-before-Baseline** — requires DCP locked + MSA closed with acceptable rating. Per `DMAIC_STANDARD §1.5` refinement #1. |
+| `#29 Control Chart (baseline)` | `[#28]` | Control Chart built on Baseline data |
+| `#30 Capability Report (baseline)` | `[#28]` | Capability needs Baseline stats |
+| `#31 MSA Report` | `[#22]` | MSA requires operational definition from DCP; runs against DCP's measurement method |
+| `#32 Process Maps` | `[#21]` | Detailed maps expand the SIPOC's high-level steps |
+| `#33 Quick Win Improvements` | `[#22, #36]` | **Quick Wins gated on Baseline + validated causes** — no solution leakage during Measure. Per `DMAIC_STANDARD §1.5` refinement #2 + §11.5 item 1. |
+| `#34 C&E Matrix` | `[#26, #32]` | C&E rows: Y's from VOC/CTQ × X's from process maps |
+| `#35 Inputs DCP` | `[#34]` | Collect data on the prioritized X's from C&E |
+| `#36 Correlation & Regression` | `[#35]` | Requires paired X-Y data from Input DCP |
+| `#37 FMEA` | `[#34, #36]` | FMEA over C&E-identified failure modes with validated-cause evidence |
+| `#38 Improvement Backlog` | `[#37]` | Backlog items derive from FMEA recommended actions |
+| `#39 Financial Benefit Translator (pass 1 — projected)` | `[#38, #33]` | Projected benefit after backlog authored + quick wins measured |
+| `#40 Implemented Improvements` | `[#38]` | Implement items from the authored backlog |
+| `#39 Financial Benefit Translator (pass 2 — actual)` | `[#40, #29-post, #30-post]` | Actual benefit after implementation + post-Control Chart + post-Capability. `#29-post` and `#30-post` are the Control-phase re-runs of the Baseline chart/capability reports (same catalog ID, different `ScheduledActivity` rows, differentiated by `linkedDmaicStepRef.kind='POST'`). |
+| `#41 Project Results Narrative` | `[#40, #29-post, #30-post, #39-pass2]` | Narrative requires implementation done + post-improvement control evidence + actual ROI signed |
+
+**Two-pass `#39` implementation note.** The engine treats `#39` as a single `CatalogEntry` seed row. The DMAIC composer schedules two `ScheduledActivity` instances of it during project lifetime: pass 1 is scheduled after `#38` and `#33` close; pass 2 is scheduled after `#40` + post-Control-Chart `#29` + post-Capability `#30` close. Both `ScheduledActivity` rows carry `linkedDmaicStepRef: { kaizenId, catalogEntryId: '#39', passNumber: 1 | 2 }`. The close of each pass appends a row to `Kaizen.roiProjections[]` (per `ARCHITECTURE §2.9`); pass 2's close computes `reconciliationDeltaPercent` and flags if > 30%.
+
+**Post-Control-phase `#29` / `#30`.** Similar pattern: Control Chart and Capability Report are scheduled TWICE — once at Baseline (Measure phase) and once post-improvement (Control phase). Differentiated by `linkedDmaicStepRef.kind ∈ {'BASELINE', 'POST'}`. No catalog-row duplication; composer schedules two instances.
+
+### J.2 DAG validation responsibilities
+
+- **`CatalogService.seed()`** — validates DAG on initial seed. Rejects cycles. Rejects unresolvable `dependsOn` references (entry id not in catalog).
+- **`CatalogService.edit()`** — re-validates on any `dependsOn` mutation.
+- **`ComposerService.eligibleDmaicPayloadSteps()`** — reads the DAG at composer time and filters eligible entries to those whose `dependsOn` are all CLOSED in the current Kaizen scope (per `ARCHITECTURE §4.5 R9`).
+- **`ActivityService.close()`** — for `#28` close, additionally checks the MSA artifact's `acceptanceRating` field is `ACCEPTABLE` or `MARGINAL_ACCEPTABLE`; rejects close if `UNACCEPTABLE`.
+
+---
+
+## K. Kaizen Event 90-Day (`KAIZEN_EVENT_90D`) — catalog bindings
+
+**Status (v0.3):** authoritative per `KAIZEN_EVENT_STANDARD §11.5` item 9. Catalog `#42`–`#50` (originally authored for the standalone 1–5 day `KAIZEN_EVENT` project type in §B.5, §C.5, §C.6, and §B.6) are additionally bound to the phased 90-day variant `KAIZEN_EVENT_90D` with `phaseBinding` values mapping to the 4 macro-phases from `KAIZEN_EVENT_STANDARD §2`.
+
+**Binding model (per `ARCHITECTURE §2.2`):** `CatalogEntry.projectTypeBinding` is a string[] for `#42`–`#50` — both `'KAIZEN_EVENT'` (standalone) AND `'KAIZEN_EVENT_90D'` (90-day phased) are present. `CatalogEntry.phaseBinding` is set per the table below for `KAIZEN_EVENT_90D` semantics; `phaseBinding` is ignored when the active Kaizen's `projectType === 'KAIZEN_EVENT'` (standalone mode has no phase).
+
+### K.1 Kaizen 90 catalog binding table
+
+| Catalog entry | `projectTypeBinding` | `phaseBinding` for `KAIZEN_EVENT_90D` | Notes |
+|---|---|---|---|
+| `#42 Kaizen Charter` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `PRE_EVENT` | Charter authoring sub-phase 03 |
+| `#43 Kaizen Output DCP` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `PRE_EVENT` | Baseline data-capture plan sub-phase 06 |
+| `#44 Event Scheduling` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `PRE_EVENT` | Kaizen Week scheduling sub-phase 08. Works for Kaizen 90 without structural change (still scheduling 5 consecutive days), but the 5 days fall inside the 90-day window vs. being the entire project. Per `KAIZEN_EVENT_STANDARD §11.5` item 3. |
+| `#45 Event SIPOC` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `EVENT` | Kaizen Week Day 1 current-state review |
+| `#46 Prioritized Inputs` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `EVENT` | Kaizen Week root-cause analysis |
+| `#47 FMEA` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `EVENT` | Kaizen Week failure-mode analysis |
+| `#48 Implemented Improvements` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `POST_EVENT` | **Kaizen 90 duration semantics differ**: the 23-hour catalog `defaultDurationMinutes` is now the *per-major-backlog-item indicative duration*, NOT the total implementation time. For `KAIZEN_EVENT_90D`, `#48` spans Days 20–70 and totals ~600 person-hours across the team; the engine schedules multiple `#48` instances (one per backlog item) each with its own indicative duration. Per `KAIZEN_EVENT_STANDARD §11.5` item 4. |
+| `#49 Results Narrative 3-Pager` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `SUSTAIN` | Day 85–90 executive readout |
+| `#50 Process Owner Transition` | `['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']` | `SUSTAIN` | Day 85–90 transition to PO; seeds sustainment check-ins per `ARCHITECTURE §2.9` invariants |
+
+**Entries unique to Kaizen 90.** Beyond the 9 catalog anchors, `KAIZEN_EVENT_STANDARD.md` §3 introduces ~73 operational tasks with `kze_preevent_*`, `kze_event_*`, `kze_postevent_*`, `kze_sustain_*` IDs (not catalog-numbered). These are Kaizen-90-specific and bound ONLY to `'KAIZEN_EVENT_90D'`. Seeded in a separate seed migration; not listed here (see `KAIZEN_EVENT_STANDARD §3` for the full list). The nine `#42`–`#50` catalog rows are the public catalog anchors; the `kze_*` tasks are orchestration helpers between anchors.
+
+### K.2 Composer eligibility under set-valued `projectTypeBinding`
+
+The engine's composer `eligibleDmaicPayloadSteps(kaizen, catalog, scheduledActivities)` function resolves `entry.projectTypeBinding` as follows:
+- If `typeof entry.projectTypeBinding === 'string'`: check `entry.projectTypeBinding === kaizen.projectType`.
+- If `Array.isArray(entry.projectTypeBinding)`: check `entry.projectTypeBinding.includes(kaizen.projectType)`.
+- If `entry.projectTypeBinding === null`: entry is cross-project; passes the project-type check unconditionally.
+
+Then applies the `phaseBinding` filter if non-null and the active Kaizen has a non-null `phase`. For `projectType === 'KAIZEN_EVENT'` standalone mode, the phase filter is skipped (standalone mode has no phase). For `projectType === 'KAIZEN_EVENT_90D'`, the phase filter applies per the K.1 table.
+
+### K.3 Duration note for `#48` on Kaizen 90
+
+Per `KAIZEN_EVENT_STANDARD §11.5` item 4: for `KAIZEN_EVENT_90D` bindings, `#48`'s 23-hour `defaultDurationMinutes` is **per-major-backlog-item indicative**, not the total implementation time. The catalog annotation text (seeded alongside the entry's procedure) must include: *"For `KAIZEN_EVENT_90D` bindings, treat this as per-item indicative duration; total implementation hours per project are much higher (~600 person-hours over Days 20–70) — see `KAIZEN_EVENT_STANDARD.md §2.20`."* No schema change; just a seed-data annotation in the entry's `procedure` or a new `contextNotes` field (coordinator decision: use a note inside `procedure[0]` as the simplest approach; a dedicated `contextNotes` field can be added post-MVP if this becomes a pattern across multiple catalog entries).
+
+### K.4 DAG edges for Kaizen 90
+
+The Kaizen 90 composer applies the same DAG logic as DMAIC: an entry is eligible iff every entry in its `dependsOn` has a CLOSED `ScheduledActivity` in the same Kaizen scope. Kaizen 90's `dependsOn` edges for `#42`–`#50` follow the intuitive Charter → DCP → Event → Implementation → Narrative → Transition order and are authored in `KAIZEN_EVENT_STANDARD §3`. Key edges:
+- `#42 Charter dependsOn []` — entry point
+- `#43 Output DCP dependsOn [#42]`
+- `#44 Event Scheduling dependsOn [#42, #43]` — need Charter + DCP before scheduling event window
+- `#45 Event SIPOC dependsOn [#44]` — starts at Event Day 1
+- `#46 Prioritized Inputs dependsOn [#45]`
+- `#47 FMEA dependsOn [#46]`
+- `#48 Implemented Improvements dependsOn [#47]` — backlog items start Day 20
+- `#49 Results Narrative dependsOn [#48]` — narrative written at Day 85+
+- `#50 Process Owner Transition dependsOn [#49]` — transition on Day 85–90
+
+Plus the many `kze_*` edges detailed in `KAIZEN_EVENT_STANDARD §3`; those are seeded separately but participate in the same DAG.
