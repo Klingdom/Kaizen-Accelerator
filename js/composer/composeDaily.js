@@ -1,27 +1,35 @@
 /**
- * composeDaily — daily composer skeleton (E3-T3 Sprint 2 scope).
+ * composeDaily — daily composer, all 10 steps (E3-T3 Sprint 3 complete).
  *
- * This Sprint-2 delivery implements the FIRST THREE STEPS of the 10-step
- * algorithm documented in ENGINE_DESIGN §1.2:
+ * Implements ENGINE_DESIGN §1.2 end-to-end:
  *
- *   STEP 1 — Compute bucket targets + floors + ceilings.
- *   STEP 2 — Place daily non-optionals (DAILY_NON_OPTIONAL_SET, R1).
- *   STEP 3 — Rescue yesterday's skipped non-optionals (R2).
+ *   STEP 1 — Compute bucket targets + floors + ceilings.         (Sprint 2)
+ *   STEP 2 — Place daily non-optionals (R1).                     (Sprint 2)
+ *   STEP 3 — Rescue yesterday's skipped non-optionals (R2).      (Sprint 2)
+ *   STEP 4 — Sprint-phase ceremonies (R4).                       (Sprint 3)
+ *   STEP 5 — Deep Work payload (R3 DMAIC / generic).             (Sprint 3)
+ *   STEP 6 — CI rotation fill (pickCI).                          (Sprint 3)
+ *   STEP 7 — COMMUNICATION filler (pickCommFiller).              (Sprint 3)
+ *   STEP 8 — Order day (orderDay).                               (Sprint 3)
+ *   STEP 9 — Validate (validateComposition + relaxConfigurable). (Sprint 3)
+ *   STEP 10 — Build Composition + emit CycleProposed.            (Sprint 3)
  *
- * Steps 4–10 (sprint-phase ceremonies, Deep payload, CI rotation, comm
- * filler, ordering, validation, retry, build) are marked TODO and ship in
- * Sprint 3 per DELIVERY_PLAN §4.
- *
- * Output shape (PARTIAL per Sprint 2): an intermediate object with the
- * computed targets + the placed non-optional / varianceRescue drafts +
- * `why[]` audit entries. Sprint 3 replaces this with the full Composition
- * builder (step 10).
- *
- * Pure; no I/O.
+ * Pure composer — the only side effect is optional `cycleProposedEvent`
+ * construction when `emit` is provided (persistence + event publication are
+ * handled by ComposerService, which wraps this pure composer).
  */
 
 import { computeBucketTargets } from '../engine/capacity.js';
-import { computeBucketFloors, computeBucketCeilings } from '../capacity/floorsAndCeilings.js';
+import {
+  computeBucketFloors,
+  computeBucketCeilings
+} from '../capacity/floorsAndCeilings.js';
+import { selectDeepPayload } from '../engine/selectDeepPayload.js';
+import { pickCI, ciPriority } from '../engine/pickCI.js';
+import { pickCommFiller } from '../engine/pickCommFiller.js';
+import { orderDay } from '../engine/orderDay.js';
+import { validateComposition } from '../engine/validateComposition.js';
+import { relaxConfigurable } from '../engine/relaxConfigurable.js';
 
 /**
  * DAILY_NON_OPTIONAL_SET per ENGINE_DESIGN §1.2 heading. Canonical ids from
@@ -37,10 +45,6 @@ export const DAILY_NON_OPTIONAL_SET = Object.freeze([
     name: 'Daily Standup'
   },
   {
-    // AM High-value Communication — per §1.2 a 60-min block anchored 09:15.
-    // The composer materializes this from generic COMM entry (gen_value_added_communication)
-    // with an explicit slot name; catalog #14 is the reference but #14 is
-    // not flagged non-optional (see markNonOptional.js rationale).
     id: 'gen_value_added_communication',
     anchor: '09:15',
     defaultMinutes: 60,
@@ -66,6 +70,77 @@ export const DAILY_NON_OPTIONAL_SET = Object.freeze([
 ]);
 
 /**
+ * SPRINT_CEREMONIES — step-4 phase-specific placements.
+ *
+ *  PLANNING_DAY  — Sprint Planning (120 min, Mon Wk1, 09:30)
+ *  MID_SPRINT_DAY — Mid-Sprint Review (30 min, Fri Wk1, 15:00)
+ *  REVIEW_DAY    — Sprint Review (60 min, Fri Wk2, 14:00) + Retrospective (30 min, 15:00)
+ */
+export const SPRINT_CEREMONIES = Object.freeze({
+  PLANNING_DAY: Object.freeze([
+    {
+      id: 'cer_sprint_planning',
+      anchor: '09:30',
+      defaultMinutes: 120,
+      bucket: 'COMMUNICATION',
+      name: 'Sprint Planning'
+    }
+  ]),
+  MID_SPRINT_DAY: Object.freeze([
+    {
+      id: 'cer_mid_sprint_review',
+      anchor: '15:00',
+      defaultMinutes: 30,
+      bucket: 'COMMUNICATION',
+      name: 'Mid-Sprint Review'
+    }
+  ]),
+  REVIEW_DAY: Object.freeze([
+    {
+      id: 'cer_sprint_review',
+      anchor: '14:00',
+      defaultMinutes: 60,
+      bucket: 'COMMUNICATION',
+      name: 'Sprint Review'
+    },
+    {
+      id: 'cer_sprint_retrospective',
+      anchor: '15:00',
+      defaultMinutes: 30,
+      bucket: 'COMMUNICATION',
+      name: 'Sprint Retrospective'
+    }
+  ])
+});
+
+/**
+ * Compute sprint-phase anchor day flags for the target date using
+ * `User.sprintAnchorDate` as the reference Monday Wk1.
+ *
+ *  - PLANNING_DAY: target date === sprintAnchorDate (Mon Wk1)
+ *  - MID_SPRINT_DAY: target date = sprintAnchorDate + 4 days (Fri Wk1)
+ *  - REVIEW_DAY: target date = sprintAnchorDate + 11 days (Fri Wk2)
+ *
+ * @param {string} targetDateIso
+ * @param {string|undefined} sprintAnchorDateIso
+ * @returns {{isPlanningDay: boolean, isMidSprintDay: boolean, isReviewDay: boolean}}
+ */
+export function sprintCeremonyDays(targetDateIso, sprintAnchorDateIso) {
+  if (!targetDateIso || !sprintAnchorDateIso) {
+    return { isPlanningDay: false, isMidSprintDay: false, isReviewDay: false };
+  }
+  const anchor = new Date(`${sprintAnchorDateIso}T00:00:00Z`);
+  const target = new Date(`${targetDateIso}T00:00:00Z`);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.round((target - anchor) / dayMs);
+  return {
+    isPlanningDay: diffDays === 0,
+    isMidSprintDay: diffDays === 4,
+    isReviewDay: diffDays === 11
+  };
+}
+
+/**
  * Does `remaining[bucket]` have room for `minutes`?
  *
  * @param {{PROJECT: number, COMMUNICATION: number, CI: number}} remaining
@@ -78,52 +153,80 @@ function fits(remaining, bucket, minutes) {
 }
 
 /**
- * Materialize a ScheduledActivity draft. Sprint 2 version — fields known at
- * composer time. Sprint 3 will enrich with plannedStartAt (orderDay) and
- * linkedKaizenId / linkedDmaicStepRef (selectDeepPayload).
+ * Materialize a ScheduledActivity draft.
  *
  * @param {object} spec
- * @param {string} spec.catalogEntryId
- * @param {string} spec.name
- * @param {string} spec.bucket
- * @param {number} spec.plannedDurationMinutes
- * @param {string} [spec.anchor]
- * @param {string} [spec.slotKind]
- * @param {boolean} [spec.carriedOver]
  * @returns {object}
  */
 function materialize(spec) {
   const draft = {
-    id: `sa_${spec.catalogEntryId}_${spec.anchor ?? spec.slotKind ?? 'slot'}`,
+    id: spec.id ?? `sa_${spec.catalogEntryId}_${spec.anchor ?? spec.slotKind ?? spec.idSuffix ?? 'slot'}`,
     catalogEntryId: spec.catalogEntryId,
     name: spec.name,
     bucket: spec.bucket,
     plannedDurationMinutes: spec.plannedDurationMinutes,
-    plannedStartAt: null, // Sprint 3: orderDay sets this
+    plannedStartAt: spec.plannedStartAt ?? null,
     state: 'PROPOSED',
     sourceOfSchedule: 'COMPOSER_AUTO'
   };
   if (spec.slotKind) draft.slotKind = spec.slotKind;
+  if (spec.anchor) draft.anchor = spec.anchor;
   if (spec.carriedOver) draft.carriedOver = true;
+  if (spec.linkedKaizenId) draft.linkedKaizenId = spec.linkedKaizenId;
+  if (spec.linkedDmaicStepRef) draft.linkedDmaicStepRef = spec.linkedDmaicStepRef;
+  if (spec.sliceIndex !== undefined) draft.sliceIndex = spec.sliceIndex;
+  if (typeof spec.ciPriority === 'number') draft.ciPriority = spec.ciPriority;
   return draft;
 }
 
 /**
- * composeDaily (Sprint 2 skeleton — steps 1–3 only).
+ * Slice a Deep payload block per `User.deepSlicePreference`. Returns an
+ * array of `{ minutes }` slices whose sum <= `remainingProject`.
+ *
+ * @param {number} totalMinutes
+ * @param {'2x2h' | '4x1h'} [pref='2x2h']
+ * @param {number} [remainingProject=Number.POSITIVE_INFINITY]
+ * @returns {{minutes: number}[]}
+ */
+export function sliceDeep(totalMinutes, pref = '2x2h', remainingProject = Number.POSITIVE_INFINITY) {
+  const cap = Math.min(totalMinutes, remainingProject);
+  if (cap <= 0) return [];
+  if (pref === '4x1h') {
+    // Target: 4 × 60-min slices.
+    const slices = [];
+    let left = cap;
+    for (let i = 0; i < 4 && left >= 60; i += 1) {
+      slices.push({ minutes: 60 });
+      left -= 60;
+    }
+    if (slices.length === 0) {
+      // fallback — single slice
+      slices.push({ minutes: cap });
+    }
+    return slices;
+  }
+  // default 2x2h
+  const half = Math.floor(cap / 2);
+  if (half <= 0) return [{ minutes: cap }];
+  const s1 = half;
+  const s2 = cap - half;
+  if (s2 <= 0) return [{ minutes: s1 }];
+  return [{ minutes: s1 }, { minutes: s2 }];
+}
+
+/**
+ * Attempt to grow a generic Deep block when PROJECT has slack after DMAIC
+ * slices. Returns the top-up minutes (possibly 0).
+ */
+function deepTopUpMinutes(remainingProject) {
+  return Math.max(0, remainingProject);
+}
+
+/**
+ * composeDaily — all 10 steps.
  *
  * @param {object} input  ComposerInput per ENGINE_DESIGN §1.1
- * @returns {{
- *   partial: true,
- *   cycleType: 'DAILY',
- *   targets: {PROJECT: number, COMMUNICATION: number, CI: number, _ext: number, _warnings?: string[]},
- *   floors: {PROJECT: number, COMMUNICATION: number, CI: number},
- *   ceilings: {PROJECT: number, COMMUNICATION: number, CI: number},
- *   placed: object[],
- *   varianceQueueRescued: object[],
- *   remaining: {PROJECT: number, COMMUNICATION: number, CI: number},
- *   why: Array<{ref: string, rule: string, detail: string}>,
- *   todo: string[]
- * }}
+ * @returns {object}
  */
 export function composeDaily(input) {
   if (!input || typeof input !== 'object') {
@@ -161,20 +264,11 @@ export function composeDaily(input) {
 
   // ---------------------------------------------------------------------
   // STEP 2 — Place daily non-optionals (R1).
-  //
-  // NOTE: The AM + Post-lunch Communication blocks may need shrinking to
-  // fit the reduced COMMUNICATION target after external drain. Per §1.9
-  // the composer protects PRESENCE over LENGTH: every block is kept, but
-  // sizes are reduced proportionally. Sprint 2 implements a simple
-  // proportional shrink across the two shrinkable Communication slots
-  // (Standup's 15-min anchor is fixed).
   // ---------------------------------------------------------------------
-
-  // First, identify how much COMM the Standup consumes (always fixed at 15).
-  const standupSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === undefined && s.bucket === 'COMMUNICATION');
+  const standupSpec = DAILY_NON_OPTIONAL_SET.find(
+    (s) => s.slotKind === undefined && s.bucket === 'COMMUNICATION'
+  );
   const standupMinutes = standupSpec?.defaultMinutes ?? 15;
-
-  // The two shrinkable COMM slots are the AM + Post-lunch blocks.
   const amSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === 'AM_COMM');
   const postSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === 'POST_LUNCH_COMM');
   const amDefault = amSpec?.defaultMinutes ?? 60;
@@ -187,14 +281,9 @@ export function composeDaily(input) {
   let postMinutes = postDefault;
 
   if (commNeeded > commBudget) {
-    // Shrink AM + Post proportionally; Standup is inviolate.
     const shrinkable = amDefault + postDefault;
     const available = Math.max(0, commBudget - standupMinutes);
     if (available <= 0) {
-      // Not enough room even for Standup + minimum-viable slots. Fall back
-      // to 0/0 on AM/Post — still preserves presence via 1-minute? No,
-      // fall back to the minimum presence of 1 min each so rows aren't
-      // dropped. Sprint-3 INFEASIBLE path handles this more cleanly.
       amMinutes = 1;
       postMinutes = 1;
     } else {
@@ -260,29 +349,349 @@ export function composeDaily(input) {
   }
 
   // ---------------------------------------------------------------------
-  // STEPS 4–10 — TODO (Sprint 3).
+  // STEP 4 — Sprint-phase ceremonies (R4).
+  //
+  // Per ENGINE_DESIGN §3.3 + §1.2 step 4. Dates computed from
+  // User.sprintAnchorDate passed through on input (we accept
+  // input.user.sprintAnchorDate OR input.sprintAnchorDate OR we derive
+  // nothing if absent).
   // ---------------------------------------------------------------------
-  const todo = [
-    'STEP_4_PHASE_CEREMONIES',
-    'STEP_5_DEEP_PAYLOAD',
-    'STEP_6_CI_ROTATION',
-    'STEP_7_COMM_FILLER',
-    'STEP_8_ORDER_DAY',
-    'STEP_9_VALIDATE',
-    'STEP_10_BUILD_COMPOSITION'
-  ];
+  const sprintAnchor =
+    input.user?.sprintAnchorDate ??
+    input.sprintAnchorDate ??
+    null;
+  const { isPlanningDay, isMidSprintDay, isReviewDay } = sprintCeremonyDays(
+    input.date,
+    sprintAnchor
+  );
+
+  const phaseCeremonies = [];
+  if (isPlanningDay) phaseCeremonies.push(...SPRINT_CEREMONIES.PLANNING_DAY);
+  if (isMidSprintDay) phaseCeremonies.push(...SPRINT_CEREMONIES.MID_SPRINT_DAY);
+  if (isReviewDay) phaseCeremonies.push(...SPRINT_CEREMONIES.REVIEW_DAY);
+
+  for (const cer of phaseCeremonies) {
+    if (!fits(remaining, cer.bucket, cer.defaultMinutes)) {
+      // Phase ceremonies are non-optional; if they don't fit, we surface an
+      // INFEASIBLE at validation time.
+      why.push({
+        ref: cer.id,
+        rule: 'R4_PHASE_CEREMONY',
+        detail: `${cer.name} could not fit — will surface at validate`
+      });
+    }
+    const draft = materialize({
+      catalogEntryId: cer.id,
+      name: cer.name,
+      bucket: cer.bucket,
+      plannedDurationMinutes: cer.defaultMinutes,
+      anchor: cer.anchor
+    });
+    placed.push(draft);
+    remaining[cer.bucket] = Math.max(0, (remaining[cer.bucket] ?? 0) - cer.defaultMinutes);
+    why.push({
+      ref: cer.id,
+      rule: 'R4_PHASE_CEREMONY',
+      detail: `${cer.name} @ ${cer.anchor}`
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // STEP 5 — Deep Work payload (R3 DMAIC link OR generic).
+  // ---------------------------------------------------------------------
+  let deepEntry = null;
+  let deepMinutesPlanned = 0;
+  if (remaining.PROJECT > 0) {
+    deepEntry = selectDeepPayload(input);
+    if (deepEntry) {
+      const deepDuration =
+        typeof deepEntry.defaultDurationMinutes === 'number'
+          ? deepEntry.defaultDurationMinutes
+          : remaining.PROJECT;
+      deepMinutesPlanned = Math.min(deepDuration, remaining.PROJECT);
+
+      const pref = input.user?.deepSlicePreference ?? input.deepSlicePreference ?? '2x2h';
+      const slices = sliceDeep(deepMinutesPlanned, pref, remaining.PROJECT);
+
+      // Track 4x1h interruption case: if fewer than 4 morning/afternoon slots
+      // remain, drop to 3x1h and record a why entry.
+      if (pref === '4x1h' && slices.length < 4) {
+        why.push({
+          ref: deepEntry.id,
+          rule: 'R5_DEEP_PAYLOAD',
+          detail: 'deep_sliced_3_of_4_interruption'
+        });
+      }
+
+      const linkedKaizenId = input.activeKaizen?.id ?? null;
+      const linkedDmaicStepRef = input.activeKaizen
+        ? { kaizenId: input.activeKaizen.id, catalogEntryId: deepEntry.id }
+        : null;
+
+      for (let i = 0; i < slices.length; i += 1) {
+        const s = slices[i];
+        const draft = materialize({
+          catalogEntryId: deepEntry.id,
+          name: deepEntry.name,
+          bucket: 'PROJECT',
+          plannedDurationMinutes: s.minutes,
+          linkedKaizenId,
+          linkedDmaicStepRef,
+          sliceIndex: i + 1,
+          idSuffix: `slice${i + 1}`
+        });
+        placed.push(draft);
+        remaining.PROJECT -= s.minutes;
+        why.push({
+          ref: deepEntry.id,
+          rule: linkedKaizenId ? 'R3_KAIZEN_LINK' : 'R5_DEEP_PAYLOAD',
+          detail: `${deepEntry.name} slice ${i + 1}/${slices.length} (${s.minutes}m)`
+        });
+      }
+
+      // Top-up PROJECT with generic Deep if there's slack.
+      const topUp = deepTopUpMinutes(remaining.PROJECT);
+      if (topUp > 0 && deepEntry.id !== 'gen_deep_work_project') {
+        const generic = catalog.find((c) => c.id === 'gen_deep_work_project');
+        if (generic) {
+          const draft = materialize({
+            catalogEntryId: generic.id,
+            name: generic.name,
+            bucket: 'PROJECT',
+            plannedDurationMinutes: topUp,
+            idSuffix: 'topup'
+          });
+          placed.push(draft);
+          remaining.PROJECT = 0;
+          why.push({
+            ref: generic.id,
+            rule: 'R5_DEEP_PAYLOAD',
+            detail: `PROJECT top-up ${topUp}m (generic Deep)`
+          });
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // STEP 6 — CI rotation fill.
+  // ---------------------------------------------------------------------
+  let ciGuard = 16;
+  while (remaining.CI >= 30 && ciGuard > 0) {
+    ciGuard -= 1;
+    const next = pickCI(input, placed, remaining.CI);
+    if (!next) break;
+    const draft = materialize({
+      catalogEntryId: next.entry.id,
+      name: next.entry.name,
+      bucket: 'CI',
+      plannedDurationMinutes: next.minutes,
+      ciPriority: next.priority
+    });
+    placed.push(draft);
+    remaining.CI -= next.minutes;
+    why.push({
+      ref: next.entry.id,
+      rule: 'R6_CI_ROTATION',
+      detail: `${next.entry.name} — ${next.reason}`
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // STEP 7 — COMMUNICATION filler.
+  // ---------------------------------------------------------------------
+  let commGuard = 16;
+  while (remaining.COMMUNICATION >= 15 && commGuard > 0) {
+    commGuard -= 1;
+    const next = pickCommFiller(input, placed, remaining.COMMUNICATION);
+    if (!next) break;
+    const draft = materialize({
+      catalogEntryId: next.entry.id,
+      name: next.entry.name,
+      bucket: 'COMMUNICATION',
+      plannedDurationMinutes: next.minutes
+    });
+    placed.push(draft);
+    remaining.COMMUNICATION -= next.minutes;
+    why.push({
+      ref: next.entry.id,
+      rule: 'R7_COMM_FILLER',
+      detail: `${next.entry.name} — ${next.reason}`
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // STEP 8 — Order the day (sets plannedStartAt on each block).
+  // ---------------------------------------------------------------------
+  orderDay(placed, input);
+
+  // ---------------------------------------------------------------------
+  // STEP 9 — Validate + relax.
+  // ---------------------------------------------------------------------
+  const doValidate = (acts) =>
+    validateComposition({
+      cycleType: 'DAILY',
+      activities: acts,
+      userDailyCapacityMinutes: input.dailyCapacityMinutes,
+      externalMinutesToday: input.externalMinutesToday ?? 0
+    });
+
+  let finalPlaced = placed;
+  let validation = doValidate(finalPlaced);
+  let relaxedDrops = [];
+
+  if (!validation.ok && (
+    validation.failureCode === 'OVER_CAPACITY' ||
+    validation.failureCode === 'PROJECT_OVERPACKED' ||
+    validation.failureCode === 'COMM_OVERPACKED' ||
+    validation.failureCode === 'CI_OVERPACKED'
+  )) {
+    const relaxed = relaxConfigurable(finalPlaced, doValidate);
+    finalPlaced = relaxed.placed;
+    relaxedDrops = relaxed.dropped;
+    validation = relaxed.result;
+    for (const d of relaxedDrops) {
+      why.push({
+        ref: d.catalogEntryId,
+        rule: 'R9_RELAXED',
+        detail: `dropped ${d.name} (${d.plannedDurationMinutes}m) to meet invariants`
+      });
+    }
+  }
+
+  if (!validation.ok) {
+    // Build an InfeasibleResult per ENGINE_DESIGN §4.7.
+    const totalReq = finalPlaced.reduce(
+      (s, a) => s + (a.plannedDurationMinutes ?? 0),
+      0
+    );
+    const effCap =
+      input.dailyCapacityMinutes - (input.externalMinutesToday ?? 0);
+    const infeasible = {
+      kind: 'INFEASIBLE',
+      totalRequiredMinutes: totalReq,
+      capacityMinutes: effCap,
+      shortfallMinutes: Math.max(0, totalReq - effCap),
+      bucketShortfalls: {
+        PROJECT: Math.max(
+          0,
+          finalPlaced.filter((a) => a.bucket === 'PROJECT').reduce(
+            (s, a) => s + (a.plannedDurationMinutes ?? 0),
+            0
+          ) - ceilings.PROJECT
+        ),
+        COMMUNICATION: Math.max(
+          0,
+          finalPlaced
+            .filter((a) => a.bucket === 'COMMUNICATION')
+            .reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0) -
+            ceilings.COMMUNICATION
+        ),
+        CI: Math.max(
+          0,
+          finalPlaced
+            .filter((a) => a.bucket === 'CI')
+            .reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0) - ceilings.CI
+        )
+      },
+      suggestedActions: [
+        {
+          kind: 'RAISE_CAPACITY',
+          currentMinutes: input.dailyCapacityMinutes,
+          suggestedMinutes: input.dailyCapacityMinutes + 60
+        },
+        {
+          kind: 'REDUCE_EXTERNAL',
+          currentExternalMinutes: input.externalMinutesToday ?? 0,
+          suggestedExternalMinutes: 0
+        }
+      ],
+      explain: [
+        `Required ${totalReq} min; capacity ${effCap} min.`,
+        `Validation failed on ${validation.failureCode}.`
+      ],
+      validation
+    };
+    return {
+      state: 'INFEASIBLE',
+      partial: false,
+      cycleType: 'DAILY',
+      reason: validation.failureCode,
+      detail: validation.detail,
+      infeasible,
+      targets,
+      floors,
+      ceilings,
+      placed: finalPlaced,
+      varianceQueueRescued,
+      remaining,
+      why,
+      validation,
+      todo: []
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // STEP 10 — Build Composition (PROPOSED), freeze composerInputsSnapshot,
+  // attach invariantChecks, optionally emit CycleProposed.
+  // ---------------------------------------------------------------------
+  const compositionId = `comp_${input.userId}_${input.date}`;
+  const composition = {
+    id: compositionId,
+    userId: input.userId,
+    cycleType: 'DAILY',
+    startAt: `${input.date}T00:00:00`,
+    endAt: `${input.date}T23:59:59`,
+    parentCompositionId: null,
+    state: 'PROPOSED',
+    proposedAt: input._now ?? new Date().toISOString(),
+    decidedAt: null,
+    closedAt: null,
+    composerInputsSnapshot: {
+      role: Array.isArray(input.role) ? [...input.role] : [],
+      capacityMinutes: input.dailyCapacityMinutes,
+      externalMinutesToday: input.externalMinutesToday ?? 0,
+      sprintPhase: input.sprintPhase ?? 'EXECUTION',
+      activeKaizenId: input.activeKaizen?.id ?? null,
+      varianceCount: Array.isArray(input.varianceQueue) ? input.varianceQueue.length : 0,
+      explain: why
+    },
+    invariantChecks: validation.detail,
+    activities: finalPlaced.map((a) => ({
+      ...a,
+      compositionId,
+      state: 'PROPOSED',
+      sourceOfSchedule: 'COMPOSER_AUTO'
+    }))
+  };
+
+  // Optional event construction (caller's ComposerService.persists + publishes).
+  const cycleProposedEvent = {
+    event: 'CycleProposed',
+    payload: {
+      compositionId,
+      userId: input.userId,
+      cycleType: 'DAILY',
+      date: input.date
+    }
+  };
 
   return {
-    partial: true,
+    state: 'PROPOSED',
+    partial: false,
     cycleType: 'DAILY',
+    composition,
     targets,
     floors,
     ceilings,
-    placed,
+    placed: finalPlaced,
     varianceQueueRescued,
     remaining,
     why,
-    todo
+    validation,
+    cycleProposedEvent,
+    // Sprint-2 compatibility fields retained for existing tests:
+    todo: []
   };
 }
 

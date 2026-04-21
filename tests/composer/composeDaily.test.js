@@ -12,11 +12,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { composeDaily, DAILY_NON_OPTIONAL_SET } from '../../js/composer/composeDaily.js';
+import { composeDaily, DAILY_NON_OPTIONAL_SET, sprintCeremonyDays, sliceDeep } from '../../js/composer/composeDaily.js';
 import {
   GOLDEN_USER,
   GOLDEN_EXPECTED_TARGETS,
   GOLDEN_MIN_CATALOG,
+  GOLDEN_FULL_CATALOG,
   GOLDEN_VARIANCE_QUEUE,
   buildGoldenComposerInput
 } from '../fixtures/goldenDay.js';
@@ -34,7 +35,10 @@ describe('composeDaily — STEP 1: bucket targets', () => {
       catalog: []
     };
     const out = composeDaily(input);
-    assert.equal(out.partial, true);
+    // Sprint 3: composer is complete; partial=false. State is PROPOSED
+    // when the day is feasible; INFEASIBLE when empty catalog makes it
+    // impossible (default test uses catalog=[] → no Deep payload).
+    assert.equal(out.partial, false);
     assert.equal(out.targets.PROJECT, 240);
     assert.equal(out.targets.COMMUNICATION, 120);
     assert.equal(out.targets.CI, 120);
@@ -210,17 +214,12 @@ describe('composeDaily — STEP 3: varianceQueue rescue', () => {
   });
 });
 
-describe('composeDaily — TODO list flags Sprint 3 steps', () => {
-  test('todo[] lists steps 4–10 as remaining', () => {
+describe('composeDaily — Sprint 3 completeness', () => {
+  test('todo[] is empty now that steps 4–10 are implemented', () => {
     const input = buildGoldenComposerInput();
     const out = composeDaily(input);
-    assert.ok(out.todo.includes('STEP_4_PHASE_CEREMONIES'));
-    assert.ok(out.todo.includes('STEP_5_DEEP_PAYLOAD'));
-    assert.ok(out.todo.includes('STEP_6_CI_ROTATION'));
-    assert.ok(out.todo.includes('STEP_7_COMM_FILLER'));
-    assert.ok(out.todo.includes('STEP_8_ORDER_DAY'));
-    assert.ok(out.todo.includes('STEP_9_VALIDATE'));
-    assert.ok(out.todo.includes('STEP_10_BUILD_COMPOSITION'));
+    assert.ok(Array.isArray(out.todo));
+    assert.equal(out.todo.length, 0);
   });
 });
 
@@ -264,5 +263,316 @@ describe('composeDaily — golden fixture loads cleanly', () => {
     assert.equal(input.externalMinutesToday, 60);
     assert.ok(input.activeKaizen);
     assert.equal(input.varianceQueue.length, 1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPRINT 3 — steps 4–10 end-to-end against full catalog.
+// ---------------------------------------------------------------------------
+
+describe('composeDaily — sprintCeremonyDays', () => {
+  test('anchor day → PLANNING_DAY', () => {
+    const flags = sprintCeremonyDays('2026-04-20', '2026-04-20');
+    assert.equal(flags.isPlanningDay, true);
+    assert.equal(flags.isMidSprintDay, false);
+    assert.equal(flags.isReviewDay, false);
+  });
+
+  test('anchor + 4 days (Fri Wk1) → MID_SPRINT_DAY', () => {
+    const flags = sprintCeremonyDays('2026-04-24', '2026-04-20');
+    assert.equal(flags.isPlanningDay, false);
+    assert.equal(flags.isMidSprintDay, true);
+    assert.equal(flags.isReviewDay, false);
+  });
+
+  test('anchor + 11 days (Fri Wk2) → REVIEW_DAY', () => {
+    const flags = sprintCeremonyDays('2026-05-01', '2026-04-20');
+    assert.equal(flags.isReviewDay, true);
+  });
+
+  test('missing inputs return all false', () => {
+    const flags = sprintCeremonyDays('2026-04-20', null);
+    assert.equal(flags.isPlanningDay, false);
+    assert.equal(flags.isMidSprintDay, false);
+    assert.equal(flags.isReviewDay, false);
+  });
+});
+
+describe('composeDaily — sliceDeep', () => {
+  test('2x2h pref on 240 min → two 120-min slices', () => {
+    const s = sliceDeep(240, '2x2h');
+    assert.equal(s.length, 2);
+    assert.equal(s[0].minutes + s[1].minutes, 240);
+  });
+
+  test('4x1h pref on 240 min → four 60-min slices', () => {
+    const s = sliceDeep(240, '4x1h');
+    assert.equal(s.length, 4);
+    for (const slice of s) assert.equal(slice.minutes, 60);
+  });
+
+  test('4x1h pref with only room for 3 → 3 slices (interruption)', () => {
+    const s = sliceDeep(180, '4x1h');
+    assert.equal(s.length, 3);
+  });
+
+  test('capped by remainingProject', () => {
+    const s = sliceDeep(240, '2x2h', 120);
+    assert.equal(s.reduce((a, b) => a + b.minutes, 0), 120);
+  });
+});
+
+describe('composeDaily — STEP 4: sprint-phase ceremonies', () => {
+  test('places Sprint Planning on PLANNING_DAY', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    input.date = GOLDEN_USER.sprintAnchorDate; // Mon Wk1 (2026-04-20)
+    input.sprintAnchorDate = GOLDEN_USER.sprintAnchorDate;
+    input.user = { ...input.user, sprintAnchorDate: GOLDEN_USER.sprintAnchorDate };
+    const out = composeDaily(input);
+    const planning = out.placed.find((p) => p.catalogEntryId === 'cer_sprint_planning');
+    assert.ok(planning, 'Sprint Planning should be placed on PLANNING_DAY');
+  });
+
+  test('why[] includes R4_PHASE_CEREMONY', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    input.date = GOLDEN_USER.sprintAnchorDate;
+    input.sprintAnchorDate = GOLDEN_USER.sprintAnchorDate;
+    input.user = { ...input.user, sprintAnchorDate: GOLDEN_USER.sprintAnchorDate };
+    const out = composeDaily(input);
+    const r4 = out.why.filter((w) => w.rule === 'R4_PHASE_CEREMONY');
+    assert.ok(r4.length >= 1);
+  });
+
+  test('no ceremony on non-anchor weekday (Tuesday)', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const ceremonies = out.placed.filter(
+      (p) =>
+        p.catalogEntryId === 'cer_sprint_planning' ||
+        p.catalogEntryId === 'cer_mid_sprint_review' ||
+        p.catalogEntryId === 'cer_sprint_review' ||
+        p.catalogEntryId === 'cer_sprint_retrospective'
+    );
+    assert.equal(ceremonies.length, 0);
+  });
+});
+
+describe('composeDaily — STEP 5: Deep payload', () => {
+  test('active Kaizen with nextStepActivityNumber=34 lands #34 as Deep', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const deepBlocks = out.placed.filter((p) => p.bucket === 'PROJECT');
+    assert.ok(deepBlocks.length >= 1);
+    const linked = deepBlocks.find((p) => p.catalogEntryId === 'cat_34_cause_and_effect_matrix');
+    assert.ok(linked);
+    assert.equal(linked.linkedKaizenId, 'k_reduce_cycle_time');
+  });
+
+  test('Deep slices include linkedKaizenId and linkedDmaicStepRef', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const linkedDeep = out.placed.find(
+      (p) => p.bucket === 'PROJECT' && p.catalogEntryId === 'cat_34_cause_and_effect_matrix'
+    );
+    assert.ok(linkedDeep.linkedKaizenId);
+    assert.ok(linkedDeep.linkedDmaicStepRef);
+    assert.equal(linkedDeep.linkedDmaicStepRef.kaizenId, 'k_reduce_cycle_time');
+  });
+
+  test('why[] records R3_KAIZEN_LINK for DMAIC-linked slices', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const r3 = out.why.filter((w) => w.rule === 'R3_KAIZEN_LINK');
+    assert.ok(r3.length >= 1);
+  });
+});
+
+describe('composeDaily — STEP 6: CI rotation', () => {
+  test('PDCA placed at priority 80 when active and ≥42h since last tick', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const pdca = out.placed.find((p) => p.catalogEntryId === 'cat_12_pdca_cycle');
+    assert.ok(pdca, 'PDCA should be placed via CI rotation');
+    assert.equal(pdca.bucket, 'CI');
+    assert.equal(pdca.ciPriority, 80);
+  });
+
+  test('why[] contains R6_CI_ROTATION entries', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const r6 = out.why.filter((w) => w.rule === 'R6_CI_ROTATION');
+    assert.ok(r6.length >= 1);
+  });
+});
+
+describe('composeDaily — STEP 8: ordering', () => {
+  test('every placed block has plannedStartAt set after step 8', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    for (const p of out.placed) {
+      assert.ok(p.plannedStartAt, `missing plannedStartAt on ${p.name}`);
+    }
+  });
+
+  test('Standup anchored 09:00, AM Comm 09:15, Post-lunch Comm 13:00, Reflection 17:00', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    const standup = out.placed.find((p) => p.catalogEntryId === 'cer_daily_standup');
+    const am = out.placed.find((p) => p.slotKind === 'AM_COMM');
+    const post = out.placed.find((p) => p.slotKind === 'POST_LUNCH_COMM');
+    const refl = out.placed.find(
+      (p) => p.catalogEntryId === 'gen_end_of_activity_reflection'
+    );
+    assert.equal(standup.plannedStartAt, '09:00');
+    assert.equal(am.plannedStartAt, '09:15');
+    assert.equal(post.plannedStartAt, '13:00');
+    assert.equal(refl.plannedStartAt, '17:00');
+  });
+});
+
+describe('composeDaily — STEP 9: validation', () => {
+  test('golden fixture composes to a valid PROPOSED composition', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    assert.equal(out.state, 'PROPOSED');
+    assert.equal(out.validation.ok, true);
+  });
+});
+
+describe('composeDaily — STEP 10: build Composition', () => {
+  test('output includes composition with state=PROPOSED', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    assert.ok(out.composition);
+    assert.equal(out.composition.state, 'PROPOSED');
+    assert.equal(out.composition.cycleType, 'DAILY');
+    assert.equal(out.composition.userId, GOLDEN_USER.id);
+  });
+
+  test('composerInputsSnapshot.explain mirrors why[]', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    assert.equal(
+      out.composition.composerInputsSnapshot.explain.length,
+      out.why.length
+    );
+  });
+
+  test('activities on composition carry compositionId, state=PROPOSED', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    for (const a of out.composition.activities) {
+      assert.equal(a.compositionId, out.composition.id);
+      assert.equal(a.state, 'PROPOSED');
+      assert.equal(a.sourceOfSchedule, 'COMPOSER_AUTO');
+    }
+  });
+
+  test('emits a cycleProposedEvent descriptor', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+    assert.ok(out.cycleProposedEvent);
+    assert.equal(out.cycleProposedEvent.event, 'CycleProposed');
+    assert.equal(out.cycleProposedEvent.payload.compositionId, out.composition.id);
+  });
+});
+
+describe('composeDaily — GOLDEN §1.9 end-to-end (critical)', () => {
+  test('composes the §1.9 golden day from the full catalog', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out = composeDaily(input);
+
+    // Feasible + PROPOSED.
+    assert.equal(out.state, 'PROPOSED', 'golden day must compose to PROPOSED');
+    assert.equal(out.validation.ok, true);
+
+    // Bucket sums — PROJECT=240, COMMUNICATION=60, CI sum matches §1.9 outputs.
+    const sums = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
+    for (const p of out.placed) sums[p.bucket] += p.plannedDurationMinutes;
+    assert.equal(sums.PROJECT, 240, 'PROJECT sum must equal 240');
+    assert.equal(sums.COMMUNICATION, 60, 'COMMUNICATION sum must equal 60');
+    assert.ok(sums.CI >= 60, `CI sum ${sums.CI} must be >= 60 (floor)`);
+    assert.ok(sums.CI <= 150, `CI sum ${sums.CI} must be <= 150 (ceiling)`);
+
+    // Non-optional set present.
+    const names = new Set(out.placed.map((p) => p.name));
+    assert.ok(names.has('Daily Standup'));
+    assert.ok(names.has('AM High-value Communication'));
+    assert.ok(names.has('Post-lunch High-value Communication'));
+    assert.ok(names.has('End-of-Activity Reflection'));
+
+    // DMAIC #34 slice present, linked to k_reduce_cycle_time.
+    const deepLinked = out.placed.find((p) => p.catalogEntryId === 'cat_34_cause_and_effect_matrix');
+    assert.ok(deepLinked, 'DMAIC #34 must be placed as Deep payload');
+    assert.equal(deepLinked.linkedKaizenId, 'k_reduce_cycle_time');
+
+    // R2 rescue #1 L&D present + carriedOver.
+    const ld = out.placed.find(
+      (p) => p.catalogEntryId === 'cat_1_personal_learning_and_development_l_d_tracker'
+    );
+    assert.ok(ld);
+    assert.equal(ld.carriedOver, true);
+
+    // PDCA tick present (priority 80).
+    const pdca = out.placed.find((p) => p.catalogEntryId === 'cat_12_pdca_cycle');
+    assert.ok(pdca);
+
+    // Total minutes ≤ capacity − external.
+    const total = out.placed.reduce((a, b) => a + b.plannedDurationMinutes, 0);
+    assert.ok(total <= 480 - 60);
+
+    // why[] has all expected rule references.
+    const rules = new Set(out.why.map((w) => w.rule));
+    assert.ok(rules.has('R1_NON_OPTIONAL'));
+    assert.ok(rules.has('R2_VARIANCE_RESCUE'));
+    assert.ok(rules.has('R3_KAIZEN_LINK'));
+    assert.ok(rules.has('R6_CI_ROTATION'));
+  });
+
+  test('determinism: same input → byte-identical composition activities', () => {
+    const input1 = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const input2 = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const out1 = composeDaily(input1);
+    const out2 = composeDaily(input2);
+    const strip = (a) => ({
+      id: a.id,
+      catalogEntryId: a.catalogEntryId,
+      bucket: a.bucket,
+      plannedDurationMinutes: a.plannedDurationMinutes,
+      plannedStartAt: a.plannedStartAt
+    });
+    const acts1 = out1.placed.map(strip);
+    const acts2 = out2.placed.map(strip);
+    assert.deepEqual(acts1, acts2);
+  });
+});
+
+describe('composeDaily — performance', () => {
+  test('p95 under 100ms over 100 iterations (pure composition)', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    const times = [];
+    for (let i = 0; i < 100; i += 1) {
+      const t0 = performance.now();
+      composeDaily(input);
+      times.push(performance.now() - t0);
+    }
+    times.sort((a, b) => a - b);
+    const p95 = times[Math.floor(times.length * 0.95)];
+    assert.ok(
+      p95 < 100,
+      `p95 composition time ${p95.toFixed(3)}ms should be < 100ms`
+    );
+  });
+});
+
+describe('composeDaily — INFEASIBLE path', () => {
+  test('when PROJECT cannot be filled, returns INFEASIBLE', () => {
+    // Empty catalog, zero-capacity-after-external → Deep can't be placed, floor fails.
+    const input = buildGoldenComposerInput({ catalog: [] });
+    const out = composeDaily(input);
+    assert.equal(out.state, 'INFEASIBLE');
+    assert.ok(out.infeasible);
+    assert.equal(out.infeasible.kind, 'INFEASIBLE');
+    assert.ok(Array.isArray(out.infeasible.suggestedActions));
   });
 });
