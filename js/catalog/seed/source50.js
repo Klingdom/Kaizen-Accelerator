@@ -1,36 +1,58 @@
 /**
- * Seed loader — Sprint 1 parser STUB for the first 10 rows (E2-T2 stub).
+ * Seed loader — E2-T2 full 50-row BAM parser.
  *
- * Scope: parse the first 10 activity blocks from
- * `docs/Business Agility Standard Work.txt` into `CatalogEntry` drafts with:
+ * Scope (v2 Sprint 2): parse EVERY numbered activity block from
+ * `docs/Business Agility Standard Work.txt` into `CatalogEntry` drafts.
  *
+ * The source file numbers rows 1..50 but:
+ *   - Row 17 is absent (RESERVED per CATALOG_GAPS §F.1).
+ *   - Rows 19 and 20 have focus+name but no `hours per sprint` line and no
+ *     `procedure` block — they are completed by CATALOG_GAPS §A.2 / §A.4.
+ *
+ * We therefore return 47 numbered drafts with full hours+procedure data
+ * (rows 1..16, 18, 21..50) AND 2 skeleton drafts (rows 19 and 20) where
+ * `defaultDurationMinutes` and `procedure` are left null for §A fill-in.
+ * Row 17 is intentionally NOT produced (no record in source).
+ *
+ * Parsed-row fields:
  *   - id                        (stable: `cat_${activityNumber}_<slug>`)
  *   - activityNumber            (integer from the source row heading)
  *   - name                      (activity name line)
- *   - focusArea                 (source column; "Continuous Improvement" rows map to 'CONTINUOUS_IMPROVEMENT')
- *   - defaultDurationMinutes    (source hours × 60, integer)
- *   - procedure                 (the ordered `a./b./c./...` steps captured in order)
+ *   - focusArea                 (mapped from the focus-area column)
+ *   - defaultDurationMinutes    (source hours × 60, integer; null on skeletons)
+ *   - procedure                 (the ordered `a./b./c./…` steps; null on skeleton)
  *   - sourceRef                 ('<file-path>:<lineNumber>')
  *
- * All other CatalogEntry fields (cadence, trigger, inputs, outputArtifact,
+ * All cross-cutting metadata (cadence, trigger, inputs, outputArtifact,
  * participants, bucket, isNonOptional, dependsOn, projectTypeBinding,
- * phaseBinding, appliesToRoles) ship in Sprint 2 as part of E2-T4/T5/T6.
- * We leave those fields **null** (or the empty array for list-valued fields
- * that must be iterable) so downstream services can read them without
- * special-casing `undefined`. DELIVERY_PLAN Sprint-1 acceptance: "Leave as
- * `null`" — kept verbatim.
+ * phaseBinding, appliesToRoles) is left `null` here — populated by later
+ * seed-pipeline steps: fillGaps (§A–§D), bulkFill (§E), bucketMap (§H.1),
+ * markNonOptional (§3.4), dmaicDag (§J).
  *
- * Node-only read path: uses `node:fs` to load the source file. The repo is
- * browser-portable at runtime because this parser only runs at build/seed
- * time (the seeded output later lands as a static JSON bundle).
+ * Node-only read path (node:fs); runs at build/seed time only.
  */
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-/** Number of rows this Sprint-1 stub produces. */
+/** Number of rows the Sprint-1 stub produced. Kept for back-compat. */
 export const STUB_ROW_LIMIT = 10;
+
+/**
+ * Full-source numbered rows we expect to produce drafts for. Excludes #17
+ * (reserved — see CATALOG_GAPS §F.1). Includes #19 and #20 as skeletons.
+ */
+export const EXPECTED_NUMBERED_ROWS = Object.freeze(
+  [
+    ...Array.from({ length: 16 }, (_, i) => i + 1), // 1..16
+    18,
+    19,
+    20,
+    ...Array.from({ length: 30 }, (_, i) => i + 21) // 21..50
+  ]
+);
+export const EXPECTED_ROW_COUNT = EXPECTED_NUMBERED_ROWS.length; // 49
 
 /** Location of the source file relative to this module. */
 function defaultSourcePath() {
@@ -40,9 +62,11 @@ function defaultSourcePath() {
 }
 
 /**
- * Map a source focus-area column string to the typed FocusArea enum.
- * First 10 source rows are all 'Continuous Improvement'; we keep the
- * match table tiny and explicit so parser failures stay loud.
+ * Map a source focus-area column string to the typed FocusArea enum. The
+ * §2.2 type set includes CONTINUOUS_IMPROVEMENT, COMMUNICATION, DMAIC,
+ * KAIZEN, INNOVATION, CEREMONY, DEEP_WORK. DMAIC/Kaizen columns in the
+ * source read "DMAIC Project Work" / "Kaizen Project Work" — normalized
+ * to their enum values here.
  *
  * @param {string} raw
  * @returns {string}
@@ -53,29 +77,44 @@ function mapFocusArea(raw) {
     case 'continuous improvement':
       return 'CONTINUOUS_IMPROVEMENT';
     case 'communication':
+    case 'communications':
       return 'COMMUNICATION';
     case 'deep work':
       return 'DEEP_WORK';
     case 'dmaic':
+    case 'dmaic project work':
       return 'DMAIC';
     case 'kaizen':
+    case 'kaizen project work':
       return 'KAIZEN';
     case 'innovation':
       return 'INNOVATION';
     case 'ceremony':
       return 'CEREMONY';
     default:
-      // Unknown focus-area values in the source file — fail loud rather than
-      // silently defaulting. Sprint 2 will extend mapping.
-      throw Object.assign(
-        new Error(`source50: unrecognized focusArea '${raw}'`),
-        { name: 'UNKNOWN_FOCUS_AREA', raw }
-      );
+      throw Object.assign(new Error(`source50: unrecognized focusArea '${raw}'`), {
+        name: 'UNKNOWN_FOCUS_AREA',
+        raw
+      });
   }
 }
 
+/** Accepted set of raw focus-area strings — used to detect block boundaries. */
+const KNOWN_FOCUS_AREAS = new Set([
+  'continuous improvement',
+  'communication',
+  'communications',
+  'deep work',
+  'dmaic',
+  'dmaic project work',
+  'kaizen',
+  'kaizen project work',
+  'innovation',
+  'ceremony'
+]);
+
 /**
- * Deterministic kebab-case slug for the id, stripping non-ascii-word chars.
+ * Deterministic kebab/snake-case slug for the id.
  *
  * @param {string} name
  * @returns {string}
@@ -89,15 +128,9 @@ function slugify(name) {
 }
 
 /**
- * Is `line` a procedure-step line? We accept:
- *   - a. …  b. …  c. …  (lowercase Latin letters, followed by . or ) )
- *   - A. …                (uppercase — source rows 12+ use mixed case)
- *   - i. …  ii. …        (lowercase Roman numerals, some sub-steps)
- *   - 1. …  2. …         (numbered preamble step — kept as-is)
- *   - §  or bullet lines (kept as continuation of the prior step's prose)
- *
- * Returns true for anything we consider a "step line worth keeping" in the
- * Sprint-1 stub. Sprint 2 will normalize sub-step indentation.
+ * A procedure-step line? Lowercase/uppercase letters, Roman numerals, or
+ * 1./2. numbered preambles all accepted. Sub-step indentation is not
+ * normalized here; Sprint-3 composer renderers can re-indent.
  *
  * @param {string} line
  * @returns {boolean}
@@ -105,125 +138,173 @@ function slugify(name) {
 function looksLikeProcedureLine(line) {
   const t = line.trimStart();
   if (t.length === 0) return false;
-  // a. / a) / A. / A)
   if (/^[A-Za-z][.)]\s/.test(t)) return true;
-  // 1. / 2.
   if (/^\d+[.)]\s/.test(t)) return true;
-  // i. / ii. / iv. — lowercase Roman numeral shorthand
   if (/^(i|ii|iii|iv|v|vi|vii|viii|ix|x)[.)]\s/i.test(t)) return true;
   return false;
 }
 
 /**
- * A blank-ish line we treat as a block separator. The source uses
- * lines that are " " (a single non-breaking/ASCII space) plus true empty
- * lines as record separators.
- *
  * @param {string} line
- * @returns {boolean}
  */
 function isBlankLine(line) {
   return line.trim().length === 0;
 }
 
 /**
+ * True iff `line` is a pure positive integer in [1, 99]. Used as the
+ * block-heading detector.
+ *
+ * @param {string} line
+ * @returns {boolean}
+ */
+function isActivityHeader(line) {
+  const t = line.trim();
+  if (!/^\d+$/.test(t)) return false;
+  const n = Number.parseInt(t, 10);
+  return n >= 1 && n <= 99;
+}
+
+/**
  * @typedef {object} ParsedBlock
  * @property {number} activityNumber
- * @property {number} headerLineNumber    // 1-indexed line of the activityNumber heading
+ * @property {number} headerLineNumber
  * @property {string} focusAreaRaw
  * @property {string} name
- * @property {number} hours               // source hours-per-sprint number
- * @property {string[]} procedure
+ * @property {number|null} hours
+ * @property {string[]|null} procedure
  */
 
 /**
- * Walk `lines` and collect up to `limit` activity blocks. Each block begins
- * with a pure-numeric line (the activity number), followed on the next three
- * non-blank lines by focusArea, name, and hours. Any subsequent non-blank
- * lines up to the next numeric-heading line are treated as procedure / prose.
+ * Walk `lines` and collect every activity block. An activity block begins
+ * with a pure-numeric header line, followed (on the next non-blank line)
+ * by a known focus-area, the activity name, and optionally the hours +
+ * procedure. Rows without hours or procedure are emitted as skeletons.
  *
  * @param {string[]} lines
- * @param {number} limit
+ * @param {number} [limit=Infinity]
  * @returns {ParsedBlock[]}
  */
-function extractBlocks(lines, limit) {
+function extractBlocks(lines, limit = Infinity) {
   /** @type {ParsedBlock[]} */
   const blocks = [];
 
-  for (let i = 0; i < lines.length && blocks.length < limit; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    // Activity header: a pure-numeric line whose value is a small positive integer.
-    if (!/^\d+$/.test(trimmed)) continue;
-
-    const activityNumber = Number.parseInt(trimmed, 10);
-    // The source file opens with the column-header row (no "1" line) and the first
-    // activity number "1" appears partway through. The first 10 rows we care about
-    // are 1..10 — reject obvious non-activity numbers early.
-    if (activityNumber < 1 || activityNumber > 99) continue;
-
-    // Expect the next three non-blank lines to be focusArea, name, hours.
-    const nextNonBlank = [];
-    let scan = i + 1;
-    while (scan < lines.length && nextNonBlank.length < 3) {
-      if (!isBlankLine(lines[scan])) nextNonBlank.push({ idx: scan, text: lines[scan] });
-      scan++;
-    }
-    if (nextNonBlank.length < 3) break;
-
-    const [focusAreaLine, nameLine, hoursLine] = nextNonBlank;
-    const hours = Number.parseFloat(hoursLine.text.trim());
-    if (!Number.isFinite(hours)) {
-      // Malformed record — skip this candidate and keep scanning.
+  let i = 0;
+  while (i < lines.length && blocks.length < limit) {
+    if (!isActivityHeader(lines[i])) {
+      i++;
       continue;
     }
 
-    // Procedure lines: every line from `hoursLine.idx + 1` up to the line
-    // before the NEXT pure-numeric heading. We keep only lines that look
-    // like procedure steps per `looksLikeProcedureLine`; prose / preamble
-    // that doesn't match the step-letter pattern is dropped at this stub
-    // stage — Sprint 2 does the richer fill in E2-T4.
-    /** @type {string[]} */
-    const procedure = [];
-    let p = hoursLine.idx + 1;
-    while (p < lines.length) {
-      const pt = lines[p].trim();
-      if (/^\d+$/.test(pt)) {
-        const cand = Number.parseInt(pt, 10);
-        if (cand >= 1 && cand <= 99 && cand !== activityNumber) break;
+    const activityNumber = Number.parseInt(lines[i].trim(), 10);
+    const headerLineNumber = i + 1; // 1-indexed
+
+    // Find the next non-blank line. Must be a known focus area for this to
+    // be a real activity block (guards against stray digits in the file).
+    let scan = i + 1;
+    while (scan < lines.length && isBlankLine(lines[scan])) scan++;
+    if (scan >= lines.length) break;
+    const focusAreaRaw = lines[scan].trim();
+    if (!KNOWN_FOCUS_AREAS.has(focusAreaRaw.toLowerCase())) {
+      // Defensive: throw on unknown focus-area (keeps strict-parse guarantee).
+      // Row 17 is absent from the source (never produces a header line);
+      // any real header line is always followed by a known focus area.
+      mapFocusArea(focusAreaRaw); // throws UNKNOWN_FOCUS_AREA
+    }
+
+    // Next non-blank line is the name.
+    let nameIdx = scan + 1;
+    while (nameIdx < lines.length && isBlankLine(lines[nameIdx])) nameIdx++;
+    if (nameIdx >= lines.length) break;
+    const name = lines[nameIdx].trim();
+
+    // Next non-blank line is either hours (numeric) OR the focus-area of
+    // the next activity block (signals that THIS activity has no hours).
+    let hoursIdx = nameIdx + 1;
+    while (hoursIdx < lines.length && isBlankLine(lines[hoursIdx])) hoursIdx++;
+
+    /** @type {number|null} */
+    let hours = null;
+    /** @type {string[]|null} */
+    let procedure = null;
+    /** End index used when advancing `i`. */
+    let advanceTo = nameIdx + 1;
+
+    if (hoursIdx < lines.length) {
+      const hoursCandidate = lines[hoursIdx].trim();
+      const parsed = Number.parseFloat(hoursCandidate);
+      const isNumeric = /^\d+(\.\d+)?$/.test(hoursCandidate);
+
+      // Defensive: a pure integer that is ALSO a valid activity-header
+      // number AND whose following non-blank line is a known focus area is
+      // actually the NEXT activity's header — the current row is a skeleton.
+      let lookalikeHeader = false;
+      if (isNumeric && /^\d+$/.test(hoursCandidate) && isActivityHeader(hoursCandidate)) {
+        let k = hoursIdx + 1;
+        while (k < lines.length && isBlankLine(lines[k])) k++;
+        if (k < lines.length && KNOWN_FOCUS_AREAS.has(lines[k].trim().toLowerCase())) {
+          lookalikeHeader = true;
+        }
       }
-      if (looksLikeProcedureLine(lines[p])) {
-        procedure.push(lines[p].trim());
+
+      if (isNumeric && Number.isFinite(parsed) && !lookalikeHeader) {
+        hours = parsed;
+
+        // Collect procedure lines from hoursIdx+1 until the next activity
+        // header (or until a line that is a known focus-area immediately
+        // after an activity header — signaling the next block starts).
+        procedure = [];
+        let p = hoursIdx + 1;
+        while (p < lines.length) {
+          if (isActivityHeader(lines[p])) break;
+          // An unnumbered ceremony is a known-focus-area line followed by
+          // a name line followed by hours — if we detect a known focus
+          // area at a blank-separated boundary, treat it as the start of
+          // a new block and stop here.
+          if (
+            isBlankLine(lines[p - 1] ?? '') &&
+            KNOWN_FOCUS_AREAS.has(lines[p].trim().toLowerCase())
+          ) {
+            break;
+          }
+          if (looksLikeProcedureLine(lines[p])) {
+            procedure.push(lines[p].trim());
+          }
+          p++;
+        }
+        advanceTo = p;
+      } else {
+        // Skeleton row — no hours; don't consume the focus-area of the
+        // next block, just advance past the name.
+        advanceTo = nameIdx + 1;
       }
-      p++;
     }
 
     blocks.push({
       activityNumber,
-      headerLineNumber: i + 1, // 1-indexed
-      focusAreaRaw: focusAreaLine.text.trim(),
-      name: nameLine.text.trim(),
+      headerLineNumber,
+      focusAreaRaw,
+      name,
       hours,
       procedure
     });
 
-    // Resume scanning from the next potential header.
-    i = p - 1;
+    i = advanceTo;
   }
 
   return blocks;
 }
 
 /**
- * Parse a source-file string into up to `limit` CatalogEntry drafts.
- * Exposed for unit tests that want to inject custom source text.
+ * Parse `sourceText` into CatalogEntry drafts. Exposed for unit tests that
+ * want to inject synthetic text.
  *
  * @param {string} sourceText
  * @param {string} sourceFilePath
- * @param {number} [limit=STUB_ROW_LIMIT]
+ * @param {number} [limit=Infinity]
  * @returns {import('../../domain/types.js').CatalogEntry[]}
  */
-export function parseSourceText(sourceText, sourceFilePath, limit = STUB_ROW_LIMIT) {
+export function parseSourceText(sourceText, sourceFilePath, limit = Infinity) {
   const lines = sourceText.split(/\r\n|\r|\n/);
   const blocks = extractBlocks(lines, limit);
 
@@ -235,11 +316,11 @@ export function parseSourceText(sourceText, sourceFilePath, limit = STUB_ROW_LIM
       activityNumber: b.activityNumber,
       name: b.name,
       focusArea: mapFocusArea(b.focusAreaRaw),
-      defaultDurationMinutes: Math.round(b.hours * 60),
+      defaultDurationMinutes: b.hours !== null ? Math.round(b.hours * 60) : null,
       procedure: b.procedure,
       sourceRef: `${sourceFilePath}:${b.headerLineNumber}`,
 
-      // ---- Fields deferred to Sprint 2 (E2-T4/T5/T6/T7/T8) ----
+      // ---- Deferred to later seed steps (§A–§D / §E / §H.1 / §J) ----
       cadence: null,
       trigger: null,
       inputs: null,
@@ -252,7 +333,7 @@ export function parseSourceText(sourceText, sourceFilePath, limit = STUB_ROW_LIM
       phaseBinding: null,
       appliesToRoles: null,
 
-      // Seeded defaults that are stable across sprints:
+      // Stable seed defaults:
       enabledByUser: true,
       version: 1
     };
@@ -261,7 +342,8 @@ export function parseSourceText(sourceText, sourceFilePath, limit = STUB_ROW_LIM
 }
 
 /**
- * Sprint-1 entry point. Reads the real source file and returns 10 drafts.
+ * Sprint-1 STUB entry point — parses only the first 10 rows. Retained for
+ * back-compat with the Sprint-1 tests. New callers should use `parseSource50`.
  *
  * @param {{sourceFilePath?: string}} [opts]
  * @returns {import('../../domain/types.js').CatalogEntry[]}
@@ -272,4 +354,17 @@ export function parseSource10({ sourceFilePath } = {}) {
   return parseSourceText(text, path, STUB_ROW_LIMIT);
 }
 
-export default parseSource10;
+/**
+ * E2-T2 entry point — parses every numbered activity row in the source
+ * file (49 rows produced; #17 absent; #19 and #20 as skeletons).
+ *
+ * @param {{sourceFilePath?: string}} [opts]
+ * @returns {import('../../domain/types.js').CatalogEntry[]}
+ */
+export function parseSource50({ sourceFilePath } = {}) {
+  const path = sourceFilePath ?? defaultSourcePath();
+  const text = readFileSync(path, 'utf8');
+  return parseSourceText(text, path);
+}
+
+export default parseSource50;
