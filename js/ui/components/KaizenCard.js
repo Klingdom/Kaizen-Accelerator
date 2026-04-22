@@ -32,12 +32,38 @@
 
 import { esc } from '../mount.js';
 import { KaizenState } from '../../domain/types.js';
+import { getCurrentNext } from '../../catalog/progression.js';
 
 const CLOSE_KIND_LABEL = Object.freeze({
   SUCCESS: 'SUCCESS',
   PARTIAL: 'PARTIAL',
   FAILED_HONEST: 'FAILED HONEST'
 });
+
+/**
+ * Compute the "▶ #N Name" current standard-work chip for a Kaizen, given a
+ * catalog + completed ids. Returns an HTML fragment (or '' when the Kaizen
+ * has no projectType, no catalog, or no current work).
+ *
+ * Sprint 9 P9c — shown inline on Portfolio KaizenCards.
+ *
+ * @param {object} kaizen
+ * @param {object[]} catalog
+ * @param {string[]|Set<string>} completedIds
+ * @returns {string}
+ */
+export function renderCurrentStandardWorkChip(kaizen, catalog, completedIds) {
+  if (!kaizen || !kaizen.projectType) return '';
+  if (!Array.isArray(catalog) || catalog.length === 0) return '';
+  const { current } = getCurrentNext(
+    kaizen.projectType,
+    completedIds ?? [],
+    catalog
+  );
+  if (!current) return '';
+  const actNum = typeof current.activityNumber === 'number' ? `#${current.activityNumber} ` : '';
+  return `<p class="kz-current-sw" aria-label="current standard work">▶ ${esc(actNum)}${esc(current.name ?? '')}</p>`;
+}
 
 /**
  * KaizenCard component.
@@ -47,7 +73,9 @@ const CLOSE_KIND_LABEL = Object.freeze({
  *   baseline?: object|null,
  *   remeasurement?: object|null,
  *   sourceFrictionSignalCount?: number,
- *   abandonFormOpen?: boolean
+ *   abandonFormOpen?: boolean,
+ *   catalog?: object[],
+ *   completedCatalogIds?: string[]|Set<string>
  * }} props
  * @returns {string}
  */
@@ -110,6 +138,7 @@ function renderDraft(k, props) {
     <span class="kz-badge kz-badge-draft">DRAFT</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
   </header>
+  ${renderCurrentStandardWorkChip(k, props.catalog, props.completedCatalogIds)}
   <section class="kz-problem">
     <h3 class="kz-sub">Problem</h3>
     <p class="kz-body">${esc(k.problemStatement || '')}</p>
@@ -152,6 +181,7 @@ function renderActive(k, props) {
     <span class="kz-badge kz-badge-active">ACTIVE</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
   </header>
+  ${renderCurrentStandardWorkChip(k, props.catalog, props.completedCatalogIds)}
   <section class="kz-problem">
     <h3 class="kz-sub">Problem</h3>
     <p class="kz-body">${esc(k.problemStatement || '')}</p>
@@ -193,6 +223,7 @@ function renderInRemeasurement(k, props) {
     <span class="kz-badge kz-badge-in-remeasurement">IN REMEASUREMENT</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
   </header>
+  ${renderCurrentStandardWorkChip(k, props.catalog, props.completedCatalogIds)}
   <section class="kz-problem">
     <h3 class="kz-sub">Problem</h3>
     <p class="kz-body">${esc(k.problemStatement || '')}</p>

@@ -87,6 +87,21 @@ export const CycleType = Object.freeze({
 });
 
 /**
+ * WeeklyComposition.state values (Sprint 9). Mirrors CompositionState but
+ * scoped to the weekly envelope. A WeeklyComposition is PROPOSED after the
+ * pure `composeWeekly()` runs; moves to ACCEPTED when the user accepts the
+ * week; REJECTED terminal on reject. Per-day `Composition` rows each carry
+ * their own `CompositionState`.
+ *
+ * @typedef {'PROPOSED' | 'ACCEPTED' | 'REJECTED'} WeeklyCompositionStatus
+ */
+export const WeeklyCompositionStatus = Object.freeze({
+  PROPOSED: 'PROPOSED',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+});
+
+/**
  * Composition.state values (ARCHITECTURE §2.4 + §3.1 FSM).
  * @typedef {'PROPOSED' | 'ACCEPTED' | 'EDITED' | 'REJECTED' | 'ACTIVE' | 'CLOSED'} CompositionState
  */
@@ -401,6 +416,33 @@ export const User = null;
  * @property {InvariantChecks} invariantChecks
  */
 export const Composition = null;
+
+// ---------------------------------------------------------------------------
+// Sprint 9 — WeeklyComposition (5-day envelope around 5 Composition days)
+// ---------------------------------------------------------------------------
+
+/**
+ * WeeklyComposition — a Monday–Friday envelope around 5 Compositions.
+ *
+ * Produced by the pure `composeWeekly()` composer (Pass 9b) and wrapped for
+ * persistence/events by `WeeklyComposerService` (Pass 9c). The 5 `days`
+ * entries are Composition-shaped objects (same fields composeDaily
+ * produces, including `activities`) so downstream accept/reject flows
+ * work unchanged once they're persisted via ComposerService.
+ *
+ * @typedef {object} WeeklyComposition
+ * @property {string} id
+ * @property {string} userId
+ * @property {string} weekStart                 // Monday ISO date (YYYY-MM-DD)
+ * @property {string} weekEnd                   // Friday ISO date (YYYY-MM-DD)
+ * @property {WeeklyCompositionStatus} state
+ * @property {string} proposedAt                // ISO timestamp
+ * @property {string|null} decidedAt
+ * @property {Composition[]} days               // length 5 (Mon..Fri)
+ * @property {object} composerInputsSnapshot    // frozen-in composer inputs
+ * @property {number} version
+ */
+export const WeeklyComposition = null;
 
 // ---------------------------------------------------------------------------
 // 2.5 ScheduledActivity
@@ -727,6 +769,7 @@ export const ENUMS = Object.freeze({
   Bucket,
   CycleType,
   CompositionState,
+  WeeklyCompositionStatus,
   ScheduledActivityState,
   ReasonCode,
   SourceOfSchedule,

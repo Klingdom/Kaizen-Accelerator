@@ -31,6 +31,7 @@ import { ReflectionService } from './services/ReflectionService.js';
 import { FrictionService } from './services/FrictionService.js';
 import { KaizenService } from './services/KaizenService.js';
 import { OpportunityService } from './services/OpportunityService.js';
+import { WeeklyComposerService } from './services/WeeklyComposerService.js';
 import { ensureUser } from './services/SmartDefaults.js';
 import {
   CycleProposed,
@@ -52,7 +53,9 @@ import {
   OpportunityCreated,
   OpportunityPromoted,
   OpportunityDeferred,
-  OpportunityRejected
+  OpportunityRejected,
+  WeeklyCycleProposed,
+  WeeklyCycleAccepted
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { AppShell } from './ui/AppShell.js';
@@ -60,6 +63,7 @@ import { Today } from './ui/pages/Today.js';
 import { Kaizen as KaizenPage } from './ui/pages/Kaizen.js';
 import { Portfolio } from './ui/pages/Portfolio.js';
 import { Catalog as CatalogPage } from './ui/pages/Catalog.js';
+import { Week as WeekPage } from './ui/pages/Week.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
@@ -159,6 +163,17 @@ export function buildServices(deps = {}) {
     kaizenService
   });
 
+  // Sprint 9 — Weekly composer service.
+  const weeklyComposerService = new WeeklyComposerService({
+    repo,
+    bus,
+    clock,
+    composerService,
+    catalogService,
+    kaizenService,
+    activityService
+  });
+
   // Ensure a User row exists with smart defaults (Sprint 5 P0-T2).
   ensureUser({
     repo,
@@ -179,7 +194,8 @@ export function buildServices(deps = {}) {
     reflectionService,
     frictionService,
     kaizenService,
-    opportunityService
+    opportunityService,
+    weeklyComposerService
   };
 }
 
@@ -334,7 +350,8 @@ export function renderApp(services, state) {
     kaizenService,
     frictionService,
     opportunityService,
-    catalogService
+    catalogService,
+    weeklyComposerService
   } = services;
   let pageHtml;
 
@@ -398,6 +415,16 @@ export function renderApp(services, state) {
     pageHtml = CatalogPage({
       entries,
       view: state.catalogView ?? 'list'
+    });
+  } else if (state.route === 'week' && weeklyComposerService) {
+    const userId = DEFAULT_USER.id;
+    const weekStart =
+      state.weekStartOverride ?? computeMondayIso(services.clock.now());
+    const weeklyComposition =
+      weeklyComposerService.getLatestProposed(userId);
+    pageHtml = WeekPage({
+      weeklyComposition,
+      weekStart
     });
   } else if (state.route === 'kaizen' && kaizenService && frictionService) {
     const userId = DEFAULT_USER.id;
@@ -475,6 +502,30 @@ function renderKaizenDialogs(services, state) {
     });
   }
   return html;
+}
+
+/**
+ * Compute the ISO date (YYYY-MM-DD) of the Monday of the week containing
+ * `nowIso`. Always returns a Monday. Used by the Week page to default the
+ * "Plan this week" payload.
+ *
+ * @param {string} nowIso
+ * @returns {string}
+ */
+export function computeMondayIso(nowIso) {
+  const d = new Date(nowIso);
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  // getUTCDay: 0 = Sun, 1 = Mon, ... 6 = Sat. Roll back to Monday.
+  const wd = d.getUTCDay();
+  const offset = wd === 0 ? 6 : wd - 1; // Sun → 6 days back, Mon → 0, Tue → 1, ...
+  const mon = new Date(d.getTime());
+  mon.setUTCDate(mon.getUTCDate() - offset);
+  const y = mon.getUTCFullYear();
+  const m = String(mon.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(mon.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 /**
@@ -1242,6 +1293,50 @@ export function buildHandlers(scope) {
         state.lastError = err;
       }
       rerender();
+    },
+
+    // ---- Sprint 9: Weekly composer --------------------------------------
+
+    WEEK_PROPOSE(payload) {
+      if (!services.weeklyComposerService) return;
+      const weekStart =
+        payload?.weekStart ?? computeMondayIso(services.clock.now());
+      try {
+        services.weeklyComposerService.proposeWeek({
+          weekStart,
+          userId: DEFAULT_USER.id,
+          dailyCapacityMinutes: DEFAULT_USER.dailyCapacityMinutes
+        });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    WEEK_ACCEPT_DAY(payload) {
+      if (!payload || !payload.weeklyCompositionId) return;
+      if (typeof payload.dayIndex !== 'number') return;
+      if (!services.weeklyComposerService) return;
+      try {
+        services.weeklyComposerService.acceptDay(
+          payload.weeklyCompositionId,
+          payload.dayIndex
+        );
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    WEEK_ACCEPT_ALL(payload) {
+      if (!payload || !payload.weeklyCompositionId) return;
+      if (!services.weeklyComposerService) return;
+      try {
+        services.weeklyComposerService.acceptWeek(payload.weeklyCompositionId);
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
     }
   };
 }
@@ -1318,6 +1413,8 @@ export function start() {
   services.bus.subscribe(OpportunityPromoted, () => {});
   services.bus.subscribe(OpportunityDeferred, () => {});
   services.bus.subscribe(OpportunityRejected, () => {});
+  services.bus.subscribe(WeeklyCycleProposed, () => {});
+  services.bus.subscribe(WeeklyCycleAccepted, () => {});
 
   const rerender = () => renderApp(services, state);
 

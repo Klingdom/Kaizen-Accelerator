@@ -530,7 +530,7 @@
     "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "AD_HOC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -828,7 +828,7 @@
     "bucket": "PROJECT",
     "isNonOptional": false,
     "dependsOn": [],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -867,7 +867,7 @@
     "dependsOn": [
       "cat_20_dmaic_project_charter"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -913,7 +913,7 @@
       "cat_21_dmaic_sipoc",
       "cat_26_dmaic_voc_vob_voa_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -959,7 +959,7 @@
     "dependsOn": [
       "cat_20_dmaic_project_charter"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1003,7 +1003,7 @@
     "dependsOn": [
       "cat_23_dmaic_stakeholder_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1050,7 +1050,7 @@
       "cat_20_dmaic_project_charter",
       "cat_21_dmaic_sipoc"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1098,7 +1098,7 @@
     "dependsOn": [
       "cat_23_dmaic_stakeholder_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1143,7 +1143,7 @@
     "dependsOn": [
       "cat_28_dmaic_baseline_output_performance_data"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1189,7 +1189,7 @@
       "cat_22_dmaic_output_data_collection_plan",
       "cat_31_dmaic_msa_report"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1228,7 +1228,7 @@
     "dependsOn": [
       "cat_28_dmaic_baseline_output_performance_data"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1273,7 +1273,7 @@
     "dependsOn": [
       "cat_28_dmaic_baseline_output_performance_data"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1320,7 +1320,7 @@
     "dependsOn": [
       "cat_22_dmaic_output_data_collection_plan"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1366,7 +1366,7 @@
     "dependsOn": [
       "cat_21_dmaic_sipoc"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1415,7 +1415,7 @@
       "cat_22_dmaic_output_data_collection_plan",
       "cat_36_dmaic_correlation_and_regression"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1455,7 +1455,7 @@
       "cat_26_dmaic_voc_vob_voa_analysis",
       "cat_32_dmaic_detailed_process_maps"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1502,7 +1502,7 @@
     "dependsOn": [
       "cat_34_dmaic_cause_and_effect_matrix_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1549,7 +1549,7 @@
     "dependsOn": [
       "cat_35_dmaic_inputs_data_collection_plan"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1589,7 +1589,7 @@
       "cat_34_dmaic_cause_and_effect_matrix_analysis",
       "cat_36_dmaic_correlation_and_regression"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1636,7 +1636,7 @@
     "dependsOn": [
       "cat_37_dmaic_failure_modes_effects_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1685,7 +1685,7 @@
       "cat_38_dmaic_process_improvement_backlog",
       "cat_33_dmaic_quick_win_improvements"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1729,7 +1729,7 @@
     "dependsOn": [
       "cat_38_dmaic_process_improvement_backlog"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1781,7 +1781,7 @@
       "cat_40_dmaic_implemented_improvements",
       "cat_39_dmaic_financial_benefit_translator"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": "DMAIC",
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1828,7 +1828,10 @@
     "bucket": "PROJECT",
     "isNonOptional": false,
     "dependsOn": [],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1874,7 +1877,10 @@
     "dependsOn": [
       "cat_42_kaizen_project_charter"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1919,7 +1925,10 @@
       "cat_42_kaizen_project_charter",
       "cat_43_kaizen_output_data_collection_plan"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1959,7 +1968,10 @@
     "dependsOn": [
       "cat_44_kaizen_event_scheduling"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -1999,7 +2011,10 @@
     "dependsOn": [
       "cat_45_kaizen_event_sipoc"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -2039,7 +2054,10 @@
     "dependsOn": [
       "cat_46_kaizen_event_prioritized_inputs"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -2084,7 +2102,10 @@
     "dependsOn": [
       "cat_47_kaizen_event_failure_modes_effects_analysis"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -2129,7 +2150,10 @@
     "dependsOn": [
       "cat_48_kaizen_implemented_improvements"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",
@@ -2176,7 +2200,10 @@
     "dependsOn": [
       "cat_49_kaizen_project_results_narrative_3_pager"
     ],
-    "projectTypeBinding": null,
+    "projectTypeBinding": [
+      "KAIZEN_EVENT",
+      "KAIZEN_EVENT_90D"
+    ],
     "phaseBinding": null,
     "appliesToRoles": [
       "PRACTITIONER",

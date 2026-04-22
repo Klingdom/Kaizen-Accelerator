@@ -816,3 +816,263 @@ html, body {
 .cat-proc-list li {
   padding-left: 4px;
 }
+
+/* ========================================================================
+ * Sprint 9 — Week page
+ * ======================================================================== */
+
+.week-page {
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.wk-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wk-page-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.wk-range {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.wk-propose,
+.wk-accept-all {
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wk-propose:hover,
+.wk-accept-all:hover {
+  opacity: 0.9;
+}
+
+.wk-propose-secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+}
+
+.wk-empty-section {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--muted);
+}
+
+/* 5-column grid, responsive. */
+.wk-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .wk-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .wk-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wk-day {
+  background: var(--primary-contrast);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
+}
+
+.wk-day-empty {
+  opacity: 0.5;
+}
+
+.wk-day[data-state="ACCEPTED"] {
+  border-color: var(--success);
+  border-width: 2px;
+}
+
+.wk-day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.wk-day-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wk-day-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.wk-day-totals {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.wk-day-totals dt {
+  display: inline;
+  margin-right: 2px;
+}
+
+.wk-day-totals dd {
+  display: inline;
+  margin: 0;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.wk-day-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wk-day-activity {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.wk-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.wk-chip.chip-project {
+  background: var(--project-bg);
+  color: var(--project-fg);
+}
+
+.wk-chip.chip-communication {
+  background: var(--communication-bg);
+  color: var(--communication-fg);
+}
+
+.wk-chip.chip-ci {
+  background: var(--ci-bg);
+  color: var(--ci-fg);
+}
+
+.wk-activity-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-kaizen-chip {
+  color: var(--primary);
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.wk-activity-dur {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.wk-day-footer {
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.wk-accept-day {
+  width: 100%;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wk-accept-day:hover {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.wk-day-state {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.wk-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wk-state-label {
+  font-size: 14px;
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* KaizenCard current-standard-work chip (Sprint 9 Pass 9c). */
+.kz-current-sw {
+  margin: 4px 0 8px 0;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--fg);
+}

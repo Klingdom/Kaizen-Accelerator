@@ -9,10 +9,11 @@
  *   5. Apply §H.1 bucket mapping                              (bucketMap)
  *   6. Flip isNonOptional=true on the locked set              (markNonOptional)
  *   7. Apply §J DMAIC + §K.4 Kaizen DAG edges                 (dmaicDag)
+ *   8. Stamp projectTypeBinding on DMAIC / Kaizen rows         (projectTypeBindings — Sprint 9)
  *
  * Output: a fully-populated array of `CatalogEntry` rows, ready for
  * `CatalogService` to persist. Every row has all 9 PRODUCT_BLUEPRINT §3.1
- * fields + bucket + isNonOptional + dependsOn.
+ * fields + bucket + isNonOptional + dependsOn + projectTypeBinding.
  *
  * Pure function; no I/O beyond the source-file read (node:fs in source50).
  */
@@ -24,6 +25,7 @@ import { applyBulkFill } from './bulkFill.js';
 import { applyBucketMap } from './bucketMap.js';
 import { applyMarkNonOptional } from './markNonOptional.js';
 import { applyDmaicDag } from './dmaicDag.js';
+import { applyProjectTypeBindings } from './projectTypeBindings.js';
 
 /**
  * Build the fully-populated catalog. Accepts the source file path (for
@@ -46,6 +48,7 @@ export function buildCatalog(opts = {}) {
   catalog = applyBucketMap(catalog);
   catalog = applyMarkNonOptional(catalog);
   catalog = applyDmaicDag(catalog);
+  catalog = applyProjectTypeBindings(catalog);
 
   return catalog;
 }

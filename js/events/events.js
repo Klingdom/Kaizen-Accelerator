@@ -72,6 +72,14 @@ export const OpportunityPromoted = 'OpportunityPromoted';
 export const OpportunityDeferred = 'OpportunityDeferred';
 export const OpportunityRejected = 'OpportunityRejected';
 
+// --- Sprint 9: Weekly composer envelope --------------------------------------
+// Fired by WeeklyComposerService.
+// Payload shapes:
+//   WeeklyCycleProposed — {weeklyCompositionId, userId, weekStart, weekEnd, proposedAt}
+//   WeeklyCycleAccepted — {weeklyCompositionId, userId, compositionIds, acceptedAt}
+export const WeeklyCycleProposed = 'WeeklyCycleProposed';
+export const WeeklyCycleAccepted = 'WeeklyCycleAccepted';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -107,7 +115,9 @@ export const EVENT_NAMES = Object.freeze([
   OpportunityCreated,
   OpportunityPromoted,
   OpportunityDeferred,
-  OpportunityRejected
+  OpportunityRejected,
+  WeeklyCycleProposed,
+  WeeklyCycleAccepted
 ]);
 
 /**
@@ -145,5 +155,7 @@ export default Object.freeze({
   OpportunityPromoted,
   OpportunityDeferred,
   OpportunityRejected,
+  WeeklyCycleProposed,
+  WeeklyCycleAccepted,
   EVENT_NAMES
 });

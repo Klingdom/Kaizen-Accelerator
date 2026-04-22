@@ -124,7 +124,7 @@ export function Portfolio(props = {}) {
     <h1 class="pf-page-title">${esc(PORTFOLIO_COPY.TITLE)}</h1>
     <button type="button" class="pf-new-opp" data-action="OPP_OPEN_INTAKE" data-payload='{}'>${esc(PORTFOLIO_COPY.NEW_OPP)}</button>
   </header>
-  ${renderActiveKaizens(activeKaizens)}
+  ${renderActiveKaizens(activeKaizens, catalogEntries)}
   ${renderOpportunities(sorted, nowIso, expandedId, oppFilter, oppSort)}
   ${renderValidatedKaizens(closedKaizens, remeasurementsByKaizenId)}
   ${renderCatalogSection(catalogEntries)}
@@ -170,16 +170,26 @@ function renderValidatedKaizens(closed, remeasurementsByKaizenId) {
  * Render the Active Kaizens section.
  *
  * @param {object[]} kaizens
+ * @param {object[]} catalog   Optional — used for the "current standard work"
+ *                             chip on each card.
  * @returns {string}
  */
-function renderActiveKaizens(kaizens) {
+function renderActiveKaizens(kaizens, catalog = []) {
   if (!kaizens.length) {
     return `<section class="pf-section pf-active-kaizens">
       <h2 class="pf-section-title">Active Kaizens</h2>
       <p class="pf-empty">${esc(PORTFOLIO_COPY.ACTIVE_EMPTY)}</p>
     </section>`;
   }
-  const cards = kaizens.map((k) => KaizenCard({ kaizen: k })).join('\n');
+  const cards = kaizens
+    .map((k) =>
+      KaizenCard({
+        kaizen: k,
+        catalog,
+        completedCatalogIds: []
+      })
+    )
+    .join('\n');
   return `<section class="pf-section pf-active-kaizens">
     <h2 class="pf-section-title">Active Kaizens (${esc(String(kaizens.length))})</h2>
     ${cards}
