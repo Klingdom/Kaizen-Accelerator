@@ -61,21 +61,39 @@
 	# ES modules require Content-Type application/javascript or text/javascript.
 	# Some proxies strip Content-Type; explicit handle blocks ensure the header
 	# is set on the final response regardless of upstream behavior.
+	# All app assets change on every deploy — tell the browser to revalidate
+	# with If-Modified-Since rather than serving from its own cache. 304s are
+	# cheap; stale catalogs are not. no-cache means "revalidate, don't reuse
+	# without asking." no-store would also work but burns bandwidth on
+	# unchanged bytes.
 	@js_files path *.js
 	handle @js_files {
 		header Content-Type "application/javascript; charset=utf-8"
+		header Cache-Control "no-cache"
 		file_server
 	}
 
 	@css_files path *.css
 	handle @css_files {
 		header Content-Type "text/css; charset=utf-8"
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	# JSON assets — critical for the seeded catalog. Browsers' dynamic-import
+	# cache for `with: { type: 'json' }` is opaque; force revalidation so the
+	# Catalog page reflects each deploy without a hard-refresh.
+	@json_files path *.json
+	handle @json_files {
+		header Content-Type "application/json; charset=utf-8"
+		header Cache-Control "no-cache"
 		file_server
 	}
 
 	@html_files path *.html /
 	handle @html_files {
 		header Content-Type "text/html; charset=utf-8"
+		header Cache-Control "no-cache"
 		file_server {
 			index index.html
 		}
