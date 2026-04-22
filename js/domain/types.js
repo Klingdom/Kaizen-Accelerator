@@ -235,6 +235,23 @@ export const PdcaClosedReason = Object.freeze({
   SUPERSEDED_BY_KAIZEN: 'SUPERSEDED_BY_KAIZEN'
 });
 
+/**
+ * Opportunity.status values (Sprint 7 §2.14). FSM:
+ *   INTAKE → SCORED → (PROMOTED | DEFERRED | REJECTED)
+ *   INTAKE → (PROMOTED | DEFERRED | REJECTED)
+ * The three PROMOTED / DEFERRED / REJECTED states are TERMINAL — the row is
+ * immutable except for `updatedAt`.
+ *
+ * @typedef {'INTAKE' | 'SCORED' | 'PROMOTED' | 'DEFERRED' | 'REJECTED'} OpportunityStatus
+ */
+export const OpportunityStatus = Object.freeze({
+  INTAKE: 'INTAKE',
+  SCORED: 'SCORED',
+  PROMOTED: 'PROMOTED',
+  DEFERRED: 'DEFERRED',
+  REJECTED: 'REJECTED'
+});
+
 // ---------------------------------------------------------------------------
 // Supporting structure typedefs
 // ---------------------------------------------------------------------------
@@ -501,6 +518,9 @@ export const FrictionSignal = null;
  * // ---- v0.6: folded from ADHOC_PDCA_STANDARD v1.0 ----
  * @property {string|null} targetCloseDate               // ISO date. Required non-null for projectType='AD_HOC'. Drives ProjectPaceWarning(kind='AD_HOC_OVERRUN') emission.
  * @property {string|null} sourcePdcaExperimentId        // FK PdcaExperiment. Set when promoted from PDCA via closedReason='SUPERSEDED_BY_KAIZEN'. Distinct from sourceFrictionSignalIds.
+ *
+ * // ---- Sprint 7: folded from Portfolio intake (P0-T3 + P1-T2) ----
+ * @property {string|null} sourceOpportunityId           // FK Opportunity. Set when promoted from the Portfolio intake funnel via OpportunityService.promote(). Distinct from sourceFrictionSignalIds / sourcePdcaExperimentId.
  */
 export const Kaizen = null;
 
@@ -580,6 +600,32 @@ export const MetricsSnapshot = null;
 export const PdcaExperiment = null;
 
 // ---------------------------------------------------------------------------
+// 2.14 Opportunity (Sprint 7 — Project Portfolio intake)
+// ---------------------------------------------------------------------------
+
+/**
+ * A captured improvement opportunity. Lives in the Portfolio intake funnel
+ * and either gets PROMOTED to a Kaizen (DRAFT), DEFERRED for later, or
+ * REJECTED with a reason. Terminal statuses are immutable except for
+ * `updatedAt`.
+ *
+ * @typedef {object} Opportunity
+ * @property {string} id
+ * @property {string} userId
+ * @property {string} title                     // 3-80 chars, required
+ * @property {string} problemStatement          // 10-500 chars, required
+ * @property {string|null} scope                // 0-300 chars, optional
+ * @property {ProjectType} proposedProjectType
+ * @property {OpportunityStatus} status
+ * @property {string|null} promotedKaizenId     // FK Kaizen set when status=PROMOTED
+ * @property {string|null} deferredUntil        // ISO date; set when status=DEFERRED
+ * @property {string|null} rejectionReason      // set when status=REJECTED, min 5 chars
+ * @property {string} createdAt                 // ISO timestamp
+ * @property {string} updatedAt                 // ISO timestamp
+ */
+export const Opportunity = null;
+
+// ---------------------------------------------------------------------------
 // 4.7 InfeasibleResult (supporting type for composer — kept for Sprint 2 use)
 // ---------------------------------------------------------------------------
 
@@ -647,6 +693,7 @@ export const ENTITIES = Object.freeze([
   'MetricsSnapshot',
   'PdcaExperiment',
   'ProjectPhaseDefinition',
+  'Opportunity',
   'InfeasibleResult'
 ]);
 
@@ -671,5 +718,6 @@ export const ENUMS = Object.freeze({
   CloseKind,
   ReflectionKind,
   PdcaState,
-  PdcaClosedReason
+  PdcaClosedReason,
+  OpportunityStatus
 });

@@ -54,6 +54,18 @@ export const ProjectPaceWarning = 'ProjectPaceWarning';
 // Informational/audit only — does NOT auto-pause the Kaizen.
 export const ScopeChangeRequested = 'ScopeChangeRequested';
 
+// --- Sprint 7: Opportunity intake funnel (Portfolio) --------------------------
+// Fired by OpportunityService (§6.1 coordinator patch flagged separately).
+// Payload shapes:
+//   OpportunityCreated  — {opportunityId, userId, status: 'INTAKE', createdAt, proposedProjectType}
+//   OpportunityPromoted — {opportunityId, userId, kaizenId, promotedAt, proposedProjectType}
+//   OpportunityDeferred — {opportunityId, userId, deferredUntil, reason|null, deferredAt}
+//   OpportunityRejected — {opportunityId, userId, rejectionReason, rejectedAt}
+export const OpportunityCreated = 'OpportunityCreated';
+export const OpportunityPromoted = 'OpportunityPromoted';
+export const OpportunityDeferred = 'OpportunityDeferred';
+export const OpportunityRejected = 'OpportunityRejected';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -83,7 +95,11 @@ export const EVENT_NAMES = Object.freeze([
   ComposerInfeasible,
   ProjectPhaseAdvanced,
   ProjectPaceWarning,
-  ScopeChangeRequested
+  ScopeChangeRequested,
+  OpportunityCreated,
+  OpportunityPromoted,
+  OpportunityDeferred,
+  OpportunityRejected
 ]);
 
 /**
@@ -115,5 +131,9 @@ export default Object.freeze({
   ProjectPhaseAdvanced,
   ProjectPaceWarning,
   ScopeChangeRequested,
+  OpportunityCreated,
+  OpportunityPromoted,
+  OpportunityDeferred,
+  OpportunityRejected,
   EVENT_NAMES
 });

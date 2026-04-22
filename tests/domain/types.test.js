@@ -35,7 +35,8 @@ import {
   CloseKind,
   ReflectionKind,
   PdcaState,
-  PdcaClosedReason
+  PdcaClosedReason,
+  OpportunityStatus
 } from '../../js/domain/types.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -45,9 +46,9 @@ const typesSource = readFileSync(
 );
 
 describe('types.js — entity introspection', () => {
-  test('exports the 14 ENTITIES named in ARCHITECTURE §2 + supporting types', () => {
-    // 12 §2 entities + ProjectPhaseDefinition + InfeasibleResult = 14.
-    assert.equal(ENTITIES.length, 14);
+  test('exports the 15 ENTITIES named in ARCHITECTURE §2 + supporting types', () => {
+    // 12 §2 entities + ProjectPhaseDefinition + Opportunity (Sprint 7) + InfeasibleResult = 15.
+    assert.equal(ENTITIES.length, 15);
     for (const name of [
       'CatalogEntry',
       'User',
@@ -62,6 +63,7 @@ describe('types.js — entity introspection', () => {
       'MetricsSnapshot',
       'PdcaExperiment',
       'ProjectPhaseDefinition',
+      'Opportunity',
       'InfeasibleResult'
     ]) {
       assert.ok(ENTITIES.includes(name), `ENTITIES missing ${name}`);
@@ -87,7 +89,8 @@ describe('types.js — entity introspection', () => {
       'CloseKind',
       'ReflectionKind',
       'PdcaState',
-      'PdcaClosedReason'
+      'PdcaClosedReason',
+      'OpportunityStatus'
     ]) {
       assert.ok(ENUMS[k], `ENUMS missing ${k}`);
     }
@@ -224,6 +227,16 @@ describe('types.js — enum values', () => {
     assert.ok(Object.keys(ReflectionKind).length >= 2);
     assert.ok(Object.keys(PdcaState).length >= 5);
     assert.ok(Object.keys(PdcaClosedReason).length >= 3);
+  });
+
+  test('OpportunityStatus covers the 5 funnel states', () => {
+    assert.deepEqual(Object.values(OpportunityStatus).sort(), [
+      'DEFERRED',
+      'INTAKE',
+      'PROMOTED',
+      'REJECTED',
+      'SCORED'
+    ]);
   });
 
   test('every enum is frozen (immutable)', () => {
@@ -384,7 +397,9 @@ describe('types.js — required fields appear in source', () => {
       'scopeChanges',
       // v0.6 fields from ADHOC_PDCA_STANDARD
       'targetCloseDate',
-      'sourcePdcaExperimentId'
+      'sourcePdcaExperimentId',
+      // Sprint 7 fields from Portfolio intake
+      'sourceOpportunityId'
     ],
     BaselineMetric: [
       'id',
@@ -434,6 +449,20 @@ describe('types.js — required fields appear in source', () => {
       'closedReason'
     ],
     ProjectPhaseDefinition: ['id', 'name', 'days', 'nonOptionalCatalogEntryIds'],
+    Opportunity: [
+      'id',
+      'userId',
+      'title',
+      'problemStatement',
+      'scope',
+      'proposedProjectType',
+      'status',
+      'promotedKaizenId',
+      'deferredUntil',
+      'rejectionReason',
+      'createdAt',
+      'updatedAt'
+    ],
     InfeasibleResult: [
       'kind',
       'totalRequiredMinutes',

@@ -14,6 +14,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // This is the authoritative list — verbatim from ARCHITECTURE §6.1.
 // v0.5 renamed AcceleratorPaceWarning → ProjectPaceWarning and added
 // ScopeChangeRequested (22 + 3 = 25 total).
+// Sprint 7 adds 4 Opportunity* events for the Portfolio intake funnel
+// (25 + 4 = 29 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -39,7 +41,11 @@ const EXPECTED = [
   'ComposerInfeasible',
   'ProjectPhaseAdvanced',
   'ProjectPaceWarning',
-  'ScopeChangeRequested'
+  'ScopeChangeRequested',
+  'OpportunityCreated',
+  'OpportunityPromoted',
+  'OpportunityDeferred',
+  'OpportunityRejected'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {

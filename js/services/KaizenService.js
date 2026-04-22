@@ -328,7 +328,8 @@ export class KaizenService {
       sustainmentGatePassed: null,
       scopeChanges: [],
       targetCloseDate,
-      sourcePdcaExperimentId: null
+      sourcePdcaExperimentId: null,
+      sourceOpportunityId: null
     };
 
     // Snapshot prior state for rollback.
@@ -718,6 +719,114 @@ export class KaizenService {
     if (!k || !k.baselineMetricId) return null;
     const map = this._repo.read(BASELINE_METRICS_KEY) ?? {};
     return map[k.baselineMetricId] ?? null;
+  }
+
+  /**
+   * Sprint 7 P0-T3 — create a DRAFT Kaizen from an Opportunity row.
+   *
+   * Unlike `promote()`, this does NOT touch friction signals. Instead it
+   * records the `sourceOpportunityId` on the Kaizen. `projectType` is
+   * preserved from the opportunity (not defaulted to AD_HOC). Emits
+   * `KaizenPromoted` with `fromOpportunityId` in the payload.
+   *
+   * Guards:
+   *   - opportunityId must be a non-empty string
+   *   - userId required
+   *   - problemStatement must be ≥ 10 chars
+   *
+   * @param {string} opportunityId
+   * @param {{userId: string, title: string, problemStatement: string, projectType?: string}} input
+   * @returns {{kaizen: object}}
+   */
+  promoteFromOpportunity(opportunityId, input) {
+    if (typeof opportunityId !== 'string' || opportunityId.length === 0) {
+      fail(
+        'INVALID_INPUT',
+        'KaizenService.promoteFromOpportunity: opportunityId required'
+      );
+    }
+    if (!input || typeof input !== 'object') {
+      fail(
+        'INVALID_INPUT',
+        'KaizenService.promoteFromOpportunity: input required'
+      );
+    }
+    const { userId, problemStatement } = input;
+    if (typeof userId !== 'string' || userId.length === 0) {
+      fail(
+        'INVALID_INPUT',
+        'KaizenService.promoteFromOpportunity: userId required'
+      );
+    }
+    if (
+      typeof problemStatement !== 'string' ||
+      problemStatement.length < PROBLEM_STATEMENT_MIN_LENGTH
+    ) {
+      fail(
+        'PROBLEM_STATEMENT_TOO_SHORT',
+        `KaizenService.promoteFromOpportunity: problemStatement must be at least ${PROBLEM_STATEMENT_MIN_LENGTH} chars`,
+        { length: problemStatement?.length ?? 0 }
+      );
+    }
+
+    const now = this._clock.now();
+    const id = buildKaizenId(userId, now);
+    const title =
+      typeof input.title === 'string' && input.title.length > 0
+        ? input.title
+        : 'Untitled Kaizen';
+    const projectType =
+      typeof input.projectType === 'string' && input.projectType in ProjectType
+        ? input.projectType
+        : ProjectType.AD_HOC;
+
+    const kaizen = {
+      id,
+      userId,
+      title,
+      problemStatement,
+      goalStatement: '',
+      sourceFrictionSignalIds: [],
+      baselineMetricId: null,
+      remeasurementId: null,
+      actions: [],
+      state: KaizenState.DRAFT,
+      openedAt: now,
+      closedAt: null,
+      closeKind: null,
+      resultsNarrativeRef: null,
+      projectType,
+      phase: null,
+      phaseDefinitions: null,
+      implementationCostDollars: null,
+      annualBenefitsDollars: null,
+      startDate: isoDate(now),
+      controlPlanArtifactRef: null,
+      controlPlanDraftArtifactRef: null,
+      implementationLeadUserId: null,
+      roiPassNumber: null,
+      roiProjections: null,
+      validatedRootCauseArtifactRef: null,
+      sustainmentCheckIns: null,
+      sustainmentGatePassed: null,
+      scopeChanges: [],
+      targetCloseDate: null,
+      sourcePdcaExperimentId: null,
+      sourceOpportunityId: opportunityId
+    };
+
+    this._repo.upsert(KAIZENS_KEY, id, kaizen);
+
+    this._bus.publish(KaizenPromoted, {
+      kaizenId: id,
+      userId,
+      sourceFrictionSignalIds: [],
+      fromOpportunityId: opportunityId,
+      projectType,
+      openedAt: now
+    });
+
+    return { kaizen };
   }
 }
 

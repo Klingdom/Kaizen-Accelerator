@@ -24,10 +24,21 @@ describe('AppShell — structure', () => {
     assert.match(html, /<div class="app-content">[\s\S]*id="probe"[\s\S]*<\/div>/);
   });
 
-  test('nav has 6 items (one per MVP route)', () => {
+  test('nav has 7 items (one per MVP route — Portfolio added in Sprint 7)', () => {
     const html = AppShell({ route: 'today' });
     const navItems = (html.match(/class="nav-item[^"]*"/g) ?? []).length;
-    assert.equal(navItems, 6);
+    assert.equal(navItems, 7);
+  });
+
+  test('nav includes Portfolio in 2nd position after Today (Sprint 7)', () => {
+    const html = AppShell({ route: 'today' });
+    assert.match(html, /href="#portfolio"/);
+    // Today must appear before Portfolio; Portfolio before Week.
+    const todayIdx = html.indexOf('href="#today"');
+    const portfolioIdx = html.indexOf('href="#portfolio"');
+    const weekIdx = html.indexOf('href="#week"');
+    assert.ok(todayIdx >= 0 && portfolioIdx > todayIdx);
+    assert.ok(weekIdx > portfolioIdx);
   });
 
   test('active route carries the "active" class', () => {

@@ -14,26 +14,37 @@ import {
 } from '../../js/ui/router.js';
 
 describe('router — ROUTES / ROUTE_NAMES constants', () => {
-  test('ROUTES has exactly 6 MVP routes', () => {
+  test('ROUTES has exactly 7 MVP routes (Sprint 7 adds PORTFOLIO)', () => {
     assert.deepEqual(Object.keys(ROUTES).sort(), [
       'CATALOG',
       'INSIGHTS',
       'KAIZEN',
+      'PORTFOLIO',
       'SETTINGS',
       'TODAY',
       'WEEK'
     ]);
   });
 
-  test('ROUTE_NAMES lists the 6 routes in lowercase form', () => {
+  test('ROUTE_NAMES lists the 7 routes in lowercase form', () => {
     assert.deepEqual([...ROUTE_NAMES].sort(), [
       'catalog',
       'insights',
       'kaizen',
+      'portfolio',
       'settings',
       'today',
       'week'
     ]);
+  });
+
+  test('portfolio is in 2nd position (after today)', () => {
+    assert.equal(ROUTE_NAMES[0], 'today');
+    assert.equal(ROUTE_NAMES[1], 'portfolio');
+  });
+
+  test('#portfolio → portfolio', () => {
+    assert.deepEqual(parseHash('#portfolio'), { route: 'portfolio', params: {} });
   });
 
   test('ROUTES is frozen', () => {

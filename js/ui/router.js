@@ -25,6 +25,7 @@
  */
 export const ROUTES = Object.freeze({
   TODAY: 'today',
+  PORTFOLIO: 'portfolio',
   WEEK: 'week',
   CATALOG: 'catalog',
   KAIZEN: 'kaizen',
@@ -32,8 +33,10 @@ export const ROUTES = Object.freeze({
   SETTINGS: 'settings'
 });
 
+// Portfolio is positioned 2nd (after Today) per Sprint 7 spec.
 export const ROUTE_NAMES = Object.freeze([
   'today',
+  'portfolio',
   'week',
   'catalog',
   'kaizen',

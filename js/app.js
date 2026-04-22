@@ -30,6 +30,7 @@ import { ActivityService } from './services/ActivityService.js';
 import { ReflectionService } from './services/ReflectionService.js';
 import { FrictionService } from './services/FrictionService.js';
 import { KaizenService } from './services/KaizenService.js';
+import { OpportunityService } from './services/OpportunityService.js';
 import { ensureUser } from './services/SmartDefaults.js';
 import {
   CycleProposed,
@@ -43,12 +44,18 @@ import {
   ReflectionCaptured,
   FrictionSignalCaptured,
   KaizenPromoted,
-  KaizenBaselineLocked
+  KaizenBaselineLocked,
+  OpportunityCreated,
+  OpportunityPromoted,
+  OpportunityDeferred,
+  OpportunityRejected
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { AppShell } from './ui/AppShell.js';
 import { Today } from './ui/pages/Today.js';
 import { Kaizen as KaizenPage } from './ui/pages/Kaizen.js';
+import { Portfolio } from './ui/pages/Portfolio.js';
+import { Catalog as CatalogPage } from './ui/pages/Catalog.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
@@ -131,6 +138,14 @@ export function buildServices(deps = {}) {
   const kaizenService = new KaizenService({ repo, bus, clock });
   kaizenService.setFrictionService(frictionService);
 
+  // Sprint 7 — Opportunity intake service.
+  const opportunityService = new OpportunityService({
+    repo,
+    bus,
+    clock,
+    kaizenService
+  });
+
   // Ensure a User row exists with smart defaults (Sprint 5 P0-T2).
   ensureUser({
     repo,
@@ -150,7 +165,8 @@ export function buildServices(deps = {}) {
     activityService,
     reflectionService,
     frictionService,
-    kaizenService
+    kaizenService,
+    opportunityService
   };
 }
 
@@ -241,8 +257,50 @@ function createState() {
     // Sprint 6: reflection sheet (opens on ActivityCompleted).
     reflectionSheet: null,
     // Sprint 6: weekly reflection wizard state.
-    wizard: null
+    wizard: null,
+    // Sprint 7 P0-T5 / T6: Portfolio state.
+    portfolio: {
+      intakeForm: null,           // when truthy, OpportunityIntakeForm is shown
+      expandedOpportunityId: null, // P1-T1 inline expand
+      oppFilter: 'all',
+      oppSort: 'newest'
+    },
+    // Sprint 7 P0-T7: Catalog page view toggle (list / bucket).
+    catalogView: 'list'
   };
+}
+
+/**
+ * LocalStorage key for persisted Portfolio filter/sort preferences (P1-T3).
+ */
+export const PORTFOLIO_PREFS_KEY = 'bamx:v1:portfolioPrefs';
+
+/**
+ * Load persisted Portfolio filter/sort prefs (best-effort).
+ *
+ * @param {object} repo
+ * @returns {{oppFilter?: string, oppSort?: string}|null}
+ */
+function loadPortfolioPrefs(repo) {
+  try {
+    return repo.read(PORTFOLIO_PREFS_KEY) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist Portfolio filter/sort prefs (best-effort; never throws).
+ *
+ * @param {object} repo
+ * @param {{oppFilter: string, oppSort: string}} prefs
+ */
+function savePortfolioPrefs(repo, prefs) {
+  try {
+    repo.write(PORTFOLIO_PREFS_KEY, prefs);
+  } catch {
+    /* swallow */
+  }
 }
 
 /**
@@ -253,7 +311,13 @@ function createState() {
  * @param {object} state
  */
 export function renderApp(services, state) {
-  const { composerService, kaizenService, frictionService } = services;
+  const {
+    composerService,
+    kaizenService,
+    frictionService,
+    opportunityService,
+    catalogService
+  } = services;
   let pageHtml;
 
   if (state.route === 'today') {
@@ -281,6 +345,34 @@ export function renderApp(services, state) {
       ? ReflectionSheet(state.reflectionSheet)
       : '';
     pageHtml = `${todayHtml}${reflectionSheetHtml}`;
+  } else if (state.route === 'portfolio' && opportunityService && kaizenService) {
+    const userId = DEFAULT_USER.id;
+    const activeKaizens = [
+      ...kaizenService.listByState(userId, 'ACTIVE'),
+      ...kaizenService.listByState(userId, 'IN_REMEASUREMENT')
+    ];
+    const opportunities = opportunityService.list({
+      userId,
+      includeTerminal: true
+    });
+    const catalogEntries = catalogService ? catalogService.list(userId) : [];
+    pageHtml = Portfolio({
+      activeKaizens,
+      opportunities,
+      catalogEntries,
+      nowIso: services.clock.now(),
+      intakeForm: state.portfolio?.intakeForm ?? null,
+      expandedOpportunityId: state.portfolio?.expandedOpportunityId ?? null,
+      oppFilter: state.portfolio?.oppFilter ?? 'all',
+      oppSort: state.portfolio?.oppSort ?? 'newest'
+    });
+  } else if (state.route === 'catalog' && catalogService) {
+    const userId = DEFAULT_USER.id;
+    const entries = catalogService.list(userId);
+    pageHtml = CatalogPage({
+      entries,
+      view: state.catalogView ?? 'list'
+    });
   } else if (state.route === 'kaizen' && kaizenService && frictionService) {
     const userId = DEFAULT_USER.id;
     const active =
@@ -781,8 +873,178 @@ export function buildHandlers(scope) {
 
     KAIZEN_ABANDON(_payload) {
       if (typeof globalThis.alert === 'function') {
-        globalThis.alert('Abandon ships in Sprint 7.');
+        globalThis.alert('Abandon ships in Sprint 8.');
       }
+    },
+
+    // ---- Sprint 7: Portfolio / Opportunity intake ---------------------------
+
+    OPP_OPEN_INTAKE(_payload) {
+      if (!state.portfolio) {
+        state.portfolio = { intakeForm: null, expandedOpportunityId: null };
+      }
+      state.portfolio.intakeForm = {
+        title: '',
+        problemStatement: '',
+        scope: '',
+        proposedProjectType: 'AD_HOC',
+        errorName: null,
+        errorMessage: null
+      };
+      rerender();
+    },
+
+    OPP_CANCEL_INTAKE(_payload) {
+      if (state.portfolio) {
+        state.portfolio.intakeForm = null;
+      }
+      rerender();
+    },
+
+    OPP_SUBMIT_INTAKE(_payload, ctx) {
+      if (!state.portfolio) return;
+      const fields = extractFormFields(ctx?.element);
+      if (!services.opportunityService) return;
+      try {
+        services.opportunityService.create({
+          userId: DEFAULT_USER.id,
+          title: (fields.title ?? '').trim(),
+          problemStatement: (fields.problemStatement ?? '').trim(),
+          scope: fields.scope ? String(fields.scope).trim() : null,
+          proposedProjectType: fields.proposedProjectType ?? 'AD_HOC'
+        });
+        state.portfolio.intakeForm = null;
+      } catch (err) {
+        state.portfolio.intakeForm = {
+          ...(state.portfolio.intakeForm ?? {}),
+          title: fields.title ?? '',
+          problemStatement: fields.problemStatement ?? '',
+          scope: fields.scope ?? '',
+          proposedProjectType: fields.proposedProjectType ?? 'AD_HOC',
+          errorName: err.name ?? 'INTAKE_FAILED',
+          errorMessage: err.message ?? ''
+        };
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    OPP_PROMOTE(payload) {
+      if (!payload || !payload.opportunityId) return;
+      if (!services.opportunityService) return;
+      try {
+        services.opportunityService.promote(payload.opportunityId);
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    OPP_DEFER(payload) {
+      if (!payload || !payload.opportunityId) return;
+      if (!services.opportunityService) return;
+      const promptFn = globalThis.prompt ?? null;
+      let deferredUntil = null;
+      if (promptFn) {
+        deferredUntil = promptFn('Defer until (YYYY-MM-DD)') ?? null;
+      }
+      if (!deferredUntil) {
+        // Default: 14 days out if no prompt available.
+        const d = new Date(services.clock.now());
+        d.setDate(d.getDate() + 14);
+        deferredUntil = d.toISOString().slice(0, 10);
+      }
+      try {
+        services.opportunityService.defer(payload.opportunityId, { deferredUntil });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    OPP_REJECT(payload) {
+      if (!payload || !payload.opportunityId) return;
+      if (!services.opportunityService) return;
+      const promptFn = globalThis.prompt ?? null;
+      let reason = null;
+      if (promptFn) {
+        reason = promptFn('Why reject? (at least 5 chars)') ?? null;
+      }
+      if (!reason || reason.length < 5) {
+        // UI guard: without reason, bail.
+        return;
+      }
+      try {
+        services.opportunityService.reject(payload.opportunityId, { reason });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    OPP_TOGGLE_EXPAND(payload) {
+      if (!state.portfolio) return;
+      if (!payload || !payload.opportunityId) return;
+      if (state.portfolio.expandedOpportunityId === payload.opportunityId) {
+        state.portfolio.expandedOpportunityId = null;
+      } else {
+        state.portfolio.expandedOpportunityId = payload.opportunityId;
+      }
+      rerender();
+    },
+
+    OPP_FILTER_CHANGE(payload, ctx) {
+      if (!state.portfolio) return;
+      let value = payload?.value;
+      if (!value && ctx?.element && typeof ctx.element.value === 'string') {
+        value = ctx.element.value;
+      }
+      if (typeof value === 'string') {
+        state.portfolio.oppFilter = value;
+        savePortfolioPrefs(services.repo, {
+          oppFilter: state.portfolio.oppFilter,
+          oppSort: state.portfolio.oppSort
+        });
+      }
+      rerender();
+    },
+
+    OPP_SORT_CHANGE(payload, ctx) {
+      if (!state.portfolio) return;
+      let value = payload?.value;
+      if (!value && ctx?.element && typeof ctx.element.value === 'string') {
+        value = ctx.element.value;
+      }
+      if (typeof value === 'string') {
+        state.portfolio.oppSort = value;
+        savePortfolioPrefs(services.repo, {
+          oppFilter: state.portfolio.oppFilter,
+          oppSort: state.portfolio.oppSort
+        });
+      }
+      rerender();
+    },
+
+    // ---- Sprint 7: Catalog view toggle (P0-T7) ------------------------------
+
+    CATALOG_SET_VIEW(payload) {
+      if (!payload || typeof payload.view !== 'string') return;
+      state.catalogView = payload.view;
+      rerender();
+    },
+
+    CATALOG_TOGGLE(payload) {
+      if (!payload || !payload.catalogEntryId) return;
+      if (!services.catalogService) return;
+      try {
+        services.catalogService.toggleEnabled(
+          payload.catalogEntryId,
+          DEFAULT_USER.id
+        );
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
     }
   };
 }
@@ -829,6 +1091,17 @@ export function start() {
   const services = buildServices();
   const state = createState();
 
+  // Restore persisted Portfolio prefs (Sprint 7 P1-T3).
+  const savedPrefs = loadPortfolioPrefs(services.repo);
+  if (savedPrefs && typeof savedPrefs === 'object') {
+    if (typeof savedPrefs.oppFilter === 'string') {
+      state.portfolio.oppFilter = savedPrefs.oppFilter;
+    }
+    if (typeof savedPrefs.oppSort === 'string') {
+      state.portfolio.oppSort = savedPrefs.oppSort;
+    }
+  }
+
   services.bus.subscribe(CycleProposed, () => {});
   services.bus.subscribe(CycleAccepted, () => {});
   services.bus.subscribe(CycleRejected, () => {});
@@ -840,6 +1113,10 @@ export function start() {
   services.bus.subscribe(FrictionSignalCaptured, () => {});
   services.bus.subscribe(KaizenPromoted, () => {});
   services.bus.subscribe(KaizenBaselineLocked, () => {});
+  services.bus.subscribe(OpportunityCreated, () => {});
+  services.bus.subscribe(OpportunityPromoted, () => {});
+  services.bus.subscribe(OpportunityDeferred, () => {});
+  services.bus.subscribe(OpportunityRejected, () => {});
 
   const rerender = () => renderApp(services, state);
 

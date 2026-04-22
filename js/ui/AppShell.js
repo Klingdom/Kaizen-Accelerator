@@ -16,6 +16,7 @@ import { ROUTE_NAMES } from './router.js';
 
 const NAV_LABELS = Object.freeze({
   today: 'Today',
+  portfolio: 'Portfolio',
   week: 'Week',
   catalog: 'Catalog',
   kaizen: 'Kaizen',
