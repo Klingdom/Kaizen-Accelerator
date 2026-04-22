@@ -85,12 +85,88 @@ function renderListRow(e) {
   const toggleLabel = enabled ? 'On' : 'Off';
   const toggleDisabled = e.isNonOptional ? 'disabled aria-disabled="true"' : '';
   return `<li class="cat-list-row" data-catalog-entry-id="${esc(e.id ?? '')}">
-    ${actNum}
-    <span class="cat-list-name">${esc(e.name ?? '')}</span>
-    <span class="cat-list-bucket">${esc(e.bucket ?? '')}</span>
-    <span class="cat-list-lock">${lockIcon}</span>
-    <button type="button" class="cat-list-toggle" data-action="CATALOG_TOGGLE" data-payload='${payload}' ${toggleDisabled}>${esc(toggleLabel)}</button>
+    <div class="cat-list-row-main">
+      ${actNum}
+      <span class="cat-list-name">${esc(e.name ?? '')}</span>
+      <span class="cat-list-bucket">${esc(e.bucket ?? '')}</span>
+      <span class="cat-list-lock">${lockIcon}</span>
+      <button type="button" class="cat-list-toggle" data-action="CATALOG_TOGGLE" data-payload='${payload}' ${toggleDisabled}>${esc(toggleLabel)}</button>
+    </div>
+    ${renderEntryDetails(e)}
   </li>`;
+}
+
+/**
+ * Collapsed-by-default detail block. Shows everything the seed pipeline
+ * knows about the entry: duration, focus area, cadence, trigger, inputs,
+ * output artifact, project-type binding, participants, and the full
+ * ordered procedure steps. Pure HTML; no behavior beyond <details>.
+ *
+ * @param {object} e
+ * @returns {string}
+ */
+export function renderEntryDetails(e) {
+  const hasProcedure = Array.isArray(e.procedure) && e.procedure.length > 0;
+  if (!hasProcedure && !hasAnyMeta(e)) return '';
+  return `<details class="cat-row-detail">
+    <summary class="cat-row-summary">Details${hasProcedure ? ` &middot; ${esc(String(e.procedure.length))} steps` : ''}</summary>
+    ${renderMeta(e)}
+    ${hasProcedure ? renderProcedure(e.procedure) : ''}
+  </details>`;
+}
+
+function hasAnyMeta(e) {
+  return (
+    e.defaultDurationMinutes != null ||
+    e.focusArea ||
+    e.cadence ||
+    e.trigger ||
+    (Array.isArray(e.inputs) && e.inputs.length > 0) ||
+    e.outputArtifact ||
+    e.projectTypeBinding ||
+    (Array.isArray(e.participants) && e.participants.length > 0)
+  );
+}
+
+function renderMeta(e) {
+  /** @type {string[]} */
+  const rows = [];
+  if (e.defaultDurationMinutes != null) {
+    rows.push(row('Duration', `${esc(String(e.defaultDurationMinutes))} min`));
+  }
+  if (e.focusArea) rows.push(row('Focus area', esc(String(e.focusArea))));
+  if (e.cadence) rows.push(row('Cadence', esc(String(e.cadence))));
+  if (e.trigger) rows.push(row('Trigger', esc(String(e.trigger))));
+  if (Array.isArray(e.inputs) && e.inputs.length) {
+    rows.push(row('Inputs', esc(e.inputs.join(', '))));
+  }
+  if (e.outputArtifact && typeof e.outputArtifact === 'object') {
+    const oa = e.outputArtifact;
+    const parts = [oa.name, oa.schema, oa.required ? 'required' : 'optional']
+      .filter(Boolean)
+      .map((s) => esc(String(s)));
+    rows.push(row('Output', parts.join(' &middot; ')));
+  }
+  if (e.projectTypeBinding) {
+    const pt = Array.isArray(e.projectTypeBinding)
+      ? e.projectTypeBinding.join(', ')
+      : String(e.projectTypeBinding);
+    rows.push(row('Project type', esc(pt)));
+  }
+  if (Array.isArray(e.participants) && e.participants.length) {
+    rows.push(row('Participants', esc(e.participants.join(', '))));
+  }
+  if (!rows.length) return '';
+  return `<dl class="cat-meta-list">${rows.join('')}</dl>`;
+}
+
+function row(label, value) {
+  return `<div class="cat-meta-row"><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
+}
+
+function renderProcedure(steps) {
+  const items = steps.map((s) => `<li>${esc(String(s))}</li>`).join('');
+  return `<ol class="cat-proc-list">${items}</ol>`;
 }
 
 export default Catalog;

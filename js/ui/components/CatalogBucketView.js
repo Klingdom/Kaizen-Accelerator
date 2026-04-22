@@ -14,6 +14,7 @@
 
 import { esc } from '../mount.js';
 import { Bucket } from '../../domain/types.js';
+import { renderEntryDetails } from '../pages/Catalog.js';
 
 export const BUCKET_ORDER = Object.freeze([
   Bucket.PROJECT,
@@ -126,6 +127,7 @@ function renderCard(e) {
       ${dep}
       <button type="button" class="cat-card-toggle ${toggleCls}" data-action="CATALOG_TOGGLE" data-payload='${payload}' ${toggleDisabled}>${esc(toggleLabel)}</button>
     </div>
+    ${renderEntryDetails(e)}
   </li>`;
 }
 
