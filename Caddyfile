@@ -1,46 +1,30 @@
 # BAM-X Kaizen OS — Caddy configuration
 # Serves the marketing HTML at the root + the /js/ MVP modules.
 # Auto-HTTPS is enabled in production via Caddy's ACME integration.
-#
-# Two listen modes selected via the DOMAIN environment variable:
-#   DOMAIN=localhost   → HTTP on :80 only, no TLS (for local `docker compose up`)
-#   DOMAIN=your.tld    → HTTPS on :443 with Let's Encrypt, redirects :80 → :443
 
 {
-	# Global options.
-	# Admin endpoint disabled in production to reduce attack surface.
 	admin off
-	# Reasonable defaults for a static site.
 	servers {
 		trusted_proxies static private_ranges
 	}
-	# In local mode the email is unused; in production Let's Encrypt needs it.
 	email {$ACME_EMAIL:admin@localhost}
 }
 
 {$DOMAIN:localhost}:{$HTTP_PORT:80} {
 	root * /srv
-
-	# Local dev: no TLS. Production: auto-HTTPS kicks in when DOMAIN != localhost.
-	@localdev expression {env.DOMAIN} == "localhost" || {env.DOMAIN} == ""
-	handle @localdev {
-		# No TLS directive; Caddy will serve HTTP only on this block.
-	}
+	encode zstd gzip
 
 	# Security headers applied to all responses.
+	# NOTE: some reverse proxies (NPM, CloudFront, etc.) strip or rewrite
+	# certain headers. The per-path MIME handlers below set Content-Type
+	# explicitly so ES modules load correctly even through a stripping proxy.
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
-		# Conservative CSP — no external scripts/styles in MVP (zero runtime deps).
 		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
-		# Remove the Caddy server header.
 		-Server
 	}
-
-	# MIME: ES modules must be served as application/javascript.
-	@js path *.js
-	header @js Content-Type application/javascript
 
 	# Health endpoint — matches the Docker HEALTHCHECK probe.
 	respond /health 200 {
@@ -48,13 +32,14 @@
 		close
 	}
 
-	# Do not serve the design docs, tests, config, CI, or git plumbing even
-	# if they leak into the image. Defense in depth on top of .dockerignore.
-	# Caddy allows only one path_regexp per matcher, so we use path globs
-	# (which allow multiple entries and are OR'd together).
+	# Block internal files from being served, even if .dockerignore fails.
 	@forbidden {
 		path /ARCHITECTURE.md /PRODUCT_BLUEPRINT.md /UX_FLOWS.md /ENGINE_DESIGN.md
 		path /DELIVERY_PLAN.md /AI_AGENTS.md /CATALOG_GAPS.md /PROJECT_TYPE_30D_KAIZEN.md
+		path /ACCELERATOR_STANDARD.md /DMAIC_STANDARD.md /KAIZEN_EVENT_STANDARD.md
+		path /ADHOC_PDCA_STANDARD.md /GLOSSARY.md /SCHEDULING_VISION.md
+		path /SCHEDULING_UX.md /SCHEDULING_ARCHITECTURE.md /SCHEDULING_DELIVERABLES.md
+		path /SCHEDULING_SYSTEM.md
 		path /Dockerfile /Caddyfile /docker-compose.yml /.dockerignore
 		path /.env /.env.*
 		path /.git /.git/*
@@ -68,13 +53,34 @@
 	}
 	respond @forbidden 404
 
-	# Enable gzip + zstd for text/* responses.
-	encode zstd gzip
+	# ES modules require Content-Type application/javascript or text/javascript.
+	# Some proxies strip Content-Type; explicit handle blocks ensure the header
+	# is set on the final response regardless of upstream behavior.
+	@js_files path *.js
+	handle @js_files {
+		header Content-Type "application/javascript; charset=utf-8"
+		file_server
+	}
 
-	# Static file server for everything else. try_files lets index.html act
-	# as default for `/` and falls through to 404.html if present.
-	file_server {
-		index index.html
+	@css_files path *.css
+	handle @css_files {
+		header Content-Type "text/css; charset=utf-8"
+		file_server
+	}
+
+	@html_files path *.html /
+	handle @html_files {
+		header Content-Type "text/html; charset=utf-8"
+		file_server {
+			index index.html
+		}
+	}
+
+	# Catch-all static file server for images, fonts, etc.
+	handle {
+		file_server {
+			index index.html
+		}
 	}
 
 	handle_errors {
@@ -84,7 +90,6 @@
 		respond @500 "Server error" 500
 	}
 
-	# Minimal access log to stdout; Docker captures it.
 	log {
 		output stdout
 		format console
