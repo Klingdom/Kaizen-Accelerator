@@ -16,6 +16,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // ScopeChangeRequested (22 + 3 = 25 total).
 // Sprint 7 adds 4 Opportunity* events for the Portfolio intake funnel
 // (25 + 4 = 29 total).
+// Sprint 8 adds KaizenRemeasurementStarted + KaizenAbandoned for the
+// HARD RULE close loop (29 + 2 = 31 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -33,8 +35,10 @@ const EXPECTED = [
   'WeeklyReflectionCompleted',
   'KaizenPromoted',
   'KaizenBaselineLocked',
+  'KaizenRemeasurementStarted',
   'KaizenRemeasured',
   'KaizenClosed',
+  'KaizenAbandoned',
   'PdcaExperimentOpened',
   'PdcaTickCommitted',
   'PdcaExperimentClosed',

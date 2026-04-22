@@ -1,28 +1,43 @@
 /**
- * KaizenCard — Sprint 6 P0-T7.
+ * KaizenCard — Sprint 6 P0-T7 + Sprint 8 P1-T2/T3.
  *
- * Pure render. Two variants for Sprint 6:
- *   DRAFT    — problemStatement, source-signal count, editable goal,
- *              action list with add/remove, "Lock baseline" CTA
- *              (disabled until goalStatement + actions.length >= 1)
- *   ACTIVE   — read-only goal, locked baseline block, action list with
- *              check-off, "Ready to remeasure" indicator, "Abandon" CTA
- *
- * Other states (IN_REMEASUREMENT, CLOSED) render a short "Ships in
- * Sprint 7" stub.
+ * Pure render. Variants:
+ *   DRAFT             — problem, editable goal, action list w/ add/remove,
+ *                       "Lock baseline" CTA (disabled until goal+>=1 action)
+ *                       + inline "Abandon" form (Sprint 8 P1-T3)
+ *   ACTIVE            — read-only goal, locked baseline, check-off actions,
+ *                       "Start remeasurement" (when all actions done)
+ *   IN_REMEASUREMENT  — (Sprint 8 P1-T2) baseline (locked), "Capture
+ *                       remeasurement" primary button; when remeasurement
+ *                       captured, show delta + "Close Kaizen" primary.
+ *   CLOSED            — (Sprint 8 P1-T2) read-only summary with closeKind
+ *                       badge, baseline/remeasurement/delta, lessonsLearned,
+ *                       closedAt. No actions.
+ *   ABANDONED        — variant rendered when kaizen.abandoned=true,
+ *                       regardless of state (always DRAFT per invariant).
  *
  * Events fired via delegation:
- *   KAIZEN_SET_GOAL          (payload {kaizenId})  — textarea blur / form submit
- *   KAIZEN_ADD_ACTION        (payload {kaizenId})
- *   KAIZEN_REMOVE_ACTION     (payload {kaizenId, index})
- *   KAIZEN_MARK_ACTION_DONE  (payload {kaizenId, index})
- *   KAIZEN_LOCK_BASELINE     (payload {kaizenId})  — opens baseline dialog
- *   KAIZEN_START_REMEASUREMENT (payload {kaizenId})  — Sprint 7 wiring
- *   KAIZEN_ABANDON           (payload {kaizenId})
+ *   KAIZEN_SET_GOAL
+ *   KAIZEN_ADD_ACTION
+ *   KAIZEN_REMOVE_ACTION
+ *   KAIZEN_MARK_ACTION_DONE
+ *   KAIZEN_LOCK_BASELINE         — opens BaselineDialog
+ *   KAIZEN_START_REMEASUREMENT
+ *   KAIZEN_OPEN_REMEASUREMENT_DIALOG
+ *   KAIZEN_OPEN_CLOSE_DIALOG
+ *   KAIZEN_ABANDON               — expands inline abandon form
+ *   KAIZEN_CONFIRM_ABANDON       — submits abandon
+ *   KAIZEN_CANCEL_ABANDON        — cancels abandon form
  */
 
 import { esc } from '../mount.js';
 import { KaizenState } from '../../domain/types.js';
+
+const CLOSE_KIND_LABEL = Object.freeze({
+  SUCCESS: 'SUCCESS',
+  PARTIAL: 'PARTIAL',
+  FAILED_HONEST: 'FAILED HONEST'
+});
 
 /**
  * KaizenCard component.
@@ -30,7 +45,9 @@ import { KaizenState } from '../../domain/types.js';
  * @param {{
  *   kaizen: object,
  *   baseline?: object|null,
- *   sourceFrictionSignalCount?: number
+ *   remeasurement?: object|null,
+ *   sourceFrictionSignalCount?: number,
+ *   abandonFormOpen?: boolean
  * }} props
  * @returns {string}
  */
@@ -39,14 +56,18 @@ export function KaizenCard(props = {}) {
   if (!kaizen || typeof kaizen !== 'object') {
     return `<section class="kz-card kz-card-empty"><p>No Kaizen.</p></section>`;
   }
+  if (kaizen.abandoned === true) {
+    return renderAbandoned(kaizen);
+  }
   switch (kaizen.state) {
     case KaizenState.DRAFT:
       return renderDraft(kaizen, props);
     case KaizenState.ACTIVE:
       return renderActive(kaizen, props);
     case KaizenState.IN_REMEASUREMENT:
+      return renderInRemeasurement(kaizen, props);
     case KaizenState.CLOSED:
-      return renderStub(kaizen);
+      return renderClosed(kaizen, props);
     default:
       return renderStub(kaizen);
   }
@@ -54,10 +75,6 @@ export function KaizenCard(props = {}) {
 
 /**
  * DRAFT variant.
- *
- * @param {object} k
- * @param {object} props
- * @returns {string}
  */
 function renderDraft(k, props) {
   const payload = esc(JSON.stringify({ kaizenId: k.id }));
@@ -72,6 +89,21 @@ function renderDraft(k, props) {
   const lockHint = canLock
     ? ''
     : '<p class="kz-hint">Set a goal + at least one action to enable Lock baseline.</p>';
+
+  const abandonBlock = props.abandonFormOpen
+    ? `<section class="kz-abandon-form" data-kaizen-id="${esc(k.id)}">
+        <form data-action="KAIZEN_CONFIRM_ABANDON" data-payload='${payload}'>
+          <label class="kz-abandon-label">
+            <span>Abandon this Kaizen? State it why (min 10 chars).</span>
+            <textarea class="kz-abandon-reason" name="reason" rows="2" minlength="10" required></textarea>
+          </label>
+          <div class="kz-abandon-actions">
+            <button type="button" class="kz-abandon-cancel" data-action="KAIZEN_CANCEL_ABANDON" data-payload='${payload}'>Keep</button>
+            <button type="submit" class="kz-abandon-confirm">Confirm abandon</button>
+          </div>
+        </form>
+      </section>`
+    : `<button type="button" class="kz-abandon" data-action="KAIZEN_ABANDON" data-payload='${payload}'>Abandon</button>`;
 
   return `<section class="kz-card kz-card-draft" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}">
   <header class="kz-header">
@@ -94,16 +126,13 @@ function renderDraft(k, props) {
   <footer class="kz-footer">
     <button type="button" class="kz-lock-baseline" data-action="KAIZEN_LOCK_BASELINE" data-payload='${payload}' ${lockDisabled}>Lock baseline</button>
     ${lockHint}
+    ${abandonBlock}
   </footer>
 </section>`;
 }
 
 /**
  * ACTIVE variant.
- *
- * @param {object} k
- * @param {object} props
- * @returns {string}
  */
 function renderActive(k, props) {
   const payload = esc(JSON.stringify({ kaizenId: k.id }));
@@ -113,15 +142,7 @@ function renderActive(k, props) {
   const readyToRemeasure =
     actionsTotal > 0 && actionsDone === actionsTotal;
 
-  const baselineHtml = baseline
-    ? `<dl class="kz-baseline-meta">
-        <dt>Metric</dt><dd>${esc(baseline.metricDefinition?.name ?? '')}</dd>
-        <dt>Value</dt><dd>${esc(String(baseline.value ?? ''))} ${esc(baseline.metricDefinition?.unit ?? '')}</dd>
-        <dt>Captured</dt><dd>${esc(baseline.capturedAt ?? '')}</dd>
-        <dt>Locked</dt><dd>${baseline.locked ? 'Yes' : 'No'}</dd>
-      </dl>`
-    : '<p class="kz-body kz-body-missing">Baseline not resolved.</p>';
-
+  const baselineHtml = renderBaselineDl(baseline);
   const readyBadge = readyToRemeasure
     ? `<p class="kz-ready">Ready to remeasure · <button type="button" class="kz-start-remeasure" data-action="KAIZEN_START_REMEASUREMENT" data-payload='${payload}'>Start remeasurement</button></p>`
     : '';
@@ -145,17 +166,126 @@ function renderActive(k, props) {
   </section>
   ${renderActionsSection(k, payload, /* active= */ true)}
   ${readyBadge}
+</section>`;
+}
+
+/**
+ * IN_REMEASUREMENT variant (Sprint 8 P1-T2). Shows baseline, the capture
+ * CTA (until a Remeasurement row exists) and — once captured — delta +
+ * Close Kaizen CTA.
+ */
+function renderInRemeasurement(k, props) {
+  const payload = esc(JSON.stringify({ kaizenId: k.id }));
+  const baseline = props.baseline ?? null;
+  const remeasurement = props.remeasurement ?? null;
+
+  const baselineHtml = renderBaselineDl(baseline);
+  const remHtml = remeasurement
+    ? renderRemeasurementDl(remeasurement, baseline)
+    : `<button type="button" class="kz-capture-remeasure" data-action="KAIZEN_OPEN_REMEASUREMENT_DIALOG" data-payload='${payload}'>Capture remeasurement</button>`;
+
+  const closeBtn = remeasurement
+    ? `<button type="button" class="kz-close-kaizen" data-action="KAIZEN_OPEN_CLOSE_DIALOG" data-payload='${payload}'>Close Kaizen</button>`
+    : '';
+
+  return `<section class="kz-card kz-card-in-remeasurement" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}">
+  <header class="kz-header">
+    <span class="kz-badge kz-badge-in-remeasurement">IN REMEASUREMENT</span>
+    <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
+  </header>
+  <section class="kz-problem">
+    <h3 class="kz-sub">Problem</h3>
+    <p class="kz-body">${esc(k.problemStatement || '')}</p>
+  </section>
+  <section class="kz-goal">
+    <h3 class="kz-sub">Goal</h3>
+    <p class="kz-body">${esc(k.goalStatement || '')}</p>
+  </section>
+  <section class="kz-baseline">
+    <h3 class="kz-sub">Baseline (locked)</h3>
+    ${baselineHtml}
+  </section>
+  <section class="kz-remeasurement">
+    <h3 class="kz-sub">Remeasurement</h3>
+    ${remHtml}
+  </section>
   <footer class="kz-footer">
-    <button type="button" class="kz-abandon" data-action="KAIZEN_ABANDON" data-payload='${payload}'>Abandon</button>
+    ${closeBtn}
+    <button type="button" class="kz-back-to-active" disabled aria-disabled="true" title="Back to ACTIVE ships in a later sprint">Back to ACTIVE</button>
   </footer>
 </section>`;
 }
 
 /**
- * Stub view for IN_REMEASUREMENT / CLOSED until Sprint 7 wiring lands.
- *
- * @param {object} k
- * @returns {string}
+ * CLOSED variant (Sprint 8 P1-T2). Read-only, closeKind badge + lessons.
+ */
+function renderClosed(k, props) {
+  const baseline = props.baseline ?? null;
+  const remeasurement = props.remeasurement ?? null;
+  const closeKind = typeof k.closeKind === 'string' ? k.closeKind : 'UNKNOWN';
+  const badgeLabel = CLOSE_KIND_LABEL[closeKind] ?? closeKind;
+  const badgeClass = `kz-badge kz-close-${esc(closeKind.toLowerCase())}`;
+
+  const deltaRow = remeasurement
+    ? renderRemeasurementDl(remeasurement, baseline)
+    : '<p class="kz-body kz-body-missing">Remeasurement row missing.</p>';
+
+  const lessonsHtml = k.lessonsLearned
+    ? `<section class="kz-lessons"><h3 class="kz-sub">Lessons learned</h3><p class="kz-body">${esc(k.lessonsLearned)}</p></section>`
+    : '';
+
+  return `<section class="kz-card kz-card-closed" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}" data-close-kind="${esc(closeKind)}">
+  <header class="kz-header">
+    <span class="${badgeClass}">${esc(badgeLabel)}</span>
+    <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
+  </header>
+  <section class="kz-problem">
+    <h3 class="kz-sub">Problem</h3>
+    <p class="kz-body">${esc(k.problemStatement || '')}</p>
+  </section>
+  <section class="kz-goal">
+    <h3 class="kz-sub">Goal</h3>
+    <p class="kz-body">${esc(k.goalStatement || '')}</p>
+  </section>
+  <section class="kz-baseline">
+    <h3 class="kz-sub">Baseline (locked)</h3>
+    ${renderBaselineDl(baseline)}
+  </section>
+  <section class="kz-remeasurement">
+    <h3 class="kz-sub">Remeasurement</h3>
+    ${deltaRow}
+  </section>
+  ${lessonsHtml}
+  <footer class="kz-footer">
+    <p class="kz-closed-at">Closed ${esc(k.closedAt ?? '')}</p>
+  </footer>
+</section>`;
+}
+
+/**
+ * ABANDONED variant (Sprint 8 P1-T3). Always rendered for kaizen.abandoned
+ * regardless of state (state remains DRAFT per §3.3 invariant).
+ */
+function renderAbandoned(k) {
+  return `<section class="kz-card kz-card-abandoned" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}" data-abandoned="true">
+  <header class="kz-header">
+    <span class="kz-badge kz-badge-abandoned">ABANDONED</span>
+    <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
+  </header>
+  <section class="kz-problem">
+    <h3 class="kz-sub">Problem</h3>
+    <p class="kz-body">${esc(k.problemStatement || '')}</p>
+  </section>
+  <section class="kz-reason">
+    <h3 class="kz-sub">Reason</h3>
+    <p class="kz-body">${esc(k.abandonReason ?? '')}</p>
+    <p class="kz-abandoned-at">Abandoned ${esc(k.abandonedAt ?? '')}</p>
+  </section>
+</section>`;
+}
+
+/**
+ * Stub view for unknown states.
  */
 function renderStub(k) {
   return `<section class="kz-card kz-card-stub" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}">
@@ -163,18 +293,12 @@ function renderStub(k) {
     <span class="kz-badge kz-badge-${esc((k.state ?? '').toLowerCase())}">${esc(k.state ?? '')}</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
   </header>
-  <p class="kz-body">Full ${esc(k.state ?? '')} view ships in Sprint 7.</p>
+  <p class="kz-body">Full ${esc(k.state ?? '')} view not available.</p>
 </section>`;
 }
 
 /**
- * Render the actions section. In DRAFT the user can add + remove; in
- * ACTIVE they check off done.
- *
- * @param {object} k
- * @param {string} payload     pre-escaped JSON {kaizenId: ...}
- * @param {boolean} active
- * @returns {string}
+ * Render the actions section.
  */
 function renderActionsSection(k, payload, active) {
   const actions = Array.isArray(k.actions) ? k.actions : [];
@@ -216,6 +340,38 @@ function renderActionsSection(k, payload, active) {
     <ul class="kz-action-list">${items || '<li class="kz-action-empty">No actions yet.</li>'}</ul>
     ${addForm}
   </section>`;
+}
+
+function renderBaselineDl(baseline) {
+  if (!baseline) return '<p class="kz-body kz-body-missing">Baseline not resolved.</p>';
+  const md = baseline.metricDefinition ?? {};
+  return `<dl class="kz-baseline-meta">
+    <dt>Metric</dt><dd>${esc(md.name ?? '')}</dd>
+    <dt>Value</dt><dd>${esc(String(baseline.value ?? ''))} ${esc(md.unit ?? '')}</dd>
+    <dt>Captured</dt><dd>${esc(baseline.capturedAt ?? '')}</dd>
+    <dt>Locked</dt><dd>${baseline.locked ? 'Yes' : 'No'}</dd>
+  </dl>`;
+}
+
+function renderRemeasurementDl(rm, baseline) {
+  const unit = baseline?.metricDefinition?.unit ?? '';
+  const signedAbs =
+    (rm.deltaAbsolute >= 0 ? '+' : '') + String(rm.deltaAbsolute);
+  const pctPart =
+    rm.deltaPercent === null
+      ? 'N/A'
+      : `${rm.deltaPercent >= 0 ? '+' : ''}${roundish(rm.deltaPercent)}%`;
+  return `<dl class="kz-remeasurement-meta">
+    <dt>Value</dt><dd>${esc(String(rm.value))} ${esc(unit)}</dd>
+    <dt>Delta</dt><dd class="kz-delta" data-beats="${esc(String(rm.beatsBaseline))}">${esc(signedAbs)} ${esc(unit)} (${esc(pctPart)})</dd>
+    <dt>Captured</dt><dd>${esc(rm.capturedAt ?? '')}</dd>
+    <dt>Beats baseline</dt><dd>${rm.beatsBaseline ? 'Yes' : 'No'}</dd>
+  </dl>`;
+}
+
+function roundish(n) {
+  if (!Number.isFinite(Number(n))) return String(n);
+  return String(Math.round(Number(n) * 100) / 100);
 }
 
 export default KaizenCard;

@@ -31,8 +31,10 @@ export const KAIZEN_COPY = Object.freeze({
  *   activeKaizen?: object|null,
  *   draftKaizens?: object[],
  *   baseline?: object|null,
+ *   remeasurement?: object|null,
  *   openFrictionSignals?: object[],
- *   wizardState?: object|null
+ *   wizardState?: object|null,
+ *   abandonForm?: {kaizenId: string}|null
  * }} props
  * @returns {string}
  */
@@ -40,10 +42,12 @@ export function Kaizen(props = {}) {
   const active = props.activeKaizen ?? null;
   const drafts = Array.isArray(props.draftKaizens) ? props.draftKaizens : [];
   const baseline = props.baseline ?? null;
+  const remeasurement = props.remeasurement ?? null;
   const openSignals = Array.isArray(props.openFrictionSignals)
     ? props.openFrictionSignals
     : [];
   const wizardState = props.wizardState ?? null;
+  const abandonForm = props.abandonForm ?? null;
 
   const wizardModal = wizardState
     ? WeeklyReflectionWizard(wizardState)
@@ -52,14 +56,17 @@ export function Kaizen(props = {}) {
   const activeBlock = active
     ? `<section class="kz-page-active">
         <h2 class="kz-page-section-title">Active Kaizen</h2>
-        ${KaizenCard({ kaizen: active, baseline })}
+        ${KaizenCard({ kaizen: active, baseline, remeasurement })}
       </section>`
     : '';
 
   const draftBlock = drafts.length
     ? `<section class="kz-page-drafts">
         <h2 class="kz-page-section-title">Drafts</h2>
-        ${drafts.map((k) => KaizenCard({ kaizen: k })).join('\n')}
+        ${drafts.map((k) => KaizenCard({
+          kaizen: k,
+          abandonFormOpen: abandonForm != null && abandonForm.kaizenId === k.id
+        })).join('\n')}
       </section>`
     : '';
 

@@ -54,18 +54,27 @@
 
 import {
   KaizenPromoted,
-  KaizenBaselineLocked
+  KaizenBaselineLocked,
+  KaizenRemeasurementStarted,
+  KaizenRemeasured,
+  KaizenClosed,
+  KaizenAbandoned
 } from '../events/events.js';
 import {
   KaizenState,
   FrictionStatus,
-  ProjectType
+  ProjectType,
+  CloseKind,
+  MetricDirection
 } from '../domain/types.js';
 
 export const KAIZENS_KEY = 'bamx:v1:kaizens';
 export const BASELINE_METRICS_KEY = 'bamx:v1:baselineMetrics';
+export const REMEASUREMENTS_KEY = 'bamx:v1:remeasurements';
 
 export const PROBLEM_STATEMENT_MIN_LENGTH = 10;
+export const LESSONS_LEARNED_MIN_LENGTH = 20;
+export const ABANDON_REASON_MIN_LENGTH = 10;
 
 /**
  * Raise a named error.
@@ -109,6 +118,17 @@ export function buildKaizenId(userId, openedAt) {
 export function buildBaselineMetricId(kaizenId) {
   const safe = String(kaizenId ?? 'unknown').replace(/[^a-zA-Z0-9_]/g, '_');
   return `bm_${safe}`;
+}
+
+/**
+ * Deterministic Remeasurement id from kaizenId (Sprint 8). One per Kaizen.
+ *
+ * @param {string} kaizenId
+ * @returns {string}
+ */
+export function buildRemeasurementId(kaizenId) {
+  const safe = String(kaizenId ?? 'unknown').replace(/[^a-zA-Z0-9_]/g, '_');
+  return `rm_${safe}`;
 }
 
 /** ISO-date from timestamp, YYYY-MM-DD. */
@@ -329,7 +349,14 @@ export class KaizenService {
       scopeChanges: [],
       targetCloseDate,
       sourcePdcaExperimentId: null,
-      sourceOpportunityId: null
+      sourceOpportunityId: null,
+      // Sprint 8 fields.
+      lessonsLearned: null,
+      metricDirection: MetricDirection.HIGHER_IS_BETTER,
+      targetImprovement: null,
+      abandoned: false,
+      abandonedAt: null,
+      abandonReason: null
     };
 
     // Snapshot prior state for rollback.
@@ -396,6 +423,13 @@ export class KaizenService {
         { kaizenId }
       );
     }
+    if (k.abandoned === true) {
+      fail(
+        'KAIZEN_ABANDONED',
+        `KaizenService.setGoalStatement: kaizen '${kaizenId}' is abandoned`,
+        { kaizenId }
+      );
+    }
     if (k.state !== KaizenState.DRAFT) {
       fail(
         'KAIZEN_NOT_IN_DRAFT',
@@ -427,6 +461,13 @@ export class KaizenService {
       fail(
         'KAIZEN_NOT_FOUND',
         `KaizenService.addAction: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (k.abandoned === true) {
+      fail(
+        'KAIZEN_ABANDONED',
+        `KaizenService.addAction: kaizen '${kaizenId}' is abandoned`,
         { kaizenId }
       );
     }
@@ -577,6 +618,13 @@ export class KaizenService {
         { kaizenId }
       );
     }
+    if (k.abandoned === true) {
+      fail(
+        'KAIZEN_ABANDONED',
+        `KaizenService.lockBaseline: kaizen '${kaizenId}' is abandoned`,
+        { kaizenId }
+      );
+    }
     if (k.state !== KaizenState.DRAFT) {
       fail(
         'KAIZEN_NOT_IN_DRAFT',
@@ -674,10 +722,23 @@ export class KaizenService {
     const priorBaselines = this._repo.read(BASELINE_METRICS_KEY) ?? {};
     const nextBaselines = { ...priorBaselines, [baselineId]: baseline };
 
+    // Optional Sprint 8 fields carried from the BaselineDialog.
+    const nextMetricDirection =
+      input.metricDirection === MetricDirection.LOWER_IS_BETTER
+        ? MetricDirection.LOWER_IS_BETTER
+        : MetricDirection.HIGHER_IS_BETTER;
+    const nextTargetImprovement =
+      typeof input.targetImprovement === 'number' &&
+      Number.isFinite(input.targetImprovement)
+        ? input.targetImprovement
+        : k.targetImprovement ?? null;
+
     const nextKaizen = {
       ...k,
       baselineMetricId: baselineId,
-      state: KaizenState.ACTIVE
+      state: KaizenState.ACTIVE,
+      metricDirection: nextMetricDirection,
+      targetImprovement: nextTargetImprovement
     };
     const nextKaizens = { ...priorKaizens, [kaizenId]: nextKaizen };
 
@@ -719,6 +780,383 @@ export class KaizenService {
     if (!k || !k.baselineMetricId) return null;
     const map = this._repo.read(BASELINE_METRICS_KEY) ?? {};
     return map[k.baselineMetricId] ?? null;
+  }
+
+  /**
+   * Look up the Remeasurement for a Kaizen. Returns null when absent.
+   *
+   * @param {string} kaizenId
+   * @returns {object|null}
+   */
+  getRemeasurementForKaizen(kaizenId) {
+    const k = this.get(kaizenId);
+    if (!k || !k.remeasurementId) return null;
+    const map = this._repo.read(REMEASUREMENTS_KEY) ?? {};
+    return map[k.remeasurementId] ?? null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Sprint 8 — HARD RULE close loop
+  // -------------------------------------------------------------------------
+
+  /**
+   * Transition a Kaizen from ACTIVE to IN_REMEASUREMENT. Does NOT create a
+   * Remeasurement row — that is done separately via captureRemeasurement().
+   *
+   * Guards:
+   *   - kaizen must exist
+   *   - if userId is supplied, kaizen.userId must match
+   *   - kaizen.state must be ACTIVE
+   *
+   * Emits KaizenRemeasurementStarted.
+   *
+   * @param {string} kaizenId
+   * @param {string} [userId]
+   * @returns {object} updated kaizen
+   */
+  startRemeasurement(kaizenId, userId) {
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.startRemeasurement: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (typeof userId === 'string' && userId.length > 0 && k.userId !== userId) {
+      fail(
+        'KAIZEN_OWNER_MISMATCH',
+        `KaizenService.startRemeasurement: kaizen '${kaizenId}' not owned by '${userId}'`,
+        { kaizenId, userId, ownerId: k.userId }
+      );
+    }
+    if (k.state !== KaizenState.ACTIVE) {
+      fail(
+        'KAIZEN_NOT_ACTIVE',
+        `KaizenService.startRemeasurement: kaizen '${kaizenId}' is '${k.state}', must be ACTIVE`,
+        { kaizenId, state: k.state }
+      );
+    }
+    const now = this._clock.now();
+    const next = { ...k, state: KaizenState.IN_REMEASUREMENT };
+    this._repo.upsert(KAIZENS_KEY, kaizenId, next);
+    this._bus.publish(KaizenRemeasurementStarted, {
+      kaizenId,
+      userId: k.userId,
+      startedAt: now
+    });
+    return next;
+  }
+
+  /**
+   * Capture the Remeasurement row for a Kaizen in IN_REMEASUREMENT.
+   * APPEND-ONLY — second attempt throws REMEASUREMENT_ALREADY_CAPTURED.
+   *
+   * Computes:
+   *   deltaAbsolute = value - baseline.value
+   *   deltaPercent  = baseline.value === 0 ? null : (deltaAbsolute / baseline.value) * 100
+   *   beatsBaseline = per metricDirection:
+   *       higher_is_better → deltaAbsolute > 0
+   *       lower_is_better  → deltaAbsolute < 0
+   *
+   * Sets kaizen.remeasurementId. Emits KaizenRemeasured.
+   *
+   * @param {string} kaizenId
+   * @param {string} userId
+   * @param {{value: number, evidenceRef?: object|null}} input
+   * @returns {{kaizen: object, remeasurement: object}}
+   */
+  captureRemeasurement(kaizenId, userId, input = {}) {
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.captureRemeasurement: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (typeof userId === 'string' && userId.length > 0 && k.userId !== userId) {
+      fail(
+        'KAIZEN_OWNER_MISMATCH',
+        `KaizenService.captureRemeasurement: kaizen '${kaizenId}' not owned by '${userId}'`,
+        { kaizenId, userId, ownerId: k.userId }
+      );
+    }
+    if (k.state !== KaizenState.IN_REMEASUREMENT) {
+      fail(
+        'KAIZEN_NOT_IN_REMEASUREMENT',
+        `KaizenService.captureRemeasurement: kaizen '${kaizenId}' is '${k.state}', must be IN_REMEASUREMENT`,
+        { kaizenId, state: k.state }
+      );
+    }
+    if (k.remeasurementId) {
+      fail(
+        'REMEASUREMENT_ALREADY_CAPTURED',
+        `KaizenService.captureRemeasurement: kaizen '${kaizenId}' already has remeasurement '${k.remeasurementId}'`,
+        { kaizenId, remeasurementId: k.remeasurementId }
+      );
+    }
+    const baseline = this.getBaselineForKaizen(kaizenId);
+    if (!baseline || baseline.locked !== true) {
+      fail(
+        'BASELINE_NOT_LOCKED',
+        `KaizenService.captureRemeasurement: kaizen '${kaizenId}' has no locked baseline`,
+        { kaizenId }
+      );
+    }
+    const { value } = input;
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      fail(
+        'INVALID_METRIC_VALUE',
+        'KaizenService.captureRemeasurement: value must be a finite number',
+        { value }
+      );
+    }
+    const evidenceRef = input.evidenceRef ?? null;
+    if (
+      evidenceRef !== null &&
+      (typeof evidenceRef !== 'object' || Array.isArray(evidenceRef))
+    ) {
+      fail(
+        'INVALID_EVIDENCE_REF',
+        'KaizenService.captureRemeasurement: evidenceRef must be an object or null'
+      );
+    }
+
+    const baseVal = Number(baseline.value);
+    const deltaAbsolute = value - baseVal;
+    const deltaPercent = baseVal === 0 ? null : (deltaAbsolute / baseVal) * 100;
+    const direction = k.metricDirection === MetricDirection.LOWER_IS_BETTER
+      ? MetricDirection.LOWER_IS_BETTER
+      : MetricDirection.HIGHER_IS_BETTER;
+    const beatsBaseline =
+      direction === MetricDirection.HIGHER_IS_BETTER
+        ? deltaAbsolute > 0
+        : deltaAbsolute < 0;
+
+    const now = this._clock.now();
+    const id = buildRemeasurementId(kaizenId);
+    const remeasurement = {
+      id,
+      kaizenId,
+      metricDefinitionId: baseline.id,
+      value,
+      deltaAbsolute,
+      deltaPercent,
+      beatsBaseline,
+      capturedAt: now,
+      evidenceRef
+    };
+
+    // Atomic-ish: remeasurement first (appendOnly — immutable), then Kaizen
+    // pointer. If the kaizen upsert fails after appendOnly the row exists but
+    // is orphaned; the second capture will then also throw APPEND_ONLY on a
+    // retry — but the caller sees the original error.
+    this._repo.appendOnly(REMEASUREMENTS_KEY, id, remeasurement);
+    try {
+      const next = { ...k, remeasurementId: id };
+      this._repo.upsert(KAIZENS_KEY, kaizenId, next);
+      this._bus.publish(KaizenRemeasured, {
+        kaizenId,
+        userId: k.userId,
+        remeasurementId: id,
+        value,
+        deltaAbsolute,
+        deltaPercent,
+        beatsBaseline,
+        capturedAt: now
+      });
+      return { kaizen: next, remeasurement };
+    } catch (err) {
+      fail(
+        'PERSIST_FAILED',
+        `KaizenService.captureRemeasurement: kaizen update failed — ${err.message}`,
+        { cause: err }
+      );
+    }
+  }
+
+  /**
+   * Compute the deterministic closeKind. Exported helper for UI preview.
+   *
+   *   beatsBaseline === false                                  → FAILED_HONEST
+   *   targetImprovement set AND |delta| >= |targetImprovement| → SUCCESS
+   *   else (beatsBaseline === true but below target or no      → PARTIAL
+   *     target specified)
+   *
+   * @param {{beatsBaseline: boolean, deltaAbsolute: number}} remeasurement
+   * @param {number|null|undefined} targetImprovement
+   * @returns {'SUCCESS'|'PARTIAL'|'FAILED_HONEST'}
+   */
+  static deriveCloseKind(remeasurement, targetImprovement) {
+    if (!remeasurement || remeasurement.beatsBaseline !== true) {
+      return CloseKind.FAILED_HONEST;
+    }
+    const t = Number(targetImprovement);
+    if (Number.isFinite(t) && t !== 0) {
+      if (Math.abs(remeasurement.deltaAbsolute) >= Math.abs(t)) {
+        return CloseKind.SUCCESS;
+      }
+      return CloseKind.PARTIAL;
+    }
+    // No target set — any improvement is a PARTIAL (not full SUCCESS).
+    return CloseKind.PARTIAL;
+  }
+
+  /**
+   * Transition a Kaizen from IN_REMEASUREMENT to CLOSED. Derives closeKind
+   * from the stored Remeasurement + optional `targetImprovement` on the
+   * Kaizen. Requires `lessonsLearned` (min 20 chars).
+   *
+   * HARD RULE: throws KAIZEN_CLOSE_REQUIRES_REMEASUREMENT if the Kaizen has
+   * no remeasurementId.
+   *
+   * Emits KaizenClosed with closeKind + deltaPercent.
+   *
+   * @param {string} kaizenId
+   * @param {string} userId
+   * @param {{lessonsLearned: string}} input
+   * @returns {object} updated kaizen
+   */
+  close(kaizenId, userId, input = {}) {
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.close: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (typeof userId === 'string' && userId.length > 0 && k.userId !== userId) {
+      fail(
+        'KAIZEN_OWNER_MISMATCH',
+        `KaizenService.close: kaizen '${kaizenId}' not owned by '${userId}'`,
+        { kaizenId, userId, ownerId: k.userId }
+      );
+    }
+    if (k.state !== KaizenState.IN_REMEASUREMENT) {
+      fail(
+        'KAIZEN_NOT_IN_REMEASUREMENT',
+        `KaizenService.close: kaizen '${kaizenId}' is '${k.state}', must be IN_REMEASUREMENT`,
+        { kaizenId, state: k.state }
+      );
+    }
+    // HARD RULE — no remeasurement, no close.
+    if (!k.remeasurementId) {
+      fail(
+        'KAIZEN_CLOSE_REQUIRES_REMEASUREMENT',
+        `KaizenService.close: kaizen '${kaizenId}' cannot close without a captured Remeasurement`,
+        { kaizenId }
+      );
+    }
+    const lessonsLearned = typeof input.lessonsLearned === 'string'
+      ? input.lessonsLearned.trim()
+      : '';
+    if (lessonsLearned.length < LESSONS_LEARNED_MIN_LENGTH) {
+      fail(
+        'LESSONS_LEARNED_TOO_SHORT',
+        `KaizenService.close: lessonsLearned must be at least ${LESSONS_LEARNED_MIN_LENGTH} chars`,
+        { length: lessonsLearned.length }
+      );
+    }
+    const remeasurement = this.getRemeasurementForKaizen(kaizenId);
+    if (!remeasurement) {
+      fail(
+        'KAIZEN_CLOSE_REQUIRES_REMEASUREMENT',
+        `KaizenService.close: kaizen '${kaizenId}' remeasurement row missing`,
+        { kaizenId }
+      );
+    }
+
+    const closeKind = KaizenService.deriveCloseKind(
+      remeasurement,
+      k.targetImprovement
+    );
+    const now = this._clock.now();
+    const next = {
+      ...k,
+      state: KaizenState.CLOSED,
+      closedAt: now,
+      closeKind,
+      lessonsLearned
+    };
+    this._repo.upsert(KAIZENS_KEY, kaizenId, next);
+    this._bus.publish(KaizenClosed, {
+      kaizenId,
+      userId: k.userId,
+      closeKind,
+      deltaAbsolute: remeasurement.deltaAbsolute,
+      deltaPercent: remeasurement.deltaPercent,
+      closedAt: now
+    });
+    return next;
+  }
+
+  /**
+   * Abandon a DRAFT Kaizen. Sets `abandoned=true`, captures `abandonReason`,
+   * sets `abandonedAt`. Never transitions to CLOSED per ARCHITECTURE §3.3
+   * invariant. Once abandoned, promote/edit guards reject the Kaizen.
+   *
+   * Emits KaizenAbandoned.
+   *
+   * @param {string} kaizenId
+   * @param {string} userId
+   * @param {{reason: string}} input
+   * @returns {object} updated kaizen
+   */
+  abandon(kaizenId, userId, input = {}) {
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.abandon: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (typeof userId === 'string' && userId.length > 0 && k.userId !== userId) {
+      fail(
+        'KAIZEN_OWNER_MISMATCH',
+        `KaizenService.abandon: kaizen '${kaizenId}' not owned by '${userId}'`,
+        { kaizenId, userId, ownerId: k.userId }
+      );
+    }
+    if (k.abandoned === true) {
+      fail(
+        'KAIZEN_ABANDONED',
+        `KaizenService.abandon: kaizen '${kaizenId}' is already abandoned`,
+        { kaizenId }
+      );
+    }
+    if (k.state !== KaizenState.DRAFT) {
+      fail(
+        'KAIZEN_NOT_IN_DRAFT',
+        `KaizenService.abandon: kaizen '${kaizenId}' is '${k.state}', must be DRAFT`,
+        { kaizenId, state: k.state }
+      );
+    }
+    const reason = typeof input.reason === 'string' ? input.reason.trim() : '';
+    if (reason.length < ABANDON_REASON_MIN_LENGTH) {
+      fail(
+        'ABANDON_REASON_TOO_SHORT',
+        `KaizenService.abandon: reason must be at least ${ABANDON_REASON_MIN_LENGTH} chars`,
+        { length: reason.length }
+      );
+    }
+    const now = this._clock.now();
+    const next = {
+      ...k,
+      abandoned: true,
+      abandonedAt: now,
+      abandonReason: reason
+    };
+    this._repo.upsert(KAIZENS_KEY, kaizenId, next);
+    this._bus.publish(KaizenAbandoned, {
+      kaizenId,
+      userId: k.userId,
+      reason,
+      abandonedAt: now
+    });
+    return next;
   }
 
   /**
@@ -812,7 +1250,14 @@ export class KaizenService {
       scopeChanges: [],
       targetCloseDate: null,
       sourcePdcaExperimentId: null,
-      sourceOpportunityId: opportunityId
+      sourceOpportunityId: opportunityId,
+      // Sprint 8 fields.
+      lessonsLearned: null,
+      metricDirection: MetricDirection.HIGHER_IS_BETTER,
+      targetImprovement: null,
+      abandoned: false,
+      abandonedAt: null,
+      abandonReason: null
     };
 
     this._repo.upsert(KAIZENS_KEY, id, kaizen);

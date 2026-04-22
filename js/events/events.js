@@ -31,8 +31,14 @@ export const FrictionSignalCaptured = 'FrictionSignalCaptured';
 export const WeeklyReflectionCompleted = 'WeeklyReflectionCompleted';
 export const KaizenPromoted = 'KaizenPromoted';
 export const KaizenBaselineLocked = 'KaizenBaselineLocked';
+// Sprint 8 P0-T6: explicit transition ACTIVE → IN_REMEASUREMENT (no row yet).
+// Payload: {kaizenId, userId, startedAt}.
+export const KaizenRemeasurementStarted = 'KaizenRemeasurementStarted';
 export const KaizenRemeasured = 'KaizenRemeasured';
 export const KaizenClosed = 'KaizenClosed';
+// Sprint 8 P0-T5: DRAFT Kaizen marked abandoned (never transitions to CLOSED).
+// Payload: {kaizenId, userId, reason, abandonedAt}.
+export const KaizenAbandoned = 'KaizenAbandoned';
 
 // --- PDCA experiments --------------------------------------------------------
 export const PdcaExperimentOpened = 'PdcaExperimentOpened';
@@ -87,8 +93,10 @@ export const EVENT_NAMES = Object.freeze([
   WeeklyReflectionCompleted,
   KaizenPromoted,
   KaizenBaselineLocked,
+  KaizenRemeasurementStarted,
   KaizenRemeasured,
   KaizenClosed,
+  KaizenAbandoned,
   PdcaExperimentOpened,
   PdcaTickCommitted,
   PdcaExperimentClosed,
@@ -122,8 +130,10 @@ export default Object.freeze({
   WeeklyReflectionCompleted,
   KaizenPromoted,
   KaizenBaselineLocked,
+  KaizenRemeasurementStarted,
   KaizenRemeasured,
   KaizenClosed,
+  KaizenAbandoned,
   PdcaExperimentOpened,
   PdcaTickCommitted,
   PdcaExperimentClosed,

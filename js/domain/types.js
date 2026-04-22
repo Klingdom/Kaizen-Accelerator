@@ -205,6 +205,18 @@ export const CloseKind = Object.freeze({
 });
 
 /**
+ * Kaizen.metricDirection values (Sprint 8). Controls how `beatsBaseline` is
+ * computed on Remeasurement: 'higher_is_better' counts a positive delta as
+ * improvement; 'lower_is_better' flips the sign. Default 'higher_is_better'.
+ *
+ * @typedef {'higher_is_better' | 'lower_is_better'} MetricDirection
+ */
+export const MetricDirection = Object.freeze({
+  HIGHER_IS_BETTER: 'higher_is_better',
+  LOWER_IS_BETTER: 'lower_is_better'
+});
+
+/**
  * Reflection.kind values.
  * @typedef {'END_OF_ACTIVITY' | 'WEEKLY'} ReflectionKind
  */
@@ -521,6 +533,14 @@ export const FrictionSignal = null;
  *
  * // ---- Sprint 7: folded from Portfolio intake (P0-T3 + P1-T2) ----
  * @property {string|null} sourceOpportunityId           // FK Opportunity. Set when promoted from the Portfolio intake funnel via OpportunityService.promote(). Distinct from sourceFrictionSignalIds / sourcePdcaExperimentId.
+ *
+ * // ---- Sprint 8: HARD RULE close loop ----
+ * @property {string|null} lessonsLearned                // Required at close(), min 20 chars. Enforces learning capture per CATALOG_GAPS §H.2.
+ * @property {MetricDirection} [metricDirection]         // Sign convention for beatsBaseline computation. Default 'higher_is_better'.
+ * @property {number|null} [targetImprovement]           // Optional absolute delta target. When set, closeKind=SUCCESS requires |deltaAbsolute| >= |targetImprovement|.
+ * @property {boolean} [abandoned]                       // DRAFT-only terminal flag. Set by abandon(). Once true, locked (cannot un-abandon or promote/edit).
+ * @property {string|null} [abandonedAt]                 // ISO timestamp when abandoned=true.
+ * @property {string|null} [abandonReason]               // Reason string captured at abandon time. Min 10 chars.
  */
 export const Kaizen = null;
 
@@ -716,6 +736,7 @@ export const ENUMS = Object.freeze({
   FrictionStatus,
   KaizenState,
   CloseKind,
+  MetricDirection,
   ReflectionKind,
   PdcaState,
   PdcaClosedReason,

@@ -52,11 +52,13 @@ describe('KaizenCard — empty/unknown', () => {
     assert.ok(html.includes('kz-card-empty'));
   });
 
-  test('IN_REMEASUREMENT renders Sprint-7 stub', () => {
+  test('IN_REMEASUREMENT now renders the Sprint-8 in-remeasurement card', () => {
+    // Sprint 8 P1-T2 replaced the stub with a real IN_REMEASUREMENT variant.
     const html = KaizenCard({
       kaizen: { id: 'k', title: 't', state: 'IN_REMEASUREMENT' }
     });
-    assert.ok(html.includes('Sprint 7'));
+    assert.ok(html.includes('kz-card-in-remeasurement'));
+    assert.ok(html.includes('IN REMEASUREMENT'));
   });
 });
 
@@ -193,9 +195,11 @@ describe('KaizenCard — ACTIVE variant', () => {
     assert.ok(!html.includes('Ready to remeasure'));
   });
 
-  test('abandon button always present on ACTIVE', () => {
+  test('abandon button NOT on ACTIVE (Sprint 8 moved to DRAFT only)', () => {
+    // Sprint 8: KaizenService.abandon() only operates on DRAFT, so the UI
+    // affordance moved. ACTIVE cards expose Start remeasurement instead.
     const html = KaizenCard({ kaizen: activeKaizen(), baseline });
-    assert.ok(html.includes('data-action="KAIZEN_ABANDON"'));
+    assert.ok(!html.includes('data-action="KAIZEN_ABANDON"'));
   });
 
   test('shows placeholder when baseline is null', () => {

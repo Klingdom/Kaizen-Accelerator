@@ -45,6 +45,10 @@ import {
   FrictionSignalCaptured,
   KaizenPromoted,
   KaizenBaselineLocked,
+  KaizenRemeasurementStarted,
+  KaizenRemeasured,
+  KaizenClosed,
+  KaizenAbandoned,
   OpportunityCreated,
   OpportunityPromoted,
   OpportunityDeferred,
@@ -59,6 +63,15 @@ import { Catalog as CatalogPage } from './ui/pages/Catalog.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
+import {
+  BaselineDialog,
+  extractBaselineFields
+} from './ui/components/BaselineDialog.js';
+import {
+  RemeasurementDialog,
+  extractRemeasurementFields
+} from './ui/components/RemeasurementDialog.js';
+import { KaizenCloseDialog } from './ui/components/KaizenCloseDialog.js';
 import {
   mountHtml,
   attachRootClickListener
@@ -266,7 +279,12 @@ function createState() {
       oppSort: 'newest'
     },
     // Sprint 7 P0-T7: Catalog page view toggle (list / bucket).
-    catalogView: 'list'
+    catalogView: 'list',
+    // Sprint 8: Kaizen HARD RULE close loop dialogs.
+    baselineDialog: null,          // { kaizenId, fields..., errorName?, errorMessage? }
+    remeasurementDialog: null,     // { kaizenId, currentValue, evidenceSchema, evidenceValue, errorName? }
+    closeKaizenDialog: null,       // { kaizenId, lessonsLearned, errorName? }
+    kaizenAbandonForm: null        // { kaizenId } — when truthy, inline abandon form open
   };
 }
 
@@ -351,6 +369,12 @@ export function renderApp(services, state) {
       ...kaizenService.listByState(userId, 'ACTIVE'),
       ...kaizenService.listByState(userId, 'IN_REMEASUREMENT')
     ];
+    const closedKaizens = kaizenService.listByState(userId, 'CLOSED');
+    const remeasurementsByKaizenId = {};
+    for (const k of closedKaizens) {
+      const rm = kaizenService.getRemeasurementForKaizen(k.id);
+      if (rm) remeasurementsByKaizenId[k.id] = rm;
+    }
     const opportunities = opportunityService.list({
       userId,
       includeTerminal: true
@@ -358,6 +382,8 @@ export function renderApp(services, state) {
     const catalogEntries = catalogService ? catalogService.list(userId) : [];
     pageHtml = Portfolio({
       activeKaizens,
+      closedKaizens,
+      remeasurementsByKaizenId,
       opportunities,
       catalogEntries,
       nowIso: services.clock.now(),
@@ -383,23 +409,72 @@ export function renderApp(services, state) {
     const baseline = active
       ? kaizenService.getBaselineForKaizen(active.id)
       : null;
+    const remeasurement = active
+      ? kaizenService.getRemeasurementForKaizen(active.id)
+      : null;
     const openFrictionSignals = frictionService.list({
       userId,
       status: 'OPEN'
     });
-    pageHtml = KaizenPage({
+    const kaizenHtml = KaizenPage({
       activeKaizen: active,
       draftKaizens: drafts,
       baseline,
+      remeasurement,
       openFrictionSignals,
-      wizardState: state.wizard
+      wizardState: state.wizard,
+      abandonForm: state.kaizenAbandonForm
     });
+    const dialogHtml = renderKaizenDialogs(services, state);
+    pageHtml = `${kaizenHtml}${dialogHtml}`;
   } else {
     pageHtml = PlaceholderPage({ route: state.route });
   }
 
   const shellHtml = AppShell({ route: state.route, pageHtml });
   mountHtml(APP_ROOT_ID, shellHtml);
+}
+
+/**
+ * Render any open Sprint 8 Kaizen dialogs into a string (baseline /
+ * remeasurement / close). Empty string when none are open.
+ *
+ * @param {object} services
+ * @param {object} state
+ * @returns {string}
+ */
+function renderKaizenDialogs(services, state) {
+  let html = '';
+  if (state.baselineDialog) {
+    html += BaselineDialog(state.baselineDialog);
+  }
+  if (state.remeasurementDialog) {
+    const bd = services.kaizenService.getBaselineForKaizen(
+      state.remeasurementDialog.kaizenId
+    );
+    const k = services.kaizenService.get(state.remeasurementDialog.kaizenId);
+    html += RemeasurementDialog({
+      ...state.remeasurementDialog,
+      baseline: bd,
+      metricDirection: k?.metricDirection ?? 'higher_is_better'
+    });
+  }
+  if (state.closeKaizenDialog) {
+    const k = services.kaizenService.get(state.closeKaizenDialog.kaizenId);
+    const bd = services.kaizenService.getBaselineForKaizen(
+      state.closeKaizenDialog.kaizenId
+    );
+    const rm = services.kaizenService.getRemeasurementForKaizen(
+      state.closeKaizenDialog.kaizenId
+    );
+    html += KaizenCloseDialog({
+      ...state.closeKaizenDialog,
+      kaizen: k,
+      baseline: bd,
+      remeasurement: rm
+    });
+  }
+  return html;
 }
 
 /**
@@ -834,47 +909,169 @@ export function buildHandlers(scope) {
 
     KAIZEN_LOCK_BASELINE(payload) {
       if (!payload || !payload.kaizenId) return;
-      // MVP: collect a minimal baseline via prompt-driven flow if no dialog
-      // is open; Sprint 7 will ship a full BaselineDialog component.
-      if (typeof globalThis.prompt !== 'function') {
-        state.lastError = new Error(
-          'Baseline lock requires a prompt surface; Sprint 7 ships the dialog.'
-        );
-        rerender();
-        return;
-      }
+      // Sprint 8 P0-T7: open the BaselineDialog.
+      state.baselineDialog = {
+        kaizenId: payload.kaizenId,
+        metricName: '',
+        unit: '',
+        operationalDefinition: '',
+        sampleSize: '',
+        method: '',
+        value: '',
+        metricDirection: 'higher_is_better',
+        targetImprovement: '',
+        errorName: null,
+        errorMessage: null
+      };
+      rerender();
+    },
+
+    CLOSE_BASELINE_DIALOG(_payload) {
+      state.baselineDialog = null;
+      rerender();
+    },
+
+    SUBMIT_BASELINE_DIALOG(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      const normalized = extractBaselineFields(fields);
       try {
-        const metricName = globalThis.prompt('Metric name', 'Adherence') ?? '';
-        const unit = globalThis.prompt('Unit', '%') ?? '';
-        const method = globalThis.prompt('Measurement method', 'Manual count') ?? '';
-        const operationalDefinition =
-          globalThis.prompt('Operational definition', 'How exactly do we measure?') ?? '';
-        const valueRaw = globalThis.prompt('Value', '0') ?? '0';
-        const sampleRaw = globalThis.prompt('Sample size', '10') ?? '10';
-        services.kaizenService.lockBaseline(payload.kaizenId, {
-          metricName,
-          unit,
-          operationalDefinition,
-          sampleSize: Number(sampleRaw),
-          method,
-          value: Number(valueRaw)
-        });
+        services.kaizenService.lockBaseline(payload.kaizenId, normalized);
+        state.baselineDialog = null;
+      } catch (err) {
+        state.baselineDialog = {
+          ...(state.baselineDialog ?? {}),
+          ...normalized,
+          kaizenId: payload.kaizenId,
+          errorName: err.name ?? 'LOCK_FAILED',
+          errorMessage: err.message ?? ''
+        };
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_START_REMEASUREMENT(payload) {
+      if (!payload || !payload.kaizenId) return;
+      try {
+        services.kaizenService.startRemeasurement(payload.kaizenId, DEFAULT_USER.id);
       } catch (err) {
         state.lastError = err;
       }
       rerender();
     },
 
-    KAIZEN_START_REMEASUREMENT(_payload) {
-      if (typeof globalThis.alert === 'function') {
-        globalThis.alert('Remeasurement capture ships in Sprint 7.');
-      }
+    KAIZEN_OPEN_REMEASUREMENT_DIALOG(payload) {
+      if (!payload || !payload.kaizenId) return;
+      state.remeasurementDialog = {
+        kaizenId: payload.kaizenId,
+        currentValue: '',
+        evidenceSchema: '',
+        evidenceValue: '',
+        errorName: null,
+        errorMessage: null
+      };
+      rerender();
     },
 
-    KAIZEN_ABANDON(_payload) {
-      if (typeof globalThis.alert === 'function') {
-        globalThis.alert('Abandon ships in Sprint 8.');
+    CLOSE_REMEASUREMENT_DIALOG(_payload) {
+      state.remeasurementDialog = null;
+      rerender();
+    },
+
+    REMEASUREMENT_PREVIEW_CHANGE(_payload, ctx) {
+      if (!state.remeasurementDialog) return;
+      const el = ctx?.element;
+      if (el && typeof el.value === 'string') {
+        state.remeasurementDialog.currentValue = el.value;
       }
+      rerender();
+    },
+
+    SUBMIT_REMEASUREMENT_DIALOG(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      const normalized = extractRemeasurementFields(fields);
+      try {
+        services.kaizenService.captureRemeasurement(
+          payload.kaizenId,
+          DEFAULT_USER.id,
+          normalized
+        );
+        state.remeasurementDialog = null;
+      } catch (err) {
+        state.remeasurementDialog = {
+          ...(state.remeasurementDialog ?? {}),
+          currentValue: fields.currentValue ?? '',
+          evidenceSchema: fields.evidenceSchema ?? '',
+          evidenceValue: fields.evidenceValue ?? '',
+          errorName: err.name ?? 'CAPTURE_FAILED',
+          errorMessage: err.message ?? ''
+        };
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_OPEN_CLOSE_DIALOG(payload) {
+      if (!payload || !payload.kaizenId) return;
+      state.closeKaizenDialog = {
+        kaizenId: payload.kaizenId,
+        lessonsLearned: '',
+        errorName: null,
+        errorMessage: null
+      };
+      rerender();
+    },
+
+    CLOSE_CLOSE_KAIZEN_DIALOG(_payload) {
+      state.closeKaizenDialog = null;
+      rerender();
+    },
+
+    SUBMIT_CLOSE_KAIZEN_DIALOG(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      try {
+        services.kaizenService.close(payload.kaizenId, DEFAULT_USER.id, {
+          lessonsLearned: fields.lessonsLearned ?? ''
+        });
+        state.closeKaizenDialog = null;
+      } catch (err) {
+        state.closeKaizenDialog = {
+          ...(state.closeKaizenDialog ?? {}),
+          lessonsLearned: fields.lessonsLearned ?? '',
+          errorName: err.name ?? 'CLOSE_FAILED',
+          errorMessage: err.message ?? ''
+        };
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_ABANDON(payload) {
+      if (!payload || !payload.kaizenId) return;
+      state.kaizenAbandonForm = { kaizenId: payload.kaizenId };
+      rerender();
+    },
+
+    KAIZEN_CANCEL_ABANDON(_payload) {
+      state.kaizenAbandonForm = null;
+      rerender();
+    },
+
+    KAIZEN_CONFIRM_ABANDON(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      try {
+        services.kaizenService.abandon(payload.kaizenId, DEFAULT_USER.id, {
+          reason: fields.reason ?? ''
+        });
+        state.kaizenAbandonForm = null;
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
     },
 
     // ---- Sprint 7: Portfolio / Opportunity intake ---------------------------
@@ -1113,6 +1310,10 @@ export function start() {
   services.bus.subscribe(FrictionSignalCaptured, () => {});
   services.bus.subscribe(KaizenPromoted, () => {});
   services.bus.subscribe(KaizenBaselineLocked, () => {});
+  services.bus.subscribe(KaizenRemeasurementStarted, () => {});
+  services.bus.subscribe(KaizenRemeasured, () => {});
+  services.bus.subscribe(KaizenClosed, () => {});
+  services.bus.subscribe(KaizenAbandoned, () => {});
   services.bus.subscribe(OpportunityCreated, () => {});
   services.bus.subscribe(OpportunityPromoted, () => {});
   services.bus.subscribe(OpportunityDeferred, () => {});

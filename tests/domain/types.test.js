@@ -33,6 +33,7 @@ import {
   FrictionStatus,
   KaizenState,
   CloseKind,
+  MetricDirection,
   ReflectionKind,
   PdcaState,
   PdcaClosedReason,
@@ -87,6 +88,7 @@ describe('types.js — entity introspection', () => {
       'FrictionStatus',
       'KaizenState',
       'CloseKind',
+      'MetricDirection',
       'ReflectionKind',
       'PdcaState',
       'PdcaClosedReason',
@@ -227,6 +229,13 @@ describe('types.js — enum values', () => {
     assert.ok(Object.keys(ReflectionKind).length >= 2);
     assert.ok(Object.keys(PdcaState).length >= 5);
     assert.ok(Object.keys(PdcaClosedReason).length >= 3);
+  });
+
+  test('MetricDirection covers higher/lower_is_better (Sprint 8)', () => {
+    assert.deepEqual(Object.values(MetricDirection).sort(), [
+      'higher_is_better',
+      'lower_is_better'
+    ]);
   });
 
   test('OpportunityStatus covers the 5 funnel states', () => {
@@ -399,7 +408,14 @@ describe('types.js — required fields appear in source', () => {
       'targetCloseDate',
       'sourcePdcaExperimentId',
       // Sprint 7 fields from Portfolio intake
-      'sourceOpportunityId'
+      'sourceOpportunityId',
+      // Sprint 8 fields for HARD RULE close loop
+      'lessonsLearned',
+      'metricDirection',
+      'targetImprovement',
+      'abandoned',
+      'abandonedAt',
+      'abandonReason'
     ],
     BaselineMetric: [
       'id',

@@ -17,13 +17,15 @@ import { KaizenCard } from '../components/KaizenCard.js';
 import { OpportunityRow } from '../components/OpportunityRow.js';
 import { OpportunityIntakeForm } from '../components/OpportunityIntakeForm.js';
 import { CatalogBucketView } from '../components/CatalogBucketView.js';
+import { ValidatedKaizenCard } from '../components/ValidatedKaizenCard.js';
 import { OpportunityStatus } from '../../domain/types.js';
 
 export const PORTFOLIO_COPY = Object.freeze({
   TITLE: 'Project Portfolio',
   NEW_OPP: 'New Opportunity',
   ACTIVE_EMPTY: 'No active Kaizens. Promote an opportunity to start.',
-  OPPORTUNITIES_EMPTY: 'No opportunities yet. Tap New Opportunity to capture one.'
+  OPPORTUNITIES_EMPTY: 'No opportunities yet. Tap New Opportunity to capture one.',
+  VALIDATED_EMPTY: 'No validated Kaizens yet. Close a Kaizen to see it here.'
 });
 
 export const OPP_FILTER_VALUES = Object.freeze([
@@ -61,6 +63,8 @@ export const OPP_SORT_LABELS = Object.freeze({
  *   activeKaizens?: object[],
  *   opportunities?: object[],
  *   catalogEntries?: object[],
+ *   closedKaizens?: object[],
+ *   remeasurementsByKaizenId?: Record<string, object>,
  *   nowIso?: string,
  *   intakeForm?: object|null,
  *   expandedOpportunityId?: string|null,
@@ -73,6 +77,11 @@ export function Portfolio(props = {}) {
   const activeKaizens = Array.isArray(props.activeKaizens) ? props.activeKaizens : [];
   const opportunitiesIn = Array.isArray(props.opportunities) ? props.opportunities : [];
   const catalogEntries = Array.isArray(props.catalogEntries) ? props.catalogEntries : [];
+  const closedKaizens = Array.isArray(props.closedKaizens) ? props.closedKaizens : [];
+  const remeasurementsByKaizenId =
+    props.remeasurementsByKaizenId && typeof props.remeasurementsByKaizenId === 'object'
+      ? props.remeasurementsByKaizenId
+      : {};
   const nowIso = props.nowIso ?? new Date().toISOString();
   const intakeForm = props.intakeForm ?? null;
   const expandedId = props.expandedOpportunityId ?? null;
@@ -117,9 +126,44 @@ export function Portfolio(props = {}) {
   </header>
   ${renderActiveKaizens(activeKaizens)}
   ${renderOpportunities(sorted, nowIso, expandedId, oppFilter, oppSort)}
+  ${renderValidatedKaizens(closedKaizens, remeasurementsByKaizenId)}
   ${renderCatalogSection(catalogEntries)}
   ${intakeModal}
 </main>`;
+}
+
+/**
+ * Render the Validated Kaizens section (Sprint 8 P1-T4). Sorted by
+ * closedAt desc.
+ *
+ * @param {object[]} closed
+ * @param {Record<string, object>} remeasurementsByKaizenId
+ * @returns {string}
+ */
+function renderValidatedKaizens(closed, remeasurementsByKaizenId) {
+  const sorted = [...closed].sort((a, b) => {
+    const ax = a?.closedAt ?? '';
+    const bx = b?.closedAt ?? '';
+    if (ax < bx) return 1;
+    if (ax > bx) return -1;
+    return 0;
+  });
+  if (!sorted.length) {
+    return `<section class="pf-section pf-validated-kaizens">
+      <h2 class="pf-section-title">Validated Kaizens</h2>
+      <p class="pf-empty">${esc(PORTFOLIO_COPY.VALIDATED_EMPTY)}</p>
+    </section>`;
+  }
+  const rows = sorted
+    .map((k) => ValidatedKaizenCard({
+      kaizen: k,
+      remeasurement: remeasurementsByKaizenId[k.id] ?? null
+    }))
+    .join('\n');
+  return `<section class="pf-section pf-validated-kaizens">
+    <h2 class="pf-section-title">Validated Kaizens (${esc(String(sorted.length))})</h2>
+    <ul class="pf-validated-list">${rows}</ul>
+  </section>`;
 }
 
 /**
