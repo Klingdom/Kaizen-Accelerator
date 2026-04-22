@@ -18,6 +18,14 @@ services:
     # No `image:` — compose builds locally only. Setting image:bamx/web:latest
     # caused Hostinger's panel to try Docker Hub pulls on redeploy (bamx/web
     # doesn't exist there), failing before the local build could run.
+    #
+    # pull_policy: build — Hostinger's "Deploy from GitHub URL" runs
+    #   `docker compose pull && docker compose up -d` (no --build). Without
+    #   this, `pull` skips (no remote image) and `up` then fails with
+    #   "No such image: <project>-web:latest" because compose v2's auto-build
+    #   doesn't fire under the panel's deploy flow. `pull_policy: build`
+    #   turns the pull step into a build, so redeploy always ships fresh code.
+    pull_policy: build
     container_name: bamx-web
     restart: unless-stopped
     ports:
