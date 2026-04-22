@@ -190,15 +190,76 @@ describe('CycleCard — ACCEPTED variant', () => {
     assert.ok(!html.includes(CARD_COPY.PROPOSED_HEADER));
   });
 
-  test('activities show Start button (disabled in Sprint 4)', () => {
+  test('activities show Start button (enabled in Sprint 5)', () => {
     const html = CycleCard({ composition: comp, activities: acts });
     assert.match(html, /sa-start/);
-    assert.match(html, /disabled/);
+    // Sprint 5 drops the Sprint-4 `disabled` flag on the Start button.
+    assert.ok(!/sa-start[^>]*\sdisabled/.test(html));
   });
 
   test('no AcceptEditRejectTriad on ACCEPTED', () => {
     const html = CycleCard({ composition: comp, activities: acts });
     assert.ok(!html.includes('class="triad"'));
+  });
+});
+
+describe('CycleCard — Sprint 5 why-chip (PROPOSED only)', () => {
+  test('renders why-chips on PROPOSED when snapshot.explain matches', () => {
+    const comp = {
+      ...PROPOSED_COMP,
+      composerInputsSnapshot: {
+        role: ['PRACTITIONER'],
+        capacityMinutes: 480,
+        explain: [
+          {
+            ref: 'cer_daily_standup',
+            rule: 'R1_NON_OPTIONAL',
+            detail: 'Daily Standup @ 09:00'
+          }
+        ]
+      }
+    };
+    const html = CycleCard({
+      composition: comp,
+      activities: [
+        {
+          id: 'sa_standup',
+          catalogEntryId: 'cer_daily_standup',
+          name: 'Daily Standup',
+          bucket: 'COMMUNICATION',
+          plannedStartAt: '09:00',
+          plannedDurationMinutes: 15,
+          state: 'PROPOSED'
+        }
+      ]
+    });
+    assert.match(html, /why-chip/);
+    assert.match(html, /R1_NON_OPTIONAL/);
+  });
+
+  test('hides why-chip on ACCEPTED composition', () => {
+    const comp = {
+      ...PROPOSED_COMP,
+      state: 'ACCEPTED',
+      composerInputsSnapshot: {
+        explain: [{ ref: 'cer_daily_standup', rule: 'R1', detail: 'x' }]
+      }
+    };
+    const html = CycleCard({
+      composition: comp,
+      activities: [
+        {
+          id: 'sa_standup',
+          catalogEntryId: 'cer_daily_standup',
+          name: 'Daily Standup',
+          bucket: 'COMMUNICATION',
+          plannedStartAt: '09:00',
+          plannedDurationMinutes: 15,
+          state: 'SCHEDULED'
+        }
+      ]
+    });
+    assert.ok(!html.includes('why-chip'));
   });
 });
 

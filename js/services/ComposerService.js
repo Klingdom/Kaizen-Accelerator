@@ -144,6 +144,21 @@ export class ComposerService {
 
     const result = composeDaily(effectiveInput);
 
+    // Sprint 5 P1-T4: persist the fine-tune capacity override on the
+    // composition snapshot (if the caller set one). Composer does not
+    // mutate `User.dailyCapacityMinutes`; the override is a per-day
+    // annotation only. Tomorrow's compose reverts to the User default.
+    if (
+      result &&
+      result.composition &&
+      typeof effectiveInput.capacityMinutesOverride === 'number'
+    ) {
+      result.composition.composerInputsSnapshot = {
+        ...(result.composition.composerInputsSnapshot ?? {}),
+        capacityMinutesOverride: effectiveInput.capacityMinutesOverride
+      };
+    }
+
     if (result.state === 'INFEASIBLE') {
       this._bus.publish(ComposerInfeasible, {
         userId: effectiveInput.userId,

@@ -1,21 +1,27 @@
 /**
- * ScheduledActivityBlock — one row per activity (E10-T5).
+ * ScheduledActivityBlock — one row per activity.
  *
  * Pure render. Returns an HTML string.
  *
  * Props:
- *   activity:        required — ScheduledActivity row
- *   showStart:       boolean — show the Start button (disabled in this sprint)
- *   pinned:          boolean — pin-the-first-block styling
- *   compositionState: string — parent composition state (affects intention readout)
+ *   activity:          required — ScheduledActivity row
+ *   showStart:         boolean — show the Start button (enabled in Sprint 5)
+ *   pinned:            boolean — pin-the-first-block styling
+ *   compositionState:  string — parent composition state (affects intention readout)
+ *   nowIso:            string — ISO timestamp for elapsed-timer readout on IN_PROGRESS
+ *   explainEntry:      {ref, rule, detail} — if provided and composition is
+ *                      PROPOSED, a WhyChip is rendered on the trailing edge.
  *
- * Start button Sprint-4 note:
- *   Per Sprint 4 backlog E10-T5, Start is disabled with tooltip "Ships in Sprint 5".
- *
- * The intention field renders read-only in this sprint (per §6.5.8 placeholder).
+ * State variants (Sprint 5):
+ *   PROPOSED     — bucket chip + read-only intention + why-chip (if given)
+ *   SCHEDULED    — same + enabled Start button + Skip button
+ *   IN_PROGRESS  — elapsed timer + Close button (artifact dialog on click)
+ *   CLOSED       — state label "closed" + no actions
+ *   SKIPPED      — state label "skipped" + reason label
  */
 
 import { esc } from '../mount.js';
+import { WhyChip } from './WhyChip.js';
 
 /**
  * Format a planned start time (ISO or HH:MM) to "HH:MM".
@@ -44,6 +50,9 @@ const BUCKET_CHIP_CLASS = {
 
 /**
  * Return a human label for the activity state.
+ *
+ * @param {string} state
+ * @returns {string}
  */
 function stateLabel(state) {
   switch (state) {
@@ -65,13 +74,83 @@ function stateLabel(state) {
 }
 
 /**
+ * Compute whole-minute elapsed between two ISO timestamps (or 0 if either
+ * is invalid / unset).
+ *
+ * @param {string|null|undefined} startIso
+ * @param {string|null|undefined} nowIso
+ * @returns {number}
+ */
+export function computeElapsedMinutes(startIso, nowIso) {
+  if (!startIso || !nowIso) return 0;
+  const s = new Date(startIso);
+  const n = new Date(nowIso);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(n.getTime())) return 0;
+  const ms = n.getTime() - s.getTime();
+  if (ms <= 0) return 0;
+  return Math.floor(ms / 60000);
+}
+
+/**
+ * Render the action surface for each state. Returns an HTML fragment or ''.
+ *
+ * @param {object} a        activity
+ * @param {boolean} showStart
+ * @returns {string}
+ */
+function renderActions(a, showStart) {
+  const id = a.id ?? '';
+  const payload = esc(JSON.stringify({ activityId: id }));
+  switch (a.state) {
+    case 'SCHEDULED': {
+      if (!showStart) return '';
+      const startBtn = `<button type="button" class="sa-start" data-action="START_ACTIVITY" data-payload='${payload}'>Start</button>`;
+      const skipBtn = `<button type="button" class="sa-skip" data-action="OPEN_SKIP_MODAL" data-payload='${payload}'>Skip</button>`;
+      return `<div class="sa-actions">${startBtn}${skipBtn}</div>`;
+    }
+    case 'IN_PROGRESS': {
+      const closeBtn = `<button type="button" class="sa-close" data-action="OPEN_CLOSE_DIALOG" data-payload='${payload}'>Close</button>`;
+      return `<div class="sa-actions">${closeBtn}</div>`;
+    }
+    default:
+      return '';
+  }
+}
+
+/**
+ * Render the elapsed-timer readout for IN_PROGRESS state.
+ *
+ * @param {object} a        activity
+ * @param {string|null|undefined} nowIso
+ * @returns {string}
+ */
+function renderElapsed(a, nowIso) {
+  if (a.state !== 'IN_PROGRESS') return '';
+  const elapsed = computeElapsedMinutes(a.actualStartAt, nowIso);
+  return `<div class="sa-elapsed" aria-label="elapsed minutes">${esc(String(elapsed))}m elapsed</div>`;
+}
+
+/**
+ * Render the skipped-reason label for SKIPPED state.
+ *
+ * @param {object} a    activity
+ * @returns {string}
+ */
+function renderSkipReason(a) {
+  if (a.state !== 'SKIPPED' || !a.reasonCodeIfSkipped) return '';
+  return `<div class="sa-skip-reason" aria-label="skip reason">${esc(a.reasonCodeIfSkipped)}</div>`;
+}
+
+/**
  * Render a single ScheduledActivity row.
  *
  * @param {{
  *   activity: object,
  *   showStart?: boolean,
  *   pinned?: boolean,
- *   compositionState?: string
+ *   compositionState?: string,
+ *   nowIso?: string,
+ *   explainEntry?: {ref: string, rule: string, detail: string} | null
  * }} props
  * @returns {string}
  */
@@ -82,6 +161,9 @@ export function ScheduledActivityBlock(props = {}) {
   }
   const showStart = !!props.showStart;
   const pinned = !!props.pinned;
+  const compositionState = props.compositionState ?? '';
+  const nowIso = props.nowIso ?? null;
+  const explainEntry = props.explainEntry ?? null;
 
   const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
   const time = formatTime(a.plannedStartAt ?? a.anchor);
@@ -97,11 +179,6 @@ export function ScheduledActivityBlock(props = {}) {
     pinned ? 'pinned' : ''
   ].filter(Boolean).join(' ');
 
-  // Start button — disabled in Sprint 4 (action ships in Sprint 5).
-  const startButton = showStart
-    ? `<button type="button" class="sa-start" disabled aria-disabled="true" title="Ships in Sprint 5" data-action="START_ACTIVITY" data-payload='${esc(JSON.stringify({ activityId: a.id }))}'>Start</button>`
-    : '';
-
   // Intention is read-only this sprint (placeholder from §6.5.8).
   const intentionBlock = `<div class="sa-intention" aria-label="intention">${
     intention
@@ -109,14 +186,24 @@ export function ScheduledActivityBlock(props = {}) {
       : '<span class="placeholder">One line: what outcome by close?</span>'
   }</div>`;
 
+  // Why-chip: only rendered for PROPOSED compositions (PROPOSED state) with
+  // a matching explain entry. On ACCEPTED/ACTIVE we hide it per Sprint 5 spec.
+  const showWhyChip =
+    !!explainEntry &&
+    (compositionState === 'PROPOSED' || (!compositionState && state === 'PROPOSED'));
+  const whyChip = showWhyChip ? WhyChip({ entry: explainEntry }) : '';
+
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}">
   <div class="sa-when">${esc(time)}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>
   ${intentionBlock}
+  ${renderElapsed(a, nowIso)}
+  ${renderSkipReason(a)}
   <div class="sa-state-label">${esc(stateLabel(state))}</div>
-  ${startButton}
+  ${renderActions(a, showStart)}
+  ${whyChip}
 </li>`;
 }
 

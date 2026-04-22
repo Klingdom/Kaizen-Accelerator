@@ -139,7 +139,16 @@ describe('app.buildHandlers — integration', () => {
       params: {},
       composerLoading: false,
       infeasibleExplain: null,
-      lastError: null
+      lastError: null,
+      fineTune: {
+        open: false,
+        capacityMinutes: 480,
+        externalMinutesToday: 0,
+        activeKaizenId: 'k_cadenceplan_mvp',
+        availableKaizens: [],
+        _snapshotBeforeChange: null
+      },
+      openDialog: null
     };
     rerenderCalls = 0;
     const rerender = () => { rerenderCalls += 1; };
@@ -152,6 +161,26 @@ describe('app.buildHandlers — integration', () => {
 
   test('exposes AUTO_PLAN, ACCEPT, EDIT, REJECT, START_ACTIVITY', () => {
     for (const k of ['AUTO_PLAN', 'ACCEPT', 'EDIT', 'REJECT', 'START_ACTIVITY']) {
+      assert.equal(typeof handlers[k], 'function', `missing handler ${k}`);
+    }
+  });
+
+  test('exposes Sprint 5 handlers: OPEN_CLOSE_DIALOG, SUBMIT_CLOSE_DIALOG, OPEN_SKIP_MODAL, SUBMIT_SKIP_MODAL, FINE_TUNE_TOGGLE, FINE_TUNE_APPLY', () => {
+    const keys = [
+      'OPEN_CLOSE_DIALOG',
+      'CLOSE_CLOSE_DIALOG',
+      'SUBMIT_CLOSE_DIALOG',
+      'OPEN_SKIP_MODAL',
+      'CLOSE_SKIP_MODAL',
+      'SUBMIT_SKIP_MODAL',
+      'FINE_TUNE_TOGGLE',
+      'FINE_TUNE_CANCEL',
+      'FINE_TUNE_APPLY',
+      'CAPACITY_CHANGE',
+      'EXTERNAL_MEETINGS_CHANGE',
+      'PROJECT_FOCUS_CHANGE'
+    ];
+    for (const k of keys) {
       assert.equal(typeof handlers[k], 'function', `missing handler ${k}`);
     }
   });
@@ -241,7 +270,7 @@ describe('app.buildHandlers — integration', () => {
     assert.equal(after.state, 'PROPOSED');
   });
 
-  test('EDIT is a placeholder (Sprint 5)', () => {
+  test('EDIT is a placeholder (Sprint 6 — drag/drop composer)', () => {
     const originalAlert = globalThis.alert;
     let alertMsg = null;
     globalThis.alert = (m) => { alertMsg = m; };
@@ -250,19 +279,23 @@ describe('app.buildHandlers — integration', () => {
     } finally {
       globalThis.alert = originalAlert;
     }
-    assert.match(alertMsg, /Sprint 5/);
+    assert.match(alertMsg, /Sprint 6/);
   });
 
-  test('START_ACTIVITY is a placeholder (Sprint 5)', () => {
-    const originalAlert = globalThis.alert;
-    let alertMsg = null;
-    globalThis.alert = (m) => { alertMsg = m; };
-    try {
-      handlers.START_ACTIVITY({ activityId: 'sa_1' });
-    } finally {
-      globalThis.alert = originalAlert;
-    }
-    assert.match(alertMsg, /Sprint 5/);
+  test('START_ACTIVITY wires to ActivityService.start (Sprint 5)', () => {
+    // Compose + accept so SAs are SCHEDULED.
+    handlers.AUTO_PLAN({});
+    const comps = env.services.repo.read(COMPOSITIONS_KEY);
+    const compId = Object.keys(comps)[0];
+    handlers.ACCEPT({ compositionId: compId });
+    const acts = env.services.repo.read(ACTIVITIES_KEY);
+    const firstSa = Object.values(acts).find(
+      (a) => a.compositionId === compId && a.state === 'SCHEDULED'
+    );
+    assert.ok(firstSa, 'no SCHEDULED activity found');
+    handlers.START_ACTIVITY({ activityId: firstSa.id });
+    const after = env.services.repo.read(ACTIVITIES_KEY)[firstSa.id];
+    assert.equal(after.state, 'IN_PROGRESS');
   });
 
   test('AUTO_PLAN → ACCEPT end-to-end populates the ACTIVE composition', () => {

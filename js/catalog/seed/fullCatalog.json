@@ -1,0 +1,2651 @@
+[
+  {
+    "id": "cat_1_personal_learning_and_development_l_d_tracker",
+    "activityNumber": 1,
+    "name": "Personal Learning and Development (L&D Tracker)",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Define what you would like to achieve and the motivation to pursue it",
+      "b. Discuss and evaluate the required skills to achieve your desired outcome",
+      "c. Inventory the target skill(s) and assess your current knowledge/application of each skill",
+      "d. Prioritize skills and select skill for development",
+      "e. Evaluate and select appropriate training within quarter to support desired outcome",
+      "f. Complete training and write Knowledge Sharing 1 Pager",
+      "g. Present 1 Pager and save to Knowledge Wiki",
+      "h. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:10",
+    "cadence": "CONTINUOUS",
+    "trigger": "Own development goal active OR weekly anchor day",
+    "inputs": [
+      "L&D Tracker state",
+      "Personal quarterly development goal"
+    ],
+    "outputArtifact": {
+      "name": "Knowledge Sharing 1 Pager",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_2_team_learning_and_development_l_d_tracker",
+    "activityNumber": 2,
+    "name": "Team Learning and Development (L&D Tracker)",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Define what you would like to achieve and the motivation to pursue it",
+      "b. Discuss and evaluate the required skills to achieve your desired outcome",
+      "c. Inventory the target skill(s) and assess your current knowledge/application of each skill",
+      "d. Prioritize skills and select skill for development",
+      "e. Evaluate and select appropriate team training within quarter to support desired outcome",
+      "f. Complete training and write Facilitate Team Retrospective",
+      "g. Create Knowledge Wiki",
+      "h. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:27",
+    "cadence": "CONTINUOUS",
+    "trigger": "Own development goal active OR weekly anchor day",
+    "inputs": [
+      "Team L&D Tracker",
+      "Team quarterly goal",
+      "Team charter"
+    ],
+    "outputArtifact": {
+      "name": "Team Retrospective Notes",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Team",
+      "Agile Facilitator"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_3_company_compliance_training_l_d_tracker",
+    "activityNumber": 3,
+    "name": "Company Compliance Training (L&D Tracker)",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "procedure": [
+      "a. Track Company Compliance Training requirements in KNET, KNET2, and FastCap",
+      "b. Complete training"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:44",
+    "cadence": "MONTHLY",
+    "trigger": "First working day of month",
+    "inputs": [
+      "Development goal",
+      "Prior reflection notes"
+    ],
+    "outputArtifact": {
+      "name": "Compliance Completion Record",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_4_document_review",
+    "activityNumber": 4,
+    "name": "Document Review",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Receive Document (PRFAQ, MBR, 6 Pager)",
+      "b. Schedule time to review and provide written feedback",
+      "c. Review Document and Document Feedback",
+      "d. Communicate feedback (live, email, chime)"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:54",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Development goal",
+      "Prior reflection notes"
+    ],
+    "outputArtifact": {
+      "name": "Document Review Feedback",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Team",
+      "Agile Facilitator"
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_5_team_introductions_and_engagements",
+    "activityNumber": 5,
+    "name": "Team Introductions and Engagements",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Identify new partner team or PXT stakeholder",
+      "b. Communicate interest for introduction and engagement",
+      "c. Schedule Team Intro/Engagement Communication Cycle",
+      "d. Review Team PRFAQs, MBRs, 6 Pagers, Wikis, and Data",
+      "e. Discuss synergies for process improvement",
+      "f. Coordinate intake of process improvement opportunities"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:67",
+    "cadence": "MONTHLY",
+    "trigger": "First working day of month",
+    "inputs": [
+      "Development goal",
+      "Prior reflection notes"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Team",
+      "Agile Facilitator"
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_6_innovation_process_explore_opportunities",
+    "activityNumber": 6,
+    "name": "Innovation Process - Explore Opportunities",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a.     \tAdd new Opportunity Name to row in Opportunity Tracker",
+      "b. Provide a brief 1-2 sentence Opportunity Description of the opportunity.",
+      "c. Select the Strategic Category for the opportunity",
+      "d. Identify the Executive Sponsor for the opportunity",
+      "e. Select the Desired Timeframe for the opportunity to be implemented",
+      "f. Identify the Owner/Driver for the opportunity (the person completing opportunity deliverables)"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:81",
+    "cadence": "CONTINUOUS",
+    "trigger": "Own development goal active OR weekly anchor day",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_7_innovation_process_evaluate_opportunity",
+    "activityNumber": 7,
+    "name": "Innovation Process - Evaluate Opportunity",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Document Target 3-7 Use Cases related to opportunity.  Use cases are based on activities in a process and specific scenarios encountered.",
+      "b. Document the technologies proposed for this opportunity",
+      "c. Define the primary customer impacted by the opportunity",
+      "d. Document the flow of activities / steps in the process from start to finish",
+      "e. Estimate opportunity benefit (target population with time, cost, quality benefits)"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:96",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_8_innovation_process_prfaq",
+    "activityNumber": 8,
+    "name": "Innovation Process - PRFAQ",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Update the Opportunity Status field to Active - PRFAQ",
+      "b. Complete Writing Hub - Writing Like an Companyian (one time training)",
+      "c.      \tReference Writing Hub PRFAQ Site for Template and Instructions",
+      "d.     \tCreate a PRFAQ document based on PRFAQ Template",
+      "i. Who is the customer?",
+      "ii. What is the problem or opportunity we propose to solve?",
+      "iii. What is the most important customer benefit?",
+      "iv. What does the customer experience look like?",
+      "v. How do you know what customers need or want?",
+      "vi. Identify the Business Case & Target Use Case(s)",
+      "vii. Outline Technology Model - Add Link to Opportunity Tracker",
+      "viii. Diagram the Customer Experience Workflow",
+      "ix. Complete Frequently Asked Questions Template",
+      "x. Complete Press Release 1 Pager",
+      "c. Submit for Steering Committee PRFAQ Review & Proof of Concept Greenlight"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:113",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_9_innovation_process_proof_of_concept_prototype",
+    "activityNumber": 9,
+    "name": "Innovation Process - Proof of Concept/Prototype",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Complete Prototype Plan based on Prototype Plan Template",
+      "i. Purpose of Prototype",
+      "ii. Scope of Prototype",
+      "iii. Prototype Features (e.g., platform, targeted use cases, front end, backend)",
+      "iv. User Experience Workflow",
+      "v. Success Criteria",
+      "vi. Future Use Cases",
+      "b. Build Prototype to Success Criteria",
+      "i. Prototype - Instructions for use",
+      "ii. Prototype Test Results",
+      "iii. Lessons Learned and Product Assessment",
+      "c. Outline Implementation/Development Plan with Resource Type and FTE Requirements for implementation",
+      "d. Estimate Annualized Net Benefit if Opportunity implemented",
+      "e. Identify possible Risks to completing opportunity implementation and create Mitigation Plan for each risk"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:140",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_10_innovation_process_product_assessment",
+    "activityNumber": 10,
+    "name": "Innovation Process - Product Assessment",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "4. Complete Product Assessment Document based on Product Assessment Template",
+      "a. Business Scope",
+      "b. Technical Scope",
+      "c. Prototype Target Use Cases",
+      "d. Prototype Success Criteria and Test Results",
+      "e. Product Use Cases with Annualized Net Benefit",
+      "f. Product Risks and Mitigation Plan",
+      "g. Product Stakeholders",
+      "h. Assumptions",
+      "i. Constraints",
+      "j. Dependencies",
+      "k. User Experience Workflows"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:164",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_11_innovation_process_initiate_new_product_program",
+    "activityNumber": 11,
+    "name": "Innovation Process - Initiate New Product/Program",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "5. Cultivate Opportunity with internal/external stakeholders and executive committee approval",
+      "a. Update Opportunity Discovery fields (section 3) as needed",
+      "b. Update the Weekly Status field",
+      "c. Update Opportunity Stage as required opportunity fields are finalized",
+      "d. Finalize the Implementation Requirements based on prioritized business requirements and technical model"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:184",
+    "cadence": "ON_SIGNAL",
+    "trigger": "Named signal fires (document arrived, opportunity assigned, inbox threshold, variance logged)",
+    "inputs": [
+      "Opportunity Tracker row",
+      "Prior-stage output artifact"
+    ],
+    "outputArtifact": {
+      "name": "CI Completion Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_12_pdca_cycle",
+    "activityNumber": 12,
+    "name": "PDCA Cycle",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Determine a target activity or process area of interest, the \"theme\" for the activity and a baseline current condition measurement of the activity.",
+      "B. Establish a future state target condition measurement for the activity.",
+      "C. Propose an experiment or improvement that can be worked on over the next 48 hours.",
+      "D. Spend 10-60 minutes working on the proposed experiment/improvement.",
+      "E. Meet every 48 hours to measure the current condition and document results of your experiment.",
+      "F. If current condition meets target condition for 3 meetings, select a new process area for improvement. if current condition does not meet target condition go to step D. and propose a new experiment."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:197",
+    "cadence": "EVERY_48H",
+    "trigger": "Prior PDCA cycle measurement recorded",
+    "inputs": [
+      "L&D Tracker state",
+      "Personal quarterly development goal"
+    ],
+    "outputArtifact": {
+      "name": "PDCA Tick Measurement",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_13_6s_email_activity",
+    "activityNumber": 13,
+    "name": "6S Email Activity",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "procedure": [
+      "1. When number of inbox emails exceeds 20, identify:",
+      "a. Immediate Action",
+      "b. Planned Action/Keep Emails",
+      "i. Save to Task/Project Email Folder",
+      "ii. Archive",
+      "c. Delete Emails",
+      "2. When any email exceeds 90 days, identify:",
+      "a. Any action to be taken",
+      "b. Save to Task/Project Email Folder",
+      "c. Archive",
+      "d. Delete",
+      "3. Set Rules and Alerts in Microsoft Office",
+      "1. If you are creating a rule to move messages to another folder, make sure that you have created the folder before you start to create the rule using File, New, Folder.",
+      "2. Find the message that you want to base the rule on in Outlook and select it so that it is highlighted.",
+      "3. Click on the Organize button. You will find this on the top taskbar - it is a yellow button made up of lots of squares, or in the Tools menu."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:211",
+    "cadence": "WEEKLY",
+    "trigger": "Fixed anchor day in the week",
+    "inputs": [
+      "L&D Tracker state",
+      "Personal quarterly development goal"
+    ],
+    "outputArtifact": {
+      "name": "6S Email Hygiene Log",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_14_high_value_communication_time_blocking_30_60_minutes",
+    "activityNumber": 14,
+    "name": "High-value Communication Time-blocking (30-60 minutes)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 600,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:258",
+    "cadence": "DAILY",
+    "trigger": "Same time each work day",
+    "inputs": [
+      "Calendar",
+      "Inbox / chat threads",
+      "Stakeholder list"
+    ],
+    "outputArtifact": {
+      "name": "Time-block Completion Log",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_15_high_value_team_and_project_meetings_15_30_minutes",
+    "activityNumber": 15,
+    "name": "High-value team and project meetings (15-30 minutes)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 300,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:267",
+    "cadence": "WEEKLY",
+    "trigger": "Fixed anchor day in the week",
+    "inputs": [
+      "Calendar",
+      "Inbox / chat threads",
+      "Stakeholder list"
+    ],
+    "outputArtifact": {
+      "name": "Meeting Notes",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Team"
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_16_connecting_with_other_companyians_15_60_minutes",
+    "activityNumber": 16,
+    "name": "Connecting with other Companyians (15-60 minutes)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 120,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:276",
+    "cadence": "WEEKLY",
+    "trigger": "Fixed anchor day in the week",
+    "inputs": [
+      "Calendar",
+      "Inbox / chat threads",
+      "Stakeholder list"
+    ],
+    "outputArtifact": {
+      "name": "1:1 Notes",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Counterpart"
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_18_document_writing_backlog_updates_blurbs_narratives",
+    "activityNumber": 18,
+    "name": "Document Writing (Backlog, Updates, Blurbs, Narratives)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 120,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:285",
+    "cadence": "WEEKLY",
+    "trigger": "Fixed anchor day in the week",
+    "inputs": [
+      "Calendar",
+      "Inbox / chat threads",
+      "Stakeholder list"
+    ],
+    "outputArtifact": {
+      "name": "Published Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_19_refining_program_plan",
+    "activityNumber": 19,
+    "name": "Refining Program Plan",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Open current Program Plan and latest sprint outcomes.",
+      "b. Identify gaps: slipped milestones, changed scope, new dependencies, resource shifts.",
+      "c. Incorporate stakeholder feedback from last week's 1:1s and reviews.",
+      "d. Update milestone dates, owners, and dependency links.",
+      "e. Note the diff in a short changelog block.",
+      "f. Publish updated plan to team channel."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:294",
+    "cadence": "SPRINT",
+    "trigger": "Mid-Sprint Review (Fri Wk1) OR program-plan-drift signal",
+    "inputs": [
+      "Current Program Plan",
+      "Sprint backlog",
+      "Stakeholder feedback",
+      "Latest OKR snapshot"
+    ],
+    "outputArtifact": {
+      "name": "Updated Program Plan",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Program Manager",
+      "Product Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_20_dmaic_project_charter",
+    "activityNumber": 20,
+    "name": "DMAIC Project Charter",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Write the problem statement in one paragraph.",
+      "b. Document the business case (current cost / risk, expected benefit).",
+      "c. Define in-scope and out-of-scope process boundaries.",
+      "d. Identify Process Owner, Sponsor, Project Lead, and team members.",
+      "e. Set goal statement: baseline X → target Y by date Z.",
+      "f. Estimate sprint count (typical DMAIC: 6–8 sprints).",
+      "g. Identify top 3 risks and initial mitigations.",
+      "h. Obtain Sponsor signature.",
+      "i. Register Charter in project portfolio."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:401",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Decision to launch a DMAIC project after Kaizen / variance analysis",
+    "inputs": [
+      "Opportunity or problem statement",
+      "Sponsor commitment",
+      "Proposed process owner"
+    ],
+    "outputArtifact": {
+      "name": "Signed DMAIC Charter",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Process Owner",
+      "Sponsor",
+      "CI Champion"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_21_dmaic_sipoc",
+    "activityNumber": 21,
+    "name": "DMAIC SIPOC",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 240,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:410",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 21 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_20_dmaic_project_charter"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_22_dmaic_output_data_collection_plan",
+    "activityNumber": 22,
+    "name": "DMAIC Output Data Collection Plan",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. List CTQ output metrics (Y's) from VOC/VOB/VOA.",
+      "b. For each metric document: operational definition, unit, method, sampling plan, owner, tool, storage.",
+      "c. If measurement risk exists, run MSA (#31) before locking.",
+      "d. Pilot DCP for one cycle.",
+      "e. Lock DCP and proceed to Baseline (#28)."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:453",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-SIPOC, before Baseline (#28)",
+    "inputs": [
+      "DMAIC SIPOC (#21)",
+      "VOC/VOB/VOA with CTQs (#26)"
+    ],
+    "outputArtifact": {
+      "name": "Output Data Collection Plan",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_21_dmaic_sipoc",
+      "cat_26_dmaic_voc_vob_voa_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_23_dmaic_stakeholder_analysis",
+    "activityNumber": 23,
+    "name": "DMAIC Stakeholder Analysis",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. List all stakeholders impacted by or influencing the project.",
+      "b. For each, rate Influence (H/M/L) and Interest (H/M/L).",
+      "c. Plot on 2x2 grid; assign quadrant engagement approach.",
+      "d. Assign owner per quadrant.",
+      "e. Document in Stakeholder Analysis template; feed into Communication Plan."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:462",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "DMAIC Charter signed",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Org chart",
+      "Process partner list"
+    ],
+    "outputArtifact": {
+      "name": "Stakeholder Map (2x2 Influence × Interest)",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "1–2 senior team members"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_20_dmaic_project_charter"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_24_dmaic_communication_plan",
+    "activityNumber": 24,
+    "name": "DMAIC Communication Plan",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Copy the four Stakeholder Analysis quadrants into the Comm Plan matrix.",
+      "b. For each row define cadence, channel, format, owner.",
+      "c. Write an acceptance criterion per row.",
+      "d. Book recurring calendar holds for every synchronous touchpoint.",
+      "e. Publish and revisit at each Sprint Retrospective."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:471",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Stakeholder Analysis complete",
+    "inputs": [
+      "Stakeholder Analysis (#23)",
+      "DMAIC Charter (#20)"
+    ],
+    "outputArtifact": {
+      "name": "Communication Plan Matrix",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_23_dmaic_stakeholder_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_25_dmaic_risk_and_mitigation_plan",
+    "activityNumber": 25,
+    "name": "DMAIC Risk and Mitigation Plan",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Brainstorm risks in four buckets: technical, organizational, timeline, resource.",
+      "b. For each risk rate Probability (1–5) × Impact (1–5).",
+      "c. For score ≥ 12 write a mitigation plan and assign a risk owner.",
+      "d. For score 6–11 write a monitoring plan.",
+      "e. Record in Risk Register template.",
+      "f. Review at every Sprint Retrospective."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:480",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-Charter; refresh at each Sprint Retrospective",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "SIPOC (#21)"
+    ],
+    "outputArtifact": {
+      "name": "Risk Register",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_20_dmaic_project_charter",
+      "cat_21_dmaic_sipoc"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_26_dmaic_voc_vob_voa_analysis",
+    "activityNumber": 26,
+    "name": "DMAIC VOC/VOB/VOA Analysis",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Voice of Customer: interview 3–5 customers.",
+      "b. Voice of Business: interview 2–3 business leaders.",
+      "c. Voice of Associate: interview 3–5 associates.",
+      "d. Translate each raw voice into a CTQ requirement.",
+      "e. Prioritize CTQs by frequency, severity, strategic fit.",
+      "f. Document and feed into Output DCP (#22) and C&E Matrix (#34)."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:489",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-Charter",
+    "inputs": [
+      "Stakeholder Analysis (#23)",
+      "Customer data sources"
+    ],
+    "outputArtifact": {
+      "name": "VOC / VOB / VOA Document with CTQs",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Customers",
+      "Business leaders",
+      "Associates"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_23_dmaic_stakeholder_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_27_dmaic_continuous_reporting_framework",
+    "activityNumber": 27,
+    "name": "DMAIC Continuous Reporting Framework",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Define reporting cadence (weekly or monthly).",
+      "b. Select metrics: baseline, current, target, delta, trend, sigma, financial.",
+      "c. Build dashboard linked to DCP data source.",
+      "d. Assign owner and monthly review slot.",
+      "e. Publish link per Communication Plan (#24)."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:498",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-Baseline (#28)",
+    "inputs": [
+      "Output DCP data (#22)",
+      "Financial Benefit Translator (#39)"
+    ],
+    "outputArtifact": {
+      "name": "Reporting Dashboard Link",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Analytics partner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_28_dmaic_baseline_output_performance_data"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_28_dmaic_baseline_output_performance_data",
+    "activityNumber": 28,
+    "name": "DMAIC Baseline Output Performance Data",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 600,
+    "procedure": [
+      "a. Execute DCP for baseline period (30 working days or 30 samples).",
+      "b. Collect data per plan; log deviations.",
+      "c. If manual measurement, verify with MSA (#31).",
+      "d. Compute summary statistics: n, mean, median, stdev, min, max, Cp/Cpk, sigma.",
+      "e. Build baseline Control Chart (#29).",
+      "f. Record baseline value in Charter as locked reference."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:507",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Output DCP locked",
+    "inputs": [
+      "Locked Output DCP (#22)",
+      "MSA report (#31) if applicable"
+    ],
+    "outputArtifact": {
+      "name": "Baseline Dataset + Summary Statistics",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Project Lead"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_22_dmaic_output_data_collection_plan",
+      "cat_31_dmaic_msa_report"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_29_dmaic_control_chart_graph",
+    "activityNumber": 29,
+    "name": "DMAIC Control Chart Graph",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 120,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:516",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 29 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_28_dmaic_baseline_output_performance_data"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_30_dmaic_process_capability_report",
+    "activityNumber": 30,
+    "name": "DMAIC Process Capability Report",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Verify data normality (histogram + Anderson-Darling).",
+      "b. Define spec limits (USL / LSL).",
+      "c. Calculate short-term capability: Cp, Cpk.",
+      "d. Calculate long-term performance: Pp, Ppk.",
+      "e. Compute DPMO and process sigma.",
+      "f. Flag if Cpk < 1.33."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:535",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Baseline data locked",
+    "inputs": [
+      "Baseline data (#28)",
+      "USL / LSL from CTQ"
+    ],
+    "outputArtifact": {
+      "name": "Capability Report (Cp/Cpk/Pp/Ppk)",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Project Lead"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_28_dmaic_baseline_output_performance_data"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_31_dmaic_msa_report",
+    "activityNumber": 31,
+    "name": "DMAIC MSA Report",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 180,
+    "procedure": [
+      "a. Select 10 samples covering the expected process range.",
+      "b. 2–3 appraisers measure each sample 2–3 times randomized.",
+      "c. Compute Gage R&R (repeatability + reproducibility).",
+      "d. Acceptance: <10% excellent; 10–30% marginal; >30% unacceptable.",
+      "e. If unacceptable, fix and re-run MSA.",
+      "f. Document results and decision."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:544",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Output DCP drafted; before locking",
+    "inputs": [
+      "Measurement system definition",
+      "10 samples",
+      "2–3 appraisers"
+    ],
+    "outputArtifact": {
+      "name": "MSA Report with Gage R&R",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "2–3 appraisers"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_22_dmaic_output_data_collection_plan"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_32_dmaic_detailed_process_maps",
+    "activityNumber": 32,
+    "name": "DMAIC Detailed Process Maps",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 240,
+    "procedure": [
+      "1. Complete high level process map (SIPOC)",
+      "2. Detail 3-7 key sub-processes",
+      "3. Estimate process times and wait times",
+      "4. Define the inputs and outputs for each step",
+      "5. Identify all steps in the process as value added and non-value added",
+      "6. Identify 1-3 relevant measurement opportunities for each sub-process"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:553",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 32 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_21_dmaic_sipoc"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_33_dmaic_quick_win_improvements",
+    "activityNumber": 33,
+    "name": "DMAIC Quick Win Improvements",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 1200,
+    "procedure": [
+      "a. Filter: lead < 1 week AND cost < $1K AND effort < 2 pd AND reversible.",
+      "b. Get Process Owner approval.",
+      "c. Implement change.",
+      "d. Measure impact before and after (≥ 5 observations each).",
+      "e. Log: name, hypothesis, delta, decision.",
+      "f. Feed kept wins into Improvement Backlog (#38)."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:567",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Quick-win candidate identified (lead < 1w, cost < $1K, effort < 2 person-days)",
+    "inputs": [
+      "Process Maps (#32)",
+      "VOC insights (#26)",
+      "Team observations"
+    ],
+    "outputArtifact": {
+      "name": "Quick Wins Log with before/after",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_22_dmaic_output_data_collection_plan",
+      "cat_36_dmaic_correlation_and_regression"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_34_dmaic_cause_and_effect_matrix_analysis",
+    "activityNumber": 34,
+    "name": "DMAIC Cause and Effect Matrix/Analysis",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 240,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:576",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 34 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_26_dmaic_voc_vob_voa_analysis",
+      "cat_32_dmaic_detailed_process_maps"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_35_dmaic_inputs_data_collection_plan",
+    "activityNumber": 35,
+    "name": "DMAIC Inputs Data Collection Plan",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 480,
+    "procedure": [
+      "a. Take top-scored X variables from C&E Matrix (4–6 inputs).",
+      "b. For each X document: operational definition, method, sampling plan, owner, tool.",
+      "c. For each X-Y pair confirm the time-stamp join key.",
+      "d. If any X is subjective/manual, run MSA (#31) for that X.",
+      "e. Pilot for one cycle; fix and re-pilot if n < 80%.",
+      "f. Lock the Input DCP.",
+      "g. Execute for min 30 paired X-Y observations."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:606",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-C&E Matrix, before Correlation / Regression (#36)",
+    "inputs": [
+      "C&E Matrix (#34)",
+      "Prioritized X variables"
+    ],
+    "outputArtifact": {
+      "name": "Input DCP Filled",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_34_dmaic_cause_and_effect_matrix_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_36_dmaic_correlation_and_regression",
+    "activityNumber": 36,
+    "name": "DMAIC Correlation and Regression",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 180,
+    "procedure": [
+      "a. Load paired X and Y data.",
+      "b. Pairwise correlation matrix; note |r| > 0.4.",
+      "c. Fit regression; escalate as diagnostics warrant.",
+      "d. Check R² (> 0.7), p-values (< 0.05), residual plots.",
+      "e. Identify vital few X's.",
+      "f. Document model and leverage points.",
+      "g. Feed vital X's into FMEA (#37)."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:615",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Input DCP data collected (min 30 paired observations)",
+    "inputs": [
+      "Input DCP data (#35)",
+      "Output DCP data (#22)"
+    ],
+    "outputArtifact": {
+      "name": "Correlation + Regression Report",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Analytics partner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_35_dmaic_inputs_data_collection_plan"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_37_dmaic_failure_modes_effects_analysis",
+    "activityNumber": 37,
+    "name": "DMAIC Failure Modes Effects Analysis",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 240,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:624",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 37 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_34_dmaic_cause_and_effect_matrix_analysis",
+      "cat_36_dmaic_correlation_and_regression"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_38_dmaic_process_improvement_backlog",
+    "activityNumber": 38,
+    "name": "DMAIC Process Improvement Backlog",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Aggregate improvement candidates from FMEA, Quick Wins pending, VOC gaps, retro actions.",
+      "b. For each: name, one-sentence description, Day-2-Done criteria, effort, impact.",
+      "c. Score priority (RICE / WSJF / Impact × Confidence ÷ Effort).",
+      "d. Publish prioritized list to Sprint Planning.",
+      "e. Carry unfinished items forward."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:645",
+    "cadence": "SPRINT",
+    "trigger": "Post-FMEA or at each sprint boundary",
+    "inputs": [
+      "FMEA (#37)",
+      "Quick Wins pending (#33)",
+      "VOC gaps (#26)",
+      "Retro action items"
+    ],
+    "outputArtifact": {
+      "name": "Prioritized Improvement Backlog",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_37_dmaic_failure_modes_effects_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_39_dmaic_financial_benefit_translator",
+    "activityNumber": 39,
+    "name": "DMAIC Financial Benefit Translator",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 600,
+    "procedure": [
+      "a. Identify benefit categories: hard-dollar, revenue lift, quality/rework, risk avoidance.",
+      "b. Quantify current cost / loss per period at baseline.",
+      "c. Project post-improvement cost / loss at target.",
+      "d. Compute annualized net benefit = 12 × monthly delta.",
+      "e. Apply confidence rating: Hard / Soft / Cost Avoidance.",
+      "f. Obtain Finance-partner sign-off.",
+      "g. Register in portfolio benefits ledger."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:654",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Baseline complete (projection) OR post-improvement (actual)",
+    "inputs": [
+      "Baseline data (#28)",
+      "Projected or actual post-improvement performance",
+      "Unit cost data"
+    ],
+    "outputArtifact": {
+      "name": "Financial Benefit Document",
+      "schema": "NUMERIC",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Finance partner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_38_dmaic_process_improvement_backlog",
+      "cat_33_dmaic_quick_win_improvements"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_40_dmaic_implemented_improvements",
+    "activityNumber": 40,
+    "name": "DMAIC Implemented Improvements",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 1200,
+    "procedure": [
+      "1. Open Current Failure Modes Effect Analysis spreadsheet",
+      "2. Review each recommended action for improvement of process inputs",
+      "3. Identify Improvement Backlog Item(s)",
+      "4. Document Improvement Backlog Item(s) Name, Description, and Day 2 Done Criteria"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:663",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "DMAIC Charter (#20)",
+      "Prior DMAIC step outputs"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Step 40 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_38_dmaic_process_improvement_backlog"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_41_dmaic_project_results_narrative_document",
+    "activityNumber": 41,
+    "name": "DMAIC Project Results Narrative Document",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 240,
+    "procedure": [
+      "a. Executive summary: problem → result → annualized benefit.",
+      "b. Background: business case, scope, goal.",
+      "c. Results: baseline vs remeasured, Control Chart before/after.",
+      "d. Root cause findings: vital X's, FMEA failure modes addressed.",
+      "e. Implemented improvements with before/after.",
+      "f. Financial benefit with confidence.",
+      "g. Control plan: ongoing monitoring, SOPs, Process Owner.",
+      "h. Lessons learned.",
+      "i. Review with Sponsor and file in portfolio."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:675",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Control phase complete, Financial Benefit signed off",
+    "inputs": [
+      "Baseline data (#28)",
+      "Implemented improvements (#40)",
+      "Remeasured data",
+      "Control Chart (#29)",
+      "Financial Benefit (#39)"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Project Results Narrative",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_40_dmaic_implemented_improvements",
+      "cat_39_dmaic_financial_benefit_translator"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_42_kaizen_project_charter",
+    "activityNumber": 42,
+    "name": "Kaizen Project Charter",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. State problem in one paragraph with scope and pain observed.",
+      "b. Document business case.",
+      "c. Define event scope.",
+      "d. Set goal statement: baseline X → target Y by event end + 30 days.",
+      "e. Identify event team: Lead, Process Owner, SMEs, Sponsor.",
+      "f. Schedule event window.",
+      "g. Identify top 3 risks.",
+      "h. Obtain Sponsor signature."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:684",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Kaizen candidate approved for event",
+    "inputs": [
+      "Promoted Kaizen candidate",
+      "Process owner commitment"
+    ],
+    "outputArtifact": {
+      "name": "Signed Kaizen Charter",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Process Owner",
+      "Sponsor"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_43_kaizen_output_data_collection_plan",
+    "activityNumber": 43,
+    "name": "Kaizen Output Data Collection Plan",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. List the 1–3 CTQ output metrics from the Kaizen Charter goal.",
+      "b. For each metric document: operational definition, method, pre/post sampling plan, owner, tool.",
+      "c. If measurement is subjective, run a quick 3-appraiser MSA on 5 samples.",
+      "d. Execute pre-event collection on Day 1.",
+      "e. Schedule post-event collection at event end + 30 days.",
+      "f. Store DCP alongside Charter."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:693",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Event start",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Event SIPOC (#45)"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen DCP Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Team"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_42_kaizen_project_charter"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_44_kaizen_event_scheduling",
+    "activityNumber": 44,
+    "name": "Kaizen Event Scheduling",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "1. Review the Desired Project Team Roles on Project Charter",
+      "2. Select high performing subject matter experts to meet requirements of the team roles",
+      "3. Identify general timeframe of window of opportunity and negotiate availability and commitment"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:702",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Prior Kaizen step outputs"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen Step 44 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Event Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_42_kaizen_project_charter",
+      "cat_43_kaizen_output_data_collection_plan"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_45_kaizen_event_sipoc",
+    "activityNumber": 45,
+    "name": "Kaizen Event SIPOC",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 60,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:713",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Prior Kaizen step outputs"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen Step 45 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Event Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_44_kaizen_event_scheduling"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_46_kaizen_event_prioritized_inputs",
+    "activityNumber": 46,
+    "name": "Kaizen Event Prioritized Inputs",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 30,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:756",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Prior Kaizen step outputs"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen Step 46 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Event Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_45_kaizen_event_sipoc"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_47_kaizen_event_failure_modes_effects_analysis",
+    "activityNumber": 47,
+    "name": "Kaizen Event Failure Modes Effects Analysis",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 240,
+    "procedure": [],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:786",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Prior Kaizen step outputs"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen Step 47 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Event Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_46_kaizen_event_prioritized_inputs"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_48_kaizen_implemented_improvements",
+    "activityNumber": 48,
+    "name": "Kaizen Implemented Improvements",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 1380,
+    "procedure": [
+      "1. Open Current Failure Modes Effect Analysis spreadsheet",
+      "2. Review each recommended action for improvement of process inputs",
+      "3. Identify Improvement Backlog Item(s)",
+      "4. Document Improvement Backlog Item(s) Name, Description, and Day 2 Done Criteria"
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:807",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Prior step in project / event chain complete",
+    "inputs": [
+      "Kaizen Charter (#42)",
+      "Prior Kaizen step outputs"
+    ],
+    "outputArtifact": {
+      "name": "Kaizen Step 48 Artifact",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Event Team",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_47_kaizen_event_failure_modes_effects_analysis"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_49_kaizen_project_results_narrative_3_pager",
+    "activityNumber": 49,
+    "name": "Kaizen project Results Narrative 3 Pager",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 120,
+    "procedure": [
+      "a. Page 1 — Problem & Goal: statement, baseline, goal, team, dates, owner.",
+      "b. Page 2 — What Was Done: improvements, before/after diagrams, C&E/FMEA insights.",
+      "c. Page 3 — Results: remeasured metric, delta, secondary metrics, financial benefit, lessons.",
+      "d. Publish to Kaizen portfolio."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:819",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Post-remeasurement (event + 30 days)",
+    "inputs": [
+      "Baseline (#43)",
+      "Implemented improvements (#48)",
+      "Remeasurement",
+      "Financial Benefit"
+    ],
+    "outputArtifact": {
+      "name": "3-Page Kaizen Results Narrative",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_48_kaizen_implemented_improvements"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cat_50_kaizen_process_owner_transition",
+    "activityNumber": 50,
+    "name": "Kaizen Process Owner Transition",
+    "focusArea": "KAIZEN",
+    "defaultDurationMinutes": 60,
+    "procedure": [
+      "a. Walk Process Owner through each implemented improvement and its performance vs baseline.",
+      "b. Confirm control measures: updated SOP, Control Chart thresholds, rollback plan.",
+      "c. Transfer ownership of ongoing monitoring.",
+      "d. Schedule 30/60/90-day Process Owner check-ins.",
+      "e. Both parties sign; file with Kaizen record.",
+      "f. Kaizen Lead steps back."
+    ],
+    "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:828",
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Kaizen Results Narrative complete AND remeasured metric captured",
+    "inputs": [
+      "Kaizen Results Narrative (#49)",
+      "Implemented Improvements (#48)",
+      "Control Chart (#29 pattern)"
+    ],
+    "outputArtifact": {
+      "name": "Signed Transition Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Kaizen Lead",
+      "Process Owner"
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [
+      "cat_49_kaizen_project_results_narrative_3_pager"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1
+  },
+  {
+    "id": "cer_quarterly_planning",
+    "activityNumber": null,
+    "name": "Quarterly Planning",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 240,
+    "cadence": "QUARTERLY",
+    "trigger": "First working day of each quarter",
+    "inputs": [
+      "Prior quarter OKR scorecard",
+      "Portfolio roadmap",
+      "Team capacity",
+      "Kaizen pipeline"
+    ],
+    "outputArtifact": {
+      "name": "Quarter Plan",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Agile Leader",
+      "CI Champion",
+      "Process Owner"
+    ],
+    "procedure": [
+      "a. Review prior quarter: OKR confidence vs actual, Kaizens closed with validated benefit, sprint-goal completion rate.",
+      "b. Align to org priorities and externally imposed constraints for the coming quarter.",
+      "c. Draft quarterly OKRs (3–5).",
+      "d. Lay out 6 sprints + 1 reset sprint (Sprint 7) on the calendar.",
+      "e. Allocate Kaizen portfolio across sprints.",
+      "f. Identify Sprint 7 reset scope.",
+      "g. Publish to team, schedule Sprint 1 Planning."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §A.3"
+  },
+  {
+    "id": "cer_sprint_planning",
+    "activityNumber": null,
+    "name": "Sprint Planning",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 120,
+    "cadence": "SPRINT",
+    "trigger": "Mon Wk1 of sprint, 09:30 local",
+    "inputs": [
+      "Improvement Backlog",
+      "Sprint Goal",
+      "Team capacity"
+    ],
+    "outputArtifact": {
+      "name": "Sprint Backlog",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Process Owner",
+      "Agile Facilitator"
+    ],
+    "procedure": [
+      "a. Phase 1 (1h): Team selects Improvement Backlog items it commits to turning into fully documented improvements.",
+      "b. Phase 2 (1h): Team decomposes selected items into tasks with estimates and assignments.",
+      "c. Output: Sprint Backlog that reflects mutual commitment."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "docs/Business Agility Standard Work.txt:317"
+  },
+  {
+    "id": "cer_daily_standup",
+    "activityNumber": null,
+    "name": "Daily Standup",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 15,
+    "cadence": "DAILY",
+    "trigger": "Same time each work day, 09:00 local",
+    "inputs": [
+      "Prior day status",
+      "Current Sprint Backlog"
+    ],
+    "outputArtifact": {
+      "name": "Standup Notes",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Agile Facilitator"
+    ],
+    "procedure": [
+      "a. Each member answers three questions: what have you done, what will you do next, what impedes you?",
+      "b. No side conversations; 15 minutes hard stop.",
+      "c. Post-standup side-meetings scheduled for interested parties."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "docs/Business Agility Standard Work.txt:337"
+  },
+  {
+    "id": "cer_mid_sprint_review",
+    "activityNumber": null,
+    "name": "Mid-Sprint Review",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 30,
+    "cadence": "SPRINT",
+    "trigger": "Fri Wk1 of sprint, 15:00 local",
+    "inputs": [
+      "Sprint Backlog progress",
+      "Impediments from standups"
+    ],
+    "outputArtifact": {
+      "name": "Mid-Sprint Review Notes",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Agile Facilitator"
+    ],
+    "procedure": [
+      "a. Team reviews sprint progress vs commitment.",
+      "b. Identify any items that should move out of sprint or be deferred.",
+      "c. Confirm plan for Wk2."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "ENGINE_DESIGN.md §3.3"
+  },
+  {
+    "id": "cer_sprint_review",
+    "activityNumber": null,
+    "name": "Sprint Review",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 60,
+    "cadence": "SPRINT",
+    "trigger": "Fri Wk2 of sprint, 14:00 local",
+    "inputs": [
+      "Sprint Backlog completed",
+      "Process Owner",
+      "Stakeholders"
+    ],
+    "outputArtifact": {
+      "name": "Sprint Review Summary",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Process Owner",
+      "Stakeholders",
+      "Agile Facilitator"
+    ],
+    "procedure": [
+      "a. Team presents sprint goal, committed backlog, completed backlog.",
+      "b. Members demonstrate completed improvements.",
+      "c. Stakeholders polled for feedback + priority changes.",
+      "d. Process Owner discusses backlog rearrangement."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "docs/Business Agility Standard Work.txt:363"
+  },
+  {
+    "id": "cer_sprint_retrospective",
+    "activityNumber": null,
+    "name": "Sprint Retrospective",
+    "focusArea": "CEREMONY",
+    "defaultDurationMinutes": 30,
+    "cadence": "SPRINT",
+    "trigger": "Fri Wk2 of sprint, 15:00 local (immediately after Review)",
+    "inputs": [
+      "Sprint outcomes",
+      "Team observations"
+    ],
+    "outputArtifact": {
+      "name": "Retrospective Actionable Items",
+      "schema": "TWO_LIST",
+      "required": true
+    },
+    "participants": [
+      "Team",
+      "Agile Facilitator"
+    ],
+    "procedure": [
+      "a. Team answers: what went well; what could be improved?",
+      "b. Facilitator captures in summary form.",
+      "c. Prioritize improvements; add high-priority items to next sprint backlog."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "docs/Business Agility Standard Work.txt:385"
+  },
+  {
+    "id": "gen_deep_work_project",
+    "activityNumber": null,
+    "name": "Deep Work — Project Task (generic)",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 240,
+    "cadence": "DAILY",
+    "trigger": "PROJECT bucket has slack and no DMAIC/Kaizen payload eligible",
+    "inputs": [
+      "Current project task",
+      "Intention declaration"
+    ],
+    "outputArtifact": {
+      "name": "Deep Work Output",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "a. Declare intention for the block.",
+      "b. Work the primary project task uninterrupted.",
+      "c. At close, log output and any friction."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §H.2"
+  },
+  {
+    "id": "gen_value_added_communication",
+    "activityNumber": null,
+    "name": "Value-Added Communication (generic)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 60,
+    "cadence": "DAILY",
+    "trigger": "COMMUNICATION bucket has slack and no named comm entry eligible",
+    "inputs": [
+      "Inbox",
+      "Chat threads",
+      "Calendar"
+    ],
+    "outputArtifact": {
+      "name": "Comm Outcome Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "a. Triage inbox / chat / calendar for value-added touchpoints.",
+      "b. Respond deliberately (not reactively).",
+      "c. Log a short outcome note at close."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §H.2"
+  },
+  {
+    "id": "gen_end_of_activity_reflection",
+    "activityNumber": null,
+    "name": "End-of-Activity Reflection",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 15,
+    "cadence": "DAILY",
+    "trigger": "Close-of-day reflection anchor, 17:00 local",
+    "inputs": [
+      "Today's closed activities",
+      "Plan-vs-actual deltas"
+    ],
+    "outputArtifact": {
+      "name": "End-of-Activity Reflection",
+      "schema": "TWO_LIST",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "a. Scan the day's closed activities.",
+      "b. Note what went well.",
+      "c. Note what to improve.",
+      "d. Flag any friction signals for the Kaizen queue."
+    ],
+    "bucket": "CI",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §H.2"
+  },
+  {
+    "id": "gen_weekly_reflection",
+    "activityNumber": null,
+    "name": "Weekly Reflection",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 20,
+    "cadence": "WEEKLY",
+    "trigger": "Friday afternoon, 16:30 local",
+    "inputs": [
+      "Week's friction signals",
+      "Week's variances",
+      "Active Kaizen state"
+    ],
+    "outputArtifact": {
+      "name": "Weekly Reflection (DMAIC)",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "a. Define: what was the dominant pain pattern this week?",
+      "b. Measure: baseline rough count or duration.",
+      "c. Analyze: candidate causes.",
+      "d. Improve: promote at most one candidate to a Kaizen."
+    ],
+    "bucket": "CI",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §H.2"
+  },
+  {
+    "id": "gen_lessons_learned",
+    "activityNumber": null,
+    "name": "Lessons Learned",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 45,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Every Kaizen close (every projectType, every closeKind)",
+    "inputs": [
+      "Closing Kaizen",
+      "Remeasurement",
+      "Action history",
+      "Friction signals"
+    ],
+    "outputArtifact": {
+      "name": "Lessons Learned Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Kaizen Lead",
+      "Process Owner"
+    ],
+    "procedure": [
+      "a. What worked — improvements that beat baseline.",
+      "b. What didn't — improvements abandoned or reverted.",
+      "c. Next to try — hypotheses for the next iteration.",
+      "d. Publish alongside the Kaizen record."
+    ],
+    "bucket": "CI",
+    "isNonOptional": true,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "CATALOG_GAPS.md §H.2 v0.3.1"
+  }
+]

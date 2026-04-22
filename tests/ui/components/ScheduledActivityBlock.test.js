@@ -157,7 +157,7 @@ describe('ScheduledActivityBlock — state variants', () => {
   });
 });
 
-describe('ScheduledActivityBlock — Start button (Sprint 4 disabled)', () => {
+describe('ScheduledActivityBlock — Start button (Sprint 5 enabled)', () => {
   const baseActivity = {
     id: 'sa_start_test',
     name: 'Deep Block',
@@ -180,21 +180,13 @@ describe('ScheduledActivityBlock — Start button (Sprint 4 disabled)', () => {
     assert.match(html, /<button[^>]*class="sa-start"/);
   });
 
-  test('Start button is disabled (Sprint 4 defer)', () => {
+  test('Start button is NOT disabled (Sprint 5 ships it)', () => {
     const html = ScheduledActivityBlock({
       activity: baseActivity,
       showStart: true
     });
-    assert.match(html, /sa-start[^>]*disabled/);
-    assert.match(html, /aria-disabled="true"/);
-  });
-
-  test('Start button carries "Ships in Sprint 5" tooltip', () => {
-    const html = ScheduledActivityBlock({
-      activity: baseActivity,
-      showStart: true
-    });
-    assert.match(html, /title="Ships in Sprint 5"/);
+    assert.ok(!/sa-start[^>]*\sdisabled/.test(html));
+    assert.ok(!/aria-disabled="true"/.test(html));
   });
 
   test('Start button has data-action=START_ACTIVITY', () => {
@@ -211,6 +203,153 @@ describe('ScheduledActivityBlock — Start button (Sprint 4 disabled)', () => {
       showStart: true
     });
     assert.match(html, /activityId.*sa_start_test/);
+  });
+
+  test('SCHEDULED block renders a Skip button', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true
+    });
+    assert.match(html, /<button[^>]*class="sa-skip"/);
+    assert.match(html, /data-action="OPEN_SKIP_MODAL"/);
+  });
+
+  test('Skip button payload carries the activity id', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true
+    });
+    assert.match(html, /sa-skip[^>]*activityId.*sa_start_test/);
+  });
+});
+
+describe('ScheduledActivityBlock — IN_PROGRESS variant', () => {
+  const baseActivity = {
+    id: 'sa_running',
+    name: 'Deep Block',
+    bucket: 'PROJECT',
+    plannedDurationMinutes: 120,
+    plannedStartAt: '10:15',
+    state: 'IN_PROGRESS',
+    actualStartAt: '2026-04-21T10:15:00Z'
+  };
+
+  test('renders a Close button (no Start)', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true,
+      nowIso: '2026-04-21T11:00:00Z'
+    });
+    assert.match(html, /<button[^>]*class="sa-close"/);
+    assert.ok(!/class="sa-start"/.test(html));
+  });
+
+  test('Close button uses data-action=OPEN_CLOSE_DIALOG', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true,
+      nowIso: '2026-04-21T11:00:00Z'
+    });
+    assert.match(html, /data-action="OPEN_CLOSE_DIALOG"/);
+  });
+
+  test('renders the elapsed-minute readout', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true,
+      nowIso: '2026-04-21T11:00:00Z'
+    });
+    assert.match(html, /45m elapsed/);
+  });
+
+  test('elapsed of 0 when nowIso missing', () => {
+    const html = ScheduledActivityBlock({
+      activity: baseActivity,
+      showStart: true
+    });
+    assert.match(html, /0m elapsed/);
+  });
+});
+
+describe('ScheduledActivityBlock — SKIPPED variant', () => {
+  test('renders the reason code label', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        id: 'sa_s',
+        name: 'Standup',
+        bucket: 'COMMUNICATION',
+        plannedDurationMinutes: 15,
+        plannedStartAt: '09:00',
+        state: 'SKIPPED',
+        reasonCodeIfSkipped: 'MEETING_CONFLICT'
+      }
+    });
+    assert.match(html, /sa-skip-reason/);
+    assert.match(html, /MEETING_CONFLICT/);
+  });
+});
+
+describe('ScheduledActivityBlock — why chip', () => {
+  test('renders the why-chip when composition PROPOSED + explain provided', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        id: 'sa_why',
+        name: 'PDCA',
+        bucket: 'CI',
+        plannedDurationMinutes: 30,
+        state: 'PROPOSED'
+      },
+      compositionState: 'PROPOSED',
+      explainEntry: { ref: 'cat_12_pdca_cycle', rule: 'R5_CI_ROTATION', detail: 'CI rotation fill' }
+    });
+    assert.match(html, /why-chip/);
+    assert.match(html, /CI rotation fill/);
+  });
+
+  test('hides the why-chip on ACCEPTED composition', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        id: 'sa_why',
+        name: 'PDCA',
+        bucket: 'CI',
+        plannedDurationMinutes: 30,
+        state: 'SCHEDULED'
+      },
+      compositionState: 'ACCEPTED',
+      explainEntry: { ref: 'cat_12_pdca_cycle', rule: 'R5_CI_ROTATION', detail: 'x' }
+    });
+    assert.ok(!html.includes('why-chip'));
+  });
+
+  test('no explainEntry → no why-chip', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        id: 'sa_w',
+        name: 'x',
+        bucket: 'CI',
+        plannedDurationMinutes: 30,
+        state: 'PROPOSED'
+      },
+      compositionState: 'PROPOSED'
+    });
+    assert.ok(!html.includes('why-chip'));
+  });
+});
+
+describe('ScheduledActivityBlock — computeElapsedMinutes', () => {
+  test('45 minutes between two ISO stamps', () => {
+    const mins = ScheduledActivityBlock({
+      activity: {
+        id: 'x',
+        name: 'y',
+        bucket: 'PROJECT',
+        plannedDurationMinutes: 60,
+        state: 'IN_PROGRESS',
+        actualStartAt: '2026-04-21T10:15:00Z'
+      },
+      nowIso: '2026-04-21T11:00:00Z'
+    });
+    assert.match(mins, /45m elapsed/);
   });
 });
 
