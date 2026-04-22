@@ -28,6 +28,29 @@ export const PORTFOLIO_COPY = Object.freeze({
   VALIDATED_EMPTY: 'No validated Kaizens yet. Close a Kaizen to see it here.'
 });
 
+/** Project-type sub-buckets for the PROJECT column (user taxonomy 2026-04-22). */
+export const PROJECT_TYPE_GROUPS = Object.freeze([
+  { key: 'KAIZEN_ACCELERATOR_30D', label: '30-Day Kaizen Accelerator' },
+  { key: 'KAIZEN_EVENT_90D', label: '90-Day Kaizen Event' },
+  { key: 'DMAIC', label: 'DMAIC' },
+  { key: 'AD_HOC', label: 'Deep Work Project Task (Ad Hoc)' }
+]);
+
+/**
+ * Resolve a Kaizen's project-type group key. Falls back to AD_HOC for
+ * anything that isn't explicitly one of the first three types.
+ *
+ * @param {object} kaizen
+ * @returns {string}
+ */
+export function resolveProjectTypeGroup(kaizen) {
+  const pt = kaizen?.projectType;
+  if (pt === 'KAIZEN_ACCELERATOR_30D') return 'KAIZEN_ACCELERATOR_30D';
+  if (pt === 'KAIZEN_EVENT_90D' || pt === 'KAIZEN_EVENT') return 'KAIZEN_EVENT_90D';
+  if (pt === 'DMAIC') return 'DMAIC';
+  return 'AD_HOC';
+}
+
 export const OPP_FILTER_VALUES = Object.freeze([
   'all',
   'INTAKE',
@@ -181,18 +204,29 @@ function renderActiveKaizens(kaizens, catalog = []) {
       <p class="pf-empty">${esc(PORTFOLIO_COPY.ACTIVE_EMPTY)}</p>
     </section>`;
   }
-  const cards = kaizens
-    .map((k) =>
-      KaizenCard({
-        kaizen: k,
-        catalog,
-        completedCatalogIds: []
-      })
-    )
+
+  /** @type {Record<string, object[]>} */
+  const grouped = { KAIZEN_ACCELERATOR_30D: [], KAIZEN_EVENT_90D: [], DMAIC: [], AD_HOC: [] };
+  for (const k of kaizens) grouped[resolveProjectTypeGroup(k)].push(k);
+
+  const groupBlocks = PROJECT_TYPE_GROUPS
+    .map((g) => {
+      const list = grouped[g.key];
+      if (!list.length) return '';
+      const cards = list
+        .map((k) => KaizenCard({ kaizen: k, catalog, completedCatalogIds: [] }))
+        .join('\n');
+      return `<div class="pf-pt-group" data-project-type="${esc(g.key)}">
+        <h3 class="pf-pt-group-title">${esc(g.label)} (${esc(String(list.length))})</h3>
+        ${cards}
+      </div>`;
+    })
+    .filter(Boolean)
     .join('\n');
+
   return `<section class="pf-section pf-active-kaizens">
     <h2 class="pf-section-title">Active Kaizens (${esc(String(kaizens.length))})</h2>
-    ${cards}
+    ${groupBlocks}
   </section>`;
 }
 

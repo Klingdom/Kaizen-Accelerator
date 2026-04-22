@@ -82,7 +82,7 @@ export const SPRINT_CEREMONIES = Object.freeze({
       id: 'cer_sprint_planning',
       anchor: '09:30',
       defaultMinutes: 120,
-      bucket: 'COMMUNICATION',
+      bucket: 'CI', // user reclassification 2026-04-22: ceremonies are CI work
       name: 'Sprint Planning'
     }
   ]),
@@ -91,7 +91,7 @@ export const SPRINT_CEREMONIES = Object.freeze({
       id: 'cer_mid_sprint_review',
       anchor: '15:00',
       defaultMinutes: 30,
-      bucket: 'COMMUNICATION',
+      bucket: 'COMMUNICATION', // live checkpoint — stays COMM
       name: 'Mid-Sprint Review'
     }
   ]),
@@ -100,14 +100,14 @@ export const SPRINT_CEREMONIES = Object.freeze({
       id: 'cer_sprint_review',
       anchor: '14:00',
       defaultMinutes: 60,
-      bucket: 'COMMUNICATION',
+      bucket: 'CI', // user reclassification 2026-04-22
       name: 'Sprint Review'
     },
     {
       id: 'cer_sprint_retrospective',
       anchor: '15:00',
       defaultMinutes: 30,
-      bucket: 'COMMUNICATION',
+      bucket: 'CI', // user reclassification 2026-04-22
       name: 'Sprint Retrospective'
     }
   ])

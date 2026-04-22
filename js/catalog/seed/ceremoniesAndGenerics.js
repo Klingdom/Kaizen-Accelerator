@@ -71,7 +71,7 @@ function buildCeremonies() {
         'f. Identify Sprint 7 reset scope.',
         'g. Publish to team, schedule Sprint 1 Planning.'
       ],
-      bucket: 'COMMUNICATION',
+      bucket: 'CI',
       isNonOptional: false,
       dependsOn: [],
       projectTypeBinding: null,
@@ -101,7 +101,7 @@ function buildCeremonies() {
         'b. Phase 2 (1h): Team decomposes selected items into tasks with estimates and assignments.',
         'c. Output: Sprint Backlog that reflects mutual commitment.'
       ],
-      bucket: 'COMMUNICATION',
+      bucket: 'CI',
       isNonOptional: true,
       dependsOn: [],
       projectTypeBinding: null,
@@ -192,7 +192,7 @@ function buildCeremonies() {
         'c. Stakeholders polled for feedback + priority changes.',
         'd. Process Owner discusses backlog rearrangement.'
       ],
-      bucket: 'COMMUNICATION',
+      bucket: 'CI',
       isNonOptional: true,
       dependsOn: [],
       projectTypeBinding: null,
@@ -222,7 +222,7 @@ function buildCeremonies() {
         'b. Facilitator captures in summary form.',
         'c. Prioritize improvements; add high-priority items to next sprint backlog.'
       ],
-      bucket: 'COMMUNICATION',
+      bucket: 'CI',
       isNonOptional: true,
       dependsOn: [],
       projectTypeBinding: null,

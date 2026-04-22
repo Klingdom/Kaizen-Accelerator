@@ -67,10 +67,14 @@ describe('CatalogBucketView — structure', () => {
     assert.match(html, /data-bucket-count="CI">\(1\)/);
   });
 
-  test('empty bucket shows empty placeholder', () => {
+  test('empty buckets show empty placeholders (PROJECT now has 4 sub-buckets)', () => {
     const html = CatalogBucketView({ entries: [] });
-    const matches = html.match(/cat-bucket-empty/g) ?? [];
-    assert.equal(matches.length, 3);
+    // COMMUNICATION + CI each render one cat-bucket-empty; PROJECT renders
+    // four cat-subbucket-empty (30-Day / 90-Day / DMAIC / Ad Hoc).
+    const bucketEmpty = html.match(/cat-bucket-empty/g) ?? [];
+    const subbucketEmpty = html.match(/cat-subbucket-empty/g) ?? [];
+    assert.equal(bucketEmpty.length, 2, 'COMMUNICATION + CI each empty');
+    assert.equal(subbucketEmpty.length, 4, 'four empty PROJECT sub-buckets');
   });
 
   test('non-optional lock icon appears', () => {
@@ -194,5 +198,38 @@ describe('BUCKET_ORDER / BUCKET_LABELS', () => {
     assert.ok(BUCKET_LABELS.PROJECT);
     assert.ok(BUCKET_LABELS.COMMUNICATION);
     assert.ok(BUCKET_LABELS.CI);
+  });
+});
+
+describe('CatalogBucketView — PROJECT sub-bucketing (user taxonomy 2026-04-22)', () => {
+  test('PROJECT column renders four sub-bucket headings in order', () => {
+    const html = CatalogBucketView({ entries: [] });
+    const subIdx = {
+      accel: html.indexOf('KAIZEN_ACCELERATOR_30D'),
+      k90: html.indexOf('KAIZEN_EVENT_90D'),
+      dmaic: html.indexOf('"DMAIC"'),
+      adhoc: html.indexOf('AD_HOC')
+    };
+    assert.ok(subIdx.accel > 0, '30-Day Accelerator present');
+    assert.ok(subIdx.k90 > subIdx.accel, '90-Day after Accelerator');
+    assert.ok(subIdx.dmaic > subIdx.k90, 'DMAIC after 90-Day');
+    assert.ok(subIdx.adhoc > subIdx.dmaic, 'AD_HOC after DMAIC');
+  });
+
+  test('DMAIC entry routes to DMAIC sub-bucket; Kaizen to 90-Day; null to Ad Hoc', () => {
+    const html = CatalogBucketView({
+      entries: [
+        { id: 'a', bucket: 'PROJECT', name: 'DMAIC SIPOC', projectTypeBinding: 'DMAIC' },
+        { id: 'b', bucket: 'PROJECT', name: 'Kaizen Charter', projectTypeBinding: ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D'] },
+        { id: 'c', bucket: 'PROJECT', name: 'Deep Work generic', projectTypeBinding: null }
+      ]
+    });
+    // Each card appears exactly once and under the correct project-type section.
+    const dmaicSection = html.match(/data-project-type="DMAIC"[\s\S]*?(?=data-project-type=|<\/div>\s*<\/section>)/);
+    const k90Section = html.match(/data-project-type="KAIZEN_EVENT_90D"[\s\S]*?(?=data-project-type=|<\/div>\s*<\/section>)/);
+    const adhocSection = html.match(/data-project-type="AD_HOC"[\s\S]*?(?=<\/div>\s*<\/section>)/);
+    assert.ok(dmaicSection && dmaicSection[0].includes('DMAIC SIPOC'));
+    assert.ok(k90Section && k90Section[0].includes('Kaizen Charter'));
+    assert.ok(adhocSection && adhocSection[0].includes('Deep Work generic'));
   });
 });

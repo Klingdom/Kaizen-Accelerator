@@ -684,6 +684,66 @@ html, body {
   padding: 8px 0;
 }
 
+.cat-project-subbuckets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cat-subbucket {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.cat-subbucket:first-child { border-top: 0; padding-top: 0; }
+
+.cat-subbucket-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--project-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cat-subbucket-count {
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.cat-subbucket-empty {
+  margin: 0;
+  padding: 4px 0 8px;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Portfolio project-type groups (Active Kaizens) */
+
+.pf-pt-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.pf-pt-group:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.pf-pt-group-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .cat-bucket-list {
   list-style: none;
   margin: 0;

@@ -29,6 +29,40 @@ export const BUCKET_LABELS = Object.freeze({
 });
 
 /**
+ * Project-type sub-buckets inside the PROJECT column (user taxonomy
+ * 2026-04-22). Ordered: 30-Day Accelerator, 90-Day Kaizen, DMAIC, Ad Hoc.
+ */
+export const PROJECT_SUBBUCKETS = Object.freeze([
+  { key: 'KAIZEN_ACCELERATOR_30D', label: '30-Day Kaizen Accelerator' },
+  { key: 'KAIZEN_EVENT_90D', label: '90-Day Kaizen Event' },
+  { key: 'DMAIC', label: 'DMAIC' },
+  { key: 'AD_HOC', label: 'Deep Work Project Task (Ad Hoc)' }
+]);
+
+/**
+ * Decide which PROJECT sub-bucket a catalog entry belongs to. Entries
+ * with a projectTypeBinding string/array are placed in the matching
+ * group; entries with null binding (universal project work) fall into
+ * AD_HOC.
+ *
+ * @param {object} entry
+ * @returns {string}
+ */
+export function resolveProjectSubbucket(entry) {
+  const pt = entry?.projectTypeBinding;
+  const keys = Array.isArray(pt) ? pt : pt ? [pt] : [];
+  // First match wins in PROJECT_SUBBUCKETS order (Accelerator > Kaizen > DMAIC > AD_HOC).
+  for (const group of PROJECT_SUBBUCKETS) {
+    if (group.key === 'AD_HOC') continue;
+    if (keys.includes(group.key)) return group.key;
+    if (group.key === 'KAIZEN_EVENT_90D' && keys.includes('KAIZEN_EVENT')) {
+      return 'KAIZEN_EVENT_90D';
+    }
+  }
+  return 'AD_HOC';
+}
+
+/**
  * Group catalog entries into a {PROJECT: [], COMMUNICATION: [], CI: []}
  * map. Entries with unknown buckets are dropped (should not occur in the
  * seeded catalog).
@@ -67,15 +101,15 @@ export function CatalogBucketView(props = {}) {
   const grouped = groupByBucket(entries);
   const columns = BUCKET_ORDER.map((bucket) => {
     const list = grouped[bucket] ?? [];
-    const items = list.length
-      ? list.map((e) => renderCard(e)).join('\n')
-      : `<p class="cat-bucket-empty">No entries.</p>`;
+    const body = bucket === Bucket.PROJECT
+      ? renderProjectColumnBody(list)
+      : renderFlatList(list);
     return `<section class="cat-bucket-column cat-bucket-${esc(bucket.toLowerCase())}" data-bucket="${esc(bucket)}">
       <header class="cat-bucket-header">
         <h3 class="cat-bucket-title">${esc(BUCKET_LABELS[bucket] ?? bucket)}</h3>
         <span class="cat-bucket-count" data-bucket-count="${esc(bucket)}">(${esc(String(list.length))})</span>
       </header>
-      <ul class="cat-bucket-list">${items}</ul>
+      ${body}
     </section>`;
   }).join('\n');
 
@@ -84,6 +118,44 @@ export function CatalogBucketView(props = {}) {
       ${columns}
     </div>
   </section>`;
+}
+
+/**
+ * Flat list (used by COMMUNICATION and CI columns).
+ *
+ * @param {object[]} list
+ * @returns {string}
+ */
+function renderFlatList(list) {
+  if (!list.length) return `<p class="cat-bucket-empty">No entries.</p>`;
+  return `<ul class="cat-bucket-list">${list.map((e) => renderCard(e)).join('\n')}</ul>`;
+}
+
+/**
+ * Project column rendered with 4 sub-bucket groups (30-Day Accelerator,
+ * 90-Day Kaizen Event, DMAIC, Ad Hoc). Empty groups still render their
+ * heading so the user sees the complete project-type vocabulary.
+ *
+ * @param {object[]} list
+ * @returns {string}
+ */
+function renderProjectColumnBody(list) {
+  /** @type {Record<string, object[]>} */
+  const sub = { KAIZEN_ACCELERATOR_30D: [], KAIZEN_EVENT_90D: [], DMAIC: [], AD_HOC: [] };
+  for (const e of list) sub[resolveProjectSubbucket(e)].push(e);
+
+  const groups = PROJECT_SUBBUCKETS.map((g) => {
+    const items = sub[g.key];
+    const body = items.length
+      ? `<ul class="cat-bucket-list">${items.map((e) => renderCard(e)).join('\n')}</ul>`
+      : `<p class="cat-subbucket-empty">No entries.</p>`;
+    return `<div class="cat-subbucket" data-project-type="${esc(g.key)}">
+      <h4 class="cat-subbucket-title">${esc(g.label)} <span class="cat-subbucket-count">(${esc(String(items.length))})</span></h4>
+      ${body}
+    </div>`;
+  }).join('\n');
+
+  return `<div class="cat-project-subbuckets">${groups}</div>`;
 }
 
 /**

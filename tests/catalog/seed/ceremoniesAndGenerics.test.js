@@ -60,11 +60,21 @@ describe('buildCeremoniesAndGenerics — sizes and shape', () => {
     }
   });
 
-  test('ceremonies land in COMMUNICATION bucket with focusArea=CEREMONY', () => {
+  test('ceremonies carry focusArea=CEREMONY and correct bucket per 2026-04-22 reclassification', () => {
+    // Daily Standup + Mid-Sprint Review remain COMM (live checkpoint rhythm).
+    // Quarterly Planning + Sprint Planning/Review/Retro moved to CI.
+    const expectedBucket = {
+      [CEREMONY_IDS.DAILY_STANDUP]: 'COMMUNICATION',
+      [CEREMONY_IDS.MID_SPRINT_REVIEW]: 'COMMUNICATION',
+      [CEREMONY_IDS.QUARTERLY_PLANNING]: 'CI',
+      [CEREMONY_IDS.SPRINT_PLANNING]: 'CI',
+      [CEREMONY_IDS.SPRINT_REVIEW]: 'CI',
+      [CEREMONY_IDS.SPRINT_RETROSPECTIVE]: 'CI'
+    };
     for (const id of Object.values(CEREMONY_IDS)) {
       const c = all.find((e) => e.id === id);
-      assert.equal(c.bucket, 'COMMUNICATION', `${id} should be COMMUNICATION`);
       assert.equal(c.focusArea, 'CEREMONY');
+      assert.equal(c.bucket, expectedBucket[id], `${id} should be ${expectedBucket[id]}`);
     }
   });
 

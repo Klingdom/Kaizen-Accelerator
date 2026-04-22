@@ -160,7 +160,7 @@
       "Team",
       "Agile Facilitator"
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -205,7 +205,7 @@
       "Team",
       "Agile Facilitator"
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -290,7 +290,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -342,7 +342,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -393,7 +393,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -442,7 +442,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -484,7 +484,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -729,7 +729,7 @@
     "participants": [
       "Self"
     ],
-    "bucket": "PROJECT",
+    "bucket": "COMMUNICATION",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -775,7 +775,7 @@
       "Program Manager",
       "Product Owner"
     ],
-    "bucket": "PROJECT",
+    "bucket": "COMMUNICATION",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -2248,7 +2248,7 @@
       "f. Identify Sprint 7 reset scope.",
       "g. Publish to team, schedule Sprint 1 Planning."
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": false,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -2290,7 +2290,7 @@
       "b. Phase 2 (1h): Team decomposes selected items into tasks with estimates and assignments.",
       "c. Output: Sprint Backlog that reflects mutual commitment."
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": true,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -2413,7 +2413,7 @@
       "c. Stakeholders polled for feedback + priority changes.",
       "d. Process Owner discusses backlog rearrangement."
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": true,
     "dependsOn": [],
     "projectTypeBinding": null,
@@ -2453,7 +2453,7 @@
       "b. Facilitator captures in summary form.",
       "c. Prioritize improvements; add high-priority items to next sprint backlog."
     ],
-    "bucket": "COMMUNICATION",
+    "bucket": "CI",
     "isNonOptional": true,
     "dependsOn": [],
     "projectTypeBinding": null,

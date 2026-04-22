@@ -20,16 +20,20 @@ describe('applyBucketMap — §H.1 approved table', () => {
     assert.equal(pipeline.find((e) => e.activityNumber === 1).bucket, 'CI');
   });
 
-  test('#4 Document Review → COMMUNICATION', () => {
-    assert.equal(pipeline.find((e) => e.activityNumber === 4).bucket, 'COMMUNICATION');
+  test('#4 Document Review → CI (user reclassification 2026-04-22)', () => {
+    assert.equal(pipeline.find((e) => e.activityNumber === 4).bucket, 'CI');
   });
 
-  test('#7–#11 Innovation pipeline → PROJECT', () => {
+  test('#5 Team Introductions → CI (user reclassification 2026-04-22)', () => {
+    assert.equal(pipeline.find((e) => e.activityNumber === 5).bucket, 'CI');
+  });
+
+  test('#7–#11 Innovation sub-phases → CI (user reclassification 2026-04-22)', () => {
     for (let n = 7; n <= 11; n++) {
       assert.equal(
         pipeline.find((e) => e.activityNumber === n).bucket,
-        'PROJECT',
-        `#${n} should be PROJECT`
+        'CI',
+        `#${n} should be CI`
       );
     }
   });
@@ -52,12 +56,12 @@ describe('applyBucketMap — §H.1 approved table', () => {
     }
   });
 
-  test('#18 Document Writing → PROJECT', () => {
-    assert.equal(pipeline.find((e) => e.activityNumber === 18).bucket, 'PROJECT');
+  test('#18 Document Writing → COMMUNICATION (user reclassification 2026-04-22)', () => {
+    assert.equal(pipeline.find((e) => e.activityNumber === 18).bucket, 'COMMUNICATION');
   });
 
-  test('#19 Refining Program Plan → PROJECT', () => {
-    assert.equal(pipeline.find((e) => e.activityNumber === 19).bucket, 'PROJECT');
+  test('#19 Refining Program Plan → COMMUNICATION (user reclassification 2026-04-22)', () => {
+    assert.equal(pipeline.find((e) => e.activityNumber === 19).bucket, 'COMMUNICATION');
   });
 
   test('DMAIC #20–#41 all → PROJECT', () => {
@@ -87,8 +91,21 @@ describe('applyBucketMap — §H.1 approved table', () => {
     }
   });
 
-  test('ceremonies (pre-set buckets) are preserved', () => {
+  test('Daily Standup + Mid-Sprint Review stay in COMMUNICATION', () => {
     const standup = pipeline.find((e) => e.id === 'cer_daily_standup');
     assert.equal(standup.bucket, 'COMMUNICATION');
+    const mid = pipeline.find((e) => e.id === 'cer_mid_sprint_review');
+    assert.equal(mid.bucket, 'COMMUNICATION');
+  });
+
+  test('Quarterly + Sprint Planning + Review + Retro ceremonies are CI (user reclassification 2026-04-22)', () => {
+    for (const id of [
+      'cer_quarterly_planning',
+      'cer_sprint_planning',
+      'cer_sprint_review',
+      'cer_sprint_retrospective'
+    ]) {
+      assert.equal(pipeline.find((e) => e.id === id).bucket, 'CI', `${id} should be CI`);
+    }
   });
 });

@@ -16,26 +16,32 @@
  * Pure function; no I/O.
  */
 
-/** §H.1 — bucket by numbered-row activityNumber. */
+/** §H.1 — bucket by numbered-row activityNumber.
+ *
+ * 2026-04-22 user reclassification: ceremonies (Sprint Planning / Review /
+ * Retro + Quarterly Planning) and Innovation Process sub-phases (#7–#11)
+ * move to CI; Document Review (#4) and Team Introductions (#5) move to
+ * CI; Document Writing (#18) and Refining Program Plan (#19) move to
+ * COMMUNICATION. Daily Standup + Mid-Sprint Review stay COMMUNICATION. */
 const BUCKET_BY_NUMBER = Object.freeze({
   1: 'CI',
   2: 'CI',
   3: 'CI',
-  4: 'COMMUNICATION',
-  5: 'COMMUNICATION',
+  4: 'CI', // was COMMUNICATION — user reclassification 2026-04-22
+  5: 'CI', // was COMMUNICATION — user reclassification 2026-04-22
   6: 'CI',
-  7: 'PROJECT',
-  8: 'PROJECT',
-  9: 'PROJECT',
-  10: 'PROJECT',
-  11: 'PROJECT',
+  7: 'CI', // was PROJECT — Innovation sub-phase, user reclassification
+  8: 'CI', // was PROJECT — Innovation sub-phase, user reclassification
+  9: 'CI', // was PROJECT — Innovation sub-phase, user reclassification
+  10: 'CI', // was PROJECT — Innovation sub-phase, user reclassification
+  11: 'CI', // was PROJECT — Innovation sub-phase, user reclassification
   12: 'CI',
-  13: 'CI', // moved from COMMUNICATION per 2026-04-18
+  13: 'CI',
   14: 'COMMUNICATION',
   15: 'COMMUNICATION',
   16: 'COMMUNICATION',
-  18: 'PROJECT',
-  19: 'PROJECT'
+  18: 'COMMUNICATION', // was PROJECT — Document Writing is COMM-side work
+  19: 'COMMUNICATION'  // was PROJECT — Refining the Plan is COMM-side work
   // #20..#41 → PROJECT (applied by family fallback below)
   // #42..#50 → PROJECT (applied by family fallback below)
 });
@@ -55,8 +61,8 @@ function bucketByFamily(entry) {
     if (n >= 42 && n <= 50) return 'PROJECT';
   }
   if (entry.focusArea === 'DMAIC' || entry.focusArea === 'KAIZEN') return 'PROJECT';
-  if (entry.focusArea === 'CEREMONY') return 'COMMUNICATION';
-  if (entry.focusArea === 'INNOVATION') return 'PROJECT';
+  if (entry.focusArea === 'CEREMONY') return 'CI';
+  if (entry.focusArea === 'INNOVATION') return 'CI';
   if (entry.focusArea === 'COMMUNICATION') return 'COMMUNICATION';
   if (entry.focusArea === 'CONTINUOUS_IMPROVEMENT') return 'CI';
   if (entry.focusArea === 'DEEP_WORK') return 'PROJECT';
