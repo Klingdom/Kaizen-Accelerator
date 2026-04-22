@@ -373,11 +373,25 @@ html, body {
   padding: 6px 12px;
   border-radius: 4px;
   border: 1px solid var(--border-strong);
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
   font-weight: 500;
+  cursor: pointer;
+}
+
+.sa-start:hover {
+  filter: brightness(1.15);
+}
+
+.sa-start:active {
+  transform: translateY(1px);
+}
+
+.sa-start[disabled] {
   cursor: not-allowed;
   opacity: 0.55;
+  background: var(--bg);
+  color: var(--fg);
 }
 
 .carried-badge {
