@@ -37,18 +37,26 @@ async function loadFromNodePipeline() {
 }
 
 /**
- * Load the JSON blob, if present, for browser consumption. Returns null
- * if the import fails (e.g. file not yet generated).
+ * Load the JSON blob via fetch for browser consumption. Returns null if
+ * the fetch fails (file not present, 404, network error).
+ *
+ * Why fetch and not `import(... { with: { type: 'json' } })`: import
+ * attributes require a recent browser (Chrome 123+, Firefox 127+, Safari
+ * 17.2+). When the import throws on older engines, the catch block
+ * silently falls back to the 9-entry BROWSER_CATALOG stub and the user
+ * sees a gutted Catalog page. Fetch works in every modern browser and
+ * gives us an explicit status code to check.
  *
  * @returns {Promise<Array<object> | null>}
  */
 async function loadFromJsonImport() {
   try {
-    // Note: import attributes may not be universally supported in tests yet.
-    // We wrap in dynamic import + a try so the module degrades gracefully.
     /* istanbul ignore next — browser / bundled only */
-    const mod = await import('./seed/fullCatalog.json', { with: { type: 'json' } });
-    return mod.default ?? mod;
+    const url = new URL('./seed/fullCatalog.json', import.meta.url);
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : null;
   } catch {
     return null;
   }
