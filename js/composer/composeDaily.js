@@ -640,8 +640,12 @@ export function composeDaily(input) {
     id: compositionId,
     userId: input.userId,
     cycleType: 'DAILY',
-    startAt: `${input.date}T00:00:00`,
-    endAt: `${input.date}T23:59:59`,
+    // v0.6 bug-fix (Sprint 6 P1-T3): force UTC suffix so downstream code
+    // that parses `startAt` as a Date doesn't flip the anchor across
+    // timezones. ActivityService._deriveRefDate() retains a defensive
+    // fallback for legacy rows.
+    startAt: `${input.date}T00:00:00Z`,
+    endAt: `${input.date}T23:59:59Z`,
     parentCompositionId: null,
     state: 'PROPOSED',
     proposedAt: input._now ?? new Date().toISOString(),

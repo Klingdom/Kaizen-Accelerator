@@ -179,7 +179,19 @@ export class ComposerService {
     const priorActs = this._repo.read(ACTIVITIES_KEY) ?? {};
 
     const nextComps = { ...priorComps };
-    const nextActs = { ...priorActs };
+    let nextActs = { ...priorActs };
+
+    // Sprint 6 P1-T3: if a Composition with this id already exists (Fine-tune
+    // re-compose case), delete every ScheduledActivity row that belonged to
+    // it before writing the new children. Prevents duplicate rows when the
+    // user re-composes with a different capacity.
+    if (priorComps[composition.id]) {
+      nextActs = Object.fromEntries(
+        Object.entries(nextActs).filter(
+          ([, a]) => !a || a.compositionId !== composition.id
+        )
+      );
+    }
 
     // Store the Composition WITHOUT the embedded activities array (children
     // live in bamx:v1:activities) so there's no duplication.

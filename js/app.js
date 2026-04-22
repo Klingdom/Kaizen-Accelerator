@@ -27,6 +27,9 @@ import { CatalogService, CATALOG_KEY } from './services/CatalogService.js';
 import { ComposerService } from './services/ComposerService.js';
 import { VarianceService } from './services/VarianceService.js';
 import { ActivityService } from './services/ActivityService.js';
+import { ReflectionService } from './services/ReflectionService.js';
+import { FrictionService } from './services/FrictionService.js';
+import { KaizenService } from './services/KaizenService.js';
 import { ensureUser } from './services/SmartDefaults.js';
 import {
   CycleProposed,
@@ -35,13 +38,20 @@ import {
   ComposerInfeasible,
   ActivityStarted,
   ActivityCompleted,
-  VarianceLogged
+  VarianceLogged,
+  ReflectionStubbed,
+  ReflectionCaptured,
+  FrictionSignalCaptured,
+  KaizenPromoted,
+  KaizenBaselineLocked
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { AppShell } from './ui/AppShell.js';
 import { Today } from './ui/pages/Today.js';
+import { Kaizen as KaizenPage } from './ui/pages/Kaizen.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
+import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
 import {
   mountHtml,
   attachRootClickListener
@@ -114,6 +124,13 @@ export function buildServices(deps = {}) {
     composerService
   });
 
+  // Sprint 6 — reflection loop + kaizen services.
+  const frictionService = new FrictionService({ repo, bus, clock });
+  const reflectionService = new ReflectionService({ repo, bus, clock });
+  reflectionService.setFrictionService(frictionService);
+  const kaizenService = new KaizenService({ repo, bus, clock });
+  kaizenService.setFrictionService(frictionService);
+
   // Ensure a User row exists with smart defaults (Sprint 5 P0-T2).
   ensureUser({
     repo,
@@ -130,7 +147,10 @@ export function buildServices(deps = {}) {
     catalogService,
     composerService,
     varianceService,
-    activityService
+    activityService,
+    reflectionService,
+    frictionService,
+    kaizenService
   };
 }
 
@@ -217,7 +237,11 @@ function createState() {
       _snapshotBeforeChange: null
     },
     // Sprint 5: open dialog state (CLOSE artifact modal OR SKIP reason modal).
-    openDialog: null
+    openDialog: null,
+    // Sprint 6: reflection sheet (opens on ActivityCompleted).
+    reflectionSheet: null,
+    // Sprint 6: weekly reflection wizard state.
+    wizard: null
   };
 }
 
@@ -229,7 +253,7 @@ function createState() {
  * @param {object} state
  */
 export function renderApp(services, state) {
-  const { composerService } = services;
+  const { composerService, kaizenService, frictionService } = services;
   let pageHtml;
 
   if (state.route === 'today') {
@@ -238,7 +262,7 @@ export function renderApp(services, state) {
       DEFAULT_USER.createdAt,
       services.clock.now()
     );
-    pageHtml = Today({
+    const todayHtml = Today({
       activeState,
       loading: state.composerLoading,
       isFirstRun: activeState === null && daysSinceSignup <= 1,
@@ -252,6 +276,31 @@ export function renderApp(services, state) {
       nowIso: services.clock.now(),
       fineTune: state.fineTune,
       openDialog: state.openDialog
+    });
+    const reflectionSheetHtml = state.reflectionSheet
+      ? ReflectionSheet(state.reflectionSheet)
+      : '';
+    pageHtml = `${todayHtml}${reflectionSheetHtml}`;
+  } else if (state.route === 'kaizen' && kaizenService && frictionService) {
+    const userId = DEFAULT_USER.id;
+    const active =
+      kaizenService.listByState(userId, 'ACTIVE')[0] ??
+      kaizenService.listByState(userId, 'IN_REMEASUREMENT')[0] ??
+      null;
+    const drafts = kaizenService.listByState(userId, 'DRAFT');
+    const baseline = active
+      ? kaizenService.getBaselineForKaizen(active.id)
+      : null;
+    const openFrictionSignals = frictionService.list({
+      userId,
+      status: 'OPEN'
+    });
+    pageHtml = KaizenPage({
+      activeKaizen: active,
+      draftKaizens: drafts,
+      baseline,
+      openFrictionSignals,
+      wizardState: state.wizard
     });
   } else {
     pageHtml = PlaceholderPage({ route: state.route });
@@ -516,6 +565,224 @@ export function buildHandlers(scope) {
         externalMinutesToday: ft.externalMinutesToday ?? 0,
         activeKaizenId: ft.activeKaizenId ?? undefined
       });
+    },
+
+    // ---- Sprint 6: Reflection loop ------------------------------------------
+
+    SUBMIT_REFLECTION(payload, ctx) {
+      if (!payload || !payload.reflectionId) return;
+      const fields = extractFormFields(ctx?.element);
+      try {
+        services.reflectionService.capture(payload.reflectionId, {
+          whatWentWell: fields.whatWentWell ?? null,
+          whatToImprove: fields.whatToImprove ?? null,
+          frictionFlag: Boolean(fields.frictionFlag),
+          frictionTag: fields.frictionTag ?? null,
+          frictionSummary: fields.frictionSummary ?? null,
+          userId: DEFAULT_USER.id
+        });
+        state.reflectionSheet = null;
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    SKIP_REFLECTION(_payload) {
+      state.reflectionSheet = null;
+      rerender();
+    },
+
+    CLOSE_REFLECTION(_payload) {
+      state.reflectionSheet = null;
+      rerender();
+    },
+
+    TOGGLE_FRICTION(_payload, ctx) {
+      if (!state.reflectionSheet) return;
+      const el = ctx?.element;
+      // If the change originated from a checkbox, use its checked state;
+      // otherwise toggle.
+      if (el && typeof el.checked === 'boolean') {
+        state.reflectionSheet.frictionChecked = el.checked;
+      } else {
+        state.reflectionSheet.frictionChecked = !state.reflectionSheet.frictionChecked;
+      }
+      rerender();
+    },
+
+    // ---- Sprint 6: Kaizen + Weekly Reflection wizard -----------------------
+
+    WRW_OPEN(_payload) {
+      const clusters = services.frictionService.clusterByTag(DEFAULT_USER.id, 7);
+      state.wizard = {
+        step: 1,
+        clusters,
+        selectedTag: clusters[0]?.tag ?? null,
+        title: '',
+        problemStatement: '',
+        goalStatement: '',
+        errorName: null
+      };
+      rerender();
+    },
+
+    WRW_CLOSE(_payload) {
+      state.wizard = null;
+      rerender();
+    },
+
+    WRW_BACK(_payload) {
+      if (!state.wizard) return;
+      state.wizard.step = Math.max(1, state.wizard.step - 1);
+      rerender();
+    },
+
+    WRW_NEXT(payload, ctx) {
+      if (!state.wizard) return;
+      // If the next action comes from the step-3 form, grab field values.
+      const fields = ctx?.element ? extractFormFields(ctx.element) : {};
+      if (state.wizard.step === 3) {
+        if (typeof fields.title === 'string') state.wizard.title = fields.title;
+        if (typeof fields.problemStatement === 'string')
+          state.wizard.problemStatement = fields.problemStatement;
+        if (typeof fields.goalStatement === 'string')
+          state.wizard.goalStatement = fields.goalStatement;
+      }
+      state.wizard.step = Math.min(4, state.wizard.step + 1);
+      rerender();
+    },
+
+    WRW_PICK_CLUSTER(payload) {
+      if (!state.wizard) return;
+      if (typeof payload?.tag === 'string') {
+        state.wizard.selectedTag = payload.tag;
+      }
+      rerender();
+    },
+
+    WRW_SUBMIT(_payload) {
+      if (!state.wizard) return;
+      const cluster = (state.wizard.clusters ?? []).find(
+        (c) => c.tag === state.wizard.selectedTag
+      ) ?? state.wizard.clusters?.[0];
+      if (!cluster) {
+        state.wizard.errorName = 'NO_CLUSTER_SELECTED';
+        rerender();
+        return;
+      }
+      try {
+        services.kaizenService.promote({
+          userId: DEFAULT_USER.id,
+          fromFrictionClusterSignalIds: cluster.signalIds,
+          problemStatement: state.wizard.problemStatement,
+          title: state.wizard.title,
+          goalStatement: state.wizard.goalStatement ?? ''
+        });
+        state.wizard = null;
+        // Navigate to #kaizen to see the new DRAFT.
+        if (typeof globalThis.location !== 'undefined') {
+          globalThis.location.hash = '#kaizen';
+        }
+      } catch (err) {
+        state.wizard.errorName = err.name ?? 'PROMOTE_FAILED';
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_SET_GOAL(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      try {
+        services.kaizenService.setGoalStatement(
+          payload.kaizenId,
+          fields.goalStatement ?? ''
+        );
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_ADD_ACTION(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      try {
+        services.kaizenService.addAction(payload.kaizenId, {
+          name: fields.name ?? '',
+          ownerRef: fields.ownerRef ?? '',
+          dueDate: fields.dueDate ?? ''
+        });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_REMOVE_ACTION(payload) {
+      if (!payload || !payload.kaizenId || typeof payload.index !== 'number') return;
+      try {
+        services.kaizenService.removeAction(payload.kaizenId, payload.index);
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_MARK_ACTION_DONE(payload) {
+      if (!payload || !payload.kaizenId || typeof payload.index !== 'number') return;
+      try {
+        services.kaizenService.markActionDone(payload.kaizenId, payload.index);
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_LOCK_BASELINE(payload) {
+      if (!payload || !payload.kaizenId) return;
+      // MVP: collect a minimal baseline via prompt-driven flow if no dialog
+      // is open; Sprint 7 will ship a full BaselineDialog component.
+      if (typeof globalThis.prompt !== 'function') {
+        state.lastError = new Error(
+          'Baseline lock requires a prompt surface; Sprint 7 ships the dialog.'
+        );
+        rerender();
+        return;
+      }
+      try {
+        const metricName = globalThis.prompt('Metric name', 'Adherence') ?? '';
+        const unit = globalThis.prompt('Unit', '%') ?? '';
+        const method = globalThis.prompt('Measurement method', 'Manual count') ?? '';
+        const operationalDefinition =
+          globalThis.prompt('Operational definition', 'How exactly do we measure?') ?? '';
+        const valueRaw = globalThis.prompt('Value', '0') ?? '0';
+        const sampleRaw = globalThis.prompt('Sample size', '10') ?? '10';
+        services.kaizenService.lockBaseline(payload.kaizenId, {
+          metricName,
+          unit,
+          operationalDefinition,
+          sampleSize: Number(sampleRaw),
+          method,
+          value: Number(valueRaw)
+        });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_START_REMEASUREMENT(_payload) {
+      if (typeof globalThis.alert === 'function') {
+        globalThis.alert('Remeasurement capture ships in Sprint 7.');
+      }
+    },
+
+    KAIZEN_ABANDON(_payload) {
+      if (typeof globalThis.alert === 'function') {
+        globalThis.alert('Abandon ships in Sprint 7.');
+      }
     }
   };
 }
@@ -567,10 +834,21 @@ export function start() {
   services.bus.subscribe(CycleRejected, () => {});
   services.bus.subscribe(ComposerInfeasible, () => {});
   services.bus.subscribe(ActivityStarted, () => {});
-  services.bus.subscribe(ActivityCompleted, () => {});
   services.bus.subscribe(VarianceLogged, () => {});
+  services.bus.subscribe(ReflectionStubbed, () => {});
+  services.bus.subscribe(ReflectionCaptured, () => {});
+  services.bus.subscribe(FrictionSignalCaptured, () => {});
+  services.bus.subscribe(KaizenPromoted, () => {});
+  services.bus.subscribe(KaizenBaselineLocked, () => {});
 
   const rerender = () => renderApp(services, state);
+
+  // Sprint 6 P0-T4: bridge ActivityCompleted → ReflectionService.stubOnClose,
+  // then surface the ReflectionSheet. Keeps the service graph acyclic.
+  services.bus.subscribe(ActivityCompleted, (payload) => {
+    handleActivityCompleted(services, state, payload);
+    rerender();
+  });
 
   const listener = createRouteListener((parsed) => {
     state.route = parsed.route;
@@ -582,6 +860,59 @@ export function start() {
   globalThis.addEventListener('hashchange', listener);
 
   attachRootClickListener(APP_ROOT_ID, buildHandlers({ services, state, rerender }));
+}
+
+/**
+ * ActivityCompleted subscriber — stubs a Reflection and opens the
+ * ReflectionSheet modal. Exported for tests.
+ *
+ * @param {object} services
+ * @param {object} state
+ * @param {{scheduledActivityId: string, compositionId?: string, actualEndAt?: string}} payload
+ */
+export function handleActivityCompleted(services, state, payload) {
+  if (!payload || !payload.scheduledActivityId) return;
+  const acts = services.repo.read('bamx:v1:activities') ?? {};
+  const sa = acts[payload.scheduledActivityId];
+  if (!sa) return;
+  // Idempotent: if a Reflection already exists for this activity, just
+  // open the sheet. Otherwise stub one.
+  let reflection =
+    services.reflectionService.getByScheduledActivityId(sa.id);
+  if (!reflection) {
+    try {
+      const enrichedSa = {
+        ...sa,
+        userId:
+          typeof sa.userId === 'string' && sa.userId.length > 0
+            ? sa.userId
+            : DEFAULT_USER.id
+      };
+      reflection = services.reflectionService.stubOnClose(enrichedSa);
+    } catch (err) {
+      if (err && err.name !== 'REFLECTION_ALREADY_EXISTS') {
+        state.lastError = err;
+        return;
+      }
+      reflection = services.reflectionService.getByScheduledActivityId(sa.id);
+    }
+  }
+  if (!reflection || reflection.pending === false) return;
+  // Resolve the catalog entry for display name + non-optional gating.
+  const catalog = services.catalogService.list(DEFAULT_USER.id);
+  const entry =
+    (catalog ?? []).find((c) => c && c.id === sa.catalogEntryId) ?? null;
+  state.reflectionSheet = {
+    reflectionId: reflection.id,
+    activityId: sa.id,
+    activityName: entry?.name ?? sa.name ?? sa.id,
+    plannedDurationMinutes: sa.plannedDurationMinutes ?? 0,
+    planVsActualMinutes: reflection.planVsActualMinutes ?? 0,
+    actualDurationMinutes:
+      (sa.plannedDurationMinutes ?? 0) + (reflection.planVsActualMinutes ?? 0),
+    isNonOptional: entry?.isNonOptional === true,
+    frictionChecked: false
+  };
 }
 
 // Auto-start when loaded as the page script (not when imported by tests).
@@ -607,6 +938,7 @@ export default {
   buildHandlers,
   computeDaysSinceSignup,
   extractFormFields,
+  handleActivityCompleted,
   start,
   DEFAULT_USER,
   APP_ROOT_ID,
