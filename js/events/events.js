@@ -80,6 +80,17 @@ export const OpportunityRejected = 'OpportunityRejected';
 export const WeeklyCycleProposed = 'WeeklyCycleProposed';
 export const WeeklyCycleAccepted = 'WeeklyCycleAccepted';
 
+// --- Sprint 10b Pass B: Kaizen step actions ----------------------------------
+// Fired by KaizenService.
+// Payload shapes:
+//   KaizenStepCompleted — {id, kaizenId, userId, catalogEntryId, completedAt,
+//                          sourceKind: 'portfolio'|'scheduled-activity',
+//                          sourceId: string|null}
+//   KaizenStepScheduled — {kaizenId, userId, catalogEntryId, targetDate,
+//                          scheduledActivityId, scheduledAt}
+export const KaizenStepCompleted = 'KaizenStepCompleted';
+export const KaizenStepScheduled = 'KaizenStepScheduled';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -117,7 +128,9 @@ export const EVENT_NAMES = Object.freeze([
   OpportunityDeferred,
   OpportunityRejected,
   WeeklyCycleProposed,
-  WeeklyCycleAccepted
+  WeeklyCycleAccepted,
+  KaizenStepCompleted,
+  KaizenStepScheduled
 ]);
 
 /**
@@ -157,5 +170,7 @@ export default Object.freeze({
   OpportunityRejected,
   WeeklyCycleProposed,
   WeeklyCycleAccepted,
+  KaizenStepCompleted,
+  KaizenStepScheduled,
   EVENT_NAMES
 });

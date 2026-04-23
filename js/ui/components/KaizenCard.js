@@ -32,7 +32,7 @@
 
 import { esc } from '../mount.js';
 import { KaizenState } from '../../domain/types.js';
-import { getCurrentNext } from '../../catalog/progression.js';
+import { getCurrentNext, filterCatalogByProjectType } from '../../catalog/progression.js';
 
 const CLOSE_KIND_LABEL = Object.freeze({
   SUCCESS: 'SUCCESS',
@@ -75,7 +75,9 @@ export function renderCurrentStandardWorkChip(kaizen, catalog, completedIds) {
  *   sourceFrictionSignalCount?: number,
  *   abandonFormOpen?: boolean,
  *   catalog?: object[],
- *   completedCatalogIds?: string[]|Set<string>
+ *   completedCatalogIds?: string[]|Set<string>,
+ *   completedStepTimestamps?: Record<string, string>,
+ *   isExpanded?: boolean
  * }} props
  * @returns {string}
  */
@@ -99,6 +101,142 @@ export function KaizenCard(props = {}) {
     default:
       return renderStub(kaizen);
   }
+}
+
+/**
+ * Render the Sprint 10b "Open" / "Collapse" button used to toggle the
+ * expanded step-list view on Portfolio project cards. Emits
+ * PORTFOLIO_TOGGLE_KAIZEN with `{kaizenId}`.
+ *
+ * @param {object} kaizen
+ * @param {boolean} isExpanded
+ * @returns {string}
+ */
+function renderToggleOpenButton(kaizen, isExpanded) {
+  const payload = esc(JSON.stringify({ kaizenId: kaizen.id }));
+  const label = isExpanded ? 'Collapse' : 'Open';
+  return `<button type="button" class="kz-toggle-open" data-action="PORTFOLIO_TOGGLE_KAIZEN" data-payload='${payload}'>${esc(label)}</button>`;
+}
+
+/**
+ * Render the expanded standard-work step list for a Kaizen. Sprint 10b
+ * Pass A. For each step renders:
+ *   - step-number badge (activityNumber or ordinal)
+ *   - step name
+ *   - status pill (done / current / next / pending)
+ *   - action buttons by status
+ *
+ * @param {object} kaizen
+ * @param {object[]} catalog
+ * @param {string[]|Set<string>} completedCatalogIds
+ * @param {Record<string, string>} completedStepTimestamps
+ * @returns {string}
+ */
+export function renderStepList(kaizen, catalog, completedCatalogIds, completedStepTimestamps) {
+  if (!kaizen || !kaizen.projectType) {
+    return `<section class="kz-step-list kz-step-list-empty">
+      <p class="kz-step-empty">No standard work available for this project.</p>
+    </section>`;
+  }
+  if (!Array.isArray(catalog) || catalog.length === 0) {
+    return `<section class="kz-step-list kz-step-list-empty">
+      <p class="kz-step-empty">No catalog available.</p>
+    </section>`;
+  }
+  const steps = filterCatalogByProjectType(kaizen.projectType, catalog);
+  if (steps.length === 0) {
+    return `<section class="kz-step-list kz-step-list-empty">
+      <p class="kz-step-empty">No standard work available for this project.</p>
+    </section>`;
+  }
+  const completedSet =
+    completedCatalogIds instanceof Set
+      ? completedCatalogIds
+      : new Set(Array.isArray(completedCatalogIds) ? completedCatalogIds : []);
+  const cn = getCurrentNext(kaizen.projectType, completedSet, catalog);
+  const timestamps =
+    completedStepTimestamps && typeof completedStepTimestamps === 'object'
+      ? completedStepTimestamps
+      : {};
+
+  const rows = steps
+    .map((step, i) => {
+      const status = stepStatus(step, cn, completedSet);
+      return renderStepRow(kaizen, step, i, status, timestamps);
+    })
+    .join('\n');
+
+  return `<section class="kz-step-list" data-kaizen-id="${esc(kaizen.id)}">
+    <h3 class="kz-sub">Standard work (${esc(String(steps.length))} steps)</h3>
+    <ol class="kz-step-rows">${rows}</ol>
+  </section>`;
+}
+
+/**
+ * Compute the status pill for a step.
+ *
+ * @param {object} step
+ * @param {{current: object|null, next: object|null}} cn
+ * @param {Set<string>} completedSet
+ * @returns {'done'|'current'|'next'|'pending'}
+ */
+function stepStatus(step, cn, completedSet) {
+  if (completedSet.has(step.id)) return 'done';
+  if (cn.current && step.id === cn.current.id) return 'current';
+  if (cn.next && step.id === cn.next.id) return 'next';
+  return 'pending';
+}
+
+/**
+ * Render a single row inside the expanded step list.
+ *
+ * @param {object} kaizen
+ * @param {object} step
+ * @param {number} idx
+ * @param {'done'|'current'|'next'|'pending'} status
+ * @param {Record<string, string>} timestamps
+ * @returns {string}
+ */
+function renderStepRow(kaizen, step, idx, status, timestamps) {
+  const payload = esc(JSON.stringify({ kaizenId: kaizen.id, catalogEntryId: step.id }));
+  const numBadge =
+    typeof step.activityNumber === 'number'
+      ? `#${step.activityNumber}`
+      : `${idx + 1}`;
+  const pillLabelMap = { done: 'Done', current: 'Current', next: 'Next', pending: 'Pending' };
+  const pill = `<span class="kz-step-pill kz-step-pill-${esc(status)}">${esc(pillLabelMap[status])}</span>`;
+  const ts = timestamps[step.id];
+  const tsHtml = status === 'done' && ts
+    ? `<span class="kz-step-ts">${esc(ts)}</span>`
+    : '';
+
+  let actionsHtml = '';
+  if (status === 'current') {
+    actionsHtml = `<div class="kz-step-actions">
+      <button type="button" class="kz-step-complete" data-action="KAIZEN_COMPLETE_STEP" data-payload='${payload}'>Complete</button>
+      <button type="button" class="kz-step-schedule-today" data-action="KAIZEN_SCHEDULE_STEP_TODAY" data-payload='${payload}'>Schedule today</button>
+      <button type="button" class="kz-step-schedule-week" data-action="KAIZEN_SCHEDULE_STEP_WEEK" data-payload='${payload}'>Schedule this week</button>
+    </div>`;
+  } else if (status === 'next') {
+    actionsHtml = `<div class="kz-step-actions">
+      <button type="button" class="kz-step-complete" disabled aria-disabled="true" title="Deps not met.">Complete</button>
+      <button type="button" class="kz-step-schedule-today" data-action="KAIZEN_SCHEDULE_STEP_TODAY" data-payload='${payload}'>Schedule today</button>
+      <button type="button" class="kz-step-schedule-week" data-action="KAIZEN_SCHEDULE_STEP_WEEK" data-payload='${payload}'>Schedule this week</button>
+    </div>`;
+  } else if (status === 'pending') {
+    actionsHtml = `<div class="kz-step-actions">
+      <button type="button" class="kz-step-schedule-week" data-action="KAIZEN_SCHEDULE_STEP_WEEK" data-payload='${payload}'>Schedule this week</button>
+    </div>`;
+  }
+  // `done` has no action buttons.
+
+  return `<li class="kz-step-row kz-step-row-${esc(status)}" data-catalog-entry-id="${esc(step.id)}" data-step-status="${esc(status)}">
+    <span class="kz-step-num">${esc(numBadge)}</span>
+    <span class="kz-step-name">${esc(step.name ?? '')}</span>
+    ${pill}
+    ${tsHtml}
+    ${actionsHtml}
+  </li>`;
 }
 
 /**
@@ -170,16 +308,26 @@ function renderActive(k, props) {
   const actionsTotal = (k.actions ?? []).length;
   const readyToRemeasure =
     actionsTotal > 0 && actionsDone === actionsTotal;
+  const isExpanded = props.isExpanded === true;
 
   const baselineHtml = renderBaselineDl(baseline);
   const readyBadge = readyToRemeasure
     ? `<p class="kz-ready">Ready to remeasure · <button type="button" class="kz-start-remeasure" data-action="KAIZEN_START_REMEASUREMENT" data-payload='${payload}'>Start remeasurement</button></p>`
     : '';
 
-  return `<section class="kz-card kz-card-active" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}">
+  const stepListHtml = isExpanded
+    ? renderStepList(k, props.catalog ?? [], props.completedCatalogIds ?? [], props.completedStepTimestamps ?? {})
+    : '';
+  const collapseFooter = isExpanded
+    ? `<footer class="kz-expanded-footer">${renderToggleOpenButton(k, true)}</footer>`
+    : '';
+  const expandedAttr = isExpanded ? ' data-expanded="true"' : '';
+
+  return `<section class="kz-card kz-card-active" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}"${expandedAttr}>
   <header class="kz-header">
     <span class="kz-badge kz-badge-active">ACTIVE</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
+    ${renderToggleOpenButton(k, isExpanded)}
   </header>
   ${renderCurrentStandardWorkChip(k, props.catalog, props.completedCatalogIds)}
   <section class="kz-problem">
@@ -196,6 +344,8 @@ function renderActive(k, props) {
   </section>
   ${renderActionsSection(k, payload, /* active= */ true)}
   ${readyBadge}
+  ${stepListHtml}
+  ${collapseFooter}
 </section>`;
 }
 
@@ -208,6 +358,7 @@ function renderInRemeasurement(k, props) {
   const payload = esc(JSON.stringify({ kaizenId: k.id }));
   const baseline = props.baseline ?? null;
   const remeasurement = props.remeasurement ?? null;
+  const isExpanded = props.isExpanded === true;
 
   const baselineHtml = renderBaselineDl(baseline);
   const remHtml = remeasurement
@@ -218,10 +369,19 @@ function renderInRemeasurement(k, props) {
     ? `<button type="button" class="kz-close-kaizen" data-action="KAIZEN_OPEN_CLOSE_DIALOG" data-payload='${payload}'>Close Kaizen</button>`
     : '';
 
-  return `<section class="kz-card kz-card-in-remeasurement" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}">
+  const stepListHtml = isExpanded
+    ? renderStepList(k, props.catalog ?? [], props.completedCatalogIds ?? [], props.completedStepTimestamps ?? {})
+    : '';
+  const collapseFooter = isExpanded
+    ? `<footer class="kz-expanded-footer">${renderToggleOpenButton(k, true)}</footer>`
+    : '';
+  const expandedAttr = isExpanded ? ' data-expanded="true"' : '';
+
+  return `<section class="kz-card kz-card-in-remeasurement" data-kaizen-id="${esc(k.id)}" data-state="${esc(k.state)}"${expandedAttr}>
   <header class="kz-header">
     <span class="kz-badge kz-badge-in-remeasurement">IN REMEASUREMENT</span>
     <h2 class="kz-title">${esc(k.title || 'Untitled Kaizen')}</h2>
+    ${renderToggleOpenButton(k, isExpanded)}
   </header>
   ${renderCurrentStandardWorkChip(k, props.catalog, props.completedCatalogIds)}
   <section class="kz-problem">
@@ -244,6 +404,8 @@ function renderInRemeasurement(k, props) {
     ${closeBtn}
     <button type="button" class="kz-back-to-active" disabled aria-disabled="true" title="Back to ACTIVE ships in a later sprint">Back to ACTIVE</button>
   </footer>
+  ${stepListHtml}
+  ${collapseFooter}
 </section>`;
 }
 

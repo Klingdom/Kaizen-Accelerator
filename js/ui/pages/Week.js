@@ -1,15 +1,19 @@
 /**
- * Week page (Sprint 9 Pass 9c).
+ * Week page (Sprint 9 Pass 9c + Sprint 10b Pass C).
  *
  * Renders the weekly composer surface:
  *   - Header with the Mon..Fri range + "Plan this week" primary action.
  *   - Empty state if no WeeklyComposition exists.
  *   - 5-column grid (Mon..Fri). Each column:
  *       - day header (weekday short + ISO date)
- *       - per-bucket planned minutes
+ *       - total planned minutes
+ *       - tight BucketStrip (PROJECT/COMMUNICATION/CI chips)
  *       - DayPreview list of activities
  *       - per-day "Accept" button
  *   - Footer with "Accept all 5 days" primary action.
+ *
+ * Sprint 10b Pass C simplifies the header (one primary "Plan this week"
+ * action) and swaps the per-day dl for a compact total + BucketStrip.
  *
  * Pure function — takes props, returns an HTML string.
  */
@@ -116,6 +120,8 @@ export function DayPreview(props = {}) {
   const activities = Array.isArray(day.activities) ? day.activities : [];
   const items = activities.map((a) => renderActivity(a)).join('\n');
   const pb = day.plannedByBucket ?? { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
+  const totalMinutes =
+    (pb.PROJECT ?? 0) + (pb.COMMUNICATION ?? 0) + (pb.CI ?? 0);
   const state = day.state ?? 'PROPOSED';
   const acceptPayload = esc(
     JSON.stringify({
@@ -131,6 +137,7 @@ export function DayPreview(props = {}) {
     <header class="wk-day-header">
       <span class="wk-day-label">${esc(WEEKDAY_SHORT[dayIdx] ?? '')}</span>
       <span class="wk-day-date">${esc(day.date ?? '')}</span>
+      <span class="wk-day-total" aria-label="total minutes">${esc(String(totalMinutes))}m</span>
     </header>
     <dl class="wk-day-totals">
       <dt>Project</dt><dd>${esc(String(pb.PROJECT))}m</dd>
@@ -201,7 +208,7 @@ export function Week(props = {}) {
         <p class="wk-range">${esc(range)}</p>
       </div>
       <div class="wk-header-actions">
-        <button type="button" class="wk-propose wk-propose-secondary" data-action="WEEK_PROPOSE" data-payload='${proposePayload}'>Re-plan</button>
+        <button type="button" class="wk-propose wk-propose-primary" data-action="WEEK_PROPOSE" data-payload='${proposePayload}'>${esc(WEEK_COPY.PROPOSE)}</button>
       </div>
     </header>
     <section class="wk-grid" role="list" aria-label="Week days">

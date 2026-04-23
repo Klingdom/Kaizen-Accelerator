@@ -55,7 +55,9 @@ import {
   OpportunityDeferred,
   OpportunityRejected,
   WeeklyCycleProposed,
-  WeeklyCycleAccepted
+  WeeklyCycleAccepted,
+  KaizenStepCompleted,
+  KaizenStepScheduled
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { AppShell } from './ui/AppShell.js';
@@ -154,6 +156,10 @@ export function buildServices(deps = {}) {
   reflectionService.setFrictionService(frictionService);
   const kaizenService = new KaizenService({ repo, bus, clock });
   kaizenService.setFrictionService(frictionService);
+  // Sprint 10b Pass B — step methods need the catalog.
+  kaizenService.setCatalogService({
+    list: () => catalogService.list(DEFAULT_USER.id)
+  });
 
   // Sprint 7 — Opportunity intake service.
   const opportunityService = new OpportunityService({
@@ -300,7 +306,9 @@ function createState() {
     baselineDialog: null,          // { kaizenId, fields..., errorName?, errorMessage? }
     remeasurementDialog: null,     // { kaizenId, currentValue, evidenceSchema, evidenceValue, errorName? }
     closeKaizenDialog: null,       // { kaizenId, lessonsLearned, errorName? }
-    kaizenAbandonForm: null        // { kaizenId } — when truthy, inline abandon form open
+    kaizenAbandonForm: null,       // { kaizenId } — when truthy, inline abandon form open
+    // Sprint 10b Pass B — Portfolio expand/collapse for projects.
+    expandedKaizenId: null
   };
 }
 
@@ -397,12 +405,18 @@ export function renderApp(services, state) {
       includeTerminal: true
     });
     const catalogEntries = catalogService ? catalogService.list(userId) : [];
+    const completedStepsByKaizenId =
+      typeof kaizenService.getCompletedStepsByKaizenId === 'function'
+        ? kaizenService.getCompletedStepsByKaizenId()
+        : {};
     pageHtml = Portfolio({
       activeKaizens,
       closedKaizens,
       remeasurementsByKaizenId,
       opportunities,
       catalogEntries,
+      completedStepsByKaizenId,
+      expandedKaizenId: state.expandedKaizenId ?? null,
       nowIso: services.clock.now(),
       intakeForm: state.portfolio?.intakeForm ?? null,
       expandedOpportunityId: state.portfolio?.expandedOpportunityId ?? null,
@@ -1337,6 +1351,65 @@ export function buildHandlers(scope) {
         state.lastError = err;
       }
       rerender();
+    },
+
+    // ---- Sprint 10b Pass B: Portfolio project expand + step actions ----
+
+    PORTFOLIO_TOGGLE_KAIZEN(payload) {
+      if (!payload || typeof payload.kaizenId !== 'string') return;
+      if (state.expandedKaizenId === payload.kaizenId) {
+        state.expandedKaizenId = null;
+      } else {
+        state.expandedKaizenId = payload.kaizenId;
+      }
+      rerender();
+    },
+
+    KAIZEN_COMPLETE_STEP(payload) {
+      if (!payload || !payload.kaizenId || !payload.catalogEntryId) return;
+      try {
+        services.kaizenService.completeStep({
+          kaizenId: payload.kaizenId,
+          catalogEntryId: payload.catalogEntryId,
+          userId: DEFAULT_USER.id,
+          sourceKind: 'portfolio'
+        });
+      } catch (err) {
+        state.lastError = err;
+        // Best-effort inline toast — fall back to console.warn if no global
+        // alert exists (tests). Avoids blocking the render path.
+        if (err && err.name === 'STEP_NOT_CURRENT') {
+          // eslint-disable-next-line no-console
+          console.warn('Complete next step first.', { kaizenId: payload.kaizenId });
+        }
+      }
+      rerender();
+    },
+
+    KAIZEN_SCHEDULE_STEP_TODAY(payload) {
+      if (!payload || !payload.kaizenId || !payload.catalogEntryId) return;
+      const todayIso = services.clock.now().slice(0, 10);
+      try {
+        services.kaizenService.scheduleStep({
+          kaizenId: payload.kaizenId,
+          catalogEntryId: payload.catalogEntryId,
+          targetDate: todayIso,
+          userId: DEFAULT_USER.id
+        });
+      } catch (err) {
+        state.lastError = err;
+      }
+      rerender();
+    },
+
+    KAIZEN_SCHEDULE_STEP_WEEK(payload) {
+      if (!payload || !payload.kaizenId || !payload.catalogEntryId) return;
+      // MVP: navigate to /#week; the user runs Plan this week to surface
+      // the step on Monday of the current week. See SPRINT_10B_NOTES.md.
+      if (typeof globalThis.location !== 'undefined') {
+        globalThis.location.hash = '#week';
+      }
+      rerender();
     }
   };
 }
@@ -1415,6 +1488,8 @@ export function start() {
   services.bus.subscribe(OpportunityRejected, () => {});
   services.bus.subscribe(WeeklyCycleProposed, () => {});
   services.bus.subscribe(WeeklyCycleAccepted, () => {});
+  services.bus.subscribe(KaizenStepCompleted, () => {});
+  services.bus.subscribe(KaizenStepScheduled, () => {});
 
   const rerender = () => renderApp(services, state);
 

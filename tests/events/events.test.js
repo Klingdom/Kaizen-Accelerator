@@ -20,6 +20,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // HARD RULE close loop (29 + 2 = 31 total).
 // Sprint 9 adds WeeklyCycleProposed + WeeklyCycleAccepted for the weekly
 // composer envelope (31 + 2 = 33 total).
+// Sprint 10b adds KaizenStepCompleted + KaizenStepScheduled for the
+// portfolio step-action surface (33 + 2 = 35 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -53,7 +55,9 @@ const EXPECTED = [
   'OpportunityDeferred',
   'OpportunityRejected',
   'WeeklyCycleProposed',
-  'WeeklyCycleAccepted'
+  'WeeklyCycleAccepted',
+  'KaizenStepCompleted',
+  'KaizenStepScheduled'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {

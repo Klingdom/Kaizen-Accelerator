@@ -60,11 +60,12 @@ describe('Portfolio — structure', () => {
     assert.match(html, /data-action="OPP_OPEN_INTAKE"/);
   });
 
-  test('renders all 3 sections', () => {
+  test('renders Projects + Opportunities sections (Sprint 10b removed Catalog)', () => {
     const html = Portfolio();
     assert.match(html, /pf-active-kaizens/);
     assert.match(html, /pf-opportunities/);
-    assert.match(html, /pf-catalog/);
+    // Sprint 10b: Catalog section removed from Portfolio.
+    assert.ok(!html.includes('pf-catalog'));
   });
 });
 
@@ -80,16 +81,16 @@ describe('Portfolio — empty states', () => {
   });
 });
 
-describe('Portfolio — Active Kaizens section', () => {
+describe('Portfolio — Projects section (renamed Sprint 10b)', () => {
   test('renders kaizen cards when provided', () => {
     const html = Portfolio({ activeKaizens: [kaizenActive({ title: 'First Kaizen' })] });
     assert.match(html, /First Kaizen/);
     assert.match(html, /kz-card-active/);
   });
 
-  test('count shown in header', () => {
+  test('count shown in header as "Projects (N)"', () => {
     const html = Portfolio({ activeKaizens: [kaizenActive(), kaizenActive({ id: 'k_2' })] });
-    assert.match(html, /Active Kaizens \(2\)/);
+    assert.match(html, /Projects \(2\)/);
   });
 });
 
@@ -207,7 +208,7 @@ describe('Portfolio — intake modal overlay', () => {
   });
 });
 
-describe('Portfolio — Standard Work Catalog section', () => {
+describe('Portfolio — Standard Work Catalog section (Sprint 10b removed)', () => {
   function catEntry(overrides = {}) {
     return {
       id: 'cat_1',
@@ -221,24 +222,12 @@ describe('Portfolio — Standard Work Catalog section', () => {
     };
   }
 
-  test('catalog section embeds the CatalogBucketView', () => {
+  test('catalog section is NOT rendered on Portfolio (moved to /#catalog)', () => {
     const html = Portfolio({
       catalogEntries: [catEntry()]
     });
-    assert.match(html, /cat-bucket-view/);
-  });
-
-  test('catalog entries flow into the column', () => {
-    const html = Portfolio({
-      catalogEntries: [
-        catEntry({ id: 'a', bucket: 'PROJECT' }),
-        catEntry({ id: 'b', bucket: 'COMMUNICATION' }),
-        catEntry({ id: 'c', bucket: 'CI' })
-      ]
-    });
-    assert.match(html, /data-bucket-count="PROJECT">\(1\)/);
-    assert.match(html, /data-bucket-count="COMMUNICATION">\(1\)/);
-    assert.match(html, /data-bucket-count="CI">\(1\)/);
+    assert.ok(!html.includes('pf-catalog'));
+    assert.ok(!html.includes('cat-bucket-view'));
   });
 });
 

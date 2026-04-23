@@ -1,13 +1,19 @@
 /**
- * Portfolio page — Sprint 7 P0-T5.
+ * Portfolio page — Sprint 7 P0-T5 + Sprint 10b (Pass A).
  *
- * The new top-level surface for opportunity intake + catalog browsing.
+ * The project command center. Sprint 10b removes the Catalog section (it
+ * now lives solely on /#catalog) and renames "Active Kaizens" to
+ * "Projects". Project cards are click-to-open; the expanded card shows
+ * the full ordered standard-work step list for the project type.
  *
  * Sections:
- *   1. Active Kaizens — list of ACTIVE (+ IN_REMEASUREMENT) Kaizens
+ *   1. Projects       — list of ACTIVE (+ IN_REMEASUREMENT) Kaizens,
+ *                       grouped by project-type. Each card collapses by
+ *                       default; one may be expanded at a time via the
+ *                       `expandedKaizenId` prop.
  *   2. Opportunities  — filterable intake list (all / intake / scored /
  *                       promoted / deferred / rejected)
- *   3. Standard Work Catalog — 3-column bucket view via CatalogBucketView
+ *   3. Validated Kaizens — closed projects with delta summary
  *
  * The intake form modal overlays when `intakeForm` is provided.
  */
@@ -16,14 +22,13 @@ import { esc } from '../mount.js';
 import { KaizenCard } from '../components/KaizenCard.js';
 import { OpportunityRow } from '../components/OpportunityRow.js';
 import { OpportunityIntakeForm } from '../components/OpportunityIntakeForm.js';
-import { CatalogBucketView } from '../components/CatalogBucketView.js';
 import { ValidatedKaizenCard } from '../components/ValidatedKaizenCard.js';
 import { OpportunityStatus } from '../../domain/types.js';
 
 export const PORTFOLIO_COPY = Object.freeze({
   TITLE: 'Project Portfolio',
   NEW_OPP: 'New Opportunity',
-  ACTIVE_EMPTY: 'No active Kaizens. Promote an opportunity to start.',
+  ACTIVE_EMPTY: 'No projects yet. Promote an opportunity to start a project.',
   OPPORTUNITIES_EMPTY: 'No opportunities yet. Tap New Opportunity to capture one.',
   VALIDATED_EMPTY: 'No validated Kaizens yet. Close a Kaizen to see it here.'
 });
@@ -88,6 +93,8 @@ export const OPP_SORT_LABELS = Object.freeze({
  *   catalogEntries?: object[],
  *   closedKaizens?: object[],
  *   remeasurementsByKaizenId?: Record<string, object>,
+ *   completedStepsByKaizenId?: Record<string, object[]>,
+ *   expandedKaizenId?: string|null,
  *   nowIso?: string,
  *   intakeForm?: object|null,
  *   expandedOpportunityId?: string|null,
@@ -105,6 +112,14 @@ export function Portfolio(props = {}) {
     props.remeasurementsByKaizenId && typeof props.remeasurementsByKaizenId === 'object'
       ? props.remeasurementsByKaizenId
       : {};
+  const completedStepsByKaizenId =
+    props.completedStepsByKaizenId && typeof props.completedStepsByKaizenId === 'object'
+      ? props.completedStepsByKaizenId
+      : {};
+  const expandedKaizenId =
+    typeof props.expandedKaizenId === 'string' && props.expandedKaizenId.length > 0
+      ? props.expandedKaizenId
+      : null;
   const nowIso = props.nowIso ?? new Date().toISOString();
   const intakeForm = props.intakeForm ?? null;
   const expandedId = props.expandedOpportunityId ?? null;
@@ -147,10 +162,9 @@ export function Portfolio(props = {}) {
     <h1 class="pf-page-title">${esc(PORTFOLIO_COPY.TITLE)}</h1>
     <button type="button" class="pf-new-opp" data-action="OPP_OPEN_INTAKE" data-payload='{}'>${esc(PORTFOLIO_COPY.NEW_OPP)}</button>
   </header>
-  ${renderActiveKaizens(activeKaizens, catalogEntries)}
+  ${renderProjects(activeKaizens, catalogEntries, completedStepsByKaizenId, expandedKaizenId)}
   ${renderOpportunities(sorted, nowIso, expandedId, oppFilter, oppSort)}
   ${renderValidatedKaizens(closedKaizens, remeasurementsByKaizenId)}
-  ${renderCatalogSection(catalogEntries)}
   ${intakeModal}
 </main>`;
 }
@@ -190,17 +204,21 @@ function renderValidatedKaizens(closed, remeasurementsByKaizenId) {
 }
 
 /**
- * Render the Active Kaizens section.
+ * Render the Projects section (Sprint 10b — renamed from "Active Kaizens").
+ *
+ * Groups by project-type, renders KaizenCard for each, honouring
+ * `expandedKaizenId` so exactly one card is expanded at a time.
  *
  * @param {object[]} kaizens
- * @param {object[]} catalog   Optional — used for the "current standard work"
- *                             chip on each card.
+ * @param {object[]} catalog
+ * @param {Record<string, object[]>} completedStepsByKaizenId
+ * @param {string|null} expandedKaizenId
  * @returns {string}
  */
-function renderActiveKaizens(kaizens, catalog = []) {
+function renderProjects(kaizens, catalog, completedStepsByKaizenId, expandedKaizenId) {
   if (!kaizens.length) {
     return `<section class="pf-section pf-active-kaizens">
-      <h2 class="pf-section-title">Active Kaizens</h2>
+      <h2 class="pf-section-title">Projects</h2>
       <p class="pf-empty">${esc(PORTFOLIO_COPY.ACTIVE_EMPTY)}</p>
     </section>`;
   }
@@ -214,7 +232,26 @@ function renderActiveKaizens(kaizens, catalog = []) {
       const list = grouped[g.key];
       if (!list.length) return '';
       const cards = list
-        .map((k) => KaizenCard({ kaizen: k, catalog, completedCatalogIds: [] }))
+        .map((k) => {
+          const rows = Array.isArray(completedStepsByKaizenId[k.id])
+            ? completedStepsByKaizenId[k.id]
+            : [];
+          const completedCatalogIds = rows.map((r) => r.catalogEntryId);
+          /** @type {Record<string, string>} */
+          const completedStepTimestamps = {};
+          for (const r of rows) {
+            if (r && r.catalogEntryId && r.completedAt) {
+              completedStepTimestamps[r.catalogEntryId] = r.completedAt;
+            }
+          }
+          return KaizenCard({
+            kaizen: k,
+            catalog,
+            completedCatalogIds,
+            completedStepTimestamps,
+            isExpanded: expandedKaizenId != null && k.id === expandedKaizenId
+          });
+        })
         .join('\n');
       return `<div class="pf-pt-group" data-project-type="${esc(g.key)}">
         <h3 class="pf-pt-group-title">${esc(g.label)} (${esc(String(list.length))})</h3>
@@ -225,7 +262,7 @@ function renderActiveKaizens(kaizens, catalog = []) {
     .join('\n');
 
   return `<section class="pf-section pf-active-kaizens">
-    <h2 class="pf-section-title">Active Kaizens (${esc(String(kaizens.length))})</h2>
+    <h2 class="pf-section-title">Projects (${esc(String(kaizens.length))})</h2>
     ${groupBlocks}
   </section>`;
 }
@@ -287,19 +324,6 @@ function renderOpportunities(opps, nowIso, expandedId, oppFilter, oppSort) {
     <h2 class="pf-section-title">Opportunities (${esc(String(opps.length))})</h2>
     ${controls}
     <ul class="pf-opp-list">${rows}</ul>
-  </section>`;
-}
-
-/**
- * Render the Standard Work Catalog section using the bucket view.
- *
- * @param {object[]} entries
- * @returns {string}
- */
-function renderCatalogSection(entries) {
-  return `<section class="pf-section pf-catalog">
-    <h2 class="pf-section-title">Standard Work Catalog</h2>
-    ${CatalogBucketView({ entries })}
   </section>`;
 }
 

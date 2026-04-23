@@ -58,7 +58,9 @@ import {
   KaizenRemeasurementStarted,
   KaizenRemeasured,
   KaizenClosed,
-  KaizenAbandoned
+  KaizenAbandoned,
+  KaizenStepCompleted,
+  KaizenStepScheduled
 } from '../events/events.js';
 import {
   KaizenState,
@@ -67,10 +69,15 @@ import {
   CloseKind,
   MetricDirection
 } from '../domain/types.js';
+import { getCurrentNext } from '../catalog/progression.js';
 
 export const KAIZENS_KEY = 'bamx:v1:kaizens';
 export const BASELINE_METRICS_KEY = 'bamx:v1:baselineMetrics';
 export const REMEASUREMENTS_KEY = 'bamx:v1:remeasurements';
+export const STEP_PROGRESS_KEY = 'bamx:v1:kaizen-step-progress';
+// Sprint 10b P B — scheduleStep() appends directly to the same
+// ScheduledActivity key ComposerService uses (`bamx:v1:activities`).
+export const SCHEDULED_ACTIVITIES_KEY = 'bamx:v1:activities';
 
 export const PROBLEM_STATEMENT_MIN_LENGTH = 10;
 export const LESSONS_LEARNED_MIN_LENGTH = 20;
@@ -1272,6 +1279,288 @@ export class KaizenService {
     });
 
     return { kaizen };
+  }
+
+  // -------------------------------------------------------------------------
+  // Sprint 10b Pass B — Kaizen step progress (append-only) + step scheduling
+  // -------------------------------------------------------------------------
+
+  /**
+   * Read the raw step-progress map from storage.
+   *
+   * @returns {Record<string, object>}
+   */
+  _readStepProgressMap() {
+    return this._repo.read(STEP_PROGRESS_KEY) ?? {};
+  }
+
+  /**
+   * Get every completed-step row for a single Kaizen.
+   *
+   * @param {string} kaizenId
+   * @returns {object[]}
+   */
+  getCompletedStepsForKaizen(kaizenId) {
+    if (typeof kaizenId !== 'string' || kaizenId.length === 0) return [];
+    const map = this._readStepProgressMap();
+    const rows = Object.values(map).filter((r) => r && r.kaizenId === kaizenId);
+    // Return stable order by completedAt asc (oldest first).
+    rows.sort((a, b) => {
+      const ax = a.completedAt ?? '';
+      const bx = b.completedAt ?? '';
+      if (ax < bx) return -1;
+      if (ax > bx) return 1;
+      return 0;
+    });
+    return rows;
+  }
+
+  /**
+   * Group every completed-step row by kaizenId (convenience for Portfolio).
+   *
+   * @returns {Record<string, object[]>}
+   */
+  getCompletedStepsByKaizenId() {
+    const map = this._readStepProgressMap();
+    /** @type {Record<string, object[]>} */
+    const out = {};
+    for (const r of Object.values(map)) {
+      if (!r || typeof r.kaizenId !== 'string') continue;
+      (out[r.kaizenId] ??= []).push(r);
+    }
+    for (const kid of Object.keys(out)) {
+      out[kid].sort((a, b) => {
+        const ax = a.completedAt ?? '';
+        const bx = b.completedAt ?? '';
+        if (ax < bx) return -1;
+        if (ax > bx) return 1;
+        return 0;
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Build a deterministic-ish step-progress id. Tests inject the clock so we
+   * only need uniqueness within a user's history; ISO timestamp + random
+   * suffix provides that. Falls back to counter if crypto unavailable.
+   *
+   * @param {string} kaizenId
+   * @param {string} catalogEntryId
+   * @param {string} nowIso
+   * @returns {string}
+   */
+  _buildStepProgressId(kaizenId, catalogEntryId, nowIso) {
+    const safeKid = String(kaizenId).replace(/[^a-zA-Z0-9_]/g, '_');
+    const safeCid = String(catalogEntryId).replace(/[^a-zA-Z0-9_]/g, '_');
+    const safeTs = String(nowIso).replace(/[^0-9]/g, '');
+    return `ksp_${safeKid}_${safeCid}_${safeTs}`;
+  }
+
+  /**
+   * Mark a catalog step as complete for a Kaizen. Guarded so only the
+   * "current" step per progression order may be completed. Appends an
+   * immutable row to `bamx:v1:kaizen-step-progress`.
+   *
+   * Emits KaizenStepCompleted.
+   *
+   * @param {{
+   *   kaizenId: string,
+   *   catalogEntryId: string,
+   *   userId: string,
+   *   sourceKind?: 'portfolio'|'scheduled-activity',
+   *   sourceId?: string|null,
+   *   catalog?: object[]
+   * }} input
+   * @returns {object} the appended step-progress row
+   */
+  completeStep(input = {}) {
+    if (!input || typeof input !== 'object') {
+      fail('INVALID_INPUT', 'KaizenService.completeStep: input required');
+    }
+    const { kaizenId, catalogEntryId, userId } = input;
+    if (typeof kaizenId !== 'string' || kaizenId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.completeStep: kaizenId required');
+    }
+    if (typeof catalogEntryId !== 'string' || catalogEntryId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.completeStep: catalogEntryId required');
+    }
+    if (typeof userId !== 'string' || userId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.completeStep: userId required');
+    }
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.completeStep: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+
+    const catalog =
+      Array.isArray(input.catalog) && input.catalog.length > 0
+        ? input.catalog
+        : this._resolveCatalog();
+    const completedIds = this.getCompletedStepsForKaizen(kaizenId).map(
+      (r) => r.catalogEntryId
+    );
+    const cn = getCurrentNext(k.projectType, completedIds, catalog);
+    const currentId = cn.current?.id ?? null;
+    if (catalogEntryId !== currentId) {
+      fail(
+        'STEP_NOT_CURRENT',
+        `KaizenService.completeStep: catalogEntryId '${catalogEntryId}' is not the current step for kaizen '${kaizenId}'`,
+        { expected: currentId, got: catalogEntryId, kaizenId }
+      );
+    }
+
+    const now = this._clock.now();
+    const sourceKind =
+      input.sourceKind === 'scheduled-activity' ? 'scheduled-activity' : 'portfolio';
+    const sourceId =
+      typeof input.sourceId === 'string' && input.sourceId.length > 0
+        ? input.sourceId
+        : null;
+    const id = this._buildStepProgressId(kaizenId, catalogEntryId, now);
+    const row = {
+      id,
+      kaizenId,
+      catalogEntryId,
+      userId,
+      completedAt: now,
+      sourceKind,
+      sourceId
+    };
+    this._repo.upsert(STEP_PROGRESS_KEY, id, row);
+    this._bus.publish(KaizenStepCompleted, {
+      id,
+      kaizenId,
+      userId,
+      catalogEntryId,
+      completedAt: now,
+      sourceKind,
+      sourceId
+    });
+    return row;
+  }
+
+  /**
+   * Schedule a catalog step for a specific date. Appends a ScheduledActivity
+   * row directly to `bamx:v1:activities` (the same key ComposerService
+   * writes). Bypasses the daily composer — see SPRINT_10B_NOTES.md for the
+   * 4-2-2 invariant caveat.
+   *
+   * Emits KaizenStepScheduled.
+   *
+   * @param {{
+   *   kaizenId: string,
+   *   catalogEntryId: string,
+   *   targetDate: string,
+   *   userId: string,
+   *   catalog?: object[]
+   * }} input
+   * @returns {string} scheduledActivityId
+   */
+  scheduleStep(input = {}) {
+    if (!input || typeof input !== 'object') {
+      fail('INVALID_INPUT', 'KaizenService.scheduleStep: input required');
+    }
+    const { kaizenId, catalogEntryId, targetDate, userId } = input;
+    if (typeof kaizenId !== 'string' || kaizenId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.scheduleStep: kaizenId required');
+    }
+    if (typeof catalogEntryId !== 'string' || catalogEntryId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.scheduleStep: catalogEntryId required');
+    }
+    if (typeof userId !== 'string' || userId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.scheduleStep: userId required');
+    }
+    if (typeof targetDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      fail(
+        'INVALID_TARGET_DATE',
+        `KaizenService.scheduleStep: targetDate must be YYYY-MM-DD, got '${targetDate}'`,
+        { targetDate }
+      );
+    }
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.scheduleStep: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    const catalog =
+      Array.isArray(input.catalog) && input.catalog.length > 0
+        ? input.catalog
+        : this._resolveCatalog();
+    const entry = catalog.find((c) => c && c.id === catalogEntryId) ?? null;
+    if (!entry) {
+      fail(
+        'CATALOG_ENTRY_NOT_FOUND',
+        `KaizenService.scheduleStep: catalog entry '${catalogEntryId}' not found`,
+        { catalogEntryId }
+      );
+    }
+
+    const now = this._clock.now();
+    const safeKid = String(kaizenId).replace(/[^a-zA-Z0-9_]/g, '_');
+    const safeCid = String(catalogEntryId).replace(/[^a-zA-Z0-9_]/g, '_');
+    const safeTs = String(now).replace(/[^0-9]/g, '');
+    const scheduledActivityId = `sa_${safeKid}_${safeCid}_${safeTs}`;
+
+    const sa = {
+      id: scheduledActivityId,
+      compositionId: null,
+      catalogEntryId,
+      linkedKaizenId: kaizenId,
+      name: entry.name ?? '',
+      bucket: entry.bucket ?? 'PROJECT',
+      plannedDurationMinutes:
+        typeof entry.defaultDurationMinutes === 'number'
+          ? entry.defaultDurationMinutes
+          : 30,
+      plannedStartAt: `${targetDate}T09:00:00Z`,
+      state: 'SCHEDULED',
+      createdAt: now
+    };
+    this._repo.upsert(SCHEDULED_ACTIVITIES_KEY, scheduledActivityId, sa);
+    this._bus.publish(KaizenStepScheduled, {
+      kaizenId,
+      userId,
+      catalogEntryId,
+      targetDate,
+      scheduledActivityId,
+      scheduledAt: now
+    });
+    return scheduledActivityId;
+  }
+
+  /**
+   * Resolve the catalog via an injected `catalogService`, if one was wired
+   * via `setCatalogService()`. Returns [] when absent.
+   *
+   * @returns {object[]}
+   */
+  _resolveCatalog() {
+    if (this._catalogService && typeof this._catalogService.list === 'function') {
+      try {
+        return this._catalogService.list() ?? [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Inject a CatalogService for step methods to resolve the full catalog
+   * without the caller having to pass it every time.
+   *
+   * @param {object} catalogService
+   */
+  setCatalogService(catalogService) {
+    this._catalogService = catalogService ?? null;
   }
 }
 

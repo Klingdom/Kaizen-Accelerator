@@ -83,14 +83,15 @@ describe('Portfolio — Validated Kaizens section', () => {
     assert.ok(html.includes('+60%'));
   });
 
-  test('section renders AFTER opportunities + BEFORE catalog', () => {
+  test('section renders AFTER opportunities (Sprint 10b: catalog removed)', () => {
     const html = Portfolio({
       closedKaizens: [closedKaizen()]
     });
     const oppIdx = html.indexOf('pf-opportunities');
     const valIdx = html.indexOf('pf-validated-kaizens');
-    const catIdx = html.indexOf('pf-catalog');
-    assert.ok(oppIdx < valIdx);
-    assert.ok(valIdx < catIdx);
+    assert.ok(oppIdx >= 0);
+    assert.ok(valIdx > oppIdx);
+    // Sprint 10b: pf-catalog no longer rendered on Portfolio.
+    assert.ok(!html.includes('pf-catalog'));
   });
 });
