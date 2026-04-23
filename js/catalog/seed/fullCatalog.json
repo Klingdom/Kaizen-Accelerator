@@ -1830,7 +1830,8 @@
     "dependsOn": [],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -1879,7 +1880,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -1927,7 +1929,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -1970,7 +1973,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -2013,7 +2017,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -2056,7 +2061,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -2104,7 +2110,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -2152,7 +2159,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [
@@ -2202,7 +2210,8 @@
     ],
     "projectTypeBinding": [
       "KAIZEN_EVENT",
-      "KAIZEN_EVENT_90D"
+      "KAIZEN_EVENT_90D",
+      "KAIZEN_ACCELERATOR_30D"
     ],
     "phaseBinding": null,
     "appliesToRoles": [

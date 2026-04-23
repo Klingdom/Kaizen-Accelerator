@@ -35,18 +35,18 @@ describe('projectTypeBindings — resolveProjectTypeBinding()', () => {
     assert.equal(resolveProjectTypeBinding(e), 'DMAIC');
   });
 
-  test('#42 Kaizen Charter returns set-valued binding (Event + Event_90D)', () => {
+  test('#42 Kaizen Charter returns set-valued binding (Event + Event_90D + Accelerator_30D)', () => {
     const e = { id: 'cat_42_kaizen_charter', activityNumber: 42 };
     const binding = resolveProjectTypeBinding(e);
     assert.ok(Array.isArray(binding));
-    assert.deepEqual([...binding].sort(), ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']);
+    assert.deepEqual([...binding].sort(), ['KAIZEN_ACCELERATOR_30D', 'KAIZEN_EVENT', 'KAIZEN_EVENT_90D']);
   });
 
-  test('#50 Process Owner Transition returns set-valued binding', () => {
+  test('#50 Process Owner Transition returns set-valued binding (all three Kaizen types)', () => {
     const e = { id: 'cat_50_foo', activityNumber: 50 };
     const binding = resolveProjectTypeBinding(e);
     assert.ok(Array.isArray(binding));
-    assert.deepEqual([...binding].sort(), ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']);
+    assert.deepEqual([...binding].sort(), ['KAIZEN_ACCELERATOR_30D', 'KAIZEN_EVENT', 'KAIZEN_EVENT_90D']);
   });
 
   test('returned set-valued bindings are fresh copies (not the frozen seed)', () => {
@@ -143,7 +143,7 @@ describe('projectTypeBindings — applyProjectTypeBindings()', () => {
     assert.equal(out[1].projectTypeBinding, null);
   });
 
-  test('applies Kaizen anchors as array', () => {
+  test('applies Kaizen anchors as array including KAIZEN_ACCELERATOR_30D', () => {
     const drafts = [
       { id: 'cat_42_kaizen_charter', activityNumber: 42, projectTypeBinding: null }
     ];
@@ -151,7 +151,7 @@ describe('projectTypeBindings — applyProjectTypeBindings()', () => {
     assert.ok(Array.isArray(out[0].projectTypeBinding));
     assert.deepEqual(
       [...out[0].projectTypeBinding].sort(),
-      ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']
+      ['KAIZEN_ACCELERATOR_30D', 'KAIZEN_EVENT', 'KAIZEN_EVENT_90D']
     );
   });
 });
@@ -180,7 +180,7 @@ describe('projectTypeBindings — end-to-end via buildCatalog()', () => {
     }
   });
 
-  test('every Kaizen #42..#50 row is bound to [KAIZEN_EVENT, KAIZEN_EVENT_90D]', () => {
+  test('every Kaizen #42..#50 row is bound to all three Kaizen project types', () => {
     for (let n = 42; n <= 50; n += 1) {
       const e = catalog.find((c) => c.activityNumber === n);
       assert.ok(e, `missing catalog row for #${n}`);
@@ -190,7 +190,7 @@ describe('projectTypeBindings — end-to-end via buildCatalog()', () => {
       );
       assert.deepEqual(
         [...e.projectTypeBinding].sort(),
-        ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']
+        ['KAIZEN_ACCELERATOR_30D', 'KAIZEN_EVENT', 'KAIZEN_EVENT_90D']
       );
     }
   });

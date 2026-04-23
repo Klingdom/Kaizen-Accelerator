@@ -10,11 +10,15 @@
  *
  *   #12 PDCA Cycle                          → 'AD_HOC'
  *   #20..#41 DMAIC                          → 'DMAIC'
- *   #42..#50 Kaizen anchors                 → ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']
+ *   #42..#50 Kaizen anchors                 → ['KAIZEN_EVENT', 'KAIZEN_EVENT_90D',
+ *                                              'KAIZEN_ACCELERATOR_30D']
  *                                             (per CATALOG_GAPS §K.1 authoritative
  *                                             binding model — set-valued so the
- *                                             same row serves standalone + 90-day).
- *   Accelerator-specific rows                → 'KAIZEN_ACCELERATOR_30D'
+ *                                             same rows serve standalone, 90-day,
+ *                                             AND 30-day Accelerator until
+ *                                             Accelerator-specific rows are
+ *                                             authored. User decision 2026-04-23.)
+ *   Accelerator-specific rows (future)       → 'KAIZEN_ACCELERATOR_30D'
  *                                             (resolved by id prefix `cat_acc_`
  *                                             or `kza_*`; none exist in the
  *                                             current 60-row pipeline — this is
@@ -47,15 +51,15 @@ const BINDING_BY_ACTIVITY_NUMBER = Object.freeze({
 
   // Kaizen anchors — set-valued per CATALOG_GAPS §K.1. Frozen so consumers
   // can't mutate the seed.
-  42: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  43: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  44: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  45: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  46: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  47: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  48: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  49: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D']),
-  50: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D'])
+  42: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  43: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  44: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  45: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  46: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  47: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  48: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  49: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D']),
+  50: Object.freeze(['KAIZEN_EVENT', 'KAIZEN_EVENT_90D', 'KAIZEN_ACCELERATOR_30D'])
 });
 
 /**

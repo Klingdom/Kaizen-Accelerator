@@ -89,9 +89,15 @@ describe('filterCatalogByProjectType — against the full seeded catalog', () =>
     assert.equal(out.length, 9);
   });
 
-  test('KAIZEN_ACCELERATOR_30D returns 0 entries (no seed yet)', () => {
+  test('KAIZEN_ACCELERATOR_30D returns the 9 Kaizen anchor rows (aliased from #42..#50)', () => {
+    // User decision 2026-04-23: Accelerator reuses Kaizen anchors until
+    // Accelerator-specific rows are authored.
     const out = filterCatalogByProjectType('KAIZEN_ACCELERATOR_30D', CATALOG);
-    assert.equal(out.length, 0);
+    assert.equal(out.length, 9);
+    assert.deepEqual(
+      out.map((e) => e.activityNumber),
+      [42, 43, 44, 45, 46, 47, 48, 49, 50]
+    );
   });
 
   test('AD_HOC returns at least 1 entry (covers #12 PDCA)', () => {
@@ -401,12 +407,14 @@ describe('getCurrentNext — AD_HOC (linear, #12 PDCA only for now)', () => {
   });
 });
 
-describe('getCurrentNext — KAIZEN_ACCELERATOR_30D (no rows yet)', () => {
-  test('empty slice → current=null, next=null', () => {
+describe('getCurrentNext — KAIZEN_ACCELERATOR_30D (aliased to Kaizen anchors)', () => {
+  test('uses the 9 Kaizen anchor rows in activityNumber order', () => {
+    // User decision 2026-04-23: Accelerator reuses #42..#50 until
+    // Accelerator-specific rows are authored.
     const r = getCurrentNext('KAIZEN_ACCELERATOR_30D', [], CATALOG);
-    assert.equal(r.current, null);
-    assert.equal(r.next, null);
-    assert.deepEqual(r.remaining, []);
+    assert.equal(r.current?.activityNumber, 42);
+    assert.equal(r.next?.activityNumber, 43);
+    assert.equal(r.remaining.length, 9);
   });
 
   test('injected accelerator rows respected', () => {
