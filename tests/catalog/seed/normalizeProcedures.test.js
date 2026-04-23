@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 
 import {
   stripPrefix,
+  rewriteBodyLetterRefs,
   renumber,
   applyProcedureNormalization,
   PROCEDURE_FILL_INS
@@ -54,6 +55,36 @@ describe('stripPrefix', () => {
 
   test('trims leading whitespace with prefix', () => {
     assert.equal(stripPrefix('   c.    Indented'), 'Indented');
+  });
+});
+
+describe('rewriteBodyLetterRefs', () => {
+  test('rewrites "step d" to "step 4"', () => {
+    assert.equal(rewriteBodyLetterRefs('return to step d to retry'), 'return to step 4 to retry');
+  });
+
+  test('rewrites uppercase "step D."', () => {
+    assert.equal(rewriteBodyLetterRefs('go to step D. and propose'), 'go to step 4. and propose');
+  });
+
+  test('rewrites multiple references in one line', () => {
+    assert.equal(
+      rewriteBodyLetterRefs('compare step a to step c'),
+      'compare step 1 to step 3'
+    );
+  });
+
+  test('leaves "step iii" alone (multi-character token)', () => {
+    assert.equal(rewriteBodyLetterRefs('see step iii for details'), 'see step iii for details');
+  });
+
+  test('leaves "stepchild" alone (no whitespace)', () => {
+    assert.equal(rewriteBodyLetterRefs('My stepchild is here'), 'My stepchild is here');
+  });
+
+  test('non-string input returns empty', () => {
+    assert.equal(rewriteBodyLetterRefs(null), '');
+    assert.equal(rewriteBodyLetterRefs(42), '');
   });
 });
 

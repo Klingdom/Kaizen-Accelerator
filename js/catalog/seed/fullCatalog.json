@@ -13,7 +13,7 @@
       "5. Evaluate and select appropriate training within quarter to support desired outcome",
       "6. Complete training and write Knowledge Sharing 1 Pager",
       "7. Present 1 Pager and save to Knowledge Wiki",
-      "8. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome."
+      "8. Compare desired outcome to actual outcome and return to step 4 to continue to pursue desired outcome."
     ],
     "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:10",
     "cadence": "CONTINUOUS",
@@ -58,7 +58,7 @@
       "5. Evaluate and select appropriate team training within quarter to support desired outcome",
       "6. Complete training and write Facilitate Team Retrospective",
       "7. Create Knowledge Wiki",
-      "8. Compare desired outcome to actual outcome and return to step d to continue to pursue desired outcome."
+      "8. Compare desired outcome to actual outcome and return to step 4 to continue to pursue desired outcome."
     ],
     "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:27",
     "cadence": "CONTINUOUS",
@@ -510,7 +510,7 @@
       "3. Propose an experiment or improvement that can be worked on over the next 48 hours.",
       "4. Spend 10-60 minutes working on the proposed experiment/improvement.",
       "5. Meet every 48 hours to measure the current condition and document results of your experiment.",
-      "6. If current condition meets target condition for 3 meetings, select a new process area for improvement. if current condition does not meet target condition go to step D. and propose a new experiment."
+      "6. If current condition meets target condition for 3 meetings, select a new process area for improvement. if current condition does not meet target condition go to step 4. and propose a new experiment."
     ],
     "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:197",
     "cadence": "EVERY_48H",

@@ -37,7 +37,34 @@ export function stripPrefix(raw) {
 }
 
 /**
- * Re-prefix a list of procedure steps with sequential `N. ` numbering.
+ * Rewrite in-body references like `step d` or `step D.` to the ordinal
+ * number (`step 4`). The source document used letter-prefixed steps, so a
+ * handful of procedure lines cross-reference earlier steps by letter. After
+ * the top-level renumbering those letter references no longer match
+ * anything visible in the UI.
+ *
+ * Mapping is a=1, b=2, c=3, d=4, ... which matches the position of a
+ * top-level letter prefix because sub-lettered/roman sub-steps in the
+ * source never appear before a top-level letter they reference.
+ *
+ * Only single-letter references are rewritten. Multi-character tokens
+ * like `step iii` or `stepchild` are left alone (the `(?![a-z])` lookahead
+ * and `\bstep\s+` anchor prevent those matches).
+ *
+ * @param {string} line
+ * @returns {string}
+ */
+export function rewriteBodyLetterRefs(line) {
+  if (typeof line !== 'string') return '';
+  return line.replace(/\bstep\s+([a-z])\b(?![a-z])/gi, (_m, letter) => {
+    const ord = letter.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+    return `step ${ord}`;
+  });
+}
+
+/**
+ * Re-prefix a list of procedure steps with sequential `N. ` numbering,
+ * and rewrite any in-body `step [letter]` references to ordinals.
  * Empty strings are dropped.
  *
  * @param {string[]} steps
@@ -46,7 +73,7 @@ export function stripPrefix(raw) {
 export function renumber(steps) {
   if (!Array.isArray(steps)) return [];
   const cleaned = steps
-    .map((s) => stripPrefix(s))
+    .map((s) => rewriteBodyLetterRefs(stripPrefix(s)))
     .filter((s) => s.length > 0);
   return cleaned.map((s, i) => `${i + 1}. ${s}`);
 }
