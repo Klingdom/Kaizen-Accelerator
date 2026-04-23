@@ -60,6 +60,7 @@ import {
   KaizenStepScheduled
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
+import { getFullCatalog } from './catalog/fullCatalog.js';
 import { AppShell } from './ui/AppShell.js';
 import { Today } from './ui/pages/Today.js';
 import { Kaizen as KaizenPage } from './ui/pages/Kaizen.js';
@@ -346,6 +347,81 @@ function savePortfolioPrefs(repo, prefs) {
 }
 
 /**
+ * Sprint 10c: list "orphan" ScheduledActivity rows for a given date.
+ *
+ * KaizenService.scheduleStep creates rows with `compositionId: null` so
+ * the user can schedule a standard-work step directly from Portfolio
+ * without an active Composition. ComposerService.getActiveComposition
+ * filters those rows out (it only returns children of the latest
+ * PROPOSED/ACCEPTED composition), so without this helper those rows
+ * persist in storage but never render anywhere.
+ *
+ * @param {{read: (key: string) => any}} repo
+ * @param {string} dateIso   YYYY-MM-DD
+ * @returns {object[]}
+ */
+export function listOrphanActivitiesForDate(repo, dateIso) {
+  if (!repo || typeof dateIso !== 'string' || dateIso.length < 10) return [];
+  const acts = repo.read('bamx:v1:activities') ?? {};
+  return Object.values(acts).filter(
+    (a) =>
+      a &&
+      (a.compositionId == null) &&
+      typeof a.plannedStartAt === 'string' &&
+      a.plannedStartAt.slice(0, 10) === dateIso
+  );
+}
+
+/**
+ * Sprint 10c: merge orphan activities (from scheduleStep) into the
+ * active state returned by `ComposerService.getActiveComposition`. If no
+ * composition exists yet but orphans are present, synthesize a minimal
+ * ACCEPTED composition so Today can render them — the composition id is
+ * a stable sentinel ('synth_orphan_day') and callers can detect the
+ * synthesized state via `composition.synthesizedForOrphans === true`.
+ *
+ * @param {null | {composition: object, activities: object[]}} activeState
+ * @param {object[]} orphans
+ * @returns {null | {composition: object, activities: object[]}}
+ */
+export function mergeOrphanActivities(activeState, orphans) {
+  if (!Array.isArray(orphans) || orphans.length === 0) return activeState;
+  if (activeState) {
+    return {
+      composition: activeState.composition,
+      activities: [...activeState.activities, ...orphans]
+    };
+  }
+  const plannedByBucket = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
+  for (const a of orphans) {
+    if (plannedByBucket[a.bucket] !== undefined) {
+      plannedByBucket[a.bucket] += Number(a.plannedDurationMinutes ?? 0);
+    }
+  }
+  const anchor = orphans[0];
+  const dateIso = typeof anchor.plannedStartAt === 'string'
+    ? anchor.plannedStartAt.slice(0, 10)
+    : '';
+  return {
+    composition: {
+      id: 'synth_orphan_day',
+      userId: anchor.userId ?? '',
+      date: dateIso,
+      state: 'ACCEPTED',
+      proposedAt: anchor.createdAt ?? '',
+      acceptedAt: anchor.createdAt ?? '',
+      capacityMinutes: 480,
+      bucketTargets: { PROJECT: 240, COMMUNICATION: 120, CI: 120 },
+      bucketFloors: { PROJECT: 120, COMMUNICATION: 60, CI: 60 },
+      bucketCeilings: { PROJECT: 264, COMMUNICATION: 150, CI: 150 },
+      plannedByBucket,
+      synthesizedForOrphans: true
+    },
+    activities: [...orphans]
+  };
+}
+
+/**
  * Render the entire app into the DOM. Pure shell around the pure page
  * components; real DOM only via `mountHtml`.
  *
@@ -365,12 +441,19 @@ export function renderApp(services, state) {
 
   if (state.route === 'today') {
     const activeState = composerService.getActiveComposition(DEFAULT_USER.id);
+    // Sprint 10c fix: scheduleStep creates ScheduledActivity rows with
+    // compositionId:null; getActiveComposition filters them out. Merge
+    // today's orphan activities back into the active state so they show
+    // up on the Today page.
+    const todayDate = services.clock.now().slice(0, 10);
+    const orphans = listOrphanActivitiesForDate(services.repo, todayDate);
+    const mergedActiveState = mergeOrphanActivities(activeState, orphans);
     const daysSinceSignup = computeDaysSinceSignup(
       DEFAULT_USER.createdAt,
       services.clock.now()
     );
     const todayHtml = Today({
-      activeState,
+      activeState: mergedActiveState,
       loading: state.composerLoading,
       isFirstRun: activeState === null && daysSinceSignup <= 1,
       infeasibleExplain: state.infeasibleExplain,
@@ -1510,6 +1593,40 @@ export function start() {
   globalThis.addEventListener('hashchange', listener);
 
   attachRootClickListener(APP_ROOT_ID, buildHandlers({ services, state, rerender }));
+
+  // Sprint 10c: upgrade BROWSER_CATALOG (9 entries) → full 60-entry catalog
+  // asynchronously after boot. Non-blocking so the app renders immediately
+  // with the browser seed; re-renders once the fetch resolves.
+  loadFullCatalogAsync(services, rerender);
+}
+
+/**
+ * Fetch the full 60-entry catalog JSON and re-seed `catalogService` if the
+ * fetch returns more entries than currently seeded. Silent on failure —
+ * the app keeps using BROWSER_CATALOG so it never regresses.
+ *
+ * Only called from `start()`, which is itself browser-only.
+ *
+ * @param {object} services
+ * @param {() => void} rerender
+ * @returns {Promise<void>}
+ */
+export async function loadFullCatalogAsync(services, rerender) {
+  try {
+    const full = await getFullCatalog();
+    if (!Array.isArray(full) || full.length === 0) return;
+    const currentCount = Array.isArray(services.catalogService.list(DEFAULT_USER.id))
+      ? services.catalogService.list(DEFAULT_USER.id).length
+      : 0;
+    if (full.length <= currentCount) return;
+    services.catalogService.seed(full.map((c) => ({ ...c })));
+    if (typeof rerender === 'function') rerender();
+  } catch (err) {
+    if (typeof console !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.warn('loadFullCatalogAsync: full catalog fetch failed; using BROWSER_CATALOG fallback', err);
+    }
+  }
 }
 
 /**
