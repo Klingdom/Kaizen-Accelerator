@@ -452,6 +452,16 @@ export function renderApp(services, state) {
       DEFAULT_USER.createdAt,
       services.clock.now()
     );
+    // Build the kaizenId → title lookup so activity blocks can render a
+    // "part of: [title]" chip across all states (Sprint 10 backlog item #2).
+    const kaizenTitleById = {};
+    if (kaizenService && typeof kaizenService.list === 'function') {
+      for (const k of kaizenService.list({ userId: DEFAULT_USER.id }) ?? []) {
+        if (k && typeof k.id === 'string') {
+          kaizenTitleById[k.id] = k.title ?? k.name ?? k.id;
+        }
+      }
+    }
     const todayHtml = Today({
       activeState: mergedActiveState,
       loading: state.composerLoading,
@@ -465,7 +475,8 @@ export function renderApp(services, state) {
       },
       nowIso: services.clock.now(),
       fineTune: state.fineTune,
-      openDialog: state.openDialog
+      openDialog: state.openDialog,
+      kaizenTitleById
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)

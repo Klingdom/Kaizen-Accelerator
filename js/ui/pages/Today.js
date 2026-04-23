@@ -144,7 +144,8 @@ export function Today(props = {}) {
     targets: strips.targets,
     floors: strips.floors,
     ceilings: strips.ceilings,
-    nowIso
+    nowIso,
+    kaizenTitleById: props.kaizenTitleById ?? {}
   })}
   ${drawer}
   ${modal}

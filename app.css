@@ -338,6 +338,19 @@ html, body {
 }
 
 .sa-name { font-weight: 500; }
+
+.sa-kaizen-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--project-bg);
+  color: var(--project-fg);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
 .sa-duration {
   color: var(--muted);
   font-variant-numeric: tabular-nums;

@@ -11,6 +11,10 @@
  *   nowIso:            string — ISO timestamp for elapsed-timer readout on IN_PROGRESS
  *   explainEntry:      {ref, rule, detail} — if provided and composition is
  *                      PROPOSED, a WhyChip is rendered on the trailing edge.
+ *   kaizenTitle:       string — when the activity is linkedKaizenId-bound,
+ *                      render a "part of: [title]" chip under the name.
+ *                      Surfaced across ALL states including PROPOSED so the
+ *                      user sees project linkage before accepting.
  *
  * State variants (Sprint 5):
  *   PROPOSED     — bucket chip + read-only intention + why-chip (if given)
@@ -164,6 +168,10 @@ export function ScheduledActivityBlock(props = {}) {
   const compositionState = props.compositionState ?? '';
   const nowIso = props.nowIso ?? null;
   const explainEntry = props.explainEntry ?? null;
+  const kaizenTitle =
+    typeof props.kaizenTitle === 'string' && props.kaizenTitle.length > 0
+      ? props.kaizenTitle
+      : null;
 
   const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
   const time = formatTime(a.plannedStartAt ?? a.anchor);
@@ -172,6 +180,9 @@ export function ScheduledActivityBlock(props = {}) {
   const intention = a.intention ?? '';
   const state = a.state ?? 'PROPOSED';
   const carried = a.carriedOver ? '<span class="carried-badge" title="carried from yesterday">carried</span>' : '';
+  const kaizenChip = (kaizenTitle && a.linkedKaizenId)
+    ? `<span class="sa-kaizen-chip" aria-label="part of Kaizen ${esc(kaizenTitle)}">part of: ${esc(kaizenTitle)}</span>`
+    : '';
 
   const classes = [
     'sa-block',
@@ -196,7 +207,7 @@ export function ScheduledActivityBlock(props = {}) {
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}">
   <div class="sa-when">${esc(time)}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
-  <div class="sa-name">${esc(name)}${carried}</div>
+  <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>
   ${intentionBlock}
   ${renderElapsed(a, nowIso)}

@@ -96,6 +96,7 @@ function renderActivityList(activities, opts) {
     return '<li class="sa-empty">No activities.</li>';
   }
   const explainById = opts.explainById ?? {};
+  const kaizenTitleById = opts.kaizenTitleById ?? {};
   return ordered
     .map((a) =>
       ScheduledActivityBlock({
@@ -104,7 +105,8 @@ function renderActivityList(activities, opts) {
         pinned: opts.pinnedId === a.id,
         nowIso: opts.nowIso,
         compositionState: opts.compositionState,
-        explainEntry: explainById[a.catalogEntryId] ?? null
+        explainEntry: explainById[a.catalogEntryId] ?? null,
+        kaizenTitle: a.linkedKaizenId ? (kaizenTitleById[a.linkedKaizenId] ?? null) : null
       })
     )
     .join('\n');
@@ -134,7 +136,7 @@ function buildExplainById(composition) {
 /**
  * Render the PROPOSED variant — the hero path.
  */
-function renderProposed(composition, activities, strips) {
+function renderProposed(composition, activities, strips, extras = {}) {
   const compId = composition.id;
   const planned = plannedFromActivities(activities);
   const explainById = buildExplainById(composition);
@@ -153,7 +155,8 @@ function renderProposed(composition, activities, strips) {
 ${renderActivityList(activities, {
     showStart: false,
     compositionState: 'PROPOSED',
-    explainById
+    explainById,
+    kaizenTitleById: extras.kaizenTitleById ?? {}
   })}
   </ul>
   ${AcceptEditRejectTriad({ compositionId: compId })}
@@ -163,7 +166,7 @@ ${renderActivityList(activities, {
 /**
  * Render the ACCEPTED / ACTIVE variant.
  */
-function renderAccepted(composition, activities, strips, { isActive, nowIso }) {
+function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById }) {
   const compId = composition.id;
   const planned = plannedFromActivities(activities);
   // Pin: prefer IN_PROGRESS, else first SCHEDULED.
@@ -185,7 +188,8 @@ ${renderActivityList(activities, {
     showStart: true,
     pinnedId: pinnedActivity?.id,
     nowIso,
-    compositionState: isActive ? 'ACTIVE' : 'ACCEPTED'
+    compositionState: isActive ? 'ACTIVE' : 'ACCEPTED',
+    kaizenTitleById: kaizenTitleById ?? {}
   })}
   </ul>
 </article>`;
@@ -221,6 +225,10 @@ export function CycleCard(props = {}) {
   const composition = props.composition;
   const activities = props.activities ?? [];
   const nowIso = props.nowIso ?? null;
+  const kaizenTitleById =
+    props.kaizenTitleById && typeof props.kaizenTitleById === 'object'
+      ? props.kaizenTitleById
+      : {};
   if (!composition) {
     return '<article class="cycle-card cycle-missing">(no composition)</article>';
   }
@@ -232,16 +240,16 @@ export function CycleCard(props = {}) {
 
   switch (composition.state) {
     case 'PROPOSED':
-      return renderProposed(composition, activities, strips);
+      return renderProposed(composition, activities, strips, { kaizenTitleById });
     case 'ACCEPTED':
     case 'EDITED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso });
+      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, kaizenTitleById });
     case 'ACTIVE':
-      return renderAccepted(composition, activities, strips, { isActive: true, nowIso });
+      return renderAccepted(composition, activities, strips, { isActive: true, nowIso, kaizenTitleById });
     case 'REJECTED':
       return renderRejected(composition);
     case 'CLOSED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso });
+      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, kaizenTitleById });
     default:
       return `<article class="cycle-card cycle-unknown" data-composition-id="${esc(composition.id ?? '')}" data-state="${esc(composition.state ?? '')}">
   <p>Unknown composition state: ${esc(composition.state ?? 'null')}</p>
