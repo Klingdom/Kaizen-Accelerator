@@ -26,6 +26,7 @@ import { applyBucketMap } from './bucketMap.js';
 import { applyMarkNonOptional } from './markNonOptional.js';
 import { applyDmaicDag } from './dmaicDag.js';
 import { applyProjectTypeBindings } from './projectTypeBindings.js';
+import { applyProcedureNormalization } from './normalizeProcedures.js';
 
 /**
  * Build the fully-populated catalog. Accepts the source file path (for
@@ -49,6 +50,7 @@ export function buildCatalog(opts = {}) {
   catalog = applyMarkNonOptional(catalog);
   catalog = applyDmaicDag(catalog);
   catalog = applyProjectTypeBindings(catalog);
+  catalog = applyProcedureNormalization(catalog);
 
   return catalog;
 }
