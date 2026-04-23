@@ -22,6 +22,7 @@ import { FineTuneDrawer, FineTuneButton } from '../components/FineTuneDrawer.js'
 import { InfeasibleBanner } from '../components/InfeasibleBanner.js';
 import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
+import { RhythmExplainer } from '../components/RhythmExplainer.js';
 import {
   DEFAULT_TARGETS,
   DEFAULT_FLOORS,
@@ -30,10 +31,17 @@ import {
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
+ *
+ * FIRST_RUN is a warmer, aspirational welcome reserved for a user who has
+ * never composed a day. EMPTY is the quieter "any other day without a
+ * composition" copy — a returning user sees this after rejecting yesterday's
+ * plan or starting fresh. INFEASIBLE fires when the composer returns
+ * infeasible and surfaces the Fine-tune pathway.
  */
 export const TODAY_COPY = Object.freeze({
-  FIRST_RUN: 'Welcome. Tap Auto-Plan to compose your first day.',
-  EMPTY: 'No day scheduled. Auto-Plan, or add activities from the Catalog.',
+  FIRST_RUN:
+    'Welcome to CadencePlan. Tap Auto-Plan to compose your first balanced day — you can always adjust before you accept.',
+  EMPTY: 'No day scheduled yet. Auto-Plan to see a proposal, or add activities from the Catalog.',
   INFEASIBLE:
     "Composer flagged an infeasible day. Raise your daily capacity or reduce external meetings, then Auto-Plan again."
 });
@@ -92,11 +100,24 @@ export function Today(props = {}) {
     ceilings: props.ceilings ?? DEFAULT_CEILINGS
   };
 
-  // Header — AdherenceDial + Fine-tune trigger.
+  // Header — day-counter badge + AdherenceDial + Fine-tune trigger.
+  const daysSinceSignup = Number.isFinite(adherence.daysSinceSignup)
+    ? adherence.daysSinceSignup
+    : null;
+  const dayBadge = daysSinceSignup !== null
+    ? `<span class="today-day-badge" aria-label="day ${esc(String(daysSinceSignup + 1))} since signup">Day ${esc(String(daysSinceSignup + 1))}</span>`
+    : '';
   const header = `<header class="today-header">
+  ${dayBadge}
   ${AdherenceDial(adherence)}
   ${FineTuneButton()}
 </header>`;
+
+  // Rhythm explainer — onboarding moment that teaches the 4-2-2 split.
+  // Parent owns the dismissed flag; we only render when not dismissed.
+  const rhythmExplainerHtml = RhythmExplainer({
+    dismissed: !!props.rhythmExplainerDismissed
+  });
 
   const drawer = fineTune
     ? FineTuneDrawer({
@@ -113,6 +134,7 @@ export function Today(props = {}) {
   if (infeasible) {
     return `<main class="today-page" data-route="today">
   ${header}
+  ${rhythmExplainerHtml}
   ${InfeasibleBanner({ infeasible })}
   <section class="today-infeasible" aria-live="polite">
     <p class="empty-copy">${esc(TODAY_COPY.INFEASIBLE)}</p>
@@ -127,6 +149,7 @@ export function Today(props = {}) {
     const emptyCopy = isFirstRun ? TODAY_COPY.FIRST_RUN : TODAY_COPY.EMPTY;
     return `<main class="today-page" data-route="today">
   ${header}
+  ${rhythmExplainerHtml}
   <section class="today-empty">
     <p class="empty-copy">${esc(emptyCopy)}</p>
     ${AutoPlanButton({ loading, variant: 'primary' })}
@@ -138,6 +161,7 @@ export function Today(props = {}) {
 
   return `<main class="today-page" data-route="today">
   ${header}
+  ${rhythmExplainerHtml}
   ${CycleCard({
     composition: activeState.composition,
     activities: activeState.activities,

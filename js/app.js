@@ -309,7 +309,10 @@ function createState() {
     closeKaizenDialog: null,       // { kaizenId, lessonsLearned, errorName? }
     kaizenAbandonForm: null,       // { kaizenId } — when truthy, inline abandon form open
     // Sprint 10b Pass B — Portfolio expand/collapse for projects.
-    expandedKaizenId: null
+    expandedKaizenId: null,
+    // Sprint 10 backlog #3 — once dismissed, the 4-2-2 onboarding banner
+    // never shows again. Hydrated from repo at boot.
+    rhythmExplainerDismissed: false
   };
 }
 
@@ -317,6 +320,13 @@ function createState() {
  * LocalStorage key for persisted Portfolio filter/sort preferences (P1-T3).
  */
 export const PORTFOLIO_PREFS_KEY = 'bamx:v1:portfolioPrefs';
+
+/**
+ * LocalStorage key for the 4-2-2 rhythm-explainer dismissal (Sprint 10
+ * backlog #3). Single boolean flag; once dismissed the banner never
+ * shows again for that browser profile.
+ */
+export const RHYTHM_EXPLAINER_KEY = 'bamx:v1:prefs:rhythm-explainer-dismissed';
 
 /**
  * Load persisted Portfolio filter/sort prefs (best-effort).
@@ -476,7 +486,8 @@ export function renderApp(services, state) {
       nowIso: services.clock.now(),
       fineTune: state.fineTune,
       openDialog: state.openDialog,
-      kaizenTitleById
+      kaizenTitleById,
+      rhythmExplainerDismissed: !!state.rhythmExplainerDismissed
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -1447,6 +1458,18 @@ export function buildHandlers(scope) {
       rerender();
     },
 
+    // ---- Sprint 10 backlog #3: 4-2-2 rhythm explainer ----
+
+    RHYTHM_EXPLAINER_DISMISS(_payload) {
+      state.rhythmExplainerDismissed = true;
+      try {
+        services.repo.write(RHYTHM_EXPLAINER_KEY, true);
+      } catch {
+        /* swallow — dismissal will reappear next session, not fatal */
+      }
+      rerender();
+    },
+
     // ---- Sprint 10b Pass B: Portfolio project expand + step actions ----
 
     PORTFOLIO_TOGGLE_KAIZEN(payload) {
@@ -1559,6 +1582,15 @@ export function start() {
     if (typeof savedPrefs.oppSort === 'string') {
       state.portfolio.oppSort = savedPrefs.oppSort;
     }
+  }
+
+  // Restore 4-2-2 rhythm explainer dismissal (Sprint 10 backlog #3).
+  try {
+    if (services.repo.read(RHYTHM_EXPLAINER_KEY) === true) {
+      state.rhythmExplainerDismissed = true;
+    }
+  } catch {
+    /* swallow */
   }
 
   services.bus.subscribe(CycleProposed, () => {});
