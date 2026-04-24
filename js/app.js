@@ -57,7 +57,8 @@ import {
   WeeklyCycleProposed,
   WeeklyCycleAccepted,
   KaizenStepCompleted,
-  KaizenStepScheduled
+  KaizenStepScheduled,
+  CycleEdited
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { getFullCatalog } from './catalog/fullCatalog.js';
@@ -79,6 +80,15 @@ import {
   extractRemeasurementFields
 } from './ui/components/RemeasurementDialog.js';
 import { KaizenCloseDialog } from './ui/components/KaizenCloseDialog.js';
+import { Toast, ToastKind } from './ui/components/Toast.js';
+import {
+  isProtectedBlock,
+  applySwap,
+  applyRemove,
+  applyAdd,
+  pushUndo,
+  popUndo
+} from './ui/editMode.js';
 import {
   mountHtml,
   attachRootClickListener
@@ -312,8 +322,67 @@ function createState() {
     expandedKaizenId: null,
     // Sprint 10 backlog #3 — once dismissed, the 4-2-2 onboarding banner
     // never shows again. Hydrated from repo at boot.
-    rhythmExplainerDismissed: false
+    rhythmExplainerDismissed: false,
+    // Sprint 11 P0-T3 — top-level toast. `null` hides the banner;
+    // `{kind, message, id}` renders above pageHtml. `id` helps
+    // `setTimeout` decide whether the currently-showing toast is still
+    // the one it was scheduled to clear.
+    toast: null,
+    // Sprint 12 — Edit mode. null when closed. When the user clicks Edit
+    // on a CycleCard this becomes:
+    //   {
+    //     compositionId,
+    //     snapshotActivities: original activities[] (for Cancel),
+    //     activities: mutable working array,
+    //     selectedActivityId: slot currently selected for swap (or
+    //       '__new__' when the user wants to add a new slot),
+    //     undoStack: prior activities[] snapshots,
+    //     searchQuery, projectTypeFilter,
+    //     expandedBuckets: ['PROJECT', 'COMMUNICATION', 'CI']
+    //   }
+    editMode: null
   };
+}
+
+/**
+ * Default toast time-to-live in ms. Short enough to feel responsive,
+ * long enough for success + error copy to be read.
+ */
+export const TOAST_TTL_MS = 3000;
+
+/**
+ * Show a toast. Idempotent: each call replaces whatever toast was
+ * showing. Schedules a clearing rerender via `setTimeout`. Safe in test
+ * environments that don't provide `setTimeout` (no-op).
+ *
+ * @param {object} state
+ * @param {string} kind           — one of `ToastKind`
+ * @param {string} message
+ * @param {() => void} rerender
+ * @param {number} [ttlMs]
+ */
+export function showToast(state, kind, message, rerender, ttlMs = TOAST_TTL_MS) {
+  if (!state || typeof state !== 'object') return;
+  if (typeof message !== 'string' || message.length === 0) return;
+  const k = typeof kind === 'string' && kind in ToastKind ? kind : ToastKind.INFO;
+  const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  state.toast = { kind: k, message, id };
+  if (typeof globalThis.setTimeout === 'function' && ttlMs > 0) {
+    const handle = globalThis.setTimeout(() => {
+      // Only clear if the same toast is still showing. A newer toast that
+      // replaced us has its own timer.
+      if (state.toast && state.toast.id === id) {
+        state.toast = null;
+        if (typeof rerender === 'function') rerender();
+      }
+    }, ttlMs);
+    // In Node (tests) `setTimeout` returns a Timeout with `.unref()` so
+    // the pending timer does not keep the event loop alive. Browsers
+    // return a numeric handle with no `.unref()`; guard both.
+    if (handle && typeof handle.unref === 'function') {
+      handle.unref();
+    }
+  }
 }
 
 /**
@@ -472,6 +541,7 @@ export function renderApp(services, state) {
         }
       }
     }
+    const catalogForEdit = catalogService ? catalogService.list(DEFAULT_USER.id) : [];
     const todayHtml = Today({
       activeState: mergedActiveState,
       loading: state.composerLoading,
@@ -487,7 +557,9 @@ export function renderApp(services, state) {
       fineTune: state.fineTune,
       openDialog: state.openDialog,
       kaizenTitleById,
-      rhythmExplainerDismissed: !!state.rhythmExplainerDismissed
+      rhythmExplainerDismissed: !!state.rhythmExplainerDismissed,
+      editMode: state.editMode,
+      catalog: catalogForEdit
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -577,7 +649,11 @@ export function renderApp(services, state) {
     pageHtml = PlaceholderPage({ route: state.route });
   }
 
-  const shellHtml = AppShell({ route: state.route, pageHtml });
+  // Sprint 11 P0-T3: overlay toast above the page content. `Toast(null)`
+  // returns an empty string so no wrapper is emitted when no toast is set.
+  const toastHtml = Toast(state.toast ?? null);
+  const pageWithToast = `${toastHtml}${pageHtml}`;
+  const shellHtml = AppShell({ route: state.route, pageHtml: pageWithToast });
   mountHtml(APP_ROOT_ID, shellHtml);
 }
 
@@ -698,9 +774,23 @@ export function buildHandlers(scope) {
       const result = services.composerService.composeDaily(input);
       if (result.state === 'INFEASIBLE') {
         state.infeasibleExplain = result.infeasible?.explain ?? [];
+        // Surface infeasibility as a toast alongside the banner — the
+        // banner lives under the loading spinner and is easy to miss.
+        showToast(
+          state,
+          ToastKind.ERROR,
+          "Today's plan is infeasible. See the suggestions above to adjust.",
+          rerender
+        );
       }
     } catch (err) {
       state.lastError = err;
+      showToast(
+        state,
+        ToastKind.ERROR,
+        `Compose failed: ${err.message ?? err.name ?? 'unknown error'}`,
+        rerender
+      );
     } finally {
       state.composerLoading = false;
       rerender();
@@ -722,21 +812,241 @@ export function buildHandlers(scope) {
       });
     },
 
+    TOAST_DISMISS(_payload) {
+      state.toast = null;
+      rerender();
+    },
+
     ACCEPT(payload) {
       if (!payload || !payload.compositionId) return;
       try {
         services.composerService.accept(payload.compositionId);
+        showToast(state, ToastKind.SUCCESS, "Today's plan accepted.", rerender);
       } catch (err) {
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Accept failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
 
-    EDIT(_payload) {
-      // Edit (drag/drop composer) ships in Sprint 6.
-      if (typeof globalThis.alert === 'function') {
-        globalThis.alert('Edit composer ships in Sprint 6.');
+    EDIT(payload) {
+      // Sprint 12 — enter edit mode. Snapshot the current composition's
+      // activities so Cancel can restore them verbatim.
+      if (!payload || !payload.compositionId) return;
+      const active = services.composerService.getComposition(payload.compositionId);
+      if (!active) return;
+      const snapshot = active.activities.map((a) => ({ ...a }));
+      state.editMode = {
+        compositionId: payload.compositionId,
+        snapshotActivities: snapshot,
+        activities: snapshot.map((a) => ({ ...a })),
+        selectedActivityId: null,
+        undoStack: [],
+        searchQuery: '',
+        projectTypeFilter: 'all',
+        expandedBuckets: ['PROJECT']
+      };
+      rerender();
+    },
+
+    EDIT_EXIT(_payload) {
+      state.editMode = null;
+      rerender();
+    },
+
+    EDIT_SELECT_SLOT(payload) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.activityId !== 'string') return;
+      // Protected slots cannot be selected for swap.
+      const target = state.editMode.activities.find((a) => a.id === payload.activityId);
+      if (!target) return;
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.INFO,
+          "This block can't be changed — it's required for your daily rhythm.",
+          rerender
+        );
+        return;
       }
+      state.editMode.selectedActivityId = payload.activityId;
+      rerender();
+    },
+
+    EDIT_ADD_SLOT(_payload) {
+      if (!state.editMode) return;
+      state.editMode.selectedActivityId = '__new__';
+      rerender();
+    },
+
+    EDIT_SWAP(payload) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.catalogEntryId !== 'string') return;
+      const catalog = services.catalogService.list(DEFAULT_USER.id) ?? [];
+      const entry = catalog.find((e) => e && e.id === payload.catalogEntryId);
+      if (!entry) {
+        showToast(state, ToastKind.ERROR, 'Catalog entry not found.', rerender);
+        return;
+      }
+      const { selectedActivityId } = state.editMode;
+      const now = services.clock.now();
+      if (selectedActivityId === '__new__') {
+        // Add-new flow — append a fresh slot.
+        state.editMode.undoStack = pushUndo(
+          state.editMode.undoStack,
+          state.editMode.activities.map((a) => ({ ...a }))
+        );
+        state.editMode.activities = applyAdd(state.editMode.activities, entry, now);
+        state.editMode.selectedActivityId = null;
+        showToast(state, ToastKind.SUCCESS, `Added ${entry.name}.`, rerender);
+        rerender();
+        return;
+      }
+      if (!selectedActivityId) {
+        showToast(
+          state,
+          ToastKind.INFO,
+          'Pick a slot in the schedule first, then tap a card to swap.',
+          rerender
+        );
+        return;
+      }
+      const target = state.editMode.activities.find((a) => a.id === selectedActivityId);
+      if (!target) return;
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.ERROR,
+          "This block can't be changed — it's required for your daily rhythm.",
+          rerender
+        );
+        return;
+      }
+      state.editMode.undoStack = pushUndo(
+        state.editMode.undoStack,
+        state.editMode.activities.map((a) => ({ ...a }))
+      );
+      const oldName = target.name;
+      state.editMode.activities = applySwap(
+        state.editMode.activities,
+        selectedActivityId,
+        entry,
+        now
+      );
+      state.editMode.selectedActivityId = null;
+      showToast(
+        state,
+        ToastKind.SUCCESS,
+        `Swapped ${oldName} → ${entry.name}.`,
+        rerender
+      );
+      rerender();
+    },
+
+    EDIT_REMOVE_SLOT(payload) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.activityId !== 'string') return;
+      const target = state.editMode.activities.find((a) => a.id === payload.activityId);
+      if (!target) return;
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.ERROR,
+          "This block can't be removed — it's required for your daily rhythm.",
+          rerender
+        );
+        return;
+      }
+      state.editMode.undoStack = pushUndo(
+        state.editMode.undoStack,
+        state.editMode.activities.map((a) => ({ ...a }))
+      );
+      state.editMode.activities = applyRemove(state.editMode.activities, payload.activityId);
+      if (state.editMode.selectedActivityId === payload.activityId) {
+        state.editMode.selectedActivityId = null;
+      }
+      showToast(state, ToastKind.SUCCESS, `Removed ${target.name}.`, rerender);
+      rerender();
+    },
+
+    EDIT_UNDO(_payload) {
+      if (!state.editMode) return;
+      const { stack, snapshot } = popUndo(state.editMode.undoStack);
+      if (!snapshot) {
+        showToast(state, ToastKind.INFO, 'Nothing to undo.', rerender);
+        return;
+      }
+      state.editMode.undoStack = stack;
+      state.editMode.activities = snapshot;
+      state.editMode.selectedActivityId = null;
+      showToast(state, ToastKind.INFO, 'Undid last change.', rerender);
+      rerender();
+    },
+
+    EDIT_BUCKET_TOGGLE(payload) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.bucket !== 'string') return;
+      const list = state.editMode.expandedBuckets ?? [];
+      if (list.includes(payload.bucket)) {
+        state.editMode.expandedBuckets = list.filter((b) => b !== payload.bucket);
+      } else {
+        state.editMode.expandedBuckets = [...list, payload.bucket];
+      }
+      rerender();
+    },
+
+    EDIT_SEARCH(payload, ctx) {
+      if (!state.editMode) return;
+      let value = payload?.value;
+      if (typeof value !== 'string' && ctx?.element && typeof ctx.element.value === 'string') {
+        value = ctx.element.value;
+      }
+      state.editMode.searchQuery = typeof value === 'string' ? value : '';
+      rerender();
+    },
+
+    EDIT_PROJECT_TYPE_FILTER(payload, ctx) {
+      if (!state.editMode) return;
+      let value = payload?.projectType ?? payload?.value;
+      if (typeof value !== 'string' && ctx?.element && typeof ctx.element.value === 'string') {
+        value = ctx.element.value;
+      }
+      if (typeof value !== 'string') return;
+      state.editMode.projectTypeFilter = value;
+      rerender();
+    },
+
+    EDIT_COMMIT(_payload) {
+      if (!state.editMode) return;
+      const { compositionId, activities } = state.editMode;
+      try {
+        services.composerService.commitEdit(compositionId, activities, {
+          userId: DEFAULT_USER.id
+        });
+        state.editMode = null;
+        showToast(state, ToastKind.SUCCESS, 'Edits saved.', rerender);
+      } catch (err) {
+        state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Commit failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
+      }
+      rerender();
+    },
+
+    EDIT_CANCEL(_payload) {
+      if (!state.editMode) return;
+      state.editMode = null;
+      showToast(state, ToastKind.INFO, 'Edit cancelled.', rerender);
+      rerender();
     },
 
     REJECT(payload) {
@@ -796,8 +1106,15 @@ export function buildHandlers(scope) {
       try {
         services.activityService.close(payload.activityId, { outputArtifactRef: ref });
         state.openDialog = null;
+        showToast(state, ToastKind.SUCCESS, 'Activity closed.', rerender);
       } catch (err) {
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Could not close activity: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -826,8 +1143,15 @@ export function buildHandlers(scope) {
       try {
         services.activityService.skip(payload.activityId, { reasonCode, note });
         state.openDialog = null;
+        showToast(state, ToastKind.SUCCESS, 'Activity skipped.', rerender);
       } catch (err) {
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Skip failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -1038,6 +1362,30 @@ export function buildHandlers(scope) {
         );
       } catch (err) {
         state.lastError = err;
+      }
+      rerender();
+    },
+
+    // Sprint 11 P1-T2: re-classify a DRAFT Kaizen's projectType.
+    KAIZEN_UPDATE_PROJECT_TYPE(payload, ctx) {
+      if (!payload || !payload.kaizenId) return;
+      const fields = extractFormFields(ctx?.element);
+      const newProjectType = fields.newProjectType ?? null;
+      try {
+        services.kaizenService.updateProjectType({
+          kaizenId: payload.kaizenId,
+          newProjectType,
+          userId: DEFAULT_USER.id
+        });
+        showToast(state, ToastKind.SUCCESS, 'Project type updated.', rerender);
+      } catch (err) {
+        state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Project-type update failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -1255,6 +1603,10 @@ export function buildHandlers(scope) {
         problemStatement: '',
         scope: '',
         proposedProjectType: 'AD_HOC',
+        // Sprint 11 P1-T1 — richer intake fields (optional).
+        currentState: '',
+        desiredState: '',
+        primaryStakeholder: '',
         errorName: null,
         errorMessage: null
       };
@@ -1278,9 +1630,13 @@ export function buildHandlers(scope) {
           title: (fields.title ?? '').trim(),
           problemStatement: (fields.problemStatement ?? '').trim(),
           scope: fields.scope ? String(fields.scope).trim() : null,
-          proposedProjectType: fields.proposedProjectType ?? 'AD_HOC'
+          proposedProjectType: fields.proposedProjectType ?? 'AD_HOC',
+          currentState: fields.currentState ? String(fields.currentState).trim() : null,
+          desiredState: fields.desiredState ? String(fields.desiredState).trim() : null,
+          primaryStakeholder: fields.primaryStakeholder ? String(fields.primaryStakeholder).trim() : null
         });
         state.portfolio.intakeForm = null;
+        showToast(state, ToastKind.SUCCESS, 'Opportunity captured.', rerender);
       } catch (err) {
         state.portfolio.intakeForm = {
           ...(state.portfolio.intakeForm ?? {}),
@@ -1288,10 +1644,19 @@ export function buildHandlers(scope) {
           problemStatement: fields.problemStatement ?? '',
           scope: fields.scope ?? '',
           proposedProjectType: fields.proposedProjectType ?? 'AD_HOC',
+          currentState: fields.currentState ?? '',
+          desiredState: fields.desiredState ?? '',
+          primaryStakeholder: fields.primaryStakeholder ?? '',
           errorName: err.name ?? 'INTAKE_FAILED',
           errorMessage: err.message ?? ''
         };
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Could not capture opportunity: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -1301,8 +1666,15 @@ export function buildHandlers(scope) {
       if (!services.opportunityService) return;
       try {
         services.opportunityService.promote(payload.opportunityId);
+        showToast(state, ToastKind.SUCCESS, 'Opportunity promoted to a DRAFT Kaizen.', rerender);
       } catch (err) {
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Promote failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -1491,13 +1863,23 @@ export function buildHandlers(scope) {
           userId: DEFAULT_USER.id,
           sourceKind: 'portfolio'
         });
+        showToast(state, ToastKind.SUCCESS, 'Step marked complete.', rerender);
       } catch (err) {
         state.lastError = err;
-        // Best-effort inline toast — fall back to console.warn if no global
-        // alert exists (tests). Avoids blocking the render path.
         if (err && err.name === 'STEP_NOT_CURRENT') {
-          // eslint-disable-next-line no-console
-          console.warn('Complete next step first.', { kaizenId: payload.kaizenId });
+          showToast(
+            state,
+            ToastKind.ERROR,
+            'Complete the current step before jumping ahead.',
+            rerender
+          );
+        } else {
+          showToast(
+            state,
+            ToastKind.ERROR,
+            `Complete failed: ${err.message ?? err.name ?? 'unknown error'}`,
+            rerender
+          );
         }
       }
       rerender();
@@ -1513,8 +1895,15 @@ export function buildHandlers(scope) {
           targetDate: todayIso,
           userId: DEFAULT_USER.id
         });
+        showToast(state, ToastKind.SUCCESS, 'Step scheduled for today.', rerender);
       } catch (err) {
         state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Schedule failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
       }
       rerender();
     },
@@ -1595,6 +1984,7 @@ export function start() {
 
   services.bus.subscribe(CycleProposed, () => {});
   services.bus.subscribe(CycleAccepted, () => {});
+  services.bus.subscribe(CycleEdited, () => {});
   services.bus.subscribe(CycleRejected, () => {});
   services.bus.subscribe(ComposerInfeasible, () => {});
   services.bus.subscribe(ActivityStarted, () => {});
@@ -1635,7 +2025,39 @@ export function start() {
   listener();
   globalThis.addEventListener('hashchange', listener);
 
-  attachRootClickListener(APP_ROOT_ID, buildHandlers({ services, state, rerender }));
+  const handlers = buildHandlers({ services, state, rerender });
+  attachRootClickListener(APP_ROOT_ID, handlers);
+
+  // Sprint 12: keyboard shortcuts scoped to edit mode.
+  //   Esc       → EDIT_CANCEL
+  //   Ctrl/Cmd+Z → EDIT_UNDO
+  /* istanbul ignore next — browser only */
+  globalThis.addEventListener('keydown', (ev) => {
+    if (!state.editMode) return;
+    // Skip shortcuts while the user is typing in a form field.
+    const tag = ev.target?.tagName?.toLowerCase?.();
+    const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select' || ev.target?.isContentEditable === true;
+    if (ev.key === 'Escape' && !isTyping) {
+      ev.preventDefault();
+      handlers.EDIT_CANCEL({});
+    } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'z') {
+      ev.preventDefault();
+      handlers.EDIT_UNDO({});
+    }
+  });
+
+  // Sprint 12: search input needs `input` events (the click dispatcher only
+  // handles buttons). Delegate on the app root.
+  /* istanbul ignore next — browser only */
+  const root = document.getElementById(APP_ROOT_ID);
+  if (root) {
+    root.addEventListener('input', (ev) => {
+      const el = ev.target;
+      if (!el || typeof el.getAttribute !== 'function') return;
+      if (el.getAttribute('data-action') !== 'EDIT_SEARCH') return;
+      handlers.EDIT_SEARCH({ value: el.value ?? '' });
+    });
+  }
 
   // Sprint 10c: upgrade BROWSER_CATALOG (9 entries) → full 60-entry catalog
   // asynchronously after boot. Non-blocking so the app renders immediately

@@ -47,6 +47,7 @@ import { composeDaily } from '../composer/composeDaily.js';
 import {
   CycleProposed,
   CycleAccepted,
+  CycleEdited,
   CycleRejected,
   ComposerInfeasible
 } from '../events/events.js';
@@ -383,6 +384,182 @@ export class ComposerService {
     });
 
     return nextComp;
+  }
+
+  /**
+   * Sprint 12 — persist an edited activity list against an existing
+   * Composition. Atomic replace:
+   *
+   *   - For each existing child, if a new child with the same `id` AND
+   *     the same `catalogEntryId` is present in `newActivities`, preserve
+   *     `actualStartAt` / `state` (the catalog entry wasn't swapped, so
+   *     runtime facts survive).
+   *   - For each existing child NOT present in `newActivities`, mark
+   *     `state: 'DROPPED'` (keeps the row for audit).
+   *   - For each new activity (no matching prior id), write it fresh.
+   *
+   * Recomputes `composition.plannedByBucket`. Bumps `composition.state` to
+   * 'EDITED' if currently PROPOSED; leaves it alone if ACCEPTED / ACTIVE
+   * (editing post-accept is a content change, not a re-decision).
+   *
+   * Publishes `CycleEdited` with `{compositionId, userId, swaps, committedAt}`.
+   *
+   * @param {string} compositionId
+   * @param {object[]} newActivities  the edited activity list (may share
+   *                                  ids with the prior children for
+   *                                  preserved slots, or carry fresh ids
+   *                                  for swaps/adds)
+   * @param {{userId?: string}} [_opts]
+   * @returns {{composition: object, activities: object[]}}
+   */
+  commitEdit(compositionId, newActivities, _opts = {}) {
+    if (typeof compositionId !== 'string' || compositionId.length === 0) {
+      fail('INVALID_ID', 'ComposerService.commitEdit: compositionId is required');
+    }
+    if (!Array.isArray(newActivities)) {
+      fail(
+        'INVALID_ACTIVITIES',
+        'ComposerService.commitEdit: newActivities must be an array'
+      );
+    }
+    const comps = this._repo.read(COMPOSITIONS_KEY) ?? {};
+    const comp = comps[compositionId];
+    if (!comp) {
+      fail(
+        'COMPOSITION_NOT_FOUND',
+        `ComposerService.commitEdit: composition '${compositionId}' not found`,
+        { compositionId }
+      );
+    }
+
+    const acts = this._repo.read(ACTIVITIES_KEY) ?? {};
+    const priorChildren = Object.values(acts).filter(
+      (a) => a && a.compositionId === compositionId
+    );
+    const priorById = new Map(priorChildren.map((a) => [a.id, a]));
+
+    const now = this._clock.now();
+    const nextActs = { ...acts };
+
+    // Track swaps for the CycleEdited payload.
+    const swaps = [];
+    const seenIds = new Set();
+
+    for (const edited of newActivities) {
+      if (!edited || typeof edited !== 'object') continue;
+      const id = edited.id;
+      if (typeof id !== 'string' || id.length === 0) continue;
+      seenIds.add(id);
+      const prior = priorById.get(id);
+      if (prior && prior.catalogEntryId === edited.catalogEntryId) {
+        // Unchanged slot — preserve runtime state.
+        nextActs[id] = {
+          ...prior,
+          ...edited,
+          // Do NOT clobber actualStartAt / runtime state / outputArtifactRef.
+          state: prior.state,
+          actualStartAt: prior.actualStartAt,
+          compositionId,
+          updatedAt: now
+        };
+        continue;
+      }
+      // New or swapped slot. If there was a prior row with the same id but
+      // different catalogEntryId, mark the prior DROPPED (audit trail) and
+      // write the new one under a fresh id to avoid losing the original.
+      if (prior) {
+        swaps.push({
+          slotActivityId: prior.id,
+          fromCatalogEntryId: prior.catalogEntryId,
+          toCatalogEntryId: edited.catalogEntryId
+        });
+        nextActs[prior.id] = { ...prior, state: 'DROPPED', updatedAt: now };
+        const freshId = `${id}_edit_${now}`;
+        nextActs[freshId] = {
+          ...edited,
+          id: freshId,
+          compositionId,
+          updatedAt: now
+        };
+      } else {
+        // Net-new slot from Add-new flow.
+        swaps.push({
+          slotActivityId: id,
+          fromCatalogEntryId: null,
+          toCatalogEntryId: edited.catalogEntryId
+        });
+        nextActs[id] = {
+          ...edited,
+          compositionId,
+          updatedAt: now
+        };
+      }
+    }
+
+    // Any prior children not present in newActivities → DROPPED.
+    for (const prior of priorChildren) {
+      if (seenIds.has(prior.id)) continue;
+      if (prior.state === 'DROPPED') continue;
+      swaps.push({
+        slotActivityId: prior.id,
+        fromCatalogEntryId: prior.catalogEntryId,
+        toCatalogEntryId: null
+      });
+      nextActs[prior.id] = { ...prior, state: 'DROPPED', updatedAt: now };
+    }
+
+    // Recompute plannedByBucket from the surviving non-DROPPED rows.
+    const survivors = Object.values(nextActs).filter(
+      (a) => a && a.compositionId === compositionId && a.state !== 'DROPPED'
+    );
+    const plannedByBucket = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
+    for (const a of survivors) {
+      if (a.state === 'SKIPPED') continue;
+      if (plannedByBucket[a.bucket] !== undefined) {
+        plannedByBucket[a.bucket] += Number(a.plannedDurationMinutes ?? 0);
+      }
+    }
+
+    const nextState =
+      comp.state === 'PROPOSED' ? 'EDITED' : comp.state;
+    const nextComp = {
+      ...comp,
+      state: nextState,
+      plannedByBucket,
+      lastEditedAt: now
+    };
+    const nextComps = { ...comps, [compositionId]: nextComp };
+
+    // Two-phase write with rollback.
+    const priorComps = comps;
+    const priorActs = acts;
+    try {
+      this._repo.write(COMPOSITIONS_KEY, nextComps);
+      try {
+        this._repo.write(ACTIVITIES_KEY, nextActs);
+      } catch (err) {
+        this._repo.write(COMPOSITIONS_KEY, priorComps);
+        throw err;
+      }
+    } catch (err) {
+      fail(
+        'PERSIST_FAILED',
+        `ComposerService.commitEdit: persistence failed — ${err.message}`,
+        { cause: err, compositionId }
+      );
+    }
+
+    this._bus.publish(CycleEdited, {
+      compositionId,
+      userId: nextComp.userId,
+      swaps,
+      committedAt: now
+    });
+
+    const children = Object.values(nextActs).filter(
+      (a) => a && a.compositionId === compositionId
+    );
+    return { composition: nextComp, activities: children };
   }
 
   /**

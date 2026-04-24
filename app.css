@@ -171,6 +171,18 @@ html, body {
   background: #fff;
 }
 
+/* Sprint 11 Pass 11c — empty-state onboarding hint strip. */
+.today-onboarding-hint {
+  margin: -4px 0 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius);
+}
+
 .empty-copy {
   font-size: 16px;
   color: var(--muted);
@@ -1206,4 +1218,706 @@ html, body {
   border-radius: 4px;
   font-size: 13px;
   color: var(--fg);
+}
+
+/* ========================================================================
+ * Sprint 11 — Toast system (P0-T3)
+ * ======================================================================== */
+
+.toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  max-width: 420px;
+  min-width: 260px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  background: #fff;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 1000;
+  font-size: 14px;
+  color: var(--fg);
+}
+
+.toast-success {
+  border-left: 4px solid var(--success);
+}
+
+.toast-error {
+  border-left: 4px solid var(--danger);
+  background: #fef2f2;
+}
+
+.toast-info {
+  border-left: 4px solid var(--primary);
+}
+
+.toast-body {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.toast-dismiss {
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 4px;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.toast-dismiss:hover {
+  color: var(--fg);
+}
+
+/* ========================================================================
+ * Sprint 11 — Responsive breakpoints (P0-T2)
+ *
+ * Tablet (≤ 900px): stack multi-column strips / grids.
+ * Mobile (≤ 600px): compact nav, stack Today chrome, full-width cards.
+ * Minimum touch target on all buttons: 44px tall.
+ * ======================================================================== */
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .bucket-strip {
+    gap: 8px;
+  }
+
+  .bucket-row {
+    grid-template-columns: 100px 1fr 80px;
+    gap: 10px;
+  }
+
+  .pf-pt-group {
+    /* Portfolio project-type groups already flex column. Reinforce. */
+    grid-template-columns: 1fr;
+  }
+
+  .cat-bucket-grid {
+    /* Already collapsed at 900px above — keep for clarity. */
+    grid-template-columns: 1fr;
+  }
+
+  .sa-block {
+    /* 7-col grid collapses to 3 rows: time+chip+name | intention | duration+state+start */
+    grid-template-columns: 60px 120px 1fr 80px;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .app-nav {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 2px;
+    font-size: 12px;
+  }
+
+  .nav-brand {
+    margin-right: 8px;
+    font-size: 13px;
+    flex-basis: 100%;
+    margin-bottom: 4px;
+  }
+
+  .nav-item {
+    padding: 6px 8px;
+    font-size: 12px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .today-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .adherence-dial {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .dial-number {
+    font-size: 18px;
+  }
+
+  .cycle-card {
+    padding: 12px;
+  }
+
+  .cycle-title {
+    font-size: 18px;
+  }
+
+  .rhythm-explainer {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .rhythm-explainer-dismiss {
+    align-self: flex-start;
+  }
+
+  .bucket-row {
+    grid-template-columns: 90px 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px 10px;
+    padding: 8px 10px;
+  }
+
+  .bucket-row .bucket-value {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .sa-block {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .sa-when,
+  .sa-bucket-chip,
+  .sa-name,
+  .sa-duration,
+  .sa-intention,
+  .sa-state-label {
+    text-align: left;
+  }
+
+  .sa-start {
+    min-height: 44px;
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .triad {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .triad button {
+    width: 100%;
+    min-height: 44px;
+    min-width: 0;
+  }
+
+  .auto-plan-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .pf-new-opp {
+    width: 100%;
+  }
+
+  .kz-card,
+  .cat-card {
+    padding: 10px;
+  }
+
+  .cat-card-main {
+    flex-wrap: wrap;
+  }
+
+  .cat-card-toggle {
+    min-height: 36px;
+  }
+
+  .cat-list-row {
+    padding: 10px;
+  }
+
+  .cat-list-row-main {
+    grid-template-columns: 32px 1fr auto;
+    gap: 8px;
+    row-gap: 6px;
+  }
+
+  .cat-list-bucket,
+  .cat-list-lock {
+    grid-column: 2 / -1;
+  }
+
+  .cat-list-toggle {
+    min-height: 36px;
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .cat-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .week-page {
+    padding: 10px;
+  }
+
+  .wk-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .wk-propose,
+  .wk-accept-all,
+  .wk-accept-day {
+    min-height: 44px;
+  }
+
+  .toast {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    max-width: none;
+  }
+
+  /* Forms / dialogs: ensure inputs + submits are tappable. */
+  .oif-input,
+  .oif-textarea,
+  .oif-select,
+  .oif-submit,
+  .oif-cancel {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  .oif-textarea {
+    min-height: 80px;
+  }
+}
+
+/* ==========================================================================
+   Sprint 12 — Edit Mode (drawer + swap chrome)
+   ========================================================================== */
+
+.today-editing .cycle-card:not(.cycle-editing) {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.cycle-card.cycle-editing {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+}
+
+.triad.triad-edit {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin-top: 16px;
+}
+
+.triad.triad-edit button {
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: white;
+}
+
+.triad.triad-edit .primary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.triad.triad-edit .primary:hover { background: #1d4ed8; }
+
+.triad.triad-edit .ghost {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.triad.triad-edit .ghost[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Edit-mode block styling -------------------------------------------- */
+
+.sa-block.edit-selectable {
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sa-block.edit-selectable:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.sa-block.edit-selected {
+  box-shadow: inset 3px 0 0 #2563eb;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.sa-block.edit-protected {
+  opacity: 0.65;
+}
+
+.sa-lock {
+  margin-left: 8px;
+  font-size: 14px;
+}
+
+.sa-edit-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.sa-edit-select,
+.sa-edit-remove {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sa-edit-remove {
+  color: #dc2626;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.sa-edit-select:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.sa-edit-remove:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: #dc2626;
+}
+
+/* --- Drawer layout ------------------------------------------------------- */
+
+.edit-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background: white;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+.edit-drawer.edit-drawer-open { transform: translateX(0); }
+
+.edit-drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.edit-drawer-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.edit-drawer-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.edit-drawer-dismiss {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.edit-drawer-dismiss:hover { background: rgba(0, 0, 0, 0.06); }
+
+.edit-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.edit-search-row {
+  margin-bottom: 12px;
+}
+
+.edit-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.edit-search-input:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  border-color: #2563eb;
+}
+
+/* --- Bucket cards inside drawer ----------------------------------------- */
+
+.edit-bucket-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.edit-bucket-card.edit-bucket-violated {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px #dc2626 inset;
+}
+
+.edit-bucket-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.edit-bucket-header:hover { background: #f3f4f6; }
+
+.edit-bucket-chevron {
+  width: 16px;
+  display: inline-block;
+  text-align: center;
+  color: #6b7280;
+}
+
+.edit-bucket-title { flex: 1 1 auto; }
+
+.edit-bucket-count { color: #6b7280; font-weight: 400; font-size: 12px; }
+
+.edit-pt-filter {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #fbfbfb;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.edit-pt-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.edit-pt-pill.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.edit-pt-pill:not(.active):hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.edit-catalog-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-catalog-card {
+  list-style: none;
+}
+
+.edit-catalog-card-btn {
+  width: 100%;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-catalog-card-btn:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-color: #2563eb;
+}
+
+.edc-head {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.edc-num {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.edc-name { font-weight: 600; font-size: 14px; }
+
+.edc-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.edc-duration {
+  font-weight: 600;
+  color: #1f2937;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.edc-chip {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.edc-in-today {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fbbf24;
+  color: #78350f;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.edc-delta {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.edc-delta-plus { background: #d1fae5; color: #065f46; }
+
+.edc-delta-minus { background: #fee2e2; color: #991b1b; }
+
+.edc-delta-zero { background: rgba(0, 0, 0, 0.06); color: #6b7280; }
+
+.edit-bucket-empty {
+  padding: 12px;
+  color: #9ca3af;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* --- Drawer footer (Commit/Cancel/Undo/Add) ----------------------------- */
+
+.edit-drawer-footer {
+  padding: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 8px;
+  background: #f9fafb;
+  flex-wrap: wrap;
+}
+
+.edit-drawer-footer button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.edit-drawer-footer .primary {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  flex: 1 1 100px;
+}
+
+.edit-drawer-footer .primary:hover { background: #1d4ed8; }
+
+.edit-drawer-footer .ghost { background: transparent; }
+
+.edit-drawer-footer .ghost[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Mobile drawer (full-screen takeover) ------------------------------- */
+
+@media (max-width: 600px) {
+  .edit-drawer {
+    width: 100vw;
+  }
+
+  .edit-drawer-footer {
+    padding: 8px;
+  }
+
+  .edit-drawer-footer button {
+    flex: 1 1 calc(50% - 4px);
+    min-height: 44px;
+  }
 }

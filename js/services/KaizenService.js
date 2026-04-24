@@ -456,6 +456,67 @@ export class KaizenService {
   }
 
   /**
+   * Change the projectType on a DRAFT Kaizen (Sprint 11 P1-T2).
+   *
+   * Guards:
+   *   - kaizen must exist, must not be abandoned, must be in DRAFT state.
+   *   - newProjectType must be one of the 5 valid `ProjectType` enum values.
+   *
+   * Does not emit a new event — project-type change on a DRAFT before
+   * baseline-lock is not audit-worthy. ARCHITECTURE §3.3 treats DRAFT as
+   * editable scratch-space until baseline is locked. Subsequent
+   * `KaizenBaselineLocked` captures the final projectType.
+   *
+   * @param {{kaizenId: string, newProjectType: string, userId?: string}} input
+   * @returns {object} updated kaizen
+   */
+  updateProjectType(input) {
+    if (!input || typeof input !== 'object') {
+      fail('INVALID_INPUT', 'KaizenService.updateProjectType: input required');
+    }
+    const { kaizenId, newProjectType } = input;
+    if (typeof kaizenId !== 'string' || kaizenId.length === 0) {
+      fail('INVALID_INPUT', 'KaizenService.updateProjectType: kaizenId required');
+    }
+    const k = this.get(kaizenId);
+    if (!k) {
+      fail(
+        'KAIZEN_NOT_FOUND',
+        `KaizenService.updateProjectType: kaizen '${kaizenId}' not found`,
+        { kaizenId }
+      );
+    }
+    if (k.abandoned === true) {
+      fail(
+        'KAIZEN_ABANDONED',
+        `KaizenService.updateProjectType: kaizen '${kaizenId}' is abandoned`,
+        { kaizenId }
+      );
+    }
+    if (k.state !== KaizenState.DRAFT) {
+      fail(
+        'KAIZEN_NOT_IN_DRAFT',
+        `KaizenService.updateProjectType: kaizen '${kaizenId}' is '${k.state}', must be DRAFT`,
+        { kaizenId, state: k.state }
+      );
+    }
+    if (typeof newProjectType !== 'string' || !(newProjectType in ProjectType)) {
+      fail(
+        'INVALID_PROJECT_TYPE',
+        `KaizenService.updateProjectType: newProjectType must be one of ${Object.values(ProjectType).join(' / ')} (got '${newProjectType}')`,
+        { value: newProjectType }
+      );
+    }
+    if (k.projectType === newProjectType) {
+      // No-op: return the current row without a write.
+      return k;
+    }
+    const next = { ...k, projectType: newProjectType };
+    this._repo.upsert(KAIZENS_KEY, kaizenId, next);
+    return next;
+  }
+
+  /**
    * Append an action to a DRAFT Kaizen's actions[].
    *
    * @param {string} kaizenId
@@ -1225,6 +1286,21 @@ export class KaizenService {
         ? input.projectType
         : ProjectType.AD_HOC;
 
+    // Sprint 11 P1-T1 — carry richer intake context onto the Kaizen.
+    // All three are optional string fields; null when unset.
+    const currentState =
+      typeof input.currentState === 'string' && input.currentState.length > 0
+        ? input.currentState
+        : null;
+    const desiredState =
+      typeof input.desiredState === 'string' && input.desiredState.length > 0
+        ? input.desiredState
+        : null;
+    const primaryStakeholder =
+      typeof input.primaryStakeholder === 'string' && input.primaryStakeholder.length > 0
+        ? input.primaryStakeholder
+        : null;
+
     const kaizen = {
       id,
       userId,
@@ -1264,7 +1340,11 @@ export class KaizenService {
       targetImprovement: null,
       abandoned: false,
       abandonedAt: null,
-      abandonReason: null
+      abandonReason: null,
+      // Sprint 11 P1-T1 — richer intake context.
+      currentState,
+      desiredState,
+      primaryStakeholder
     };
 
     this._repo.upsert(KAIZENS_KEY, id, kaizen);

@@ -95,12 +95,15 @@
   {
     "id": "cat_3_company_compliance_training_l_d_tracker",
     "activityNumber": 3,
-    "name": "Company Compliance Training (L&D Tracker)",
+    "name": "Professional Compliance Training (L&D Tracker)",
     "focusArea": "CONTINUOUS_IMPROVEMENT",
     "defaultDurationMinutes": 30,
     "procedure": [
-      "1. Track Company Compliance Training requirements in KNET, KNET2, and FastCap",
-      "2. Complete training"
+      "1. Identify the set of required compliance courses you owe for the current training cycle.",
+      "2. Review any prerequisites, expiry rules, or company-specific attestations each course carries.",
+      "3. Schedule the courses into your calendar — cluster short courses together, isolate longer ones.",
+      "4. Complete each course and log the completion in the L&D tracker (KNET / KNET2 / FastCap equivalents).",
+      "5. Review the annual-refresh schedule so re-certifications land on your calendar before their deadlines."
     ],
     "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:44",
     "cadence": "MONTHLY",
@@ -684,7 +687,7 @@
   {
     "id": "cat_16_connecting_with_other_companyians_15_60_minutes",
     "activityNumber": 16,
-    "name": "Connecting with other Companyians (15-60 minutes)",
+    "name": "Peer Connection 1:1s",
     "focusArea": "COMMUNICATION",
     "defaultDurationMinutes": 120,
     "procedure": [
@@ -2171,14 +2174,15 @@
   {
     "id": "cat_48_kaizen_implemented_improvements",
     "activityNumber": 48,
-    "name": "Kaizen Implemented Improvements",
+    "name": "Kaizen Implemented Improvements — Rollup Tracker",
     "focusArea": "KAIZEN",
     "defaultDurationMinutes": 1380,
     "procedure": [
-      "1. Open Current Failure Modes Effect Analysis spreadsheet",
-      "2. Review each recommended action for improvement of process inputs",
-      "3. Identify Improvement Backlog Item(s)",
-      "4. Document Improvement Backlog Item(s) Name, Description, and Day 2 Done Criteria"
+      "1. This is a rollup tracker, not a single work block — the duration (~23 hours) represents the total of all actual rollout work across a Kaizen.",
+      "2. Log each implementation milestone as it lands: pilot, phased rollout, go-live, sustainment handoff.",
+      "3. Attach evidence (artifacts, screenshots, adoption metrics) to each milestone in the Kaizen record.",
+      "4. Review the rollup weekly against the Kaizen goalStatement to ensure drift is caught early.",
+      "5. Decomposition of the actual rollout work into sub-activities is future work — track total minutes here for now."
     ],
     "sourceRef": "C:\\Users\\philk\\kaizen\\docs\\Business Agility Standard Work.txt:807",
     "cadence": "EVENT_DRIVEN",

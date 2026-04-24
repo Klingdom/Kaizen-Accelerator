@@ -10,7 +10,9 @@ import {
   buildHash,
   createRouteListener,
   ROUTES,
-  ROUTE_NAMES
+  ROUTE_NAMES,
+  VISIBLE_ROUTE_NAMES,
+  PLACEHOLDER_ROUTE_NAMES
 } from '../../js/ui/router.js';
 
 describe('router — ROUTES / ROUTE_NAMES constants', () => {
@@ -51,6 +53,59 @@ describe('router — ROUTES / ROUTE_NAMES constants', () => {
     assert.throws(() => {
       ROUTES.FOO = 'bar';
     });
+  });
+});
+
+describe('router — VISIBLE_ROUTE_NAMES (Sprint 11 P0-T1)', () => {
+  test('VISIBLE_ROUTE_NAMES is a 5-item subset of ROUTE_NAMES', () => {
+    assert.equal(VISIBLE_ROUTE_NAMES.length, 5);
+    for (const r of VISIBLE_ROUTE_NAMES) {
+      assert.ok(ROUTE_NAMES.includes(r), `visible route '${r}' missing from ROUTE_NAMES`);
+    }
+  });
+
+  test('VISIBLE_ROUTE_NAMES lists the 5 shipped screens in expected order', () => {
+    assert.deepEqual([...VISIBLE_ROUTE_NAMES], [
+      'today',
+      'portfolio',
+      'week',
+      'catalog',
+      'kaizen'
+    ]);
+  });
+
+  test('VISIBLE_ROUTE_NAMES does NOT contain insights / settings (placeholders)', () => {
+    assert.ok(!VISIBLE_ROUTE_NAMES.includes('insights'));
+    assert.ok(!VISIBLE_ROUTE_NAMES.includes('settings'));
+  });
+
+  test('VISIBLE_ROUTE_NAMES is frozen', () => {
+    assert.throws(() => {
+      VISIBLE_ROUTE_NAMES.push('foo');
+    });
+  });
+
+  test('PLACEHOLDER_ROUTE_NAMES lists the 2 placeholder routes', () => {
+    assert.deepEqual([...PLACEHOLDER_ROUTE_NAMES], ['insights', 'settings']);
+  });
+
+  test('VISIBLE and PLACEHOLDER sets together cover ROUTE_NAMES', () => {
+    const covered = new Set([
+      ...VISIBLE_ROUTE_NAMES,
+      ...PLACEHOLDER_ROUTE_NAMES
+    ]);
+    assert.equal(covered.size, ROUTE_NAMES.length);
+    for (const r of ROUTE_NAMES) {
+      assert.ok(covered.has(r), `route '${r}' uncategorised`);
+    }
+  });
+
+  test('direct URL access to insights still parses (not hidden from router)', () => {
+    assert.deepEqual(parseHash('#insights'), { route: 'insights', params: {} });
+  });
+
+  test('direct URL access to settings still parses', () => {
+    assert.deepEqual(parseHash('#settings'), { route: 'settings', params: {} });
   });
 });
 

@@ -22,7 +22,11 @@ import {
   TITLE_MAX_LENGTH,
   PROBLEM_MIN_LENGTH,
   PROBLEM_MAX_LENGTH,
-  SCOPE_MAX_LENGTH
+  SCOPE_MAX_LENGTH,
+  STATE_FIELD_MIN_LENGTH,
+  STATE_FIELD_MAX_LENGTH,
+  STAKEHOLDER_MIN_LENGTH,
+  STAKEHOLDER_MAX_LENGTH
 } from '../../services/OpportunityService.js';
 
 /**
@@ -42,6 +46,9 @@ export const PROJECT_TYPE_HELP = Object.freeze({
  *   problemStatement?: string,
  *   scope?: string,
  *   proposedProjectType?: string,
+ *   currentState?: string,
+ *   desiredState?: string,
+ *   primaryStakeholder?: string,
  *   errorName?: string|null,
  *   errorMessage?: string|null
  * }} props
@@ -56,6 +63,12 @@ export function OpportunityIntakeForm(props = {}) {
     typeof props.proposedProjectType === 'string'
       ? props.proposedProjectType
       : ProjectType.AD_HOC;
+  const currentState =
+    typeof props.currentState === 'string' ? props.currentState : '';
+  const desiredState =
+    typeof props.desiredState === 'string' ? props.desiredState : '';
+  const primaryStakeholder =
+    typeof props.primaryStakeholder === 'string' ? props.primaryStakeholder : '';
   const errorName = props.errorName ?? null;
   const errorMessage = props.errorMessage ?? null;
 
@@ -64,8 +77,24 @@ export function OpportunityIntakeForm(props = {}) {
     problemStatement.length >= PROBLEM_MIN_LENGTH &&
     problemStatement.length <= PROBLEM_MAX_LENGTH;
   const scopeOk = scope.length <= SCOPE_MAX_LENGTH;
+  // Optional fields: either empty (null-on-submit) OR within bounds.
+  const currentStateOk =
+    currentState.length === 0 ||
+    (currentState.length >= STATE_FIELD_MIN_LENGTH &&
+      currentState.length <= STATE_FIELD_MAX_LENGTH);
+  const desiredStateOk =
+    desiredState.length === 0 ||
+    (desiredState.length >= STATE_FIELD_MIN_LENGTH &&
+      desiredState.length <= STATE_FIELD_MAX_LENGTH);
+  const stakeholderOk =
+    primaryStakeholder.length === 0 ||
+    (primaryStakeholder.length >= STAKEHOLDER_MIN_LENGTH &&
+      primaryStakeholder.length <= STAKEHOLDER_MAX_LENGTH);
   const submitDisabled =
-    !titleOk || !problemOk || !scopeOk ? 'disabled aria-disabled="true"' : '';
+    !titleOk || !problemOk || !scopeOk ||
+    !currentStateOk || !desiredStateOk || !stakeholderOk
+      ? 'disabled aria-disabled="true"'
+      : '';
 
   const errorBlock = errorName
     ? `<p class="oif-error" role="alert">${esc(errorName)}: ${esc(errorMessage ?? '')}</p>`
@@ -84,7 +113,7 @@ export function OpportunityIntakeForm(props = {}) {
   <form class="oif-form" data-action="OPP_SUBMIT_INTAKE" data-payload='{}'>
     <header class="oif-header">
       <h2 class="oif-title">Capture an opportunity</h2>
-      <p class="oif-subhead">A 60-second intake. Title, problem, optional scope, and the project type you think fits.</p>
+      <p class="oif-subhead">A 60-second intake. Title, problem, optional scope + state + stakeholder, and the project type you think fits.</p>
     </header>
     ${errorBlock}
     <label class="oif-label">Title
@@ -98,6 +127,21 @@ export function OpportunityIntakeForm(props = {}) {
     <label class="oif-label">Scope (optional)
       <textarea class="oif-textarea" name="scope" maxlength="${SCOPE_MAX_LENGTH}" rows="2" placeholder="What's in-scope? What's explicitly out-of-scope?">${esc(scope)}</textarea>
       <span class="oif-counter ${scopeOk ? 'oif-counter-ok' : 'oif-counter-bad'}">${esc(String(scope.length))} / ${esc(String(SCOPE_MAX_LENGTH))}</span>
+    </label>
+    <label class="oif-label">Current state (optional)
+      <textarea class="oif-textarea" name="currentState" maxlength="${STATE_FIELD_MAX_LENGTH}" rows="2" placeholder="Where things stand today — baseline, pain points, known constraints.">${esc(currentState)}</textarea>
+      <span class="oif-counter ${currentStateOk ? 'oif-counter-ok' : 'oif-counter-bad'}">${esc(String(currentState.length))} / ${esc(String(STATE_FIELD_MAX_LENGTH))}</span>
+      <span class="oif-help">If filled, must be ${STATE_FIELD_MIN_LENGTH}-${STATE_FIELD_MAX_LENGTH} chars.</span>
+    </label>
+    <label class="oif-label">Desired state (optional)
+      <textarea class="oif-textarea" name="desiredState" maxlength="${STATE_FIELD_MAX_LENGTH}" rows="2" placeholder="Where you want to end up — target condition, specific outcomes.">${esc(desiredState)}</textarea>
+      <span class="oif-counter ${desiredStateOk ? 'oif-counter-ok' : 'oif-counter-bad'}">${esc(String(desiredState.length))} / ${esc(String(STATE_FIELD_MAX_LENGTH))}</span>
+      <span class="oif-help">If filled, must be ${STATE_FIELD_MIN_LENGTH}-${STATE_FIELD_MAX_LENGTH} chars.</span>
+    </label>
+    <label class="oif-label">Primary stakeholder (optional)
+      <input type="text" class="oif-input" name="primaryStakeholder" maxlength="${STAKEHOLDER_MAX_LENGTH}" placeholder="Who benefits most or owns the outcome?" value="${esc(primaryStakeholder)}" />
+      <span class="oif-counter ${stakeholderOk ? 'oif-counter-ok' : 'oif-counter-bad'}">${esc(String(primaryStakeholder.length))} / ${esc(String(STAKEHOLDER_MAX_LENGTH))}</span>
+      <span class="oif-help">If filled, must be ${STAKEHOLDER_MIN_LENGTH}-${STAKEHOLDER_MAX_LENGTH} chars.</span>
     </label>
     <label class="oif-label">Proposed project type
       <select class="oif-select" name="proposedProjectType" required>

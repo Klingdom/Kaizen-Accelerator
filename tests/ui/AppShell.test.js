@@ -24,10 +24,10 @@ describe('AppShell — structure', () => {
     assert.match(html, /<div class="app-content">[\s\S]*id="probe"[\s\S]*<\/div>/);
   });
 
-  test('nav has 7 items (one per MVP route — Portfolio added in Sprint 7)', () => {
+  test('nav has 5 items — Sprint 11 P0-T1 hides unimplemented insights + settings', () => {
     const html = AppShell({ route: 'today' });
     const navItems = (html.match(/class="nav-item[^"]*"/g) ?? []).length;
-    assert.equal(navItems, 7);
+    assert.equal(navItems, 5);
   });
 
   test('nav includes Portfolio in 2nd position after Today (Sprint 7)', () => {
@@ -39,6 +39,17 @@ describe('AppShell — structure', () => {
     const weekIdx = html.indexOf('href="#week"');
     assert.ok(todayIdx >= 0 && portfolioIdx > todayIdx);
     assert.ok(weekIdx > portfolioIdx);
+  });
+
+  test('nav hides insights + settings routes (Sprint 11 P0-T1)', () => {
+    const html = AppShell({ route: 'today' });
+    assert.ok(!html.includes('href="#insights"'));
+    assert.ok(!html.includes('href="#settings"'));
+  });
+
+  test('nav includes kaizen route (functional screen)', () => {
+    const html = AppShell({ route: 'today' });
+    assert.match(html, /href="#kaizen"/);
   });
 
   test('active route carries the "active" class', () => {
@@ -56,14 +67,13 @@ describe('AppShell — structure', () => {
     assert.ok(!/href="#week"[^>]*aria-current/.test(html));
   });
 
-  test('nav uses hash anchors (# prefix)', () => {
+  test('nav uses hash anchors (# prefix) for visible routes', () => {
     const html = AppShell({ route: 'today' });
     assert.match(html, /href="#today"/);
+    assert.match(html, /href="#portfolio"/);
     assert.match(html, /href="#week"/);
     assert.match(html, /href="#catalog"/);
     assert.match(html, /href="#kaizen"/);
-    assert.match(html, /href="#insights"/);
-    assert.match(html, /href="#settings"/);
   });
 
   test('brand "CadencePlan" present', () => {

@@ -31,7 +31,7 @@
  */
 
 import { esc } from '../mount.js';
-import { KaizenState } from '../../domain/types.js';
+import { KaizenState, ProjectType } from '../../domain/types.js';
 import { getCurrentNext, filterCatalogByProjectType } from '../../catalog/progression.js';
 
 const CLOSE_KIND_LABEL = Object.freeze({
@@ -240,6 +240,38 @@ function renderStepRow(kaizen, step, idx, status, timestamps) {
 }
 
 /**
+ * Render the DRAFT-only "Change project type" picker (Sprint 11 P1-T2).
+ * Shown on a DRAFT card so the user can re-classify the Kaizen before
+ * baseline-lock. No-op on non-DRAFT / abandoned Kaizens.
+ *
+ * @param {object} k
+ * @param {string} payload   — esc-serialized {kaizenId}
+ * @returns {string}
+ */
+function renderProjectTypePicker(k, payload) {
+  if (!k || k.state !== KaizenState.DRAFT || k.abandoned === true) return '';
+  const current = k.projectType || ProjectType.AD_HOC;
+  const options = Object.values(ProjectType)
+    .map((pt) => {
+      const selected = pt === current ? 'selected' : '';
+      return `<option value="${esc(pt)}" ${selected}>${esc(pt)}</option>`;
+    })
+    .join('\n');
+  return `<section class="kz-project-type">
+    <h3 class="kz-sub">Project type</h3>
+    <form class="kz-project-type-form" data-action="KAIZEN_UPDATE_PROJECT_TYPE" data-payload='${payload}'>
+      <label class="kz-project-type-label">
+        <span class="visually-hidden">Change project type</span>
+        <select class="kz-project-type-select" name="newProjectType">
+          ${options}
+        </select>
+      </label>
+      <button type="submit" class="kz-project-type-save">Save type</button>
+    </form>
+  </section>`;
+}
+
+/**
  * DRAFT variant.
  */
 function renderDraft(k, props) {
@@ -282,6 +314,7 @@ function renderDraft(k, props) {
     <p class="kz-body">${esc(k.problemStatement || '')}</p>
     <p class="kz-source-count">Sourced from ${esc(String(sourceCount))} friction signal${sourceCount === 1 ? '' : 's'}.</p>
   </section>
+  ${renderProjectTypePicker(k, payload)}
   <section class="kz-goal">
     <h3 class="kz-sub">Goal statement</h3>
     <form class="kz-goal-form" data-action="KAIZEN_SET_GOAL" data-payload='${payload}'>

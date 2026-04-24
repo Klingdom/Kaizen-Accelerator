@@ -202,10 +202,58 @@ export const PROCEDURE_FILL_INS = Object.freeze({
 });
 
 /**
+ * Sprint 11 P1-T3 — editorial cleanup for a handful of rows whose source
+ * names / procedures read awkwardly in the product (the source document
+ * used internal "Company" / "Companyians" phrasing, and #48 had a
+ * single-block 23-hour duration that never fit the standard-work model).
+ *
+ * `CATALOG_NAME_OVERRIDES` rewrites the `name` field. Keyed by
+ * `activityNumber`.
+ *
+ * @type {Record<number, string>}
+ */
+export const CATALOG_NAME_OVERRIDES = Object.freeze({
+  3: 'Professional Compliance Training (L&D Tracker)',
+  16: 'Peer Connection 1:1s',
+  48: 'Kaizen Implemented Improvements — Rollup Tracker'
+});
+
+/**
+ * `CATALOG_PROCEDURE_REPLACEMENTS` replaces the entire procedure for an
+ * entry (distinct from `PROCEDURE_FILL_INS` which only fires when the
+ * parsed procedure was empty). Keyed by `activityNumber`.
+ *
+ * Sprint 11 replaces #3 (expanded to 5 concrete steps) and #48 (adds a
+ * tracker/rollup explainer so users understand the 23h duration is not a
+ * single work-block).
+ *
+ * @type {Record<number, string[]>}
+ */
+export const CATALOG_PROCEDURE_REPLACEMENTS = Object.freeze({
+  3: [
+    'Identify the set of required compliance courses you owe for the current training cycle.',
+    'Review any prerequisites, expiry rules, or company-specific attestations each course carries.',
+    'Schedule the courses into your calendar — cluster short courses together, isolate longer ones.',
+    'Complete each course and log the completion in the L&D tracker (KNET / KNET2 / FastCap equivalents).',
+    'Review the annual-refresh schedule so re-certifications land on your calendar before their deadlines.'
+  ],
+  48: [
+    'This is a rollup tracker, not a single work block — the duration (~23 hours) represents the total of all actual rollout work across a Kaizen.',
+    'Log each implementation milestone as it lands: pilot, phased rollout, go-live, sustainment handoff.',
+    'Attach evidence (artifacts, screenshots, adoption metrics) to each milestone in the Kaizen record.',
+    'Review the rollup weekly against the Kaizen goalStatement to ensure drift is caught early.',
+    'Decomposition of the actual rollout work into sub-activities is future work — track total minutes here for now.'
+  ]
+});
+
+/**
  * Apply procedure normalization to every draft:
- *   - If the entry has an activityNumber in `PROCEDURE_FILL_INS`, replace
- *     its procedure with the fill-in.
- *   - Otherwise, renumber whatever is already there.
+ *   1. Replace the `name` field when an override is registered (Sprint 11 P1-T3).
+ *   2. Replace the entire procedure when an entry has an activityNumber in
+ *      `CATALOG_PROCEDURE_REPLACEMENTS` (Sprint 11 P1-T3).
+ *   3. Otherwise, if the entry has an activityNumber in `PROCEDURE_FILL_INS`,
+ *      use that fill-in.
+ *   4. Otherwise, renumber whatever is already there.
  *
  * Either way, the output is sequentially numbered `1. ... 2. ... 3. ...`.
  *
@@ -214,9 +262,16 @@ export const PROCEDURE_FILL_INS = Object.freeze({
  */
 export function applyProcedureNormalization(drafts) {
   return drafts.map((d) => {
+    const nameOverride = CATALOG_NAME_OVERRIDES[d.activityNumber];
+    const replacement = CATALOG_PROCEDURE_REPLACEMENTS[d.activityNumber];
     const fill = PROCEDURE_FILL_INS[d.activityNumber];
-    const source = fill ?? (Array.isArray(d.procedure) ? d.procedure : []);
-    return { ...d, procedure: renumber(source) };
+    const source =
+      replacement ?? fill ?? (Array.isArray(d.procedure) ? d.procedure : []);
+    const next = { ...d, procedure: renumber(source) };
+    if (typeof nameOverride === 'string' && nameOverride.length > 0) {
+      next.name = nameOverride;
+    }
+    return next;
   });
 }
 

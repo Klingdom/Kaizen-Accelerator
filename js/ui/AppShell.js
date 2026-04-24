@@ -12,7 +12,7 @@
  */
 
 import { esc } from './mount.js';
-import { ROUTE_NAMES } from './router.js';
+import { VISIBLE_ROUTE_NAMES } from './router.js';
 
 const NAV_LABELS = Object.freeze({
   today: 'Today',
@@ -25,13 +25,16 @@ const NAV_LABELS = Object.freeze({
 });
 
 /**
- * Render the top nav.
+ * Render the top nav. Iterates `VISIBLE_ROUTE_NAMES` (Sprint 11 P0-T1) so
+ * unimplemented placeholder routes (`insights`, `settings`) don't appear
+ * in the user-facing navigation. Direct URL access to hidden routes still
+ * works — `parseHash` accepts the full `ROUTE_NAMES` list.
  *
  * @param {string} currentRoute
  * @returns {string}
  */
 function renderNav(currentRoute) {
-  const items = ROUTE_NAMES.map((r) => {
+  const items = VISIBLE_ROUTE_NAMES.map((r) => {
     const active = r === currentRoute;
     const cls = active ? 'nav-item active' : 'nav-item';
     const ariaCurrent = active ? 'aria-current="page"' : '';

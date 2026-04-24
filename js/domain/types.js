@@ -583,6 +583,11 @@ export const FrictionSignal = null;
  * @property {boolean} [abandoned]                       // DRAFT-only terminal flag. Set by abandon(). Once true, locked (cannot un-abandon or promote/edit).
  * @property {string|null} [abandonedAt]                 // ISO timestamp when abandoned=true.
  * @property {string|null} [abandonReason]               // Reason string captured at abandon time. Min 10 chars.
+ *
+ * // ---- Sprint 11 P1-T1: richer intake context copied from Opportunity ----
+ * @property {string|null} [currentState]                // optional, 10-500 chars when provided; copied from Opportunity at promote.
+ * @property {string|null} [desiredState]                // optional, 10-500 chars when provided; copied from Opportunity at promote.
+ * @property {string|null} [primaryStakeholder]          // optional, 3-120 chars when provided; copied from Opportunity at promote.
  */
 export const Kaizen = null;
 
@@ -684,6 +689,11 @@ export const PdcaExperiment = null;
  * @property {string|null} rejectionReason      // set when status=REJECTED, min 5 chars
  * @property {string} createdAt                 // ISO timestamp
  * @property {string} updatedAt                 // ISO timestamp
+ *
+ * // ---- Sprint 11 P1-T1: richer intake fields ----
+ * @property {string|null} [currentState]       // optional, 10-500 chars when provided
+ * @property {string|null} [desiredState]       // optional, 10-500 chars when provided
+ * @property {string|null} [primaryStakeholder] // optional, 3-120 chars when provided
  */
 export const Opportunity = null;
 

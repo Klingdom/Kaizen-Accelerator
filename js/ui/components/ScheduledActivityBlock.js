@@ -26,6 +26,7 @@
 
 import { esc } from '../mount.js';
 import { WhyChip } from './WhyChip.js';
+import { isProtectedBlock } from '../editMode.js';
 
 /**
  * Format a planned start time (ISO or HH:MM) to "HH:MM".
@@ -154,7 +155,9 @@ function renderSkipReason(a) {
  *   pinned?: boolean,
  *   compositionState?: string,
  *   nowIso?: string,
- *   explainEntry?: {ref: string, rule: string, detail: string} | null
+ *   explainEntry?: {ref: string, rule: string, detail: string} | null,
+ *   editMode?: boolean,
+ *   editSelected?: boolean
  * }} props
  * @returns {string}
  */
@@ -172,6 +175,9 @@ export function ScheduledActivityBlock(props = {}) {
     typeof props.kaizenTitle === 'string' && props.kaizenTitle.length > 0
       ? props.kaizenTitle
       : null;
+  const editMode = !!props.editMode;
+  const editSelected = !!props.editSelected;
+  const protectedBlock = editMode ? isProtectedBlock(a) : false;
 
   const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
   const time = formatTime(a.plannedStartAt ?? a.anchor);
@@ -187,7 +193,10 @@ export function ScheduledActivityBlock(props = {}) {
   const classes = [
     'sa-block',
     `sa-state-${esc(state).toLowerCase()}`,
-    pinned ? 'pinned' : ''
+    pinned ? 'pinned' : '',
+    editMode && !protectedBlock ? 'edit-selectable' : '',
+    editMode && protectedBlock ? 'edit-protected' : '',
+    editMode && editSelected ? 'edit-selected' : ''
   ].filter(Boolean).join(' ');
 
   // Intention is read-only this sprint (placeholder from §6.5.8).
@@ -204,7 +213,24 @@ export function ScheduledActivityBlock(props = {}) {
     (compositionState === 'PROPOSED' || (!compositionState && state === 'PROPOSED'));
   const whyChip = showWhyChip ? WhyChip({ entry: explainEntry }) : '';
 
-  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}">
+  const activityIdPayload = esc(JSON.stringify({ activityId: a.id ?? '' }));
+  // Edit-mode chrome: lock icon for protected, × to remove + select hotspot
+  // for everything else.
+  const editChrome = editMode
+    ? (protectedBlock
+        ? `<span class="sa-lock" title="Protected — required for your daily rhythm" aria-label="Protected block">🔒</span>`
+        : `<div class="sa-edit-actions">
+            <button type="button" class="sa-edit-select" data-action="EDIT_SELECT_SLOT" data-payload='${activityIdPayload}' aria-label="Select this slot to swap">Select</button>
+            <button type="button" class="sa-edit-remove" data-action="EDIT_REMOVE_SLOT" data-payload='${activityIdPayload}' aria-label="Remove this slot">×</button>
+          </div>`)
+    : '';
+  const selectAttrs = (editMode && !protectedBlock)
+    ? ` data-action="EDIT_SELECT_SLOT" data-payload='${activityIdPayload}'`
+    : '';
+  // Hide normal Start/Skip/Close actions while in edit mode.
+  const runtimeActions = editMode ? '' : renderActions(a, showStart);
+
+  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}"${selectAttrs}>
   <div class="sa-when">${esc(time)}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
@@ -213,7 +239,8 @@ export function ScheduledActivityBlock(props = {}) {
   ${renderElapsed(a, nowIso)}
   ${renderSkipReason(a)}
   <div class="sa-state-label">${esc(stateLabel(state))}</div>
-  ${renderActions(a, showStart)}
+  ${runtimeActions}
+  ${editChrome}
   ${whyChip}
 </li>`;
 }

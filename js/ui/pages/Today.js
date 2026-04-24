@@ -23,11 +23,13 @@ import { InfeasibleBanner } from '../components/InfeasibleBanner.js';
 import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
 import { RhythmExplainer } from '../components/RhythmExplainer.js';
+import { EditDrawer } from '../components/EditDrawer.js';
 import {
   DEFAULT_TARGETS,
   DEFAULT_FLOORS,
   DEFAULT_CEILINGS
 } from '../components/BucketStrip.js';
+import { validateEditState } from '../editMode.js';
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
@@ -45,6 +47,31 @@ export const TODAY_COPY = Object.freeze({
   INFEASIBLE:
     "Composer flagged an infeasible day. Raise your daily capacity or reduce external meetings, then Auto-Plan again."
 });
+
+/**
+ * Sprint 11 Pass 11c — onboarding hint strip microcopy.
+ *
+ * Given `daysSinceSignup`, return the appropriate nudge to render under
+ * the day badge in the empty state. Bands:
+ *   Day 0-1  → welcome + auto-plan callout
+ *   Day 2-6  → "X days in" progress nudge
+ *   Day 7+   → Friday-reflection nudge
+ *
+ * Negative / non-finite input → null (no hint).
+ *
+ * @param {number} daysSinceSignup
+ * @returns {string | null}
+ */
+export function daysSinceSignupHint(daysSinceSignup) {
+  if (!Number.isFinite(daysSinceSignup) || daysSinceSignup < 0) return null;
+  if (daysSinceSignup <= 1) {
+    return 'Welcome to CadencePlan. Tap Auto-Plan to compose your first balanced day.';
+  }
+  if (daysSinceSignup <= 6) {
+    return `You're ${daysSinceSignup} days in. Aim for at least 5 accepted days in your first week.`;
+  }
+  return "Your first Weekly Reflection is Friday. That's where improvement ideas surface.";
+}
 
 /**
  * @param {{
@@ -93,6 +120,7 @@ export function Today(props = {}) {
   const nowIso = props.nowIso ?? null;
   const fineTune = props.fineTune ?? null;
   const openDialog = props.openDialog ?? null;
+  const editMode = props.editMode ?? null; // null when closed; object when open
 
   const strips = {
     targets: props.targets ?? DEFAULT_TARGETS,
@@ -147,8 +175,16 @@ export function Today(props = {}) {
 
   if (!activeState) {
     const emptyCopy = isFirstRun ? TODAY_COPY.FIRST_RUN : TODAY_COPY.EMPTY;
+    // Sprint 11 Pass 11c — onboarding hint strip on empty-state only.
+    const hintCopy = daysSinceSignup !== null
+      ? daysSinceSignupHint(daysSinceSignup)
+      : null;
+    const hintHtml = hintCopy
+      ? `<p class="today-onboarding-hint" role="note">${esc(hintCopy)}</p>`
+      : '';
     return `<main class="today-page" data-route="today">
   ${header}
+  ${hintHtml}
   ${rhythmExplainerHtml}
   <section class="today-empty">
     <p class="empty-copy">${esc(emptyCopy)}</p>
@@ -159,19 +195,54 @@ export function Today(props = {}) {
 </main>`;
   }
 
-  return `<main class="today-page" data-route="today">
+  // Edit mode: swap activities + editing flags in CycleCard, render the
+  // EditDrawer, and dim the surrounding page via the `today-editing` class.
+  const isEditing = !!editMode;
+  const activitiesForRender = isEditing
+    ? editMode.activities
+    : activeState.activities;
+  const compositionForRender = isEditing
+    ? { ...activeState.composition, state: activeState.composition.state }
+    : activeState.composition;
+  const violations = isEditing
+    ? validateEditState(
+        activitiesForRender,
+        strips.targets,
+        strips.floors,
+        strips.ceilings
+      ).violations
+    : [];
+  const editDrawerHtml = isEditing
+    ? EditDrawer({
+        catalog: props.catalog ?? [],
+        activities: activitiesForRender,
+        selectedActivityId: editMode.selectedActivityId ?? null,
+        search: editMode.searchQuery ?? '',
+        projectTypeFilter: editMode.projectTypeFilter ?? 'all',
+        expandedBuckets: editMode.expandedBuckets ?? ['PROJECT'],
+        undoCount: Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
+        violations
+      })
+    : '';
+  const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
+
+  return `<main class="${mainClass}" data-route="today">
   ${header}
   ${rhythmExplainerHtml}
   ${CycleCard({
-    composition: activeState.composition,
-    activities: activeState.activities,
+    composition: compositionForRender,
+    activities: activitiesForRender,
     targets: strips.targets,
     floors: strips.floors,
     ceilings: strips.ceilings,
     nowIso,
-    kaizenTitleById: props.kaizenTitleById ?? {}
+    kaizenTitleById: props.kaizenTitleById ?? {},
+    editMode: isEditing,
+    selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
+    undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0
   })}
   ${drawer}
+  ${editDrawerHtml}
   ${modal}
 </main>`;
 }

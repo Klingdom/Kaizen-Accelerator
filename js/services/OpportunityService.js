@@ -54,6 +54,12 @@ export const PROBLEM_MAX_LENGTH = 500;
 export const SCOPE_MAX_LENGTH = 300;
 export const REJECTION_REASON_MIN_LENGTH = 5;
 
+// Sprint 11 P1-T1 — richer intake fields (all optional).
+export const STATE_FIELD_MIN_LENGTH = 10;
+export const STATE_FIELD_MAX_LENGTH = 500;
+export const STAKEHOLDER_MIN_LENGTH = 3;
+export const STAKEHOLDER_MAX_LENGTH = 120;
+
 const VALID_PROJECT_TYPES = new Set(Object.values(ProjectType));
 
 const TERMINAL_STATUSES = new Set([
@@ -156,6 +162,63 @@ function validateProjectType(v) {
   }
 }
 
+/**
+ * Validate an optional state-shape field (currentState / desiredState).
+ * null / undefined pass through as null. Non-empty strings must sit in
+ * [STATE_FIELD_MIN_LENGTH, STATE_FIELD_MAX_LENGTH].
+ *
+ * @param {*} v
+ * @param {string} fieldLabel
+ * @returns {string|null}
+ */
+function validateStateField(v, fieldLabel) {
+  if (v === null || v === undefined) return null;
+  if (typeof v !== 'string') {
+    fail(
+      'INVALID_INPUT',
+      `OpportunityService: ${fieldLabel} must be a string or null`,
+      { field: fieldLabel }
+    );
+  }
+  if (v.length === 0) return null;
+  if (v.length < STATE_FIELD_MIN_LENGTH || v.length > STATE_FIELD_MAX_LENGTH) {
+    fail(
+      'STATE_FIELD_LENGTH',
+      `OpportunityService: ${fieldLabel} must be ${STATE_FIELD_MIN_LENGTH}-${STATE_FIELD_MAX_LENGTH} chars (got ${v.length})`,
+      { field: fieldLabel, length: v.length }
+    );
+  }
+  return v;
+}
+
+/**
+ * Validate the optional primaryStakeholder field. null / undefined pass
+ * through as null. Non-empty strings must sit in
+ * [STAKEHOLDER_MIN_LENGTH, STAKEHOLDER_MAX_LENGTH].
+ *
+ * @param {*} v
+ * @returns {string|null}
+ */
+function validateStakeholder(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v !== 'string') {
+    fail(
+      'INVALID_INPUT',
+      'OpportunityService: primaryStakeholder must be a string or null',
+      { field: 'primaryStakeholder' }
+    );
+  }
+  if (v.length === 0) return null;
+  if (v.length < STAKEHOLDER_MIN_LENGTH || v.length > STAKEHOLDER_MAX_LENGTH) {
+    fail(
+      'STAKEHOLDER_LENGTH',
+      `OpportunityService: primaryStakeholder must be ${STAKEHOLDER_MIN_LENGTH}-${STAKEHOLDER_MAX_LENGTH} chars (got ${v.length})`,
+      { field: 'primaryStakeholder', length: v.length }
+    );
+  }
+  return v;
+}
+
 export class OpportunityService {
   /**
    * @param {{
@@ -237,6 +300,9 @@ export class OpportunityService {
     validateProblem(problemStatement);
     const scope = validateScope(input.scope ?? null);
     validateProjectType(proposedProjectType);
+    const currentState = validateStateField(input.currentState ?? null, 'currentState');
+    const desiredState = validateStateField(input.desiredState ?? null, 'desiredState');
+    const primaryStakeholder = validateStakeholder(input.primaryStakeholder ?? null);
 
     const now = this._clock.now();
     const id = buildOpportunityId(userId, now);
@@ -253,7 +319,11 @@ export class OpportunityService {
       deferredUntil: null,
       rejectionReason: null,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      // Sprint 11 P1-T1 — richer intake fields (optional; null when empty).
+      currentState,
+      desiredState,
+      primaryStakeholder
     };
 
     this._repo.upsert(OPPORTUNITIES_KEY, id, opp);
@@ -341,6 +411,16 @@ export class OpportunityService {
       validateProjectType(patch.proposedProjectType);
       next.proposedProjectType = patch.proposedProjectType;
     }
+    // Sprint 11 P1-T1 — richer intake fields (INTAKE-only mutability preserved).
+    if (patch.currentState !== undefined) {
+      next.currentState = validateStateField(patch.currentState, 'currentState');
+    }
+    if (patch.desiredState !== undefined) {
+      next.desiredState = validateStateField(patch.desiredState, 'desiredState');
+    }
+    if (patch.primaryStakeholder !== undefined) {
+      next.primaryStakeholder = validateStakeholder(patch.primaryStakeholder);
+    }
     next.updatedAt = this._clock.now();
     this._repo.upsert(OPPORTUNITIES_KEY, id, next);
     return next;
@@ -386,7 +466,11 @@ export class OpportunityService {
       userId: opp.userId,
       title: opp.title,
       problemStatement: opp.problemStatement,
-      projectType: opp.proposedProjectType
+      projectType: opp.proposedProjectType,
+      // Sprint 11 P1-T1 — carry richer intake fields onto the Kaizen.
+      currentState: opp.currentState ?? null,
+      desiredState: opp.desiredState ?? null,
+      primaryStakeholder: opp.primaryStakeholder ?? null
     });
 
     const now = this._clock.now();

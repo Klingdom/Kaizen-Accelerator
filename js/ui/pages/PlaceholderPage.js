@@ -28,12 +28,11 @@ export const PLACEHOLDER_SPRINTS = Object.freeze({
  */
 export function PlaceholderPage(props = {}) {
   const route = props.route ?? 'unknown';
-  const ships = PLACEHOLDER_SPRINTS[route] ?? 'a later sprint';
   const label = route.charAt(0).toUpperCase() + route.slice(1);
   return `<section class="placeholder-page" data-route="${esc(route)}">
   <h1>${esc(label)}</h1>
-  <p class="placeholder-copy">Ships in ${esc(ships)}.</p>
-  <p class="placeholder-sub">This page is a stub. Today is the only wired screen in Sprint 4.</p>
+  <p class="placeholder-copy">Ships next.</p>
+  <p class="placeholder-sub">This page is on the roadmap but hasn't shipped yet. In the meantime, head back to <a href="#today" class="placeholder-link">Today</a>.</p>
 </section>`;
 }
 

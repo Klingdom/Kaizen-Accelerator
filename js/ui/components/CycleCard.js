@@ -39,6 +39,23 @@ import { AcceptEditRejectTriad } from './AcceptEditRejectTriad.js';
 import { AutoPlanButton } from './AutoPlanButton.js';
 
 /**
+ * Edit-mode triad: Commit / Cancel / Undo. Rendered in place of
+ * AcceptEditRejectTriad while `editMode === true`.
+ *
+ * @param {{undoCount?: number}} [opts]
+ * @returns {string}
+ */
+function renderEditTriad(opts = {}) {
+  const undoCount = Number.isFinite(opts.undoCount) ? opts.undoCount : 0;
+  const undoDisabled = undoCount === 0 ? 'disabled aria-disabled="true"' : '';
+  return `<div class="triad triad-edit" role="group" aria-label="Edit mode actions">
+    <button type="button" class="triad-commit primary" data-action="EDIT_COMMIT" data-payload='{}'>Commit</button>
+    <button type="button" class="triad-edit-cancel secondary" data-action="EDIT_CANCEL" data-payload='{}'>Cancel</button>
+    <button type="button" class="triad-undo ghost" data-action="EDIT_UNDO" data-payload='{}' ${undoDisabled}>Undo (${esc(String(undoCount))})</button>
+  </div>`;
+}
+
+/**
  * Copy-only reference. Do not mutate.
  */
 export const CARD_COPY = Object.freeze({
@@ -97,6 +114,8 @@ function renderActivityList(activities, opts) {
   }
   const explainById = opts.explainById ?? {};
   const kaizenTitleById = opts.kaizenTitleById ?? {};
+  const editMode = !!opts.editMode;
+  const selectedActivityId = opts.selectedActivityId ?? null;
   return ordered
     .map((a) =>
       ScheduledActivityBlock({
@@ -106,7 +125,9 @@ function renderActivityList(activities, opts) {
         nowIso: opts.nowIso,
         compositionState: opts.compositionState,
         explainEntry: explainById[a.catalogEntryId] ?? null,
-        kaizenTitle: a.linkedKaizenId ? (kaizenTitleById[a.linkedKaizenId] ?? null) : null
+        kaizenTitle: a.linkedKaizenId ? (kaizenTitleById[a.linkedKaizenId] ?? null) : null,
+        editMode,
+        editSelected: editMode && selectedActivityId === a.id
       })
     )
     .join('\n');
@@ -140,10 +161,17 @@ function renderProposed(composition, activities, strips, extras = {}) {
   const compId = composition.id;
   const planned = plannedFromActivities(activities);
   const explainById = buildExplainById(composition);
-  return `<article class="cycle-card cycle-proposed" data-composition-id="${esc(compId)}" data-state="PROPOSED">
+  const editMode = !!extras.editMode;
+  const selectedActivityId = extras.selectedActivityId ?? null;
+  const undoCount = Number.isFinite(extras.undoCount) ? extras.undoCount : 0;
+  const triad = editMode
+    ? renderEditTriad({ undoCount })
+    : AcceptEditRejectTriad({ compositionId: compId });
+  const cardClass = editMode ? 'cycle-card cycle-proposed cycle-editing' : 'cycle-card cycle-proposed';
+  return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="PROPOSED">
   <header class="cycle-header">
-    <h1 class="cycle-title">${esc(CARD_COPY.PROPOSED_HEADER)}</h1>
-    <p class="cycle-intro">${esc(CARD_COPY.PROPOSED_INTRO)}</p>
+    <h1 class="cycle-title">${esc(editMode ? 'Edit today' : CARD_COPY.PROPOSED_HEADER)}</h1>
+    <p class="cycle-intro">${esc(editMode ? 'Tap a slot on the left, then pick a swap on the right.' : CARD_COPY.PROPOSED_INTRO)}</p>
   </header>
   ${BucketStrip({
     planned,
@@ -156,26 +184,34 @@ ${renderActivityList(activities, {
     showStart: false,
     compositionState: 'PROPOSED',
     explainById,
-    kaizenTitleById: extras.kaizenTitleById ?? {}
+    kaizenTitleById: extras.kaizenTitleById ?? {},
+    editMode,
+    selectedActivityId
   })}
   </ul>
-  ${AcceptEditRejectTriad({ compositionId: compId })}
+  ${triad}
 </article>`;
 }
 
 /**
  * Render the ACCEPTED / ACTIVE variant.
  */
-function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById }) {
+function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById, editMode, selectedActivityId, undoCount }) {
   const compId = composition.id;
   const planned = plannedFromActivities(activities);
   // Pin: prefer IN_PROGRESS, else first SCHEDULED.
   const inProgress = activities.find((a) => a.state === 'IN_PROGRESS');
   const pinnedActivity =
     inProgress ?? activities.find((a) => a.state === 'SCHEDULED');
-  return `<article class="cycle-card cycle-${isActive ? 'active' : 'accepted'}" data-composition-id="${esc(compId)}" data-state="${isActive ? 'ACTIVE' : 'ACCEPTED'}">
+  const edit = !!editMode;
+  const undoN = Number.isFinite(undoCount) ? undoCount : 0;
+  const triad = edit ? renderEditTriad({ undoCount: undoN }) : '';
+  const cardClass = edit
+    ? `cycle-card cycle-${isActive ? 'active' : 'accepted'} cycle-editing`
+    : `cycle-card cycle-${isActive ? 'active' : 'accepted'}`;
+  return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="${isActive ? 'ACTIVE' : 'ACCEPTED'}">
   <header class="cycle-header">
-    <h1 class="cycle-title">${esc(isActive ? CARD_COPY.ACTIVE_HEADER : CARD_COPY.ACCEPTED_HEADER)}</h1>
+    <h1 class="cycle-title">${esc(edit ? 'Edit today' : (isActive ? CARD_COPY.ACTIVE_HEADER : CARD_COPY.ACCEPTED_HEADER))}</h1>
   </header>
   ${BucketStrip({
     planned,
@@ -185,13 +221,16 @@ function renderAccepted(composition, activities, strips, { isActive, nowIso, kai
   })}
   <ul class="cycle-activities" role="list">
 ${renderActivityList(activities, {
-    showStart: true,
+    showStart: !edit,
     pinnedId: pinnedActivity?.id,
     nowIso,
     compositionState: isActive ? 'ACTIVE' : 'ACCEPTED',
-    kaizenTitleById: kaizenTitleById ?? {}
+    kaizenTitleById: kaizenTitleById ?? {},
+    editMode: edit,
+    selectedActivityId
   })}
   </ul>
+  ${triad}
 </article>`;
 }
 
@@ -237,19 +276,23 @@ export function CycleCard(props = {}) {
     floors: props.floors ?? DEFAULT_FLOORS,
     ceilings: props.ceilings ?? DEFAULT_CEILINGS
   };
+  const editMode = !!props.editMode;
+  const selectedActivityId = props.selectedActivityId ?? null;
+  const undoCount = Number.isFinite(props.undoCount) ? props.undoCount : 0;
+  const extras = { kaizenTitleById, editMode, selectedActivityId, undoCount };
 
   switch (composition.state) {
     case 'PROPOSED':
-      return renderProposed(composition, activities, strips, { kaizenTitleById });
+      return renderProposed(composition, activities, strips, extras);
     case 'ACCEPTED':
     case 'EDITED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, kaizenTitleById });
+      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, ...extras });
     case 'ACTIVE':
-      return renderAccepted(composition, activities, strips, { isActive: true, nowIso, kaizenTitleById });
+      return renderAccepted(composition, activities, strips, { isActive: true, nowIso, ...extras });
     case 'REJECTED':
       return renderRejected(composition);
     case 'CLOSED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, kaizenTitleById });
+      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, ...extras });
     default:
       return `<article class="cycle-card cycle-unknown" data-composition-id="${esc(composition.id ?? '')}" data-state="${esc(composition.state ?? '')}">
   <p>Unknown composition state: ${esc(composition.state ?? 'null')}</p>

@@ -270,16 +270,23 @@ describe('app.buildHandlers — integration', () => {
     assert.equal(after.state, 'PROPOSED');
   });
 
-  test('EDIT is a placeholder (Sprint 6 — drag/drop composer)', () => {
-    const originalAlert = globalThis.alert;
-    let alertMsg = null;
-    globalThis.alert = (m) => { alertMsg = m; };
-    try {
-      handlers.EDIT({ compositionId: 'c1' });
-    } finally {
-      globalThis.alert = originalAlert;
-    }
-    assert.match(alertMsg, /Sprint 6/);
+  test('EDIT enters edit mode for a real composition (Sprint 12)', () => {
+    // Need a real composition so EDIT can look it up.
+    handlers.AUTO_PLAN({});
+    const comps = env.services.repo.read(COMPOSITIONS_KEY);
+    const compId = Object.keys(comps)[0];
+    handlers.EDIT({ compositionId: compId });
+    assert.ok(state.editMode, 'editMode should be set');
+    assert.equal(state.editMode.compositionId, compId);
+    assert.ok(Array.isArray(state.editMode.snapshotActivities));
+    assert.ok(state.editMode.snapshotActivities.length > 0);
+  });
+
+  test('EDIT ignores unknown composition id without throwing', () => {
+    handlers.EDIT({ compositionId: 'nope_' });
+    // state.editMode may be undefined (not set) when no composition is
+    // found — assert it's falsy.
+    assert.ok(!state.editMode);
   });
 
   test('START_ACTIVITY wires to ActivityService.start (Sprint 5)', () => {

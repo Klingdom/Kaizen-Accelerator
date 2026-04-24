@@ -44,6 +44,32 @@ export const ROUTE_NAMES = Object.freeze([
   'settings'
 ]);
 
+/**
+ * Subset of `ROUTE_NAMES` that the primary nav renders for the user.
+ * Sprint 11 P0-T1 trims the nav to shipped screens only: `today`,
+ * `portfolio`, `week`, `catalog`, and `kaizen` (which renders a functional
+ * KaizenCard detail). `insights` and `settings` still resolve through the
+ * router — direct URL access works — but they are placeholder screens
+ * and therefore hidden from the nav.
+ */
+export const VISIBLE_ROUTE_NAMES = Object.freeze([
+  'today',
+  'portfolio',
+  'week',
+  'catalog',
+  'kaizen'
+]);
+
+/**
+ * Routes that currently render a `PlaceholderPage` and should display a
+ * "Ships next" polite message on direct URL access. Kept in sync with the
+ * `else` branch in `renderApp()`.
+ */
+export const PLACEHOLDER_ROUTE_NAMES = Object.freeze([
+  'insights',
+  'settings'
+]);
+
 const KNOWN = new Set(ROUTE_NAMES);
 
 /**
@@ -126,6 +152,8 @@ export function createRouteListener(onRoute, opts = {}) {
 export default {
   ROUTES,
   ROUTE_NAMES,
+  VISIBLE_ROUTE_NAMES,
+  PLACEHOLDER_ROUTE_NAMES,
   parseHash,
   buildHash,
   createRouteListener
