@@ -267,7 +267,12 @@ export function ScheduledActivityBlock(props = {}) {
     ? `<input type="time" class="sa-time-editor" data-action="EDIT_CHANGE_START_TIME" data-activity-id="${esc(a.id ?? '')}" value="${esc(time)}" aria-label="Start time">`
     : esc(time);
 
-  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}"${selectAttrs}>
+  // Sprint 15 W4 — surface the user-edited tone signal so CSS can swap
+  // between desaturated (composer-built) and saturated (user-edited)
+  // backgrounds.
+  const userEdited = a.userEdited === true;
+
+  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}" data-user-edited="${userEdited ? 'true' : 'false'}"${selectAttrs}>
   <div class="sa-when">${whenInner}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>

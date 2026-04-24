@@ -41,7 +41,8 @@
 import { composeWeekly } from '../composer/composeWeekly.js';
 import {
   WeeklyCycleProposed,
-  WeeklyCycleAccepted
+  WeeklyCycleAccepted,
+  CycleReflowed
 } from '../events/events.js';
 import {
   COMPOSITIONS_KEY,
@@ -313,6 +314,111 @@ export class WeeklyComposerService {
     const updated = { ...weekly, state: 'REJECTED', decidedAt: now };
     const nextMap = { ...map, [weeklyCompositionId]: updated };
     this._repo.write(WEEKLY_COMPOSITIONS_KEY, nextMap);
+    return updated;
+  }
+
+  /**
+   * Sprint 15 W5 — reflow a PROPOSED weekly composition.
+   *
+   * After a runtime event (KaizenStepCompleted, ActivityCompleted on a
+   * scheduled-step that affects future days), repackage the WeeklyComposition's
+   * future days. For MVP this is a thin wrapper that re-runs `composeWeekly`
+   * for the same `weekStart` with the latest historicalCompletedCatalogIds —
+   * but ONLY if a PROPOSED weekly exists; if it's already ACCEPTED, the per-day
+   * Compositions are immutable and we leave them alone.
+   *
+   * Emits `CycleReflowed` with `scope: 'WEEKLY'`.
+   *
+   * Returns `null` when no PROPOSED weekly is found, or when the new compose
+   * yields no diff.
+   *
+   * @param {{userId: string, weekStart: string, trigger?: string}} input
+   * @returns {object|null}
+   */
+  reflow(input) {
+    if (!input || typeof input !== 'object') {
+      fail('INVALID_INPUT', 'WeeklyComposerService.reflow: input is required');
+    }
+    const { userId, weekStart } = input;
+    const trigger = typeof input.trigger === 'string' ? input.trigger : 'KaizenStepCompleted';
+    if (typeof userId !== 'string' || userId.length === 0) {
+      fail('INVALID_INPUT', 'WeeklyComposerService.reflow: userId is required');
+    }
+    if (typeof weekStart !== 'string' || weekStart.length < 10) {
+      fail('INVALID_INPUT', 'WeeklyComposerService.reflow: weekStart is required (YYYY-MM-DD)');
+    }
+
+    const map = this._repo.read(WEEKLY_COMPOSITIONS_KEY) ?? {};
+    // Find the matching PROPOSED weekly composition for this user + weekStart.
+    const candidates = Object.values(map).filter(
+      (w) =>
+        w &&
+        w.userId === userId &&
+        w.weekStart === weekStart &&
+        w.state === 'PROPOSED'
+    );
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => {
+      const at = a.proposedAt ?? '';
+      const bt = b.proposedAt ?? '';
+      if (at < bt) return 1;
+      if (at > bt) return -1;
+      return 0;
+    });
+    const weekly = candidates[0];
+
+    const catalog = this._catalogService
+      ? this._catalogService.list(userId)
+      : input.catalog ?? [];
+    let kaizens = [];
+    if (this._kaizenService) {
+      kaizens = [
+        ...this._kaizenService.listByState(userId, 'ACTIVE'),
+        ...this._kaizenService.listByState(userId, 'IN_REMEASUREMENT')
+      ];
+    } else if (Array.isArray(input.kaizens)) {
+      kaizens = input.kaizens;
+    }
+    const historicalCompletedCatalogIds = this._readHistoricalCompleted(userId);
+
+    const now = this._clock.now();
+    const reflowed = composeWeekly({
+      weekStart,
+      userId,
+      kaizens,
+      historicalCompletedCatalogIds,
+      catalog,
+      capacityOverrides: weekly.composerInputsSnapshot?.capacityOverrides ?? {},
+      dailyCapacityMinutes: weekly.composerInputsSnapshot?.dailyCapacityMinutes ?? 480,
+      _now: now
+    });
+
+    // Replace the weekly's days with the freshly composed ones, preserving
+    // the original id + state + proposedAt so consumers don't see a "new"
+    // weekly envelope.
+    const updated = {
+      ...weekly,
+      days: reflowed.days,
+      composerInputsSnapshot: {
+        ...(weekly.composerInputsSnapshot ?? {}),
+        ...(reflowed.composerInputsSnapshot ?? {}),
+        lastReflowedAt: now,
+        lastReflowTrigger: trigger
+      }
+    };
+    const next = { ...map, [weekly.id]: updated };
+    this._repo.write(WEEKLY_COMPOSITIONS_KEY, next);
+
+    this._bus.publish(CycleReflowed, {
+      weeklyCompositionId: weekly.id,
+      userId,
+      scope: 'WEEKLY',
+      trigger,
+      reflowedAt: now,
+      shifted: 0,
+      preserved: 0
+    });
+
     return updated;
   }
 

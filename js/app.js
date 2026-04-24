@@ -58,7 +58,9 @@ import {
   WeeklyCycleAccepted,
   KaizenStepCompleted,
   KaizenStepScheduled,
-  CycleEdited
+  CycleEdited,
+  ActivityStartedLate,
+  CycleReflowed
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { getFullCatalog } from './catalog/fullCatalog.js';
@@ -2172,6 +2174,7 @@ export function start() {
   services.bus.subscribe(WeeklyCycleAccepted, () => {});
   services.bus.subscribe(KaizenStepCompleted, () => {});
   services.bus.subscribe(KaizenStepScheduled, () => {});
+  services.bus.subscribe(CycleReflowed, () => {});
 
   const rerender = () => renderApp(services, state);
 
@@ -2179,6 +2182,21 @@ export function start() {
   // then surface the ReflectionSheet. Keeps the service graph acyclic.
   services.bus.subscribe(ActivityCompleted, (payload) => {
     handleActivityCompleted(services, state, payload);
+    // Sprint 15 W5 — reflow today's plan if PROPOSED/SCHEDULED rows remain.
+    handleReflowOnRuntimeEvent(services, state, 'ActivityCompleted', rerender);
+    rerender();
+  });
+
+  // Sprint 15 W5 — also reflow when an activity starts late.
+  services.bus.subscribe(ActivityStartedLate, () => {
+    handleReflowOnRuntimeEvent(services, state, 'ActivityStartedLate', rerender);
+    rerender();
+  });
+
+  // Sprint 15 W5 — when a Kaizen step is completed elsewhere (e.g. from
+  // Portfolio), reflow the future days of any PROPOSED weekly cycle.
+  services.bus.subscribe(KaizenStepCompleted, () => {
+    handleWeeklyReflowOnRuntimeEvent(services, state, 'KaizenStepCompleted', rerender);
     rerender();
   });
 
@@ -2377,6 +2395,69 @@ export function handleActivityCompleted(services, state, payload) {
     isNonOptional: entry?.isNonOptional === true,
     frictionChecked: false
   };
+}
+
+/**
+ * Sprint 15 W5 — reflow today's plan if any PROPOSED/SCHEDULED activities
+ * remain. Skips silently when the day is fully executed (no flexible
+ * activities) or when no active composition exists. Surfaces a toast on
+ * the count of shifted blocks so the user gets feedback.
+ *
+ * Exported for tests.
+ *
+ * @param {object} services
+ * @param {object} state
+ * @param {string} trigger
+ * @param {(): void} rerender
+ */
+export function handleReflowOnRuntimeEvent(services, state, trigger, rerender) {
+  if (!services || !services.composerService) return;
+  const todayDate = services.clock.now().slice(0, 10);
+  try {
+    const result = services.composerService.reflow({
+      userId: DEFAULT_USER.id,
+      date: todayDate,
+      trigger
+    });
+    if (!result || result.shifted === 0) return;
+    showToast(
+      state,
+      ToastKind.INFO,
+      `Plan re-flowed: ${result.shifted} ${result.shifted === 1 ? 'activity' : 'activities'} shifted.`,
+      rerender
+    );
+  } catch (err) {
+    /* istanbul ignore next — defensive */
+    state.lastError = err;
+  }
+}
+
+/**
+ * Sprint 15 W5 — reflow the weekly cycle for the current Monday if a
+ * PROPOSED weekly composition exists with future days.
+ *
+ * Exported for tests.
+ *
+ * @param {object} services
+ * @param {object} state
+ * @param {string} trigger
+ * @param {(): void} rerender
+ */
+export function handleWeeklyReflowOnRuntimeEvent(services, state, trigger, rerender) {
+  if (!services || !services.weeklyComposerService) return;
+  const weekStart = computeMondayIso(services.clock.now());
+  try {
+    const updated = services.weeklyComposerService.reflow({
+      userId: DEFAULT_USER.id,
+      weekStart,
+      trigger
+    });
+    if (!updated) return;
+    showToast(state, ToastKind.INFO, 'Week plan re-flowed.', rerender);
+  } catch (err) {
+    /* istanbul ignore next — defensive */
+    state.lastError = err;
+  }
 }
 
 // Auto-start when loaded as the page script (not when imported by tests).

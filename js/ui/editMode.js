@@ -94,6 +94,9 @@ export function activityFromCatalogEntry(catalogEntry, sourceSlot, nowIso, newId
     plannedStartAt: sourceSlot?.plannedStartAt ?? null,
     state: sourceSlot?.state ?? 'PROPOSED',
     sourceOfSchedule: 'COMPOSER_EDIT',
+    // Sprint 15 W4 — every freshly-materialized edit-mode draft is
+    // user-edited by definition.
+    userEdited: true,
     updatedAt: nowIso ?? null
   };
   if (sourceSlot?.anchor) draft.anchor = sourceSlot.anchor;
@@ -385,8 +388,13 @@ export function applyDurationChange(activities, slotActivityId, newDurationMinut
 
   // Clone every row so the input array and its items are untouched.
   const next = activities.map((a) => ({ ...a }));
-  // Update target duration in place (on the clone).
-  next[targetIdx] = { ...next[targetIdx], plannedDurationMinutes: newDurationMinutes };
+  // Update target duration in place (on the clone). Sprint 15 W4: stamp
+  // `userEdited: true` so the renderer can use the saturated tone.
+  next[targetIdx] = {
+    ...next[targetIdx],
+    plannedDurationMinutes: newDurationMinutes,
+    userEdited: true
+  };
 
   if (delta === 0) return next;
 
@@ -637,7 +645,12 @@ export function applyStartTimeChange(activities, slotActivityId, newHHMM) {
   // Clone every row so the input array and its items are untouched.
   const next = activities.map((a) => ({ ...a }));
   const newPlannedStartAt = replaceTimeOnStart(target.plannedStartAt, newHHMM);
-  next[targetIdx] = { ...next[targetIdx], plannedStartAt: newPlannedStartAt };
+  // Sprint 15 W4 — flag the changed slot as user-edited.
+  next[targetIdx] = {
+    ...next[targetIdx],
+    plannedStartAt: newPlannedStartAt,
+    userEdited: true
+  };
 
   const delta =
     oldStartMinutes != null ? newStartMinutes - oldStartMinutes : 0;

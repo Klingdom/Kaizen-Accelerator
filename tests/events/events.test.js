@@ -22,6 +22,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // composer envelope (31 + 2 = 33 total).
 // Sprint 10b adds KaizenStepCompleted + KaizenStepScheduled for the
 // portfolio step-action surface (33 + 2 = 35 total).
+// Sprint 15 W5 adds CycleReflowed for the composer auto re-plan loop
+// (35 + 1 = 36 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -57,7 +59,8 @@ const EXPECTED = [
   'WeeklyCycleProposed',
   'WeeklyCycleAccepted',
   'KaizenStepCompleted',
-  'KaizenStepScheduled'
+  'KaizenStepScheduled',
+  'CycleReflowed'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {

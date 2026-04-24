@@ -24,6 +24,8 @@ import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
 import { RhythmExplainer } from '../components/RhythmExplainer.js';
 import { EditDrawer } from '../components/EditDrawer.js';
+import { UpNextRail } from '../components/UpNextRail.js';
+import { NowPane } from '../components/NowPane.js';
 import {
   DEFAULT_TARGETS,
   DEFAULT_FLOORS,
@@ -226,21 +228,49 @@ export function Today(props = {}) {
     : '';
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
+  const nowPaneHtml = nowIso
+    ? NowPane({ activities: activitiesForRender, nowIso })
+    : '';
+  const upNextRailHtml = nowIso
+    ? UpNextRail({
+        activities: activitiesForRender,
+        nowIso,
+        kaizenTitleById: props.kaizenTitleById ?? {},
+        limit: 5,
+        variant: 'rail'
+      })
+    : '';
+  const upNextMobileHtml = nowIso
+    ? UpNextRail({
+        activities: activitiesForRender,
+        nowIso,
+        kaizenTitleById: props.kaizenTitleById ?? {},
+        limit: 5,
+        variant: 'mobile'
+      })
+    : '';
   return `<main class="${mainClass}" data-route="today">
   ${header}
   ${rhythmExplainerHtml}
-  ${CycleCard({
-    composition: compositionForRender,
-    activities: activitiesForRender,
-    targets: strips.targets,
-    floors: strips.floors,
-    ceilings: strips.ceilings,
-    nowIso,
-    kaizenTitleById: props.kaizenTitleById ?? {},
-    editMode: isEditing,
-    selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
-    undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0
-  })}
+  ${nowPaneHtml}
+  ${upNextMobileHtml}
+  <div class="today-body">
+    <div class="today-card-col">
+      ${CycleCard({
+        composition: compositionForRender,
+        activities: activitiesForRender,
+        targets: strips.targets,
+        floors: strips.floors,
+        ceilings: strips.ceilings,
+        nowIso,
+        kaizenTitleById: props.kaizenTitleById ?? {},
+        editMode: isEditing,
+        selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
+        undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0
+      })}
+    </div>
+    ${upNextRailHtml}
+  </div>
   ${drawer}
   ${editDrawerHtml}
   ${modal}

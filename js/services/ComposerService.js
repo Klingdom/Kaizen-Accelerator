@@ -49,7 +49,8 @@ import {
   CycleAccepted,
   CycleEdited,
   CycleRejected,
-  ComposerInfeasible
+  ComposerInfeasible,
+  CycleReflowed
 } from '../events/events.js';
 
 export const COMPOSITIONS_KEY = 'bamx:v1:compositions';
@@ -75,6 +76,53 @@ const COMPOSITION_TRANSITIONS = Object.freeze({
 const ACTIVITY_TRANSITIONS = Object.freeze({
   ON_ACCEPT: Object.freeze({ PROPOSED: 'SCHEDULED' })
 });
+
+/**
+ * Parse a plannedStartAt value (HH:MM, HH:MM:SS, ISO) into
+ * minutes-of-day. Returns null when unparseable.
+ *
+ * @param {string | null | undefined} value
+ * @returns {number | null}
+ */
+function parseStartMinutesForReflow(value) {
+  if (typeof value !== 'string' || value.length === 0) return null;
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.split(':').map(Number);
+    return h * 60 + m;
+  }
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.slice(0, 5).split(':').map(Number);
+    return h * 60 + m;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+
+/**
+ * Format minutes-of-day back into a string of the same shape as
+ * `original`. Preserves the date prefix on ISO inputs.
+ *
+ * @param {string | null | undefined} original
+ * @param {number} minutes
+ * @returns {string}
+ */
+function formatStartMinutesForReflow(original, minutes) {
+  const hh = String(Math.floor(((minutes % 1440) + 1440) % 1440 / 60)).padStart(2, '0');
+  const mm = String((((minutes % 1440) + 1440) % 1440) % 60).padStart(2, '0');
+  if (typeof original !== 'string' || original.length === 0) {
+    return `${hh}:${mm}`;
+  }
+  if (/^\d{2}:\d{2}$/.test(original)) return `${hh}:${mm}`;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(original)) return `${hh}:${mm}:${original.slice(6, 8)}`;
+  // ISO-shaped — preserve everything except HH/MM.
+  const isoMatch = original.match(/^(.*T)(\d{2}):(\d{2})(:\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (isoMatch) {
+    const [, prefix, , , secFrac = '', tz = ''] = isoMatch;
+    return `${prefix}${hh}:${mm}${secFrac}${tz}`;
+  }
+  return `${hh}:${mm}`;
+}
 
 /**
  * Raise a named error.
@@ -560,6 +608,165 @@ export class ComposerService {
       (a) => a && a.compositionId === compositionId
     );
     return { composition: nextComp, activities: children };
+  }
+
+  /**
+   * Sprint 15 W5 — reflow today's day.
+   *
+   * After a runtime event (ActivityCompleted, ActivityStartedLate, ...),
+   * re-tile remaining PROPOSED/SCHEDULED activities into the open time
+   * around already-anchored ones. Pure positional repack: no add, no
+   * remove, no swap. Activities in IN_PROGRESS, CLOSED, SKIPPED, or
+   * DROPPED states are PRESERVED verbatim; flexible activities (PROPOSED,
+   * SCHEDULED) get new `plannedStartAt` values that slot around the
+   * preserved blocks.
+   *
+   *   ┌─ before ──┐    ┌─ after a 09:00 close ─┐
+   *   │ 09 P (in) │    │ 09 P (closed)         │
+   *   │ 10 P      │    │ 10 P  (slid up?)       │
+   *   │ 11 C      │    │ 11 C  (slid up?)       │
+   *
+   * (For MVP: flexible activities keep their relative order but their
+   * starts compress backward to butt up against the latest preserved
+   * end-time; nothing slides past 19:00 to avoid runaway days.)
+   *
+   * No-op (returns null) when:
+   *   - no composition for the user on the given date,
+   *   - no flexible activities remain,
+   *   - all activities are in terminal/preserved state.
+   *
+   * Emits `CycleReflowed` with the count of shifted vs. preserved rows.
+   *
+   * @param {{userId: string, date: string, trigger?: string}} input
+   * @returns {{composition: object, activities: object[], shifted: number, preserved: number} | null}
+   */
+  reflow(input) {
+    if (!input || typeof input !== 'object') {
+      fail('INVALID_INPUT', 'ComposerService.reflow: input is required');
+    }
+    const { userId, date } = input;
+    const trigger = typeof input.trigger === 'string' ? input.trigger : 'ActivityCompleted';
+    if (typeof userId !== 'string' || userId.length === 0) {
+      fail('INVALID_INPUT', 'ComposerService.reflow: userId is required');
+    }
+    if (typeof date !== 'string' || date.length < 10) {
+      fail('INVALID_INPUT', 'ComposerService.reflow: date is required (YYYY-MM-DD)');
+    }
+
+    const comps = this._repo.read(COMPOSITIONS_KEY) ?? {};
+    // Pick the latest active composition matching the user + date.
+    const candidates = Object.values(comps).filter((c) => {
+      if (!c) return false;
+      if (c.userId !== userId) return false;
+      if (!ACTIVE_STATES.has(c.state)) return false;
+      const cDate = typeof c.startAt === 'string' ? c.startAt.slice(0, 10) : null;
+      const dDate = typeof c.date === 'string' ? c.date : null;
+      return cDate === date || dDate === date;
+    });
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => {
+      const at = a.proposedAt ?? '';
+      const bt = b.proposedAt ?? '';
+      if (at < bt) return 1;
+      if (at > bt) return -1;
+      return 0;
+    });
+    const composition = candidates[0];
+
+    const acts = this._repo.read(ACTIVITIES_KEY) ?? {};
+    const children = Object.values(acts).filter(
+      (a) => a && a.compositionId === composition.id
+    );
+    if (children.length === 0) return null;
+
+    // Partition.
+    const PRESERVED_STATES = new Set(['IN_PROGRESS', 'CLOSED', 'SKIPPED', 'DROPPED']);
+    const preserved = children.filter((a) => PRESERVED_STATES.has(a.state));
+    const flexible = children.filter(
+      (a) => a.state === 'PROPOSED' || a.state === 'SCHEDULED'
+    );
+    if (flexible.length === 0) return null;
+
+    // Compute the latest preserved end (in minutes-of-day). Flexible
+    // activities will be repacked starting at that time (or at their
+    // earliest natural start, whichever is later).
+    let preservedEnd = null;
+    for (const a of preserved) {
+      const start = parseStartMinutesForReflow(a.plannedStartAt);
+      if (start === null) continue;
+      const dur = Number(a.plannedDurationMinutes ?? 0);
+      const end = start + dur;
+      if (preservedEnd === null || end > preservedEnd) preservedEnd = end;
+    }
+
+    // Sort flexible by current plannedStartAt to keep relative order.
+    flexible.sort((x, y) => {
+      const xs = parseStartMinutesForReflow(x.plannedStartAt) ?? Infinity;
+      const ys = parseStartMinutesForReflow(y.plannedStartAt) ?? Infinity;
+      return xs - ys;
+    });
+
+    const now = this._clock.now();
+    let cursor = preservedEnd;
+    let shifted = 0;
+    const updatedFlexible = flexible.map((a) => {
+      const origStart = parseStartMinutesForReflow(a.plannedStartAt);
+      const dur = Number(a.plannedDurationMinutes ?? 0);
+      // The new start is the later of:
+      //   (cursor) — butted up against the latest preserved end, or
+      //   (origStart) — its own original time, if that's already later.
+      let nextStart;
+      if (cursor !== null && origStart !== null) {
+        nextStart = Math.max(cursor, origStart);
+      } else if (cursor !== null) {
+        nextStart = cursor;
+      } else if (origStart !== null) {
+        nextStart = origStart;
+      } else {
+        // Nothing to anchor on — leave plannedStartAt alone.
+        cursor = null;
+        return { ...a, updatedAt: now };
+      }
+      cursor = nextStart + dur;
+      const newPlannedStartAt = formatStartMinutesForReflow(
+        a.plannedStartAt,
+        nextStart
+      );
+      const changed = newPlannedStartAt !== a.plannedStartAt;
+      if (changed) shifted += 1;
+      return {
+        ...a,
+        plannedStartAt: newPlannedStartAt,
+        updatedAt: now
+      };
+    });
+
+    // Persist the shifted children.
+    const nextActs = { ...acts };
+    for (const a of updatedFlexible) {
+      nextActs[a.id] = a;
+    }
+    this._repo.write(ACTIVITIES_KEY, nextActs);
+
+    this._bus.publish(CycleReflowed, {
+      compositionId: composition.id,
+      userId,
+      scope: 'DAILY',
+      trigger,
+      reflowedAt: now,
+      shifted,
+      preserved: preserved.length
+    });
+
+    const allChildren = Object.values(nextActs).filter(
+      (a) => a && a.compositionId === composition.id
+    );
+    return {
+      composition,
+      activities: allChildren,
+      shifted,
+      preserved: preserved.length
+    };
   }
 
   /**

@@ -91,6 +91,14 @@ export const WeeklyCycleAccepted = 'WeeklyCycleAccepted';
 export const KaizenStepCompleted = 'KaizenStepCompleted';
 export const KaizenStepScheduled = 'KaizenStepScheduled';
 
+// --- Sprint 15 W5: Composer reflow -------------------------------------------
+// Fired by ComposerService.reflow / WeeklyComposerService.reflow.
+// Payload shape:
+//   CycleReflowed — {compositionId|weeklyCompositionId, userId, scope:
+//                    'DAILY'|'WEEKLY', trigger: string, reflowedAt: string,
+//                    shifted: number, preserved: number}
+export const CycleReflowed = 'CycleReflowed';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -130,7 +138,8 @@ export const EVENT_NAMES = Object.freeze([
   WeeklyCycleProposed,
   WeeklyCycleAccepted,
   KaizenStepCompleted,
-  KaizenStepScheduled
+  KaizenStepScheduled,
+  CycleReflowed
 ]);
 
 /**
@@ -172,5 +181,6 @@ export default Object.freeze({
   WeeklyCycleAccepted,
   KaizenStepCompleted,
   KaizenStepScheduled,
+  CycleReflowed,
   EVENT_NAMES
 });

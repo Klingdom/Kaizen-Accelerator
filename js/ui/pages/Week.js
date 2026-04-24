@@ -19,6 +19,8 @@
  */
 
 import { esc } from '../mount.js';
+import { WeekGrid } from '../components/WeekGrid.js';
+import { UpNextRail } from '../components/UpNextRail.js';
 
 export const WEEK_COPY = Object.freeze({
   TITLE: 'Week Plan',
@@ -152,6 +154,28 @@ export function DayPreview(props = {}) {
 }
 
 /**
+ * Flatten every activity across the 5 weekly days into a single array
+ * (used by UpNextRail). Pure helper.
+ *
+ * @param {object|null} weekly
+ * @returns {object[]}
+ */
+function flattenWeeklyActivities(weekly) {
+  if (!weekly || !Array.isArray(weekly.days)) return [];
+  const flat = [];
+  for (const d of weekly.days) {
+    if (!d || !Array.isArray(d.activities)) continue;
+    for (const a of d.activities) {
+      if (!a) continue;
+      // Decorate with the day's date so UpNextRail can build a sortable
+      // ISO key when plannedStartAt is HH:MM-only.
+      flat.push({ ...a, _date: d.date ?? null });
+    }
+  }
+  return flat;
+}
+
+/**
  * Week page component.
  *
  * @param {{
@@ -159,12 +183,16 @@ export function DayPreview(props = {}) {
  *   weekStart?: string,
  *   weekEnd?: string,
  *   kaizens?: object[],
+ *   nowIso?: string,
+ *   kaizenTitleById?: Record<string, string>,
  * }} props
  * @returns {string}
  */
 export function Week(props = {}) {
   const weekly = props.weeklyComposition ?? null;
   const defaultWeekStart = props.weekStart ?? null;
+  const nowIso = typeof props.nowIso === 'string' ? props.nowIso : null;
+  const kaizenTitleById = props.kaizenTitleById ?? {};
 
   if (!weekly) {
     const proposePayload = esc(
@@ -201,6 +229,23 @@ export function Week(props = {}) {
       ? `<button type="button" class="wk-accept-all" data-action="WEEK_ACCEPT_ALL" data-payload='${acceptAllPayload}'>${esc(WEEK_COPY.ACCEPT_ALL)}</button>`
       : `<span class="wk-state-label">${esc(state)}</span>`;
 
+  // Sprint 15 W1 — primary visualization is now the hour-grid timeline.
+  const gridHtml = WeekGrid({
+    weeklyComposition: weekly,
+    nowIso,
+    kaizenTitleById
+  });
+
+  // Sprint 15 W2 — Up Next rail to the right of the grid (desktop-only via CSS).
+  const flatActivities = flattenWeeklyActivities(weekly);
+  const upNextHtml = UpNextRail({
+    activities: flatActivities,
+    nowIso,
+    kaizenTitleById,
+    limit: 5,
+    variant: 'rail'
+  });
+
   return `<main class="week-page" data-route="week" data-weekly-id="${esc(weekly.id ?? '')}" data-state="${esc(state)}">
     <header class="wk-page-header">
       <div class="wk-header-text">
@@ -211,7 +256,13 @@ export function Week(props = {}) {
         <button type="button" class="wk-propose wk-propose-primary" data-action="WEEK_PROPOSE" data-payload='${proposePayload}'>${esc(WEEK_COPY.PROPOSE)}</button>
       </div>
     </header>
-    <section class="wk-grid" role="list" aria-label="Week days">
+    <div class="wk-body">
+      <section class="wk-grid-wrap" aria-label="Week timeline">
+        ${gridHtml}
+      </section>
+      ${upNextHtml}
+    </div>
+    <section class="wk-grid" role="list" aria-label="Week day summary">
       ${cols}
     </section>
     <footer class="wk-footer">
