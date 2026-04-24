@@ -510,6 +510,256 @@ export function computeDurationImpact(activities, slotActivityId, newDurationMin
   return result;
 }
 
+// ---- Sprint 14 — start-time editing ---------------------------------------
+
+/**
+ * Validate an `HH:MM` string. Must be exactly two-digit hour (00–23) and
+ * two-digit minute (00–59), zero-padded. Returns null when invalid, or the
+ * parsed `{hours, minutes}` tuple when valid.
+ *
+ * @param {string} value
+ * @returns {{hours: number, minutes: number} | null}
+ */
+function parseHHMM(value) {
+  if (typeof value !== 'string') return null;
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [h, m] = value.split(':').map(Number);
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
+  if (h < 0 || h > 23) return null;
+  if (m < 0 || m > 59) return null;
+  return { hours: h, minutes: m };
+}
+
+/**
+ * Replace only the time portion of a plannedStartAt value with the given
+ * `HH:MM`, preserving the original shape.
+ *
+ *   - `HH:MM`                → `newHHMM`
+ *   - `HH:MM:SS`             → `newHHMM:SS` (seconds preserved)
+ *   - ISO `YYYY-MM-DDTHH:MM:SSZ` → date portion preserved, HH/MM replaced,
+ *     seconds and the `Z` suffix preserved
+ *
+ * Returns the original value unchanged if it is unparseable.
+ *
+ * @param {string} original
+ * @param {string} newHHMM
+ * @returns {string}
+ */
+function replaceTimeOnStart(original, newHHMM) {
+  if (typeof original !== 'string' || original.length === 0) return newHHMM;
+  if (/^\d{2}:\d{2}$/.test(original)) return newHHMM;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(original)) {
+    return `${newHHMM}:${original.slice(6, 8)}`;
+  }
+  // ISO-ish: preserve everything except the HH:MM between `T` and the
+  // next `:` (so both `2026-04-22T10:00:00Z` and `…T10:00:00.123Z` work).
+  const isoMatch = original.match(/^(.*T)(\d{2}):(\d{2})(:\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (isoMatch) {
+    const [, prefix, , , secFrac = '', tz = ''] = isoMatch;
+    return `${prefix}${newHHMM}${secFrac}${tz}`;
+  }
+  return original;
+}
+
+/**
+ * Apply a start-time change to one slot and cascade-shift subsequent
+ * butting-up activities by the same delta. Mirrors applyDurationChange's
+ * cascade rule (gap <= 1 minute ⇒ butting-up ⇒ shift).
+ *
+ * Rules:
+ *   - Target's `plannedStartAt` is updated (date portion preserved).
+ *   - `delta = new - old` in minutes (can be negative).
+ *   - For each activity (sorted by plannedStartAt) AFTER the target, if its
+ *     original start was within 1 minute of the previous activity's
+ *     original end, shift it by `delta`. Deliberate gaps are preserved.
+ *   - Backward-shift guard: if the new start is earlier than the
+ *     immediately-preceding activity's end time, throw `OVERLAPS_PRIOR`
+ *     with `{priorEndHHMM}` decorated onto the error. The "immediately
+ *     preceding" check is based on the original (pre-shift) sorted order
+ *     and only considers activities with a plannedStartAt.
+ *   - Protected target → throws `PROTECTED_BLOCK`.
+ *   - Malformed `newHHMM` → throws `INVALID_TIME`.
+ *   - Input array and its items are NOT mutated.
+ *
+ * @param {object[]} activities
+ * @param {string} slotActivityId
+ * @param {string} newHHMM       e.g. "09:30"
+ * @returns {object[]}
+ */
+export function applyStartTimeChange(activities, slotActivityId, newHHMM) {
+  if (!Array.isArray(activities)) return [];
+  const parsed = parseHHMM(newHHMM);
+  if (!parsed) {
+    const err = new Error(
+      `editMode.applyStartTimeChange: "${newHHMM}" is not a valid HH:MM value`
+    );
+    err.name = 'INVALID_TIME';
+    throw err;
+  }
+  const targetIdx = activities.findIndex((a) => a && a.id === slotActivityId);
+  if (targetIdx < 0) return activities.map((a) => ({ ...a }));
+  const target = activities[targetIdx];
+  if (isProtectedBlock(target)) {
+    const err = new Error(
+      `editMode.applyStartTimeChange: ${target.name ?? slotActivityId} is protected`
+    );
+    err.name = 'PROTECTED_BLOCK';
+    throw err;
+  }
+  const newStartMinutes = parsed.hours * 60 + parsed.minutes;
+  const oldStartMinutes = parseStartMinutes(target.plannedStartAt);
+
+  // Backward-shift guard: walk the sorted sequence, find the activity that
+  // immediately precedes the target (by start time), and ensure the new
+  // start is at-or-after its end.
+  const sortedOriginal = sortedByStart(activities);
+  const targetSortedIdx = sortedOriginal.findIndex((a) => a.id === slotActivityId);
+  let priorEndMinutes = null;
+  for (let i = targetSortedIdx - 1; i >= 0; i -= 1) {
+    const row = sortedOriginal[i];
+    const rowStart = parseStartMinutes(row?.plannedStartAt);
+    if (rowStart == null) continue;
+    const rowDur = Number(row.plannedDurationMinutes ?? 0);
+    priorEndMinutes = rowStart + rowDur;
+    break;
+  }
+  if (priorEndMinutes != null && newStartMinutes < priorEndMinutes) {
+    const hh = String(Math.floor(priorEndMinutes / 60) % 24).padStart(2, '0');
+    const mm = String(priorEndMinutes % 60).padStart(2, '0');
+    const err = new Error(
+      `editMode.applyStartTimeChange: ${newHHMM} overlaps prior block ending ${hh}:${mm}`
+    );
+    err.name = 'OVERLAPS_PRIOR';
+    err.priorEndHHMM = `${hh}:${mm}`;
+    throw err;
+  }
+
+  // Clone every row so the input array and its items are untouched.
+  const next = activities.map((a) => ({ ...a }));
+  const newPlannedStartAt = replaceTimeOnStart(target.plannedStartAt, newHHMM);
+  next[targetIdx] = { ...next[targetIdx], plannedStartAt: newPlannedStartAt };
+
+  const delta =
+    oldStartMinutes != null ? newStartMinutes - oldStartMinutes : 0;
+  if (delta === 0) return next;
+
+  // Walk forward through the sorted order and shift butting-up successors.
+  const targetDuration = Number(target.plannedDurationMinutes ?? 0);
+  let prevEndBefore =
+    oldStartMinutes != null ? oldStartMinutes + targetDuration : null;
+  let prevEndAfter =
+    oldStartMinutes != null ? newStartMinutes + targetDuration : null;
+
+  for (let i = targetSortedIdx + 1; i < sortedOriginal.length; i += 1) {
+    const row = sortedOriginal[i];
+    const origStart = parseStartMinutes(row?.plannedStartAt);
+    if (origStart == null || prevEndBefore == null || prevEndAfter == null) {
+      prevEndBefore = null;
+      prevEndAfter = null;
+      continue;
+    }
+    const gap = origStart - prevEndBefore;
+    if (gap <= 1) {
+      const shifted = shiftStart(row.plannedStartAt, delta);
+      const idx = next.findIndex((a) => a.id === row.id);
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], plannedStartAt: shifted };
+      }
+      const dur = Number(row.plannedDurationMinutes ?? 0);
+      prevEndBefore = origStart + dur;
+      prevEndAfter = origStart + delta + dur;
+    } else {
+      const dur = Number(row.plannedDurationMinutes ?? 0);
+      prevEndBefore = origStart + dur;
+      prevEndAfter = origStart + dur;
+    }
+  }
+
+  return next;
+}
+
+/**
+ * Pure preview helper — compute the effect of a prospective start-time
+ * change without mutating anything.
+ *
+ * Returns:
+ *   - `delta`: newStartMinutes − old (0 if slot missing / new equals old).
+ *   - `newEndOfDay`: the last activity's end time in HH:MM after cascade,
+ *     or null if no activities have a planned start.
+ *   - `wouldExceedCapacity`: true when newEndOfDay pushes past 18:00.
+ *   - `wouldOverlapPrior`: true when newHHMM is earlier than the prior
+ *     activity's end.
+ *   - `priorEndHHMM`: the prior activity's end time in HH:MM, or null.
+ *
+ * @param {object[]} activities
+ * @param {string} slotActivityId
+ * @param {string} newHHMM
+ * @returns {{delta: number, newEndOfDay: string|null, wouldExceedCapacity: boolean, wouldOverlapPrior: boolean, priorEndHHMM: string|null}}
+ */
+export function computeStartTimeImpact(activities, slotActivityId, newHHMM) {
+  const result = {
+    delta: 0,
+    newEndOfDay: null,
+    wouldExceedCapacity: false,
+    wouldOverlapPrior: false,
+    priorEndHHMM: null
+  };
+  if (!Array.isArray(activities)) return result;
+  const target = activities.find((a) => a && a.id === slotActivityId);
+  if (!target) return result;
+  if (isProtectedBlock(target)) return result;
+  const parsed = parseHHMM(newHHMM);
+  if (!parsed) return result;
+
+  const oldStartMinutes = parseStartMinutes(target.plannedStartAt);
+  const newStartMinutes = parsed.hours * 60 + parsed.minutes;
+  if (oldStartMinutes != null) {
+    result.delta = newStartMinutes - oldStartMinutes;
+  }
+
+  // Prior-end lookup.
+  const sorted = sortedByStart(activities);
+  const targetSortedIdx = sorted.findIndex((a) => a.id === slotActivityId);
+  for (let i = targetSortedIdx - 1; i >= 0; i -= 1) {
+    const row = sorted[i];
+    const rowStart = parseStartMinutes(row?.plannedStartAt);
+    if (rowStart == null) continue;
+    const rowDur = Number(row.plannedDurationMinutes ?? 0);
+    const end = rowStart + rowDur;
+    const hh = String(Math.floor(end / 60) % 24).padStart(2, '0');
+    const mm = String(end % 60).padStart(2, '0');
+    result.priorEndHHMM = `${hh}:${mm}`;
+    if (newStartMinutes < end) result.wouldOverlapPrior = true;
+    break;
+  }
+
+  // Simulate the cascade to read the resulting end-of-day.
+  let simulated;
+  try {
+    simulated = applyStartTimeChange(activities, slotActivityId, newHHMM);
+  } catch (err) {
+    if (err && (err.name === 'OVERLAPS_PRIOR' || err.name === 'INVALID_TIME' || err.name === 'PROTECTED_BLOCK')) {
+      return result;
+    }
+    throw err;
+  }
+  let maxEnd = null;
+  for (const row of simulated) {
+    const start = parseStartMinutes(row?.plannedStartAt);
+    if (start == null) continue;
+    const dur = Number(row.plannedDurationMinutes ?? 0);
+    const end = start + dur;
+    if (maxEnd == null || end > maxEnd) maxEnd = end;
+  }
+  if (maxEnd != null) {
+    const hh = String(Math.floor(maxEnd / 60) % 24).padStart(2, '0');
+    const mm = String(maxEnd % 60).padStart(2, '0');
+    result.newEndOfDay = `${hh}:${mm}`;
+    result.wouldExceedCapacity = maxEnd > END_OF_DAY_MINUTES;
+  }
+  return result;
+}
+
 /**
  * Filter catalog entries for the drawer. Empty search + `all` filter
  * returns the whole list (after the `enabledByUser !== false` cut). The
@@ -586,6 +836,8 @@ export default {
   isInToday,
   applyDurationChange,
   computeDurationImpact,
+  applyStartTimeChange,
+  computeStartTimeImpact,
   DURATION_OPTIONS,
   PROTECTED_CATALOG_IDS,
   PROTECTED_NAMES,

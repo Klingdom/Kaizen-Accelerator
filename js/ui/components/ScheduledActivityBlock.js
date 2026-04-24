@@ -204,6 +204,10 @@ export function ScheduledActivityBlock(props = {}) {
 
   const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
   const time = formatTime(a.plannedStartAt ?? a.anchor);
+  // Sprint 14: when a non-protected slot is edit-selected, swap the static
+  // time label for a native <input type="time"> so the user can change the
+  // plannedStartAt directly.
+  const timeEditable = editMode && editSelected && !protectedBlock;
   const name = a.name ?? a.catalogEntryId ?? '(unnamed)';
   const duration = a.plannedDurationMinutes ?? 0;
   const intention = a.intention ?? '';
@@ -259,8 +263,12 @@ export function ScheduledActivityBlock(props = {}) {
     ? renderDurationChips(a, duration)
     : '';
 
+  const whenInner = timeEditable
+    ? `<input type="time" class="sa-time-editor" data-action="EDIT_CHANGE_START_TIME" data-activity-id="${esc(a.id ?? '')}" value="${esc(time)}" aria-label="Start time">`
+    : esc(time);
+
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}"${selectAttrs}>
-  <div class="sa-when">${esc(time)}</div>
+  <div class="sa-when">${whenInner}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>

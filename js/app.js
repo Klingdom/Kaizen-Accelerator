@@ -87,6 +87,7 @@ import {
   applyRemove,
   applyAdd,
   applyDurationChange,
+  applyStartTimeChange,
   pushUndo,
   popUndo,
   DURATION_OPTIONS
@@ -1037,6 +1038,117 @@ export function buildHandlers(scope) {
         state,
         ToastKind.SUCCESS,
         `Duration: ${oldDuration}m → ${minutes}m`,
+        rerender
+      );
+      rerender();
+    },
+
+    // Sprint 14 — change the selected slot's start time via the native
+    // <input type="time"> editor on the sa-when column. Cascades
+    // subsequent butting-up slots via applyStartTimeChange; pushes a
+    // snapshot onto the undo stack so Ctrl+Z reverts. The new HH:MM value
+    // may arrive either directly in payload.value (e.g. unit tests) or via
+    // ctx.element.value when the `change` event delegate fires.
+    EDIT_CHANGE_START_TIME(payload, ctx) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.activityId !== 'string') return;
+      let newHHMM = typeof payload.value === 'string' ? payload.value : null;
+      if (newHHMM == null && ctx?.element && typeof ctx.element.value === 'string') {
+        newHHMM = ctx.element.value;
+      }
+      if (typeof newHHMM !== 'string' || newHHMM.length === 0) {
+        showToast(
+          state,
+          ToastKind.ERROR,
+          'Pick a valid start time (HH:MM).',
+          rerender
+        );
+        return;
+      }
+      const target = state.editMode.activities.find(
+        (a) => a && a.id === payload.activityId
+      );
+      if (!target) return;
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.ERROR,
+          "This block's start time is fixed.",
+          rerender
+        );
+        return;
+      }
+      // Format the old HH:MM for the toast from whatever shape is stored.
+      const oldRaw = String(target.plannedStartAt ?? '');
+      let oldHHMM = '';
+      if (/^\d{2}:\d{2}$/.test(oldRaw)) oldHHMM = oldRaw;
+      else if (/^\d{2}:\d{2}:\d{2}$/.test(oldRaw)) oldHHMM = oldRaw.slice(0, 5);
+      else {
+        const d = new Date(oldRaw);
+        if (!Number.isNaN(d.getTime())) {
+          oldHHMM =
+            String(d.getUTCHours()).padStart(2, '0') +
+            ':' +
+            String(d.getUTCMinutes()).padStart(2, '0');
+        }
+      }
+      if (oldHHMM === newHHMM) return; // nothing to do
+      state.editMode.undoStack = pushUndo(
+        state.editMode.undoStack,
+        state.editMode.activities.map((a) => ({ ...a }))
+      );
+      let nextActivities;
+      try {
+        nextActivities = applyStartTimeChange(
+          state.editMode.activities,
+          payload.activityId,
+          newHHMM
+        );
+      } catch (err) {
+        // Roll back the undo push so the stack stays accurate.
+        state.editMode.undoStack = state.editMode.undoStack.slice(0, -1);
+        state.lastError = err;
+        if (err && err.name === 'OVERLAPS_PRIOR') {
+          const priorEnd = err.priorEndHHMM ?? '';
+          showToast(
+            state,
+            ToastKind.ERROR,
+            `Would overlap prior block (ends ${priorEnd}). Pick a later time.`,
+            rerender
+          );
+        } else if (err && err.name === 'INVALID_TIME') {
+          showToast(
+            state,
+            ToastKind.ERROR,
+            'Pick a valid start time (HH:MM).',
+            rerender
+          );
+        } else if (err && err.name === 'PROTECTED_BLOCK') {
+          showToast(
+            state,
+            ToastKind.ERROR,
+            "This block's start time is fixed.",
+            rerender
+          );
+        } else {
+          showToast(
+            state,
+            ToastKind.ERROR,
+            `Start-time change failed: ${err?.message ?? err?.name ?? 'unknown error'}`,
+            rerender
+          );
+        }
+        // Rerender so the bound <input type="time"> snaps back to the
+        // previous plannedStartAt (the input's value attribute is the
+        // source of truth for the rendered HTML).
+        rerender();
+        return;
+      }
+      state.editMode.activities = nextActivities;
+      showToast(
+        state,
+        ToastKind.SUCCESS,
+        `Start time: ${oldHHMM} → ${newHHMM}`,
         rerender
       );
       rerender();
@@ -2107,6 +2219,8 @@ export function start() {
 
   // Sprint 12: search input needs `input` events (the click dispatcher only
   // handles buttons). Delegate on the app root.
+  // Sprint 14: <input type="time"> fires `change` (not `click`), so add a
+  // sibling `change` delegate that routes `EDIT_CHANGE_START_TIME`.
   /* istanbul ignore next — browser only */
   const root = document.getElementById(APP_ROOT_ID);
   if (root) {
@@ -2115,6 +2229,16 @@ export function start() {
       if (!el || typeof el.getAttribute !== 'function') return;
       if (el.getAttribute('data-action') !== 'EDIT_SEARCH') return;
       handlers.EDIT_SEARCH({ value: el.value ?? '' });
+    });
+    root.addEventListener('change', (ev) => {
+      const el = ev.target;
+      if (!el || typeof el.getAttribute !== 'function') return;
+      if (el.getAttribute('data-action') !== 'EDIT_CHANGE_START_TIME') return;
+      const activityId = el.getAttribute('data-activity-id') ?? '';
+      handlers.EDIT_CHANGE_START_TIME(
+        { activityId, value: el.value ?? '' },
+        { element: el, event: ev }
+      );
     });
   }
 

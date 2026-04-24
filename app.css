@@ -1991,3 +1991,46 @@ html, body {
     gap: 8px;
   }
 }
+
+/* Sprint 14 — start-time editor (<input type="time">) inside the sa-when
+   column. Matches .sa-when's tabular-numeric + muted-color typography but
+   adds a bordered, editable affordance so the user knows it's live. */
+.sa-time-editor {
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 4px;
+  min-width: 72px;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+.sa-time-editor:hover {
+  border-color: var(--primary);
+}
+
+.sa-time-editor:focus,
+.sa-time-editor:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Protected slots keep the static sa-when display — no editor affordance
+   leaks in. (The JS already omits the <input>; this is belt-and-suspenders
+   in case a protected slot ever renders one.) */
+.sa-block.edit-protected .sa-when {
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  .sa-time-editor {
+    min-width: 96px;
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+}
