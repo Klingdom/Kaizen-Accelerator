@@ -86,8 +86,10 @@ import {
   applySwap,
   applyRemove,
   applyAdd,
+  applyDurationChange,
   pushUndo,
-  popUndo
+  popUndo,
+  DURATION_OPTIONS
 } from './ui/editMode.js';
 import {
   mountHtml,
@@ -985,6 +987,58 @@ export function buildHandlers(scope) {
       state.editMode.activities = snapshot;
       state.editMode.selectedActivityId = null;
       showToast(state, ToastKind.INFO, 'Undid last change.', rerender);
+      rerender();
+    },
+
+    // Sprint 13 — change the selected slot's duration via the chip row.
+    // Cascades subsequent butting-up slots via applyDurationChange; pushes
+    // a snapshot onto the undo stack so Ctrl+Z reverts.
+    EDIT_CHANGE_DURATION(payload) {
+      if (!state.editMode) return;
+      if (!payload || typeof payload.activityId !== 'string') return;
+      const minutes = Number(payload.minutes);
+      if (!DURATION_OPTIONS.includes(minutes)) return; // silent no-op
+      const target = state.editMode.activities.find((a) => a && a.id === payload.activityId);
+      if (!target) return;
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.ERROR,
+          "This block's duration is fixed.",
+          rerender
+        );
+        return;
+      }
+      const oldDuration = Number(target.plannedDurationMinutes ?? 0);
+      if (oldDuration === minutes) return; // nothing to do
+      state.editMode.undoStack = pushUndo(
+        state.editMode.undoStack,
+        state.editMode.activities.map((a) => ({ ...a }))
+      );
+      try {
+        state.editMode.activities = applyDurationChange(
+          state.editMode.activities,
+          payload.activityId,
+          minutes
+        );
+      } catch (err) {
+        // Roll back the undo push so the stack stays accurate.
+        state.editMode.undoStack = state.editMode.undoStack.slice(0, -1);
+        state.lastError = err;
+        showToast(
+          state,
+          ToastKind.ERROR,
+          `Duration change failed: ${err.message ?? err.name ?? 'unknown error'}`,
+          rerender
+        );
+        return;
+      }
+      showToast(
+        state,
+        ToastKind.SUCCESS,
+        `Duration: ${oldDuration}m → ${minutes}m`,
+        rerender
+      );
       rerender();
     },
 
@@ -2029,8 +2083,11 @@ export function start() {
   attachRootClickListener(APP_ROOT_ID, handlers);
 
   // Sprint 12: keyboard shortcuts scoped to edit mode.
-  //   Esc       → EDIT_CANCEL
+  //   Esc        → EDIT_CANCEL
   //   Ctrl/Cmd+Z → EDIT_UNDO
+  // Sprint 13: arrow keys cycle DURATION_OPTIONS when a slot is selected.
+  //   ArrowLeft  → one step down (stops at 15)
+  //   ArrowRight → one step up   (stops at 90)
   /* istanbul ignore next — browser only */
   globalThis.addEventListener('keydown', (ev) => {
     if (!state.editMode) return;
@@ -2043,6 +2100,8 @@ export function start() {
     } else if ((ev.ctrlKey || ev.metaKey) && ev.key === 'z') {
       ev.preventDefault();
       handlers.EDIT_UNDO({});
+    } else if ((ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !isTyping) {
+      handleDurationArrowKey(ev, state, handlers);
     }
   });
 
@@ -2063,6 +2122,55 @@ export function start() {
   // asynchronously after boot. Non-blocking so the app renders immediately
   // with the browser seed; re-renders once the fetch resolves.
   loadFullCatalogAsync(services, rerender);
+}
+
+/**
+ * Sprint 13 — pure-ish helper that maps a keyboard event while a slot is
+ * selected in Edit mode to an EDIT_CHANGE_DURATION dispatch. Separated
+ * from the listener so we can unit-test the boundary logic (wrap at 15,
+ * cap at 90, no-op when no slot is selected) without touching DOM.
+ *
+ * @param {{key: string, preventDefault?: () => void}} ev
+ * @param {object} state
+ * @param {Record<string, Function>} handlers
+ * @returns {boolean}   true when a dispatch fired
+ */
+export function handleDurationArrowKey(ev, state, handlers) {
+  if (!state || !state.editMode) return false;
+  const selectedId = state.editMode.selectedActivityId;
+  if (typeof selectedId !== 'string' || selectedId.length === 0 || selectedId === '__new__') {
+    return false;
+  }
+  const target = state.editMode.activities.find((a) => a && a.id === selectedId);
+  if (!target) return false;
+  if (isProtectedBlock(target)) return false;
+  const current = Number(target.plannedDurationMinutes ?? 0);
+  // Snap to the nearest DURATION_OPTIONS index, then step.
+  let idx = DURATION_OPTIONS.indexOf(current);
+  if (idx < 0) {
+    // Snap to the closest option below (or 0 if below the floor).
+    idx = 0;
+    for (let i = 0; i < DURATION_OPTIONS.length; i += 1) {
+      if (DURATION_OPTIONS[i] <= current) idx = i;
+    }
+  }
+  let nextIdx = idx;
+  if (ev.key === 'ArrowLeft') {
+    nextIdx = Math.max(0, idx - 1);
+  } else if (ev.key === 'ArrowRight') {
+    nextIdx = Math.min(DURATION_OPTIONS.length - 1, idx + 1);
+  } else {
+    return false;
+  }
+  const nextMinutes = DURATION_OPTIONS[nextIdx];
+  if (nextMinutes === current) {
+    // At boundary — preventDefault to swallow the key, no dispatch.
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    return false;
+  }
+  if (typeof ev.preventDefault === 'function') ev.preventDefault();
+  handlers.EDIT_CHANGE_DURATION({ activityId: selectedId, minutes: nextMinutes });
+  return true;
 }
 
 /**
@@ -2171,6 +2279,7 @@ export default {
   computeDaysSinceSignup,
   extractFormFields,
   handleActivityCompleted,
+  handleDurationArrowKey,
   start,
   DEFAULT_USER,
   APP_ROOT_ID,

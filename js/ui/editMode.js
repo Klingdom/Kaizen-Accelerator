@@ -250,6 +250,266 @@ export function durationDelta(sourceSlot, catalogEntry) {
   return b - a;
 }
 
+// ---- Sprint 13 — duration chips --------------------------------------------
+
+/**
+ * The six duration options exposed by the chip row inside Edit mode.
+ * Kept as a frozen array so callers can rely on a canonical ordering.
+ */
+export const DURATION_OPTIONS = Object.freeze([15, 30, 45, 60, 75, 90]);
+
+/**
+ * Soft end-of-day ceiling (minutes from midnight) used by
+ * computeDurationImpact. Matches the 18:00 convention used elsewhere.
+ */
+const END_OF_DAY_MINUTES = 18 * 60; // 18:00 local
+
+/**
+ * Parse a plannedStartAt value (ISO, `HH:MM`, or `HH:MM:SS`) into
+ * minutes-from-midnight in the day's timezone. For ISO with a `Z` suffix,
+ * Sprint 6 decided to treat the hours/minutes as local wall-clock; we
+ * extract UTC components directly since the composer stores them that way.
+ * Returns null when unparseable or missing.
+ *
+ * @param {string | null | undefined} value
+ * @returns {number | null}
+ */
+function parseStartMinutes(value) {
+  if (!value || typeof value !== 'string') return null;
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.split(':').map(Number);
+    return h * 60 + m;
+  }
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.slice(0, 5).split(':').map(Number);
+    return h * 60 + m;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+
+/**
+ * Return a new ISO string with the start time shifted by `deltaMinutes`.
+ * Preserves the original string's shape (`HH:MM`, `HH:MM:SS`, full ISO).
+ * Returns the original value unchanged if unparseable.
+ *
+ * @param {string} value
+ * @param {number} deltaMinutes
+ * @returns {string}
+ */
+function shiftStart(value, deltaMinutes) {
+  if (!value || typeof value !== 'string' || deltaMinutes === 0) return value;
+  // HH:MM shape — wall-clock shift.
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.split(':').map(Number);
+    const total = h * 60 + m + deltaMinutes;
+    const hh = String(Math.floor(((total % 1440) + 1440) % 1440 / 60)).padStart(2, '0');
+    const mm = String((((total % 1440) + 1440) % 1440) % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const [h, m, s] = value.split(':').map(Number);
+    const total = h * 60 + m + deltaMinutes;
+    const hh = String(Math.floor(((total % 1440) + 1440) % 1440 / 60)).padStart(2, '0');
+    const mm = String((((total % 1440) + 1440) % 1440) % 60).padStart(2, '0');
+    return `${hh}:${mm}:${String(s).padStart(2, '0')}`;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const shifted = new Date(d.getTime() + deltaMinutes * 60 * 1000);
+  return shifted.toISOString();
+}
+
+/**
+ * Sort activities by plannedStartAt (missing values sink to the end while
+ * preserving relative order). Returns a new array.
+ *
+ * @param {object[]} activities
+ * @returns {object[]}
+ */
+function sortedByStart(activities) {
+  const withIdx = activities.map((a, i) => ({ a, i, min: parseStartMinutes(a?.plannedStartAt) }));
+  withIdx.sort((x, y) => {
+    if (x.min == null && y.min == null) return x.i - y.i;
+    if (x.min == null) return 1;
+    if (y.min == null) return -1;
+    if (x.min === y.min) return x.i - y.i;
+    return x.min - y.min;
+  });
+  return withIdx.map((w) => w.a);
+}
+
+/**
+ * Apply a duration change to one slot and cascade-shift subsequent
+ * activities that were butting up against their predecessor.
+ *
+ * Rules:
+ *   - Target's `plannedDurationMinutes` is replaced.
+ *   - `delta = new - old`.
+ *   - For each activity (sorted by plannedStartAt) AFTER the target, if its
+ *     start was within 1 minute of the previous activity's end, shift it
+ *     by `delta`. Preserve explicit gaps (no shift when there's space).
+ *   - Activities without a plannedStartAt are left untouched.
+ *   - Protected target → throws PROTECTED_BLOCK.
+ *   - Invalid duration → throws INVALID_DURATION.
+ *   - Input array is NOT mutated; returns a new array with new objects for
+ *     every row (even untouched ones receive a shallow clone).
+ *
+ * @param {object[]} activities
+ * @param {string} slotActivityId
+ * @param {number} newDurationMinutes
+ * @returns {object[]}
+ */
+export function applyDurationChange(activities, slotActivityId, newDurationMinutes) {
+  if (!Array.isArray(activities)) return [];
+  if (!DURATION_OPTIONS.includes(newDurationMinutes)) {
+    const err = new Error(
+      `editMode.applyDurationChange: ${newDurationMinutes} is not a valid duration option`
+    );
+    err.name = 'INVALID_DURATION';
+    throw err;
+  }
+  const targetIdx = activities.findIndex((a) => a && a.id === slotActivityId);
+  if (targetIdx < 0) return activities.map((a) => ({ ...a }));
+  const target = activities[targetIdx];
+  if (isProtectedBlock(target)) {
+    const err = new Error(
+      `editMode.applyDurationChange: ${target.name ?? slotActivityId} is protected`
+    );
+    err.name = 'PROTECTED_BLOCK';
+    throw err;
+  }
+  const oldDuration = Number(target.plannedDurationMinutes ?? 0);
+  const delta = newDurationMinutes - oldDuration;
+
+  // Clone every row so the input array and its items are untouched.
+  const next = activities.map((a) => ({ ...a }));
+  // Update target duration in place (on the clone).
+  next[targetIdx] = { ...next[targetIdx], plannedDurationMinutes: newDurationMinutes };
+
+  if (delta === 0) return next;
+
+  // Build the sorted view (over the clones so we can mutate start times on them).
+  const sorted = sortedByStart(next);
+  const targetSortedIdx = sorted.findIndex((a) => a.id === slotActivityId);
+  if (targetSortedIdx < 0) return next;
+
+  // Track the running "end time" through the sorted sequence so we can tell
+  // whether each successor was butting up against its predecessor.
+  //
+  // Walk forward: for each successor, compare its ORIGINAL start to the
+  // predecessor's new end. If within 1 minute, shift by delta. Otherwise,
+  // leave alone and treat ITS end as the new reference for the next item.
+  let prevEndAfter = null; // predecessor's end time after any shift (minutes)
+  // Seed with the target's NEW end time.
+  const tgtStart = parseStartMinutes(sorted[targetSortedIdx].plannedStartAt);
+  if (tgtStart != null) {
+    prevEndAfter = tgtStart + newDurationMinutes;
+  }
+
+  // Track the pre-shift end (i.e., what the original sequence had as the
+  // predecessor's end time) so we can detect "was butting up" cleanly.
+  let prevEndBefore = tgtStart != null ? tgtStart + oldDuration : null;
+
+  for (let i = targetSortedIdx + 1; i < sorted.length; i += 1) {
+    const row = sorted[i];
+    const origStart = parseStartMinutes(row.plannedStartAt);
+    if (origStart == null || prevEndBefore == null || prevEndAfter == null) {
+      // Can't evaluate the butting-up gap — treat as a break; stop cascading.
+      prevEndBefore = null;
+      prevEndAfter = null;
+      continue;
+    }
+    const gap = origStart - prevEndBefore;
+    if (gap <= 1) {
+      // Butting up — shift this row by delta.
+      const shifted = shiftStart(row.plannedStartAt, delta);
+      // Find the row in `next` by id and update start.
+      const idx = next.findIndex((a) => a.id === row.id);
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], plannedStartAt: shifted };
+      }
+      const dur = Number(row.plannedDurationMinutes ?? 0);
+      prevEndBefore = origStart + dur;
+      prevEndAfter = (origStart + delta) + dur;
+    } else {
+      // Deliberate gap — stop the cascade. Subsequent rows keep their
+      // original starts; the shift would only re-propagate if they were
+      // butting up against THIS row, which (unshifted) they may be — but
+      // the user's gap intent takes precedence.
+      const dur = Number(row.plannedDurationMinutes ?? 0);
+      prevEndBefore = origStart + dur;
+      prevEndAfter = origStart + dur;
+    }
+  }
+
+  return next;
+}
+
+/**
+ * Pure preview helper — compute the effect of a prospective duration change
+ * without mutating anything.
+ *
+ * Returns:
+ *   - `delta`: newDurationMinutes − old (0 if slot missing).
+ *   - `newEndOfDay`: the last activity's end time in HH:MM after cascade,
+ *     or null if no activities have a planned start.
+ *   - `wouldExceedCapacity`: true when newEndOfDay pushes past 18:00.
+ *   - `wouldFallBelowFloor`: reserved; always false for now (floors are
+ *     capacity-based, not duration-based — no single chip click drops a
+ *     bucket below its floor directly, so this is a placeholder for a
+ *     future pass that passes floors in).
+ *
+ * @param {object[]} activities
+ * @param {string} slotActivityId
+ * @param {number} newDurationMinutes
+ * @returns {{delta: number, newEndOfDay: string|null, wouldExceedCapacity: boolean, wouldFallBelowFloor: boolean}}
+ */
+export function computeDurationImpact(activities, slotActivityId, newDurationMinutes) {
+  const result = {
+    delta: 0,
+    newEndOfDay: null,
+    wouldExceedCapacity: false,
+    wouldFallBelowFloor: false
+  };
+  if (!Array.isArray(activities)) return result;
+  const target = activities.find((a) => a && a.id === slotActivityId);
+  if (!target) return result;
+  if (!DURATION_OPTIONS.includes(newDurationMinutes)) return result;
+  if (isProtectedBlock(target)) return result;
+  const oldDuration = Number(target.plannedDurationMinutes ?? 0);
+  result.delta = newDurationMinutes - oldDuration;
+
+  // Try the change in a sandbox to read the resulting end-of-day.
+  let simulated;
+  try {
+    simulated = applyDurationChange(activities, slotActivityId, newDurationMinutes);
+  } catch (err) {
+    // Protected target: nothing to preview.
+    if (err && (err.name === 'PROTECTED_BLOCK' || err.name === 'INVALID_DURATION')) {
+      return result;
+    }
+    throw err;
+  }
+  // Compute the last end-of-day across the simulated array.
+  let maxEnd = null;
+  for (const row of simulated) {
+    const start = parseStartMinutes(row?.plannedStartAt);
+    if (start == null) continue;
+    const dur = Number(row.plannedDurationMinutes ?? 0);
+    const end = start + dur;
+    if (maxEnd == null || end > maxEnd) maxEnd = end;
+  }
+  if (maxEnd != null) {
+    const hh = String(Math.floor(maxEnd / 60) % 24).padStart(2, '0');
+    const mm = String(maxEnd % 60).padStart(2, '0');
+    result.newEndOfDay = `${hh}:${mm}`;
+    result.wouldExceedCapacity = maxEnd > END_OF_DAY_MINUTES;
+  }
+  return result;
+}
+
 /**
  * Filter catalog entries for the drawer. Empty search + `all` filter
  * returns the whole list (after the `enabledByUser !== false` cut). The
@@ -324,6 +584,9 @@ export default {
   durationDelta,
   filterCatalog,
   isInToday,
+  applyDurationChange,
+  computeDurationImpact,
+  DURATION_OPTIONS,
   PROTECTED_CATALOG_IDS,
   PROTECTED_NAMES,
   PROTECTED_SLOT_KINDS

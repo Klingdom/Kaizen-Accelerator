@@ -26,7 +26,7 @@
 
 import { esc } from '../mount.js';
 import { WhyChip } from './WhyChip.js';
-import { isProtectedBlock } from '../editMode.js';
+import { isProtectedBlock, DURATION_OPTIONS } from '../editMode.js';
 
 /**
  * Format a planned start time (ISO or HH:MM) to "HH:MM".
@@ -136,6 +136,29 @@ function renderElapsed(a, nowIso) {
 }
 
 /**
+ * Render the six duration chips (Sprint 13). The current duration's chip
+ * gets the active class + aria-pressed="true"; the rest aria-pressed="false".
+ * Each chip carries a JSON payload `{activityId, minutes}` so the
+ * data-action dispatcher in app.js can route EDIT_CHANGE_DURATION.
+ *
+ * @param {object} a         activity
+ * @param {number} current   current plannedDurationMinutes
+ * @returns {string}
+ */
+function renderDurationChips(a, current) {
+  const id = a.id ?? '';
+  const rowLabel =
+    `<div class="sa-duration-label" aria-label="current duration">duration: ${esc(String(current))}m</div>`;
+  const chips = DURATION_OPTIONS.map((m) => {
+    const active = m === current;
+    const cls = active ? 'sa-dur-chip sa-dur-chip-active' : 'sa-dur-chip';
+    const payload = esc(JSON.stringify({ activityId: id, minutes: m }));
+    return `<button type="button" class="${cls}" data-action="EDIT_CHANGE_DURATION" data-payload='${payload}' aria-pressed="${active ? 'true' : 'false'}" aria-label="Set duration to ${m} minutes">${m}m</button>`;
+  }).join('');
+  return `${rowLabel}<div class="sa-duration-chips" role="group" aria-label="duration chips">${chips}</div>`;
+}
+
+/**
  * Render the skipped-reason label for SKIPPED state.
  *
  * @param {object} a    activity
@@ -230,6 +253,12 @@ export function ScheduledActivityBlock(props = {}) {
   // Hide normal Start/Skip/Close actions while in edit mode.
   const runtimeActions = editMode ? '' : renderActions(a, showStart);
 
+  // Sprint 13: duration chips appear when a non-protected slot is
+  // edit-selected. Six options come from DURATION_OPTIONS.
+  const durationChips = (editMode && editSelected && !protectedBlock)
+    ? renderDurationChips(a, duration)
+    : '';
+
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}"${selectAttrs}>
   <div class="sa-when">${esc(time)}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
@@ -241,6 +270,7 @@ export function ScheduledActivityBlock(props = {}) {
   <div class="sa-state-label">${esc(stateLabel(state))}</div>
   ${runtimeActions}
   ${editChrome}
+  ${durationChips}
   ${whyChip}
 </li>`;
 }

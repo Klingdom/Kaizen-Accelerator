@@ -1921,3 +1921,73 @@ html, body {
     min-height: 44px;
   }
 }
+
+/* --- Sprint 13: duration chips on the selected slot --------------------- */
+
+.sa-duration-label {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  color: var(--color-text-muted, #6b7280);
+  padding: 4px 0 0;
+  letter-spacing: 0.02em;
+}
+
+.sa-duration-chips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.sa-dur-chip {
+  min-width: 44px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 999px;
+  background: var(--color-surface-muted, #f3f4f6);
+  color: var(--color-text, #111827);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+}
+
+.sa-dur-chip:hover {
+  background: var(--color-surface-hover, #e5e7eb);
+  border-color: var(--color-border-strong, #9ca3af);
+}
+
+.sa-dur-chip:active {
+  transform: translateY(1px);
+}
+
+.sa-dur-chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 2px;
+}
+
+.sa-dur-chip.sa-dur-chip-active {
+  background: var(--color-primary, #2563eb);
+  color: var(--color-primary-contrast, #ffffff);
+  border-color: var(--color-primary, #2563eb);
+}
+
+.sa-dur-chip[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+/* Responsive: at <600px chips wrap naturally; keep 44px min-width touch
+   target. The flex-wrap in .sa-duration-chips already handles the row
+   break; nothing extra needed besides reasserting min-width. */
+@media (max-width: 600px) {
+  .sa-dur-chip {
+    min-width: 44px;
+    padding: 8px 10px;
+  }
+
+  .sa-duration-chips {
+    gap: 8px;
+  }
+}
