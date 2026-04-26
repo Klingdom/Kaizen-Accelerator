@@ -107,6 +107,19 @@ describe('ScheduledActivityBlock — structure', () => {
     });
     assert.match(html, /13:00/);
   });
+
+  test('Sprint 16a: sa-when shows the HH:MM–HH:MM time range', () => {
+    const html = ScheduledActivityBlock({ activity: baseActivity });
+    // baseActivity: 10:15 + 30m → 10:15–10:45 (en-dash U+2013).
+    const m = html.match(/<div class="sa-when"[^>]*>([\s\S]*?)<\/div>/);
+    assert.ok(m, 'sa-when div not found');
+    assert.equal(m[1], '10:15\u201310:45');
+  });
+
+  test('Sprint 16a: sa-when carries aria-label "starts at HH:MM, N minutes"', () => {
+    const html = ScheduledActivityBlock({ activity: baseActivity });
+    assert.match(html, /<div class="sa-when" aria-label="starts at 10:15, 30 minutes">/);
+  });
 });
 
 describe('ScheduledActivityBlock — state variants', () => {

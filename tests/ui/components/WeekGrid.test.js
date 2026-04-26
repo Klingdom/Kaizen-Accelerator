@@ -203,6 +203,59 @@ describe('WeekGrid — block positioning', () => {
     assert.match(html, />09:00</);
   });
 
+  test('Sprint 16a: tall blocks render the HH:MM–HH:MM range', () => {
+    const html = WeekGrid({ weeklyComposition: stubWeekly() });
+    // PROJECT 09:00/120m is height 120 ≥ 40, so the range form is shown.
+    assert.match(html, />09:00\u201311:00</);
+  });
+
+  test('Sprint 16a: short blocks (<40px) fall back to start-only', () => {
+    const day = stubDay({
+      date: '2026-04-20',
+      dayIdx: 0,
+      activities: [
+        {
+          id: 'short_block',
+          name: 'Short',
+          bucket: 'CI',
+          plannedDurationMinutes: 15,
+          plannedStartAt: '09:00',
+          state: 'PROPOSED'
+        }
+      ]
+    });
+    const w = stubWeekly();
+    w.days[0] = day;
+    const html = WeekGrid({ weeklyComposition: w });
+    // 15px height < 40 → render only the start, no en-dash.
+    const blockMatch = html.match(/<article class="wg-block[^"]*"[^>]*data-activity-id="short_block"[^>]*>[\s\S]*?<\/article>/);
+    assert.ok(blockMatch, 'short block not found');
+    assert.match(blockMatch[0], /class="wg-block-time">09:00</);
+    assert.doesNotMatch(blockMatch[0], /\u2013/);
+  });
+
+  test('Sprint 16a: 40px-threshold block renders the range', () => {
+    const day = stubDay({
+      date: '2026-04-20',
+      dayIdx: 0,
+      activities: [
+        {
+          id: 'forty_block',
+          name: 'Forty',
+          bucket: 'PROJECT',
+          plannedDurationMinutes: 40,
+          plannedStartAt: '10:00',
+          state: 'PROPOSED'
+        }
+      ]
+    });
+    const w = stubWeekly();
+    w.days[0] = day;
+    const html = WeekGrid({ weeklyComposition: w });
+    // 40m at default rowHeightPx 60 ⇒ 40px height ⇒ at threshold ⇒ range.
+    assert.match(html, /class="wg-block-time">10:00\u201310:40</);
+  });
+
   test('skips blocks without a parseable plannedStartAt', () => {
     const day = stubDay({
       date: '2026-04-20',

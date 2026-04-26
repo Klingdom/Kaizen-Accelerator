@@ -127,23 +127,24 @@ describe('ScheduledActivityBlock — time editor (Sprint 14)', () => {
       editSelected: true
     });
     // The sa-when div should contain the <input>, not raw "11:00" text.
-    const m = html.match(/<div class="sa-when">([\s\S]*?)<\/div>/);
+    const m = html.match(/<div class="sa-when"[^>]*>([\s\S]*?)<\/div>/);
     assert.ok(m, 'sa-when div not found');
     assert.match(m[1], /<input[^>]+type="time"/);
   });
 
-  test('non-selected block keeps static sa-when text', () => {
+  test('non-selected block keeps static sa-when text (range form)', () => {
     const html = ScheduledActivityBlock({
       activity: mkActivity({ plannedStartAt: '11:00' }),
       editMode: true,
       editSelected: false
     });
-    const m = html.match(/<div class="sa-when">([\s\S]*?)<\/div>/);
+    const m = html.match(/<div class="sa-when"[^>]*>([\s\S]*?)<\/div>/);
     assert.ok(m);
-    assert.equal(m[1], '11:00');
+    // Sprint 16a: static label is now "HH:MM–HH:MM" (en-dash U+2013).
+    assert.equal(m[1], '11:00\u201311:30');
   });
 
-  test('protected selected slot keeps static sa-when text', () => {
+  test('protected selected slot keeps static sa-when text (range form)', () => {
     const html = ScheduledActivityBlock({
       activity: mkActivity({
         catalogEntryId: 'cer_daily_standup',
@@ -153,8 +154,8 @@ describe('ScheduledActivityBlock — time editor (Sprint 14)', () => {
       editMode: true,
       editSelected: true
     });
-    const m = html.match(/<div class="sa-when">([\s\S]*?)<\/div>/);
+    const m = html.match(/<div class="sa-when"[^>]*>([\s\S]*?)<\/div>/);
     assert.ok(m);
-    assert.equal(m[1], '09:00');
+    assert.equal(m[1], '09:00\u201309:30');
   });
 });

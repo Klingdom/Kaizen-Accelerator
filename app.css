@@ -365,7 +365,9 @@ html, body {
 
 .sa-block {
   display: grid;
-  grid-template-columns: 60px 120px 1fr 60px 1fr 90px 80px;
+  /* Sprint 16a — bump the leading time column from 60px to 100px so the
+     new "HH:MM–HH:MM" range fits comfortably without truncating. */
+  grid-template-columns: 100px 120px 1fr 60px 1fr 90px 80px;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;

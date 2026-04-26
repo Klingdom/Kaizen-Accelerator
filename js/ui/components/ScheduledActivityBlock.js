@@ -27,25 +27,11 @@
 import { esc } from '../mount.js';
 import { WhyChip } from './WhyChip.js';
 import { isProtectedBlock, DURATION_OPTIONS } from '../editMode.js';
+import { formatTime, formatTimeRange } from '../timeFormat.js';
 
-/**
- * Format a planned start time (ISO or HH:MM) to "HH:MM".
- *
- * @param {string | null | undefined} iso
- * @returns {string}
- */
-export function formatTime(iso) {
-  if (!iso) return '';
-  // Accept raw HH:MM first (composer anchors come as e.g. '09:00').
-  if (/^\d{2}:\d{2}$/.test(iso)) return iso;
-  if (/^\d{2}:\d{2}:\d{2}$/.test(iso)) return iso.slice(0, 5);
-  // ISO timestamp — extract HH:MM from Date().
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
-}
+// Re-exported so existing callers (and tests) keep working after the
+// Sprint 16a extraction.
+export { formatTime, formatTimeRange };
 
 const BUCKET_CHIP_CLASS = {
   PROJECT: 'chip-project',
@@ -204,6 +190,9 @@ export function ScheduledActivityBlock(props = {}) {
 
   const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
   const time = formatTime(a.plannedStartAt ?? a.anchor);
+  // Sprint 16a: surface the time as a "HH:MM–HH:MM" range alongside the
+  // existing single-time used by the edit-mode <input type="time">.
+  const timeRange = formatTimeRange(a.plannedStartAt ?? a.anchor, a.plannedDurationMinutes);
   // Sprint 14: when a non-protected slot is edit-selected, swap the static
   // time label for a native <input type="time"> so the user can change the
   // plannedStartAt directly.
@@ -265,7 +254,13 @@ export function ScheduledActivityBlock(props = {}) {
 
   const whenInner = timeEditable
     ? `<input type="time" class="sa-time-editor" data-action="EDIT_CHANGE_START_TIME" data-activity-id="${esc(a.id ?? '')}" value="${esc(time)}" aria-label="Start time">`
-    : esc(time);
+    : esc(timeRange);
+  // Sprint 16a — keep an explicit aria-label on the time column so screen
+  // readers still verbalize "starts at HH:MM, N minutes" even though the
+  // visible text now reads as "HH:MM–HH:MM".
+  const whenAria = (time && !timeEditable)
+    ? ` aria-label="starts at ${esc(time)}, ${esc(String(duration))} minutes"`
+    : '';
 
   // Sprint 15 W4 — surface the user-edited tone signal so CSS can swap
   // between desaturated (composer-built) and saturated (user-edited)
@@ -273,7 +268,7 @@ export function ScheduledActivityBlock(props = {}) {
   const userEdited = a.userEdited === true;
 
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}" data-user-edited="${userEdited ? 'true' : 'false'}"${selectAttrs}>
-  <div class="sa-when">${whenInner}</div>
+  <div class="sa-when"${whenAria}>${whenInner}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>

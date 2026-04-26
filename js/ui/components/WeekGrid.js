@@ -35,6 +35,12 @@ import {
   hourRailLabels,
   parseMinutesOfDay
 } from '../weekGridMath.js';
+import { formatTimeRange } from '../timeFormat.js';
+
+// Sprint 16a — Week blocks shorter than this height (px) drop the trailing
+// "–HH:MM" range fragment and render only the start time, since the grid
+// column gets visually cramped at small heights.
+const WG_RANGE_MIN_HEIGHT_PX = 40;
 
 const WEEKDAY_SHORT = Object.freeze(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
 
@@ -79,7 +85,13 @@ function renderBlock(ctx) {
   const bucket = activity.bucket ?? '';
   const bucketChipClass = BUCKET_CHIP_CLASS[bucket] ?? '';
   const userEdited = activity.userEdited === true;
-  const time = formatHHMM(activity.plannedStartAt ?? activity.anchor);
+  const startHHMM = formatHHMM(activity.plannedStartAt ?? activity.anchor);
+  // Sprint 16a — render "HH:MM–HH:MM" by default, but fall back to the
+  // start-only label on short blocks (heightPx < 40) where the range
+  // would visually overflow.
+  const time = h < WG_RANGE_MIN_HEIGHT_PX
+    ? startHHMM
+    : formatTimeRange(activity.plannedStartAt ?? activity.anchor, dur);
   const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
   const kaizenId = activity.linkedKaizenId ?? null;
   const kaizenTitle = kaizenId && kaizenTitleById && kaizenTitleById[kaizenId]
