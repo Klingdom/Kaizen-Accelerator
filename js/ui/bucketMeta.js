@@ -6,23 +6,37 @@
  * @module bucketMeta
  */
 
+/**
+ * C-UX-13 (Iteration 14) — user-facing long labels per ARCHITECTURE §3.1(c).
+ * Internal `Bucket` enum (PROJECT/COMMUNICATION/CI) is unchanged; this is a
+ * display-alias only. No T1 token changes.
+ */
+export const BUCKET_LABELS_LONG = Object.freeze({
+  PROJECT:       'Deep Work',
+  COMMUNICATION: 'Communication',
+  CI:            'Improvement'
+});
+
 const META = Object.freeze({
   PROJECT: Object.freeze({
     chipClass: 'chip-project',
     dotClass:  'chip-project',
     label:     'Project',
+    labelLong: BUCKET_LABELS_LONG.PROJECT,
     vars: Object.freeze({ bg: 'var(--project-bg)', fg: 'var(--project-fg)', fill: 'var(--project-fill)' })
   }),
   COMMUNICATION: Object.freeze({
     chipClass: 'chip-communication',
     dotClass:  'chip-communication',
     label:     'Communication',
+    labelLong: BUCKET_LABELS_LONG.COMMUNICATION,
     vars: Object.freeze({ bg: 'var(--communication-bg)', fg: 'var(--communication-fg)', fill: 'var(--communication-fill)' })
   }),
   CI: Object.freeze({
     chipClass: 'chip-ci',
     dotClass:  'chip-ci',
     label:     'Continuous Improvement',
+    labelLong: BUCKET_LABELS_LONG.CI,
     vars: Object.freeze({ bg: 'var(--ci-bg)', fg: 'var(--ci-fg)', fill: 'var(--ci-fill)' })
   })
 });
@@ -31,6 +45,7 @@ const UNKNOWN = Object.freeze({
   chipClass: 'chip-unknown',
   dotClass:  'chip-unknown',
   label:     'Unscheduled',
+  labelLong: '',
   vars: Object.freeze({ bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', fill: 'var(--color-border-strong)' })
 });
 
@@ -54,10 +69,11 @@ export default function bucketMeta(bucket) {
   const key = typeof bucket === 'string' ? bucket.toUpperCase() : null;
   const m = (key && META[key]) || UNKNOWN;
   return {
-    bucket: (key && META[key]) ? key : 'UNKNOWN',
+    bucket:    (key && META[key]) ? key : 'UNKNOWN',
     chipClass: m.chipClass,
     dotClass:  m.dotClass,
     label:     m.label,
+    labelLong: m.labelLong,
     vars:      m.vars
   };
 }

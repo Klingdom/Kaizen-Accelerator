@@ -2338,3 +2338,80 @@ html, body {
     background: CanvasText;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * C-UX-10 — MorningRecap (Iteration 14)
+ * Single-line informational strip above RhythmExplainer.
+ * Uses T1 tokens only — no new color variables.
+ * --------------------------------------------------------------------------- */
+.morning-recap {
+  padding: 6px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * C-UX-12 — WhyThisPlan (Iteration 14)
+ * Progressive-disclosure chip near CycleCard header.
+ * Uses T1 tokens only — no new color variables.
+ * --------------------------------------------------------------------------- */
+.why-this-plan {
+  margin-bottom: 8px;
+}
+
+.why-this-plan-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 4px 10px;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.why-this-plan-chip:hover,
+.why-this-plan-chip:focus-visible {
+  border-color: var(--border-strong);
+  color: var(--fg);
+  outline: none;
+}
+
+.why-this-plan--expanded .why-this-plan-chip {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+.why-list {
+  margin: 0;
+  padding: 8px 12px 10px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  background: var(--bg);
+}
+
+.why-rule {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin-top: 8px;
+}
+
+.why-rule:first-child {
+  margin-top: 0;
+}
+
+.why-detail {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin: 2px 0 0 12px;
+  padding: 0;
+}

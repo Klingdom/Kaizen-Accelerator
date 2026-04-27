@@ -19,17 +19,19 @@ Iteration 13 closed C-UX-1 (T1 token consolidation, prerequisite for cross-page 
 | — | C-PM-2 | `/insights/portfolio` MVP route (E14) | improvement | 13 | **DONE (Iteration 11)** | Shipped per spec. Suite 2,582→2,635. |
 | — | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | **DONE (Iteration 13)** | Shipped per `T1_TOKEN_SPEC.md`. Suite 2,635→2,681. Prerequisite for T2–T10 NOW LANDED. |
 | — | C-PM-1 | ProjectPaceWarning visible signal | improvement | 13 | **BLOCKED-ON-E13** | Requires E13 phase logic; not started. |
-| **1** | **C-UX-10** | **Morning yesterday-recap strip** | **improvement** | **14** | **OPEN** | **Today opens cold. Convergent across 4 lenses (Growth, Competitive, PM, Design); single most copy-able pattern from comparators (5 of 8).** |
-| 2 | C-UX-6 | Modal focus-trap discipline (T8) | fix | 13 | OPEN | EditDrawer + FineTuneDrawer have no focus trap; WCAG §2.1.2 failure. (QA §2.) |
-| 3 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
-| 4 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
+| — | C-UX-10 | Morning yesterday-recap strip | improvement | 14 | **DONE (Iteration 14)** | Shipped — `MorningRecap` component renders above `RhythmExplainer` with prior-day closed/skipped counts. Suite 2,681→2,751. AC10-1..5 PASS. |
+| 1 | C-UX-6 | Modal focus-trap discipline (T8) | fix | 13 | OPEN | EditDrawer + FineTuneDrawer have no focus trap; WCAG §2.1.2 failure. (QA §2.) |
+| 2 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
+| 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
+| — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
 | 5 | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | OPEN | No EOD nudge; day-14 reflection rate target (≥75%) has no activation driver. **Theme T3. Overlaps C-UX-3.** |
 | 6 | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | OPEN | Today closes cold; no "day complete" confirmation, no bridge to tomorrow. Convergent across PM, Growth, Competitive, Analytics. |
 | 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
 | 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
 | 9 | C-QA-3 | `formatTimeRange` DST-offset ISO test | improvement | 12 | OPEN | All fixtures use UTC `Z`; non-Z ISO input silently mis-displays. |
 | 10 | C-UX-2 | BucketStrip blackout fix in edit mode (T2) | fix | 11 | OPEN | `today-editing` over-applies opacity 0.4 to BucketStrip — invariant feedback hidden during the edit that triggers it. (UX §IA failure.) |
-| **11** | **C-UX-11** | **AdherenceDial momentum signal pre-day-7** | **improvement** | **11** | **OPEN** | **Dial shows dashes for 7 straight days; users with 3 days of progress see no momentum signal. Growth §4 AR-2 ranked biggest activation risk.** |
+| — | C-UX-13 | BalanceMeter vocabulary upgrade (T1 label-only) | improvement | 11 | **DONE (Iteration 14)** | Shipped — `BUCKET_LABELS_LONG` added to `bucketMeta.js`; BucketStrip displays "Deep Work / Communication / Improvement" labels. T1 hex tokens unchanged. AC13-1..6 PASS. |
+| **10** | **C-UX-11** | **AdherenceDial momentum signal pre-day-7** | **improvement** | **11** | **OPEN** | **Dial shows dashes for 7 straight days; users with 3 days of progress see no momentum signal. Growth §4 AR-2 ranked biggest activation risk.** |
 | 12 | C-UX-4 | Empty-state warmth ladder (T5) | improvement | 11 | OPEN | Other pages have cold empty states (Week / Portfolio / Catalog / InsightsPortfolio); Today's `daysSinceSignupHint` is the model. |
 | 13 | C-UX-7 | Now / Up-Next duplication fix (T10) | fix | 11 | OPEN | NowPane UPCOMING + UpNextRail row 1 surface the same activity simultaneously. (UX §4, Frontend §4.) |
 | 14 | C-SA-3 | Collapse duplicated protected-block lists | improvement | 11 | OPEN | `editMode.js` hardcodes lists that mirror but are not derived from `composeDaily.js`. |

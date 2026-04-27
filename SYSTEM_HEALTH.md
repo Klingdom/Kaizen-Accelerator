@@ -1,6 +1,6 @@
 # BAM-X Kaizen OS — System Health
 
-Phase: MVP build — Iterations 9–13 complete. Branch: `main`. Last committed commit: `ce81852` (Iteration 12). Iteration 13 (T1 Bucket-Tone Token Consolidation) uncommitted at write time. Suite: **2,681 tests / 0 failing / 632 suites / ~1.86s runtime**.
+Phase: MVP build — Iterations 9–14 complete. Branch: `main`. Last committed commit: `bfa4742` (governance backfill of C-UX-10 + C-UX-11). Iteration 14 (CadencePlan Today v1) uncommitted at write time. Suite: **2,751 tests / 0 failing / 651 suites / ~1.88s runtime**.
 
 ---
 
@@ -38,14 +38,14 @@ Phase: MVP build — Iterations 9–13 complete. Branch: `main`. Last committed 
 
 | Metric | Value |
 |---|---|
-| Tests passing | 2,681 (+116 since Iteration 9 baseline of 2,565) |
+| Tests passing | 2,751 (+186 since Iteration 9 baseline of 2,565) |
 | Tests failing | 0 |
-| Suite count | 632 (+29 since Iteration 9) |
-| Runtime | ~1.86s |
+| Suite count | 651 (+48 since Iteration 9) |
+| Runtime | ~1.88s |
 | Runtime budget | 3.5s |
-| Headroom | ~1.64s (47%) |
+| Headroom | ~1.62s (46%) |
 | Fail rate | 0% |
-| Last green commit | `ce81852` (Iteration 13 work uncommitted) |
+| Last green commit | `bfa4742` (Iteration 14 work uncommitted) |
 
 ---
 
@@ -102,4 +102,4 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-04-27 after Iteration 13 + governance backfill. T1 prerequisite landed; Iterations 14+ can apply themes T2–T10 to other pages without painting on cracked tokens. Backlog now 19 items including 2 convergent-finding candidates surfaced post-Iteration 12: **C-UX-10 morning yesterday-recap (score 14, new top-ranked OPEN item)** and C-UX-11 AdherenceDial momentum signal (score 11). Top P1 blockers: C-UX-10 (morning recap), C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events). See `IMPROVEMENT_BACKLOG.md` for full ranked list._
+_Last updated: 2026-04-27 after Iteration 14 (CadencePlan Today v1 — bundled C-UX-10 + C-UX-12 + C-UX-13). Today now has morning yesterday-recap strip, "Why this plan?" rationale chip, and "Deep Work / Communication / Improvement" balance-meter labels. 3 Define-phase artifacts produced (PRD + Architecture Delta + UX Delta) for the CadencePlan brief intake. Top remaining P1 OPEN: C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events). Iteration 15 = C-UX-3 (EOD closure ritual) per "a then b" sequencing — awaiting Phil go-ahead._

@@ -239,3 +239,48 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
 - **Follow-ups**:
   - Commit the work.
   - Next-loop top OPEN candidates (after T1): C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), or begin cross-page application starting with Week per the recommended sequencing in `UX_DELTA_OTHER_PAGES.md`.
+
+---
+
+## Iteration 14 — CadencePlan Today v1: Morning Recap + Why Chip + BalanceMeter Rename (C-UX-10 + C-UX-12 + C-UX-13) (2026-04-27)
+
+- **Selected items**: Bundled 3 small additive Today-page items as one coherent "CadencePlan Today v1" iteration: C-UX-10 (Morning yesterday-recap strip, score 14, top OPEN item), C-UX-12 ("Why this plan?" rationale chip, score 13), C-UX-13 (BalanceMeter vocabulary upgrade, score 11).
+- **Reason for selection / bundling**: User explicitly selected "Path A then B" — Iteration 14 ships the 3-item Package A (max-consensus across all 3 Define agents); Iteration 15 will add C-UX-3 EOD closure ritual. The 3 items are tightly related (all Today-page, all additive, all from the CadencePlan brief intake), score collectively as a single "Today v1 redesign landing," and architect estimated S+S+S = 3-4h combined which fits well within a single loop budget.
+- **Agents involved**: coordinator (orchestration + reconnaissance + validation), product-manager (`PRD_CADENCEPLAN_TODAY.md`, 269 lines), system-architect (`ARCHITECTURE_DELTA_CADENCEPLAN.md`, 353 lines), ux-designer (`UX_DELTA_CADENCEPLAN_TODAY.md`, 209 lines), frontend-engineer (implementation).
+- **Define-phase artifacts** (3 files, 831 lines total):
+  - `PRD_CADENCEPLAN_TODAY.md` — PM triage of Phil's 14-module CadencePlan brief, bounded to Today. Verdict counts: 3 ALREADY-COVERED, 0 IN-SCOPE-TODAY-MVP, 4 IN-SCOPE-TODAY-POST-MVP, 4 IN-SCOPE-CROSS-PAGE, 1 DEFERRED, 4 EXCLUDED. No §4.1 MVP scope changes.
+  - `ARCHITECTURE_DELTA_CADENCEPLAN.md` — architect concluded ~85% of brief surface already built. Top 3 already-covered: §1 one-click plan (`AutoPlanButton.js:24` + `composeDaily.js:231`); §11 ten-step planner algorithm (already implemented with explicit STEP comments at composeDaily.js:1-20 + `why[]` rationale array at line 263, persisted at line 661); §1 4-2-2 workload meter (`BucketStrip.js:1-72`). Recommendation: PROCEED-WITH-DESCOPE — fund §3.4 (Why panel) + §3.10 (Replan) + §3.7 (UnscheduledWorkTray) + §3.5(a) (tight-day INFEASIBLE polish) + §3.1(c) (WorkType label alias).
+  - `UX_DELTA_CADENCEPLAN_TODAY.md` — UX verdict: aesthetic option (c) hybrid (Linear precision + Sunsama calmness); color option (c) keep T1 hex, rename labels only ("Deep Work / Communication / Improvement" semantic); reject dark-mode reskin, drag-and-drop, green/gold/purple hex changes.
+- **Strong cross-agent convergence** on 4 strategic conflicts: (1) bucket colors → keep T1 freeze, rename labels only; (2) drag-and-drop → reject (honor Iteration 12 anti-pattern verdict); (3) stack → vanilla (brief auto-resolves); (4) scope → Today-only.
+- **Validation results**:
+  - **Test suite**: 2,681 → **2,751 passing** (+70 tests across 19 new suites). 0 failing. 651 suites total. Runtime **1.88s** (was 1.86s) — well under the 3.5s budget with 46% headroom.
+  - **AC sign-off**: All 16 acceptance criteria PASS (AC10-1..5 + AC12-1..5 + AC13-1..6). Zero descopes invoked.
+  - **Integrity check**: `git diff --name-only | grep -E "(js/composer|js/domain|js/events)"` returns 0 — composer, domain types, and event bus all untouched.
+  - **T1 token freeze respected**: `git diff app.css | grep -E "^\+\s+--[a-z]"` returns 0 — no new CSS token definitions added.
+  - **BucketStrip CSS classes unchanged**: 46 T1 visual-regression tests still passing.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **New files**:
+    - `js/ui/components/MorningRecap.js` (49 lines) — pure component renders one-line strip displaying prior-day closed/skipped counts; suppresses on day 0 or no prior-day data within 7 days.
+    - `js/ui/components/WhyThisPlan.js` (119 lines) — pure component renders collapsible plan-rationale chip; reads `composition.composerInputsSnapshot.explain` array; groups entries by rule (R1, R2, R3, R4, R5, R6, R7, R9) in canonical order; aria-expanded state.
+    - `tests/ui/components/MorningRecap.test.js` (107 lines).
+    - `tests/ui/components/WhyThisPlan.test.js` (168 lines).
+  - **Modified files**:
+    - `js/ui/bucketMeta.js` — added `BUCKET_LABELS_LONG` export and `.labelLong` field on the return shape (PROJECT='Deep Work', COMMUNICATION='Communication', CI='Improvement', UNKNOWN='').
+    - `js/ui/components/BucketStrip.js` — replaced bucket-label rendering to use `bucketMeta(bucket.key).labelLong`; added aria-label per bucket row.
+    - `js/ui/pages/Today.js` — added `MorningRecap` render above `RhythmExplainer` in all 3 render branches (empty / infeasible / proposed-or-active); added `WhyThisPlan` render above `CycleCard` for proposed/accepted/edited (non-edit-mode) states; threaded `priorDayRecap` and `whyPlanExpanded` props.
+    - `js/app.js` — added `whyPlanExpanded: false` initial state; added `computePriorDayRecap()` helper that scans up to 7 days back for most recent CLOSED/SKIPPED-bearing Composition; added `TOGGLE_WHY_PLAN` action handler.
+    - `app.css` — added `.morning-recap` and `.why-this-plan*` styles using only existing T1 tokens; zero new token definitions.
+    - `tests/ui/bucketMeta.test.js` — extended `deepEqual` shape assertions to include `.labelLong`; added `BUCKET_LABELS_LONG` export tests; added AC13 describe block.
+    - `tests/ui/components/BucketStrip.test.js` — updated single label-text assertion from old short labels to new long labels.
+    - `tests/ui/pages/Today.test.js` — added Iteration 14 integration tests for all three items.
+- **Spec deviations**: Zero. All 3 agents' recommendations honored verbatim.
+- **Time spent**: ~1.5-2h actual vs ~6h estimate (S+S+S = ~3-4h + tests). Define-phase rigor + clean architectural separation produced sub-3× efficiency.
+- **Strategic outcome**: Today now has the morning bookend (C-UX-10) and plan-rationale transparency (C-UX-12) that the brief and Iteration 12 synthesis identified as high-leverage. BalanceMeter vocabulary (C-UX-13) brings user-facing labels in line with the brief's "Deep Work / Communication / Improvement" semantic without touching tokens.
+- **User-visible changes after deploy**:
+  1. Morning recap strip ("Yesterday: N/M closed · K skipped") above the rhythm explainer when prior-day data exists.
+  2. "Why this plan?" disclosure chip near CycleCard header on proposed/accepted/edited cycles; expand to see rule-grouped composer rationale.
+  3. BucketStrip labels change from "PROJECT / COMMUNICATION / CI" to "Deep Work / Communication / Improvement".
+- **Follow-ups**:
+  - Commit the work (Define artifacts + implementation in one commit).
+  - Iteration 15 = Package B add-on = C-UX-3 (EOD closure ritual) per user's "a then b" sequencing. Awaiting go-ahead.
+  - Open candidates remaining (post-Iteration 14): C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-3/C-PM-4 (EOD closure, score 12 — queued for Iteration 15), plus the cross-page application loops per `UX_DELTA_OTHER_PAGES.md`.

@@ -26,6 +26,8 @@ import { RhythmExplainer } from '../components/RhythmExplainer.js';
 import { EditDrawer } from '../components/EditDrawer.js';
 import { UpNextRail } from '../components/UpNextRail.js';
 import { NowPane } from '../components/NowPane.js';
+import { MorningRecap } from '../components/MorningRecap.js';
+import { WhyThisPlan } from '../components/WhyThisPlan.js';
 import {
   DEFAULT_TARGETS,
   DEFAULT_FLOORS,
@@ -100,7 +102,9 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *     schema?: string,
  *     artifactDef?: object,
  *     activityName?: string
- *   }
+ *   },
+ *   priorDayRecap?: {closedCount: number, totalCount: number, skippedCount: number, dateIso: string} | null,
+ *   whyPlanExpanded?: boolean
  * }} props
  */
 export function Today(props = {}) {
@@ -123,6 +127,10 @@ export function Today(props = {}) {
   const fineTune = props.fineTune ?? null;
   const openDialog = props.openDialog ?? null;
   const editMode = props.editMode ?? null; // null when closed; object when open
+  // C-UX-10 (Iteration 14): prior-day recap strip.
+  const priorDayRecap = props.priorDayRecap ?? null;
+  // C-UX-12 (Iteration 14): "Why this plan?" expanded state.
+  const whyPlanExpanded = !!props.whyPlanExpanded;
 
   const strips = {
     targets: props.targets ?? DEFAULT_TARGETS,
@@ -149,6 +157,12 @@ export function Today(props = {}) {
     dismissed: !!props.rhythmExplainerDismissed
   });
 
+  // C-UX-10 (Iteration 14): morning recap strip. Suppressed on day 0
+  // (no yesterday) and when no prior-day recap data is available.
+  const morningRecapHtml = (daysSinceSignup !== 0 && priorDayRecap)
+    ? MorningRecap({ priorDayRecap })
+    : '';
+
   const drawer = fineTune
     ? FineTuneDrawer({
         capacityMinutes: fineTune.capacityMinutes ?? 480,
@@ -164,6 +178,7 @@ export function Today(props = {}) {
   if (infeasible) {
     return `<main class="today-page" data-route="today">
   ${header}
+  ${morningRecapHtml}
   ${rhythmExplainerHtml}
   ${InfeasibleBanner({ infeasible })}
   <section class="today-infeasible" aria-live="polite">
@@ -187,6 +202,7 @@ export function Today(props = {}) {
     return `<main class="today-page" data-route="today">
   ${header}
   ${hintHtml}
+  ${morningRecapHtml}
   ${rhythmExplainerHtml}
   <section class="today-empty">
     <p class="empty-copy">${esc(emptyCopy)}</p>
@@ -249,13 +265,31 @@ export function Today(props = {}) {
         variant: 'mobile'
       })
     : '';
+
+  // C-UX-12 (Iteration 14): "Why this plan?" chip — shown on PROPOSED,
+  // ACCEPTED, and EDITED states only (not ACTIVE, REJECTED, CLOSED, or
+  // editing mode where the chip would be distracting).
+  const cycleState = compositionForRender?.state ?? '';
+  const whyEligible =
+    (cycleState === 'PROPOSED' || cycleState === 'ACCEPTED' || cycleState === 'EDITED') &&
+    !isEditing;
+  const explainForWhy = whyEligible
+    ? (compositionForRender?.composerInputsSnapshot?.explain ?? null)
+    : null;
+  const whyThisPlanHtml = WhyThisPlan({
+    explain: explainForWhy,
+    expanded: whyPlanExpanded
+  });
+
   return `<main class="${mainClass}" data-route="today">
   ${header}
+  ${morningRecapHtml}
   ${rhythmExplainerHtml}
   ${nowPaneHtml}
   ${upNextMobileHtml}
   <div class="today-body">
     <div class="today-card-col">
+      ${whyThisPlanHtml}
       ${CycleCard({
         composition: compositionForRender,
         activities: activitiesForRender,

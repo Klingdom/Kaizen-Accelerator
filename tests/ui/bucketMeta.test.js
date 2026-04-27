@@ -11,7 +11,8 @@ import bucketMeta, {
   bucketMeta as namedBucketMeta,
   BUCKET_CHIP_CLASS,
   BUCKET_DOT_CLASS,
-  BUCKET_LABELS
+  BUCKET_LABELS,
+  BUCKET_LABELS_LONG
 } from '../../js/ui/bucketMeta.js';
 
 // ---------------------------------------------------------------------------
@@ -25,6 +26,7 @@ describe('bucketMeta — known buckets', () => {
       chipClass: 'chip-project',
       dotClass:  'chip-project',
       label:     'Project',
+      labelLong: 'Deep Work',
       vars: { bg: 'var(--project-bg)', fg: 'var(--project-fg)', fill: 'var(--project-fill)' }
     });
   });
@@ -36,6 +38,7 @@ describe('bucketMeta — known buckets', () => {
       chipClass: 'chip-communication',
       dotClass:  'chip-communication',
       label:     'Communication',
+      labelLong: 'Communication',
       vars: { bg: 'var(--communication-bg)', fg: 'var(--communication-fg)', fill: 'var(--communication-fill)' }
     });
   });
@@ -47,6 +50,7 @@ describe('bucketMeta — known buckets', () => {
       chipClass: 'chip-ci',
       dotClass:  'chip-ci',
       label:     'Continuous Improvement',
+      labelLong: 'Improvement',
       vars: { bg: 'var(--ci-bg)', fg: 'var(--ci-fg)', fill: 'var(--ci-fill)' }
     });
   });
@@ -75,6 +79,7 @@ describe('bucketMeta — UNKNOWN fallback', () => {
     chipClass: 'chip-unknown',
     dotClass:  'chip-unknown',
     label:     'Unscheduled',
+    labelLong: '',
     vars: {
       bg:   'var(--color-surface-muted)',
       fg:   'var(--color-text-muted)',
@@ -159,4 +164,47 @@ describe('BUCKET_LABELS back-compat export', () => {
   test('PROJECT → Project', () => assert.equal(BUCKET_LABELS.PROJECT, 'Project'));
   test('COMMUNICATION → Communication', () => assert.equal(BUCKET_LABELS.COMMUNICATION, 'Communication'));
   test('CI → Continuous Improvement', () => assert.equal(BUCKET_LABELS.CI, 'Continuous Improvement'));
+});
+
+// ---------------------------------------------------------------------------
+// C-UX-13 (Iteration 14) — BUCKET_LABELS_LONG + labelLong field (AC13-1..4)
+// ---------------------------------------------------------------------------
+describe('BUCKET_LABELS_LONG export (AC13-1..3)', () => {
+  test('is frozen', () => assert.equal(Object.isFrozen(BUCKET_LABELS_LONG), true));
+  test('PROJECT → "Deep Work"', () => assert.equal(BUCKET_LABELS_LONG.PROJECT, 'Deep Work'));
+  test('COMMUNICATION → "Communication"', () => assert.equal(BUCKET_LABELS_LONG.COMMUNICATION, 'Communication'));
+  test('CI → "Improvement"', () => assert.equal(BUCKET_LABELS_LONG.CI, 'Improvement'));
+});
+
+describe('bucketMeta labelLong field (AC13-1..4)', () => {
+  test('AC13-1: PROJECT → labelLong "Deep Work", label "Project" preserved', () => {
+    const m = bucketMeta('PROJECT');
+    assert.equal(m.labelLong, 'Deep Work');
+    assert.equal(m.label, 'Project');
+  });
+
+  test('AC13-2: CI → labelLong "Improvement"', () => {
+    const m = bucketMeta('CI');
+    assert.equal(m.labelLong, 'Improvement');
+  });
+
+  test('AC13-3: COMMUNICATION → labelLong "Communication"', () => {
+    const m = bucketMeta('COMMUNICATION');
+    assert.equal(m.labelLong, 'Communication');
+  });
+
+  test('AC13-4: null → labelLong ""', () => {
+    const m = bucketMeta(null);
+    assert.equal(m.labelLong, '');
+  });
+
+  test('AC13-4 variant: unknown string → labelLong ""', () => {
+    const m = bucketMeta('UNKNOWN_BUCKET');
+    assert.equal(m.labelLong, '');
+  });
+
+  test('lowercase input normalises and still returns correct labelLong', () => {
+    assert.equal(bucketMeta('project').labelLong, 'Deep Work');
+    assert.equal(bucketMeta('ci').labelLong, 'Improvement');
+  });
 });

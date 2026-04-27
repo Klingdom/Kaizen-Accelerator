@@ -23,6 +23,7 @@
  */
 
 import { esc } from '../mount.js';
+import bucketMeta from '../bucketMeta.js';
 
 /**
  * Default 4-2-2 targets per ARCHITECTURE §5.1.
@@ -46,12 +47,13 @@ export const DEFAULT_CEILINGS = Object.freeze({
 });
 
 /**
- * Bucket display metadata. Labels are used verbatim per GLOSSARY.md.
+ * Bucket display metadata. Labels use the user-facing long labels from
+ * bucketMeta (C-UX-13, Iteration 14). CSS class names are unchanged.
  */
 const BUCKETS = Object.freeze([
-  { key: 'PROJECT', label: 'PROJECT', toneClass: 'bucket-project' },
-  { key: 'COMMUNICATION', label: 'COMMUNICATION', toneClass: 'bucket-communication' },
-  { key: 'CI', label: 'CI', toneClass: 'bucket-ci' }
+  { key: 'PROJECT', toneClass: 'bucket-project' },
+  { key: 'COMMUNICATION', toneClass: 'bucket-communication' },
+  { key: 'CI', toneClass: 'bucket-ci' }
 ]);
 
 /**
@@ -83,8 +85,12 @@ function renderBar(bucket, planned, target, floor, ceiling) {
   const targetPct = scaleTop > 0 ? Math.round((target / scaleTop) * 100) : 0;
   const floorPct = scaleTop > 0 ? Math.round((floor / scaleTop) * 100) : 0;
 
-  return `<li class="bucket-row ${esc(bucket.toneClass)} status-${esc(status)}" data-bucket="${esc(bucket.key)}">
-  <div class="bucket-label">${esc(bucket.label)}</div>
+  // C-UX-13 (Iteration 14): use user-facing long label from bucketMeta.
+  const meta = bucketMeta(bucket.key);
+  const visibleLabel = meta.labelLong || bucket.key;
+
+  return `<li class="bucket-row ${esc(bucket.toneClass)} status-${esc(status)}" data-bucket="${esc(bucket.key)}" aria-label="${esc(visibleLabel)}">
+  <div class="bucket-label">${esc(visibleLabel)}</div>
   <div class="bucket-track" aria-hidden="true">
     <div class="bucket-fill" style="width:${plannedPct}%"></div>
     <div class="bucket-tick tick-floor" style="left:${floorPct}%" title="floor ${esc(String(floor))}m"></div>

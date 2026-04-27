@@ -6,6 +6,57 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 14 — 2026-04-27 — CadencePlan Today v1: Morning Recap + Why Chip + BalanceMeter Rename (C-UX-10 + C-UX-12 + C-UX-13)
+
+### What changed
+- **3 Define-phase artifacts** (831 lines) responding to Phil's 14-module CadencePlan product brief, bounded to Today:
+  - `PRD_CADENCEPLAN_TODAY.md` (269 lines, product-manager) — triage of all 14 brief modules; 3 ALREADY-COVERED, 0 IN-SCOPE-TODAY-MVP (no §4.1 changes), 4 IN-SCOPE-TODAY-POST-MVP, 4 IN-SCOPE-CROSS-PAGE, 1 DEFERRED, 4 EXCLUDED.
+  - `ARCHITECTURE_DELTA_CADENCEPLAN.md` (353 lines, system-architect) — concluded ~85% of brief surface already built; recommendation PROCEED-WITH-DESCOPE.
+  - `UX_DELTA_CADENCEPLAN_TODAY.md` (209 lines, ux-designer) — aesthetic option (c) hybrid (Linear precision + Sunsama calmness); color option (c) keep T1 hex, rename labels only.
+- **Strong cross-agent convergence** on 4 strategic conflicts: (1) bucket colors → keep T1 freeze, rename labels only; (2) drag-and-drop → reject (Iteration 12 anti-pattern verdict honored); (3) stack → vanilla; (4) scope → Today-only.
+- **2 new components**:
+  - `js/ui/components/MorningRecap.js` (49 lines) — renders one-line strip ("Yesterday: 5/6 closed · 1 skipped" or "fresh start today"); suppresses on day 0 or no prior-day data within 7 days.
+  - `js/ui/components/WhyThisPlan.js` (119 lines) — collapsible plan-rationale chip reading `composition.composerInputsSnapshot.explain`; rule-grouped display in canonical order (R1 Non-optional anchors → R2 Carry-overs → R3 Kaizen-aligned → R4 Phase ceremony → R5 Deep payload → R6 CI rotation → R7 Comm slots → R9 Relaxed); aria-expanded.
+- **`bucketMeta` extended**: `BUCKET_LABELS_LONG = {PROJECT: 'Deep Work', COMMUNICATION: 'Communication', CI: 'Improvement'}` added; `.labelLong` field on return shape.
+- **`BucketStrip` relabeled**: now displays "Deep Work / Communication / Improvement" instead of "PROJECT / COMMUNICATION / CI". CSS classes (`bucket-row.bucket-project`, `chip-project`, etc.) unchanged — T1 freeze respected.
+- **`Today` page updated**: `MorningRecap` renders above `RhythmExplainer` in all 3 render branches (empty / infeasible / proposed-or-active); `WhyThisPlan` renders above `CycleCard` for proposed/accepted/edited (non-edit-mode) states only.
+- **`app.js` updated**: added `computePriorDayRecap()` helper that scans up to 7 days back for most recent Composition with closed/skipped activities; added `whyPlanExpanded` state; added `TOGGLE_WHY_PLAN` action handler.
+- **2 new test files** (275 lines, 70 new tests):
+  - `tests/ui/components/MorningRecap.test.js` (107 lines)
+  - `tests/ui/components/WhyThisPlan.test.js` (168 lines)
+- **Updated existing tests**: `bucketMeta.test.js` extended for `.labelLong` field; `BucketStrip.test.js` label assertions updated; `Today.test.js` added integration tests for the 3 new behaviors.
+
+### Why
+User asked to "revisit the today page to incorporate a design and plan based on" a 14-module CadencePlan product brief. Treated as Define-phase intake (precedent: Iteration 9 PRD intake of similar 14-pt scheduling brief). All 3 agents converged on a small additive package that ships the brief's highest-leverage Today ideas without churning T1 tokens or violating Iteration 12 anti-pattern verdicts. User selected "Path A then B" — Iteration 14 ships Package A (3 items: morning recap + why chip + balance meter rename); Iteration 15 will add C-UX-3 EOD closure ritual.
+
+### Architectural insight
+Architect found that the brief's "Why this plan?" feature is already 95% implemented in the composer engine — `composeDaily.js` emits a structured `why[]` rationale array (line 263) which is persisted at `Composition.composerInputsSnapshot.explain` (line 661). The remaining 5% was Today.js rendering. C-UX-12 became a render-only fix instead of a composer change.
+
+### Impact
+- **Test suite**: 2,681 → **2,751 passing** (+70). 0 failing. 651 suites. Runtime **1.88s** (46% headroom under 3.5s budget).
+- **All 16 acceptance criteria** (AC10-1..5 + AC12-1..5 + AC13-1..6) PASS, no descopes.
+- **Integrity preserved**: composer, domain types, event bus, persistence layer all untouched (verified via `git diff --name-only`).
+- **T1 token freeze respected**: zero new CSS token definitions added (verified via grep).
+- **BucketStrip CSS classes unchanged**: 46 T1 visual-regression tests still passing.
+- **Time spent**: ~1.5-2h actual vs ~6h estimate. Define-phase rigor + clean architectural separation = sub-3× efficiency.
+
+### User-visible changes after deploy
+1. **Morning recap strip** above the rhythm explainer ("Yesterday: 5/6 closed · 1 skipped") — appears when prior-day data exists within 7 days; suppresses on day 0 or older.
+2. **"Why this plan?" disclosure chip** near CycleCard header on proposed/accepted/edited cycles — click to expand and see the composer's rule-grouped rationale.
+3. **BucketStrip labels** change from "PROJECT / COMMUNICATION / CI" (internal jargon) to "Deep Work / Communication / Improvement" (user-friendly). Same colors, same data, friendlier vocabulary.
+
+### Backlog updates
+- C-UX-10 → **DONE** (top-ranked score 14 OPEN item, now closed).
+- C-UX-12 → **DONE**.
+- C-UX-13 → **DONE**.
+- New top OPEN tier (all score 13): C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events).
+- Iteration 15 queued: C-UX-3 (EOD closure ritual) per user's "a then b" sequencing.
+
+### Spec deviations
+Zero.
+
+---
+
 ## Iteration 13 — 2026-04-27 — T1 Bucket-Tone Token Consolidation (C-UX-1)
 
 ### What changed

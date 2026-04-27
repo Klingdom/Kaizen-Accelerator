@@ -54,11 +54,17 @@ describe('BucketStrip — render output', () => {
     assert.equal(rowCount, 3);
   });
 
-  test('labels bucket keys verbatim (PROJECT, COMMUNICATION, CI)', () => {
+  test('renders user-facing long labels (C-UX-13, Iteration 14)', () => {
+    // Labels switched from internal enum names to user-friendly strings.
+    // data-bucket attributes remain unchanged (PROJECT/COMMUNICATION/CI).
     const html = BucketStrip();
-    assert.match(html, /PROJECT/);
-    assert.match(html, /COMMUNICATION/);
-    assert.match(html, />CI</);
+    assert.match(html, /Deep Work/);
+    assert.match(html, /Communication/);
+    assert.match(html, /Improvement/);
+    // data-bucket attributes must still use internal enum values (AC13-6).
+    assert.match(html, /data-bucket="PROJECT"/);
+    assert.match(html, /data-bucket="COMMUNICATION"/);
+    assert.match(html, /data-bucket="CI"/);
   });
 
   test('default planned = 0 → status=under-floor on every bucket', () => {

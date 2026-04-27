@@ -351,7 +351,10 @@ function createState() {
     //     searchQuery, projectTypeFilter,
     //     expandedBuckets: ['PROJECT', 'COMMUNICATION', 'CI']
     //   }
-    editMode: null
+    editMode: null,
+    // C-UX-12 (Iteration 14) — "Why this plan?" disclosure chip state.
+    // Collapses on each new page load (plan changes daily).
+    whyPlanExpanded: false
   };
 }
 
@@ -553,6 +556,10 @@ export function renderApp(services, state) {
       }
     }
     const catalogForEdit = catalogService ? catalogService.list(DEFAULT_USER.id) : [];
+    // C-UX-10 (Iteration 14): compute prior-day recap (suppressed on day 0).
+    const priorDayRecap = daysSinceSignup > 0
+      ? computePriorDayRecap(services.repo, DEFAULT_USER.id, todayDate)
+      : null;
     const todayHtml = Today({
       activeState: mergedActiveState,
       loading: state.composerLoading,
@@ -570,7 +577,9 @@ export function renderApp(services, state) {
       kaizenTitleById,
       rhythmExplainerDismissed: !!state.rhythmExplainerDismissed,
       editMode: state.editMode,
-      catalog: catalogForEdit
+      catalog: catalogForEdit,
+      priorDayRecap,
+      whyPlanExpanded: !!state.whyPlanExpanded
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -772,6 +781,80 @@ export function computeDaysSinceSignup(createdAtIso, nowIso) {
   const ms = b.getTime() - a.getTime();
   if (ms < 0) return 0;
   return Math.floor(ms / (24 * 60 * 60 * 1000));
+}
+
+/**
+ * C-UX-10 (Iteration 14) — Compute the prior-day recap for the morning strip.
+ *
+ * Reads all compositions for `userId` and finds the most recent one on a date
+ * strictly before `todayDateIso` (up to 7 calendar days back). Returns counts
+ * only when at least one activity is CLOSED or SKIPPED.
+ *
+ * Returns null when:
+ *   - no composition found within the 7-day window, or
+ *   - the found composition has zero CLOSED and zero SKIPPED activities.
+ *
+ * Pure read — no mutations, no events.
+ *
+ * @param {object} repo     — LocalStorageRepository
+ * @param {string} userId
+ * @param {string} todayDateIso  — 'YYYY-MM-DD'
+ * @returns {{closedCount: number, totalCount: number, skippedCount: number, dateIso: string} | null}
+ */
+export function computePriorDayRecap(repo, userId, todayDateIso) {
+  if (!repo || typeof userId !== 'string' || typeof todayDateIso !== 'string') return null;
+
+  const comps = repo.read('bamx:v1:compositions') ?? {};
+  const acts  = repo.read('bamx:v1:activities')   ?? {};
+
+  // Build a date string 7 days before today for the lower bound.
+  const todayMs = new Date(todayDateIso + 'T00:00:00Z').getTime();
+  if (Number.isNaN(todayMs)) return null;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+  // Collect all compositions for this user on prior days (not today,
+  // not before the 7-day window). Use the composition's `startAt` or `date`
+  // field to derive the composition date.
+  const candidates = [];
+  for (const comp of Object.values(comps)) {
+    if (!comp || comp.userId !== userId) continue;
+    // Derive the composition date from startAt or id pattern.
+    let compDateIso = null;
+    if (typeof comp.startAt === 'string' && comp.startAt.length >= 10) {
+      compDateIso = comp.startAt.slice(0, 10);
+    }
+    if (!compDateIso) continue;
+    if (compDateIso >= todayDateIso) continue; // not a prior day
+    const compMs = new Date(compDateIso + 'T00:00:00Z').getTime();
+    if (todayMs - compMs > sevenDaysMs) continue; // outside 7-day window
+    candidates.push({ comp, compDateIso });
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Pick the most recent prior composition (latest compDateIso, then latest proposedAt).
+  candidates.sort((a, b) => {
+    if (a.compDateIso > b.compDateIso) return -1;
+    if (a.compDateIso < b.compDateIso) return 1;
+    const at = a.comp.proposedAt ?? '';
+    const bt = b.comp.proposedAt ?? '';
+    return bt > at ? 1 : bt < at ? -1 : 0;
+  });
+
+  const { comp: latest, compDateIso: dateIso } = candidates[0];
+  const children = Object.values(acts).filter(
+    (a) => a && a.compositionId === latest.id
+  );
+
+  const closedCount  = children.filter((a) => a.state === 'CLOSED').length;
+  const skippedCount = children.filter((a) => a.state === 'SKIPPED').length;
+  const totalCount   = children.length;
+
+  // Only return a recap when there's meaningful data (at least one terminal
+  // activity observed, so we know the day actually ran).
+  if (closedCount === 0 && skippedCount === 0) return null;
+
+  return { closedCount, totalCount, skippedCount, dateIso };
 }
 
 /**
@@ -2041,6 +2124,12 @@ export function buildHandlers(scope) {
       rerender();
     },
 
+    // C-UX-12 (Iteration 14) — toggle "Why this plan?" chip.
+    TOGGLE_WHY_PLAN(_payload) {
+      state.whyPlanExpanded = !state.whyPlanExpanded;
+      rerender();
+    },
+
     // ---- Sprint 10b Pass B: Portfolio project expand + step actions ----
 
     PORTFOLIO_TOGGLE_KAIZEN(payload) {
@@ -2513,6 +2602,7 @@ export default {
   renderApp,
   buildHandlers,
   computeDaysSinceSignup,
+  computePriorDayRecap,
   extractFormFields,
   handleActivityCompleted,
   handleDurationArrowKey,
