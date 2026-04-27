@@ -23,6 +23,7 @@ import { boot } from './boot.js';
 import { LocalStorageRepository } from './persistence/LocalStorageRepository.js';
 import { EventBus } from './events/EventBus.js';
 import { ClockService } from './services/ClockService.js';
+import { IdGeneratorService } from './services/IdGeneratorService.js';
 import { CatalogService, CATALOG_KEY } from './services/CatalogService.js';
 import { ComposerService } from './services/ComposerService.js';
 import { VarianceService } from './services/VarianceService.js';
@@ -71,6 +72,7 @@ import { Portfolio } from './ui/pages/Portfolio.js';
 import { Catalog as CatalogPage } from './ui/pages/Catalog.js';
 import { Week as WeekPage } from './ui/pages/Week.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
+import { InsightsPortfolio } from './ui/pages/InsightsPortfolio.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
 import {
@@ -137,6 +139,9 @@ export function buildServices(deps = {}) {
   });
   const bus = new EventBus();
   const clock = deps.clock ?? new ClockService();
+  // C-SA-1: injected id generator keeps edit-mode ids deterministic.
+  // Tests override this with createDeterministicIdGenerator(seed).
+  const idGenerator = deps.idGenerator ?? new IdGeneratorService();
 
   boot(repo, { now: () => clock.nowDate() });
 
@@ -209,6 +214,7 @@ export function buildServices(deps = {}) {
     repo,
     bus,
     clock,
+    idGenerator,
     catalogService,
     composerService,
     varianceService,
@@ -650,6 +656,30 @@ export function renderApp(services, state) {
     });
     const dialogHtml = renderKaizenDialogs(services, state);
     pageHtml = `${kaizenHtml}${dialogHtml}`;
+  } else if (state.route === 'insights' && state.params?.sub === 'portfolio' && kaizenService) {
+    // E14 / C-PM-2: Validated Kaizen Portfolio analytics page at /#insights/portfolio
+    const userId = DEFAULT_USER.id;
+    const closedKaizens = kaizenService.listByState(userId, 'CLOSED');
+    const remeasurementsByKaizenId = {};
+    const baselinesByKaizenId = {};
+    for (const k of closedKaizens) {
+      const rm = kaizenService.getRemeasurementForKaizen(k.id);
+      if (rm) remeasurementsByKaizenId[k.id] = rm;
+      const bl = kaizenService.getBaselineForKaizen(k.id);
+      if (bl) baselinesByKaizenId[k.id] = bl;
+    }
+    // Pass the raw location hash so InsightsPortfolio can parse filter query params (AC6)
+    const locationHash =
+      typeof globalThis !== 'undefined' && globalThis.location
+        ? (globalThis.location.hash ?? '')
+        : '';
+    pageHtml = InsightsPortfolio({
+      kaizens: closedKaizens,
+      remeasurementsByKaizenId,
+      baselinesByKaizenId,
+      nowIso: services.clock.now(),
+      locationHash
+    });
   } else {
     pageHtml = PlaceholderPage({ route: state.route });
   }
@@ -906,7 +936,7 @@ export function buildHandlers(scope) {
           state.editMode.undoStack,
           state.editMode.activities.map((a) => ({ ...a }))
         );
-        state.editMode.activities = applyAdd(state.editMode.activities, entry, now);
+        state.editMode.activities = applyAdd(state.editMode.activities, entry, now, (p) => services.idGenerator.generate(p));
         state.editMode.selectedActivityId = null;
         showToast(state, ToastKind.SUCCESS, `Added ${entry.name}.`, rerender);
         rerender();
@@ -941,7 +971,8 @@ export function buildHandlers(scope) {
         state.editMode.activities,
         selectedActivityId,
         entry,
-        now
+        now,
+        (p) => services.idGenerator.generate(p)
       );
       state.editMode.selectedActivityId = null;
       showToast(

@@ -11,7 +11,8 @@
  *   #week       → placeholder "Ships in Sprint 5"
  *   #catalog    → placeholder
  *   #kaizen     → placeholder
- *   #insights   → placeholder
+ *   #insights            → PlaceholderPage (no sub)
+ *   #insights/portfolio  → InsightsPortfolio (E14 / C-PM-2; live)
  *   #settings   → placeholder
  *
  * Unknown hashes default to `#today`.

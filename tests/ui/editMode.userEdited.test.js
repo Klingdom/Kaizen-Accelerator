@@ -22,7 +22,13 @@ import {
   activityFromCatalogEntry
 } from '../../js/ui/editMode.js';
 
+import { createDeterministicIdGenerator } from '../../js/services/IdGeneratorService.js';
+
 const NOW = '2026-04-22T09:00:00Z';
+
+function mkIdGen(seed = 0) {
+  return createDeterministicIdGenerator(seed);
+}
 
 function stubActivity(overrides = {}) {
   return {
@@ -51,7 +57,7 @@ function stubCatalogEntry(overrides = {}) {
 describe('activityFromCatalogEntry — sets userEdited true', () => {
   test('a freshly materialized draft is flagged userEdited:true', () => {
     const entry = stubCatalogEntry();
-    const draft = activityFromCatalogEntry(entry, null, NOW, 'sa_new_1');
+    const draft = activityFromCatalogEntry(entry, null, NOW, mkIdGen(0));
     assert.equal(draft.userEdited, true);
   });
 });
@@ -59,7 +65,7 @@ describe('activityFromCatalogEntry — sets userEdited true', () => {
 describe('applySwap — flips userEdited on the swapped slot', () => {
   test('swapped slot is userEdited:true even if the source was composer-built', () => {
     const acts = [stubActivity({ id: 'orig', userEdited: false })];
-    const next = applySwap(acts, 'orig', stubCatalogEntry({ id: 'cat_swap' }), NOW);
+    const next = applySwap(acts, 'orig', stubCatalogEntry({ id: 'cat_swap' }), NOW, mkIdGen(0));
     assert.equal(next.length, 1);
     assert.equal(next[0].userEdited, true);
   });
@@ -69,7 +75,7 @@ describe('applySwap — flips userEdited on the swapped slot', () => {
       stubActivity({ id: 'a', userEdited: false }),
       stubActivity({ id: 'b', userEdited: false })
     ];
-    const next = applySwap(acts, 'a', stubCatalogEntry({ id: 'cat_swap' }), NOW);
+    const next = applySwap(acts, 'a', stubCatalogEntry({ id: 'cat_swap' }), NOW, mkIdGen(0));
     // `b` was not the swap target — should remain composer-built.
     const b = next.find((x) => x.id === 'b');
     assert.equal(b.userEdited, false);
@@ -79,7 +85,7 @@ describe('applySwap — flips userEdited on the swapped slot', () => {
 describe('applyAdd — flips userEdited on the new slot', () => {
   test('appended slot is userEdited:true', () => {
     const acts = [stubActivity({ id: 'orig', userEdited: false })];
-    const next = applyAdd(acts, stubCatalogEntry({ id: 'cat_added' }), NOW);
+    const next = applyAdd(acts, stubCatalogEntry({ id: 'cat_added' }), NOW, mkIdGen(0));
     assert.equal(next.length, 2);
     const added = next.find((a) => a.catalogEntryId === 'cat_added');
     assert.equal(added.userEdited, true);
@@ -87,7 +93,7 @@ describe('applyAdd — flips userEdited on the new slot', () => {
 
   test('original slots remain untouched', () => {
     const acts = [stubActivity({ id: 'orig', userEdited: false })];
-    const next = applyAdd(acts, stubCatalogEntry({ id: 'cat_added' }), NOW);
+    const next = applyAdd(acts, stubCatalogEntry({ id: 'cat_added' }), NOW, mkIdGen(0));
     const orig = next.find((a) => a.id === 'orig');
     assert.equal(orig.userEdited, false);
   });

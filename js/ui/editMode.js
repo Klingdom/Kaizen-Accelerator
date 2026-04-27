@@ -72,16 +72,23 @@ export function isProtectedBlock(activity, _composition) {
  * @param {object} catalogEntry
  * @param {object|null} sourceSlot   the slot being replaced (null for adds)
  * @param {string} nowIso            ISO timestamp for createdAt/updatedAt
- * @param {string} [newId]           id to assign; auto-generated if omitted
+ * @param {(prefix: string) => string} idGenerator  REQUIRED — injected id
+ *   generator function (e.g. from IdGeneratorService or a deterministic test
+ *   generator). Throws INVALID_ID_GENERATOR if not a function.
  * @returns {object}
  */
-export function activityFromCatalogEntry(catalogEntry, sourceSlot, nowIso, newId) {
+export function activityFromCatalogEntry(catalogEntry, sourceSlot, nowIso, idGenerator) {
   if (!catalogEntry || typeof catalogEntry !== 'object') {
     const err = new Error('editMode.activityFromCatalogEntry: catalogEntry required');
     err.name = 'INVALID_ENTRY';
     throw err;
   }
-  const id = newId ?? `sa_edit_${catalogEntry.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  if (typeof idGenerator !== 'function') {
+    const err = new Error('editMode.activityFromCatalogEntry: idGenerator must be a function');
+    err.name = 'INVALID_ID_GENERATOR';
+    throw err;
+  }
+  const id = idGenerator('sa_edit');
   const draft = {
     id,
     catalogEntryId: catalogEntry.id,
@@ -115,14 +122,15 @@ export function activityFromCatalogEntry(catalogEntry, sourceSlot, nowIso, newId
  * @param {string} slotActivityId
  * @param {object} catalogEntry
  * @param {string} nowIso
+ * @param {(prefix: string) => string} idGenerator  REQUIRED — see activityFromCatalogEntry
  * @returns {object[]}
  */
-export function applySwap(activities, slotActivityId, catalogEntry, nowIso) {
+export function applySwap(activities, slotActivityId, catalogEntry, nowIso, idGenerator) {
   if (!Array.isArray(activities)) return [];
   const idx = activities.findIndex((a) => a && a.id === slotActivityId);
   if (idx < 0) return activities.slice();
   const source = activities[idx];
-  const replacement = activityFromCatalogEntry(catalogEntry, source, nowIso);
+  const replacement = activityFromCatalogEntry(catalogEntry, source, nowIso, idGenerator);
   const next = activities.slice();
   next[idx] = replacement;
   return next;
@@ -147,11 +155,12 @@ export function applyRemove(activities, slotActivityId) {
  * @param {object[]} activities
  * @param {object} catalogEntry
  * @param {string} nowIso
+ * @param {(prefix: string) => string} idGenerator  REQUIRED — see activityFromCatalogEntry
  * @returns {object[]}
  */
-export function applyAdd(activities, catalogEntry, nowIso) {
+export function applyAdd(activities, catalogEntry, nowIso, idGenerator) {
   if (!Array.isArray(activities)) activities = [];
-  const draft = activityFromCatalogEntry(catalogEntry, null, nowIso);
+  const draft = activityFromCatalogEntry(catalogEntry, null, nowIso, idGenerator);
   return [...activities, draft];
 }
 

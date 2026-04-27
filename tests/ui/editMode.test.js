@@ -22,7 +22,14 @@ import {
   PROTECTED_NAMES
 } from '../../js/ui/editMode.js';
 
+import { createDeterministicIdGenerator } from '../../js/services/IdGeneratorService.js';
+
 const NOW = '2026-04-22T09:00:00Z';
+
+/** Canonical deterministic generator used across editMode.test.js */
+function mkIdGen(seed = 0) {
+  return createDeterministicIdGenerator(seed);
+}
 
 function mkActivity(overrides = {}) {
   return {
@@ -120,8 +127,10 @@ describe('editMode.isProtectedBlock', () => {
 });
 
 describe('editMode.activityFromCatalogEntry', () => {
-  test('materializes a fresh activity id / state PROPOSED when no source', () => {
-    const d = activityFromCatalogEntry(mkEntry(), null, NOW);
+  test('materializes a fresh activity with exact id from generator', () => {
+    const gen = mkIdGen(0);
+    const d = activityFromCatalogEntry(mkEntry(), null, NOW, gen);
+    assert.equal(d.id, 'sa_edit_det_0');
     assert.equal(d.catalogEntryId, 'cat_new');
     assert.equal(d.name, 'New Work');
     assert.equal(d.bucket, 'PROJECT');
@@ -139,7 +148,9 @@ describe('editMode.activityFromCatalogEntry', () => {
       compositionId: 'comp_1',
       state: 'SCHEDULED'
     });
-    const d = activityFromCatalogEntry(mkEntry(), src, NOW);
+    const gen = mkIdGen(0);
+    const d = activityFromCatalogEntry(mkEntry(), src, NOW, gen);
+    assert.equal(d.id, 'sa_edit_det_0');
     assert.equal(d.plannedStartAt, '09:30');
     assert.equal(d.anchor, '09:30');
     assert.equal(d.slotKind, 'PROJECT_DEEP');
@@ -149,27 +160,61 @@ describe('editMode.activityFromCatalogEntry', () => {
 
   test('falls back to source slot duration when entry lacks default', () => {
     const src = mkActivity({ plannedDurationMinutes: 90 });
+    const gen = mkIdGen(0);
     const d = activityFromCatalogEntry(
       { id: 'x', name: 'Y', bucket: 'PROJECT' },
       src,
-      NOW
+      NOW,
+      gen
     );
     assert.equal(d.plannedDurationMinutes, 90);
   });
 
   test('throws INVALID_ENTRY on null', () => {
-    assert.throws(() => activityFromCatalogEntry(null, null, NOW), /INVALID_ENTRY/);
+    const gen = mkIdGen(0);
+    assert.throws(() => activityFromCatalogEntry(null, null, NOW, gen), /INVALID_ENTRY/);
+  });
+
+  test('throws INVALID_ID_GENERATOR when idGenerator is missing', () => {
+    assert.throws(
+      () => activityFromCatalogEntry(mkEntry(), null, NOW),
+      (err) => err.name === 'INVALID_ID_GENERATOR'
+    );
+  });
+
+  test('throws INVALID_ID_GENERATOR when idGenerator is not a function', () => {
+    assert.throws(
+      () => activityFromCatalogEntry(mkEntry(), null, NOW, 'bad-value'),
+      (err) => err.name === 'INVALID_ID_GENERATOR'
+    );
+  });
+
+  test('same generator + same catalogEntry.id produces same id (replayability)', () => {
+    const gen1 = mkIdGen(7);
+    const gen2 = mkIdGen(7);
+    const d1 = activityFromCatalogEntry(mkEntry({ id: 'cat_foo' }), null, NOW, gen1);
+    const d2 = activityFromCatalogEntry(mkEntry({ id: 'cat_foo' }), null, NOW, gen2);
+    assert.equal(d1.id, d2.id);
+  });
+
+  test('different catalogEntry.id with same generator produces different ids (uniqueness)', () => {
+    const gen = mkIdGen(0);
+    const d1 = activityFromCatalogEntry(mkEntry({ id: 'cat_a' }), null, NOW, gen);
+    const d2 = activityFromCatalogEntry(mkEntry({ id: 'cat_b' }), null, NOW, gen);
+    assert.notEqual(d1.id, d2.id);
   });
 });
 
 describe('editMode.applySwap', () => {
-  test('replaces the matching slot in place', () => {
+  test('replaces the matching slot in place with exact id', () => {
     const a1 = mkActivity({ id: 'a1' });
     const a2 = mkActivity({ id: 'a2', plannedStartAt: '10:00' });
     const entry = mkEntry();
-    const next = applySwap([a1, a2], 'a2', entry, NOW);
+    const gen = mkIdGen(0);
+    const next = applySwap([a1, a2], 'a2', entry, NOW, gen);
     assert.equal(next.length, 2);
     assert.equal(next[0], a1); // unchanged
+    assert.equal(next[1].id, 'sa_edit_det_0');
     assert.equal(next[1].catalogEntryId, 'cat_new');
     assert.equal(next[1].plannedStartAt, '10:00');
   });
@@ -177,19 +222,19 @@ describe('editMode.applySwap', () => {
   test('returns a fresh array (no mutation)', () => {
     const a1 = mkActivity({ id: 'a1' });
     const input = [a1];
-    const out = applySwap(input, 'a1', mkEntry(), NOW);
+    const out = applySwap(input, 'a1', mkEntry(), NOW, mkIdGen(0));
     assert.notEqual(out, input);
   });
 
   test('no-op when slotActivityId is not found', () => {
     const a1 = mkActivity({ id: 'a1' });
-    const out = applySwap([a1], 'zzz', mkEntry(), NOW);
+    const out = applySwap([a1], 'zzz', mkEntry(), NOW, mkIdGen(0));
     assert.equal(out.length, 1);
     assert.equal(out[0], a1);
   });
 
   test('handles non-array input', () => {
-    assert.deepEqual(applySwap(null, 'x', mkEntry(), NOW), []);
+    assert.deepEqual(applySwap(null, 'x', mkEntry(), NOW, mkIdGen(0)), []);
   });
 });
 
@@ -214,16 +259,18 @@ describe('editMode.applyRemove', () => {
 });
 
 describe('editMode.applyAdd', () => {
-  test('appends a new slot materialized from the entry', () => {
+  test('appends a new slot materialized from the entry with exact id', () => {
     const a1 = mkActivity({ id: 'a1' });
-    const out = applyAdd([a1], mkEntry(), NOW);
+    const gen = mkIdGen(0);
+    const out = applyAdd([a1], mkEntry(), NOW, gen);
     assert.equal(out.length, 2);
+    assert.equal(out[1].id, 'sa_edit_det_0');
     assert.equal(out[1].catalogEntryId, 'cat_new');
     assert.equal(out[1].state, 'PROPOSED');
   });
 
   test('works with empty / null activities', () => {
-    const out = applyAdd(null, mkEntry(), NOW);
+    const out = applyAdd(null, mkEntry(), NOW, mkIdGen(0));
     assert.equal(out.length, 1);
     assert.equal(out[0].catalogEntryId, 'cat_new');
   });
