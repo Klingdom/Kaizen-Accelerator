@@ -102,4 +102,4 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-04-27 after Iteration 13 (T1 Bucket-Tone Token Consolidation, C-UX-1). T1 prerequisite NOW LANDED — Iterations 14+ can apply themes T2–T10 to other pages without painting on cracked tokens. Top remaining P1 blockers: C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events) all tied at score 13. See `IMPROVEMENT_BACKLOG.md` for full 17-item ranked list._
+_Last updated: 2026-04-27 after Iteration 13 + governance backfill. T1 prerequisite landed; Iterations 14+ can apply themes T2–T10 to other pages without painting on cracked tokens. Backlog now 19 items including 2 convergent-finding candidates surfaced post-Iteration 12: **C-UX-10 morning yesterday-recap (score 14, new top-ranked OPEN item)** and C-UX-11 AdherenceDial momentum signal (score 11). Top P1 blockers: C-UX-10 (morning recap), C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events). See `IMPROVEMENT_BACKLOG.md` for full ranked list._
