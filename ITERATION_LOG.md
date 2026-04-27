@@ -161,3 +161,42 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - When E15 ships, tighten `isValidatedKaizen` to require `remeasurement.statisticallySignificant === true` (spec §2.1 re-open trigger).
   - When a Finance co-sign workflow lands, promote the Finance-signed tag to a filter (spec §2.2 re-open trigger).
   - Consider consolidating `/portfolio` Validated section into `/insights/portfolio` in a future PRD pass (spec §9 re-open trigger).
+
+---
+
+## Iteration 12 — Cross-Page UX Review (Define phase) (2026-04-27)
+
+- **Selected item**: Multi-lens UX review of the Today page → extract design themes → map application across other main pages.
+- **Reason for selection**: User explicit request: "engage all subagents to review the layout and UX for the today page and determine how to improve that layout and UX design then leverage those design themes across the other main pages." Treated as Define-phase orchestration, not implementation.
+- **Agents involved**: coordinator (orchestration), ux-designer (primary review + synthesis), product-manager, frontend-engineer, qa-engineer, growth-strategist, analytics, competitive-researcher (7 parallel reviewers + 1 synthesizer = 8 total dispatches).
+- **Define-phase artifacts** (9 files, 1,766 lines total):
+  - `UX_REVIEW_TODAY_DESIGN.md` (217 lines)
+  - `UX_REVIEW_TODAY_PRODUCT.md` (137 lines)
+  - `UX_REVIEW_TODAY_FRONTEND.md` (136 lines)
+  - `UX_REVIEW_TODAY_QA.md` (148 lines)
+  - `UX_REVIEW_TODAY_GROWTH.md` (143 lines)
+  - `UX_REVIEW_TODAY_ANALYTICS.md` (246 lines)
+  - `UX_REVIEW_TODAY_COMPETITIVE.md` (125 lines, persisted by coordinator since competitive-researcher is read-only Tier 1)
+  - `UX_DESIGN_THEMES.md` (228 lines, synthesis)
+  - `UX_DELTA_OTHER_PAGES.md` (386 lines, synthesis)
+- **Validation results**:
+  - No code changes; suite still 2,635 / 0 / 1.83s.
+  - All 7 parallel reviews produced evidence-anchored findings (every claim cites file:line or external URL).
+  - One model rate-limit hit during synthesis pass; recovered by re-dispatch with same brief.
+- **Convergent findings** (≥ 4 lenses agreeing):
+  1. EOD closure ritual missing (PM, Growth, Competitive, Analytics)
+  2. Morning yesterday-recap missing (Growth, Competitive, PM, Design)
+  3. Bucket-tone token drift (Design, Frontend, QA)
+  4. Action-button aria-label gap (Design, QA, Frontend)
+  5. NowPane / UpNextRail duplication (Design, PM, Frontend)
+  6. Top-of-funnel events missing (Analytics, Growth)
+  7. AdherenceDial punitive when null (Growth, Design, Competitive)
+- **The 10 design themes** (canonical list in `UX_DESIGN_THEMES.md` §4): T1 Bucket-Tone Token Consistency · T2 Stateful Card Chrome · T3 Closure Ritual · T4 Anchor + Secondary Affordance · T5 Empty-State Warmth Ladder · T6 Drawer Pattern · T7 Page Header Trio · T8 Modal Focus-Trap · T9 Day-Band Onboarding Cadence · T10 Now / Up-Next Discipline.
+- **Cross-page page-pass sequencing**: Week → InsightsPortfolio → Portfolio → Kaizen → Catalog. Estimated 3 loops × ~16-20h = ~50h total at BAM 24h/week capacity.
+- **Backlog updates**: 9 new candidates added to `IMPROVEMENT_BACKLOG.md` (C-UX-1 through C-UX-9 plus C-AN-1). 17 ranked OPEN items now.
+- **Outcome**: Define phase complete. No code changes this iteration.
+- **Process learning**: 7-lens parallel review produced higher-quality candidates than the single-PM-pass model used in Iteration 9. Convergent-finding signal (≥4 lenses agreeing) maps reliably to score-13 candidates.
+- **Follow-ups**:
+  - Commit the 9 Define-phase artifacts.
+  - Iteration 13 selected item recommendation: **C-UX-1 (T1 Bucket-Tone Token Consolidation)** — prerequisite for T2–T10 cross-page work. Despite score 12 not being the highest, synthesis explicitly named it the foundation; everything else paints on cracked tokens.
+  - Awaiting Phil go-ahead before dispatching Iteration 13.

@@ -6,6 +6,52 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 12 — 2026-04-27 — Cross-Page UX Review (Define phase)
+
+### What changed
+- **9 Define-phase artifacts** (1,766 lines) produced by 8 specialist agents in parallel + synthesis:
+  - `UX_REVIEW_TODAY_DESIGN.md` (ux-designer, 217 lines)
+  - `UX_REVIEW_TODAY_PRODUCT.md` (product-manager, 137 lines)
+  - `UX_REVIEW_TODAY_FRONTEND.md` (frontend-engineer, 136 lines)
+  - `UX_REVIEW_TODAY_QA.md` (qa-engineer, 148 lines)
+  - `UX_REVIEW_TODAY_GROWTH.md` (growth-strategist, 143 lines)
+  - `UX_REVIEW_TODAY_ANALYTICS.md` (analytics, 246 lines)
+  - `UX_REVIEW_TODAY_COMPETITIVE.md` (competitive-researcher findings persisted by coordinator, 125 lines)
+  - `UX_DESIGN_THEMES.md` (ux-designer synthesis, 228 lines)
+  - `UX_DELTA_OTHER_PAGES.md` (ux-designer synthesis, 386 lines)
+- **9 new candidates** added to `IMPROVEMENT_BACKLOG.md`: C-UX-1 through C-UX-9 plus C-AN-1. Backlog now has 17 ranked OPEN items.
+- **No code changes.** Suite remains 2,635 / 0 / 1.83s.
+
+### Why
+User asked for a multi-lens review of Today's UX with cross-page applicability. Treated as Define-phase orchestration, not implementation. The 7-lens parallel review (UX, PM, frontend, QA, growth, analytics, competitive) ensured no single perspective dominated the synthesis.
+
+### The 10 canonical Design Themes (synthesis output)
+T1 Bucket-Tone Token Consistency · T2 Stateful Card Chrome · T3 Closure Ritual · T4 Anchor + Secondary Affordance · T5 Empty-State Warmth Ladder · T6 Drawer Pattern · T7 Page Header Trio · T8 Modal Focus-Trap · T9 Day-Band Onboarding Cadence · T10 Now / Up-Next Discipline.
+
+### Convergent findings (≥4 lenses agreed)
+1. EOD closure ritual missing (PM, Growth, Competitive, Analytics)
+2. Morning yesterday-recap missing (Growth, Competitive, PM, Design)
+3. Bucket-tone token drift (Design, Frontend, QA)
+4. Action-button aria-label gap (Design, QA, Frontend)
+5. NowPane / UpNextRail duplication (Design, PM, Frontend)
+6. Top-of-funnel events missing (Analytics, Growth)
+7. AdherenceDial punitive when null (Growth, Design, Competitive)
+
+### Cross-page sequencing recommendation
+Week → InsightsPortfolio → Portfolio → Kaizen → Catalog. Estimated 3 implementation loops × ~16-20h = ~50h at BAM 24h/week capacity.
+
+### Process learning
+7-lens parallel review produced higher-quality candidates than the single-PM-pass model used in Iteration 9. Convergent-finding signal (≥4 lenses agreeing) maps reliably to score-13 candidates. Recommendation written into `IMPROVEMENT_BACKLOG.md`: when a backlog feels stale (>6 weeks without refresh), trigger a multi-lens review pass.
+
+### Backlog updates
+- 9 new candidates: C-UX-1 (T1 tokens, score 12, **PREREQUISITE**), C-UX-2 (BucketStrip blackout, 11), C-UX-3 (Closure ritual, 12), C-UX-4 (Empty-state ladder, 11), C-UX-5 (Page header trio, 8), C-UX-6 (Modal focus trap, 13), C-UX-7 (Now/UpNext dedupe, 11), C-UX-8 (Action button aria, 13), C-UX-9 (Day-band copy, 10).
+- 1 new analytics candidate: C-AN-1 (Top-of-funnel events, 13).
+
+### Recommended next iteration
+**Iteration 13: C-UX-1 (T1 Bucket-Tone Token Consolidation)** — prerequisite for T2–T10. Despite score 12 not being the highest, synthesis explicitly named it the foundation; every cross-page visual pass depends on it.
+
+---
+
 ## Iteration 11 — 2026-04-27 — E14 Validated Kaizen Portfolio (C-PM-2)
 
 ### What changed

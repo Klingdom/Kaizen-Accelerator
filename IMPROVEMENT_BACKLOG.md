@@ -8,25 +8,41 @@ All scores are integers on a 1–5 scale per dimension. Items are sorted descend
 
 ---
 
-## Top 10 Ranked (post-Iteration 11)
+## Top Ranked (post-Iteration 12)
+
+Iteration 12 (Define-phase cross-page UX review) added 9 new theme-derived candidates (`C-UX-*` and `C-AN-1`). The full review is in `UX_DESIGN_THEMES.md` and `UX_DELTA_OTHER_PAGES.md` plus 7 per-lens reviews.
 
 | Rank | ID | Title | Type | Score | Status | 1-line problem |
 |---|---|---|---|---|---|---|
-| — | C-PM-3 | PROPOSED-state Kaizen chip | fix | 14 | **DONE** | Validation failure caught in Iteration 10: already shipped in commit `32ed008` (Apr 23). |
-| — | C-SA-1 | Make `activityFromCatalogEntry` deterministic | fix | 13 | **DONE (Iteration 10)** | Shipped via `IdGeneratorService` injection. Suite 2,565→2,582. |
-| — | C-PM-2 | `/insights/portfolio` MVP route (E14) | improvement | 13 | **DONE (Iteration 11)** | Shipped per `E14_PORTFOLIO_SPEC.md`. Suite 2,582→2,635. AC1–AC10 all PASS. |
-| — | C-PM-1 | ProjectPaceWarning visible signal | improvement | 13 | **BLOCKED-ON-E13** | Requires E13 phase logic scaffolding; E13 not started. |
-| 1 | C-PM-4 | End-of-day reflection prompt | improvement | 12 | OPEN | No end-of-day nudge exists; day-14 reflection rate target (≥75%) has no activation driver. |
-| 2 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row, leaving the variance log incomplete. |
-| 3 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | `reflow` shipped in Sprint 15 W5 but has zero test references in its test file. |
-| 4 | C-QA-3 | `formatTimeRange` DST-offset ISO test | improvement | 12 | OPEN | All fixtures use UTC `Z`; non-Z ISO input silently mis-displays due to `getUTCHours` semantics. |
-| 5 | C-SA-3 | Collapse duplicated protected-block lists | improvement | 11 | OPEN | `editMode.js` hardcodes lists that mirror but are not derived from `composeDaily.js`, risking silent drift. |
-| 6 | C-PM-5 | `ImplementationBacklog` first-class entity (E18) | improvement | 10 | OPEN | E18 is MVP must-have; Kaizen actions remain a JSON blob, blocking Sustainment Gate and Phase 3→4 veto. |
-| 7 | C-QA-1 | A11y assertions on WeekGrid + UpNextRail | improvement | 10 | OPEN | `WeekGrid.test.js` has zero aria-label assertions; UpNextRail aria contract unverified. |
+| — | C-PM-3 | PROPOSED-state Kaizen chip | fix | 14 | **DONE** | Already shipped commit `32ed008` (validation failure caught Iteration 10). |
+| — | C-SA-1 | Make `activityFromCatalogEntry` deterministic | fix | 13 | **DONE (Iteration 10)** | Shipped via `IdGeneratorService`. Suite 2,565→2,582. |
+| — | C-PM-2 | `/insights/portfolio` MVP route (E14) | improvement | 13 | **DONE (Iteration 11)** | Shipped per spec. Suite 2,582→2,635. |
+| — | C-PM-1 | ProjectPaceWarning visible signal | improvement | 13 | **BLOCKED-ON-E13** | Requires E13 phase logic; not started. |
+| 1 | C-UX-6 | Modal focus-trap discipline (T8) | fix | 13 | OPEN | EditDrawer + FineTuneDrawer have no focus trap; WCAG §2.1.2 failure. (QA §2.) |
+| 2 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
+| 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
+| 4 | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | OPEN | No EOD nudge; day-14 reflection rate target (≥75%) has no activation driver. **Theme T3.** |
+| 5 | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | OPEN | Sprint 13 `--color-*` tokens conflict with `:root` `--*` tokens; 3 independent bucket→class maps will drift. **Prerequisite for T2–T10.** (UX §4, Frontend §5–§6.) |
+| 6 | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | OPEN | Today closes cold; no "day complete" confirmation, no bridge to tomorrow. Convergent across PM, Growth, Competitive, Analytics. |
+| 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
+| 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
+| 9 | C-QA-3 | `formatTimeRange` DST-offset ISO test | improvement | 12 | OPEN | All fixtures use UTC `Z`; non-Z ISO input silently mis-displays. |
+| 10 | C-UX-2 | BucketStrip blackout fix in edit mode (T2) | fix | 11 | OPEN | `today-editing` over-applies opacity 0.4 to BucketStrip — invariant feedback hidden during the edit that triggers it. (UX §IA failure.) |
+| 11 | C-UX-4 | Empty-state warmth ladder (T5) | improvement | 11 | OPEN | Other pages have cold empty states (Week / Portfolio / Catalog / InsightsPortfolio); Today's `daysSinceSignupHint` is the model. |
+| 12 | C-UX-7 | Now / Up-Next duplication fix (T10) | fix | 11 | OPEN | NowPane UPCOMING + UpNextRail row 1 surface the same activity simultaneously. (UX §4, Frontend §4.) |
+| 13 | C-SA-3 | Collapse duplicated protected-block lists | improvement | 11 | OPEN | `editMode.js` hardcodes lists that mirror but are not derived from `composeDaily.js`. |
+| 14 | C-PM-5 | `ImplementationBacklog` first-class entity (E18) | improvement | 10 | OPEN | E18 MVP must-have; Kaizen actions remain a JSON blob. |
+| 15 | C-QA-1 | A11y assertions on WeekGrid + UpNextRail | improvement | 10 | OPEN | Existing components have aria-labels but no test assertions on them. |
+| 16 | C-UX-5 | Page header trio standardization (T7) | improvement | 8 | OPEN | Every page has bespoke header; no shared `<h1>` + status + primary-action contract. Touches all 5 pages. |
+| 17 | C-UX-9 | Day-band onboarding cadence (T9) | improvement | 8 | OPEN | Only days 0–1 / 2–6 / 7+ have copy; days 14 / 21 / 30 / 60 / 90 missing. |
 
 ### Loop Process Notes (Iteration 10 learning)
 
 Iteration 9's candidate-generation pass produced two stale candidates (C-PM-3 already-shipped, C-PM-1 blocked-on-prerequisite). Future candidate generation MUST grep against `js/` and `git log` to confirm the gap is real before scoring.
+
+### Loop Process Notes (Iteration 12 learning)
+
+The Define-phase 7-lens parallel review produced higher-quality candidates than the single-PM-pass model used in Iteration 9. Convergent-finding signal (≥4 lenses agreeing) maps reliably to score-13 candidates. Recommendation: when a backlog feels stale (>6 weeks without refresh), trigger a multi-lens review pass rather than a single-agent regeneration.
 
 ---
 
@@ -146,4 +162,102 @@ Iteration 9's candidate-generation pass produced two stale candidates (C-PM-3 al
 
 ---
 
-_Generated: 2026-04-27. Last updated after Iteration 10. Next loop trigger: coordinator selects top OPEN item (currently C-PM-2 / C-PM-4 / C-SA-2 tied tier at scores 13–12), assigns agents, opens a sprint._
+_Generated: 2026-04-27. Last updated after Iteration 12 (Define-phase cross-page UX review)._
+
+## Iteration 12 New Candidates — Detail
+
+### C-UX-1: Bucket-tone token consolidation (Theme T1)
+- Status: OPEN
+- Type: improvement
+- Problem: `app.css` has both `--primary: #0f172a` (`:root`) and `--color-primary: #2563eb` (Sprint 13 chip rules). Three independent bucket→CSS-class maps in `ScheduledActivityBlock.js`, `UpNextRail.js`, and `EditDrawer.js` will silently drift under any visual pass. WCAG forced-colors mode unhandled.
+- Expected benefit: Single source of truth for bucket tone; prerequisite for T2–T10. Cross-page visual consistency.
+- Evidence: UX §4 (token split), Frontend §5–§6 pattern 1, QA §8 pattern 7.
+- Impact 4 / Strategic 5 / Learning 3 / Confidence 5 / Effort 3 / Risk 2
+- Total: 12
+- **Note: PREREQUISITE for any cross-page visual theme work. Should run as Iteration 13 even though score is not the highest.**
+
+### C-UX-2: BucketStrip blackout fix in edit mode (Theme T2)
+- Status: OPEN
+- Type: fix
+- Problem: `app.css:1519–1527` `.today-editing .cycle-card:not(.cycle-editing)` applies `opacity: 0.4; pointer-events: none` to the BucketStrip — exactly when the user needs to watch bucket totals respond to swap choices.
+- Expected benefit: Functional IA fix; users see invariant feedback during the action that most triggers it.
+- Evidence: UX §IA failure §4 (most urgent).
+- Impact 3 / Strategic 3 / Learning 2 / Confidence 5 / Effort 1 / Risk 1
+- Total: 11
+
+### C-UX-3: Closure ritual / day-end strip (Theme T3)
+- Status: OPEN
+- Type: improvement
+- Problem: Today closes cold. No "day complete" confirmation, no pending-reflection nudge, no bridge to tomorrow. Convergent across 4 lenses.
+- Expected benefit: Closes the daily habit loop; drives day-14 reflection rate toward ≥75% target.
+- Evidence: PM §3 (C-PM-4), Growth §3 HR-3 / §7 rank 2, Competitive §3 pattern 4 / §6 rank 4, Analytics §3 step 9.
+- Open question: Is `lastActivityEndsAt` derivable from existing composition data?
+- Impact 5 / Strategic 5 / Learning 4 / Confidence 3 / Effort 3 / Risk 2
+- Total: 12
+
+### C-UX-4: Empty-state warmth ladder (Theme T5)
+- Status: OPEN
+- Type: improvement
+- Problem: Today has `daysSinceSignupHint` but Week / Portfolio / Catalog / InsightsPortfolio empty states are cold one-liners.
+- Expected benefit: Day-band copy across all 5 pages; consistent warmth ladder.
+- Evidence: Growth §6, UX §8 theme 5, Competitive §6 (yesterday recap pattern).
+- Impact 3 / Strategic 4 / Learning 3 / Confidence 4 / Effort 2 / Risk 1
+- Total: 11
+
+### C-UX-5: Page header trio standardization (Theme T7)
+- Status: OPEN
+- Type: improvement
+- Problem: Every page has bespoke header structure; no shared contract for `<h1>` + status signal + primary action. Today empty state is missing `<h1>`.
+- Expected benefit: Consistent landing structure; resolves a11y missing-h1 gap.
+- Evidence: Frontend §6 pattern (PageHeader extraction L cost), QA §1, UX §8 theme 8.
+- Impact 3 / Strategic 4 / Learning 2 / Confidence 4 / Effort 3 / Risk 2
+- Total: 8
+
+### C-UX-6: Modal focus-trap discipline (Theme T8)
+- Status: OPEN
+- Type: fix
+- Problem: `EditDrawer` and `FineTuneDrawer` do not implement focus traps; Tab escapes both into dimmed background.
+- Expected benefit: WCAG §2.1.2 compliance; SR users can navigate dialogs predictably.
+- Evidence: QA §2 (worst a11y gap secondary).
+- Impact 4 / Strategic 4 / Learning 3 / Confidence 5 / Effort 2 / Risk 1
+- Total: 13
+
+### C-UX-7: Now / Up-Next duplication fix (Theme T10)
+- Status: OPEN
+- Type: fix
+- Problem: NowPane UPCOMING and UpNextRail row 1 surface the same activity simultaneously; on mobile a third surface appears. `selectUpNext` computed twice per render.
+- Expected benefit: Cleaner IA; one canonical "coming up" surface; render-cost reduction.
+- Evidence: UX §4 / §7 improvement 1, Frontend §4.
+- Impact 3 / Strategic 3 / Learning 2 / Confidence 5 / Effort 1 / Risk 1
+- Total: 11
+
+### C-UX-8: Action-button aria-labels carry activity name (Theme T7)
+- Status: OPEN
+- Type: fix
+- Problem: Start, Close, Skip buttons on every `ScheduledActivityBlock` carry no activity name in their `aria-label`. Screen reader announces bare "Start button" with no context.
+- Expected benefit: WCAG §4.1.2 compliance; SR users can distinguish per-activity actions.
+- Evidence: QA §1 (worst a11y gap on Today), UX §7 improvement 7, Frontend §6.
+- Impact 4 / Strategic 4 / Learning 2 / Confidence 5 / Effort 1 / Risk 1
+- Total: 13
+
+### C-UX-9: Day-band onboarding cadence (Theme T9)
+- Status: OPEN
+- Type: improvement
+- Problem: `daysSinceSignupHint` only covers days 0–1 / 2–6 / 7+. Recommended bands: 0 / 1 / 3 / 7 / 14 / 21 / 30 / 60 / 90 each tied to a Blueprint §7.x milestone.
+- Expected benefit: Lifecycle-aware copy; sustained engagement past day 14.
+- Evidence: Growth §9, UX §8 theme 9.
+- Impact 3 / Strategic 4 / Learning 3 / Confidence 3 / Effort 2 / Risk 1
+- Total: 10
+
+### C-AN-1: Top-of-funnel event instrumentation
+- Status: OPEN
+- Type: fix
+- Problem: No `TodayPageViewed` event; no `AutoPlanButtonClicked` event. Today funnel has no step-1 / step-2 denominator. A UX redesign that changes CTA placement cannot be measured.
+- Expected benefit: Measurable redesign; baseline N captured before any visual change ships.
+- Evidence: Analytics §3, §5 gaps 1–2.
+- Impact 4 / Strategic 4 / Learning 4 / Confidence 5 / Effort 2 / Risk 2
+- Total: 13
+
+---
+
+_Last updated 2026-04-27 after Iteration 12. Next loop trigger: coordinator recommends C-UX-1 (T1 token consolidation) as Iteration 13 — prerequisite for cross-page theme application even though score is tied with multiple peers. Awaiting Phil go-ahead._

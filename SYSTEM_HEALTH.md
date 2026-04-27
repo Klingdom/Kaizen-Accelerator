@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase: MVP build — Iterations 9, 10, 11 complete (uncommitted). Branch: `main`. Last committed commit: `6887cab` (Sprint 16a). Last green run includes Iteration 11 (E14 portfolio). Suite: **2,635 tests / 0 failing / 620 suites / ~2.61s runtime**.
+Phase: MVP build — Iterations 9–12 complete. Branch: `main`. Last committed commit: `6ec06ee` (Iterations 9–11). Iteration 12 (Define-phase cross-page UX review) uncommitted at write time. Suite: **2,635 tests / 0 failing / 620 suites / ~1.83s runtime** (unchanged — Iteration 12 was Define-phase only, no code).
 
 ---
 
@@ -104,4 +104,4 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-04-27 after Iteration 11 (E14 Validated Kaizen Portfolio, C-PM-2)._
+_Last updated: 2026-04-27 after Iteration 12 (Cross-Page UX Review — Define phase). Top-of-funnel measurement gap (C-AN-1, score 13) and modal focus-trap a11y failure (C-UX-6, score 13) both surfaced as new P1 blockers; see `IMPROVEMENT_BACKLOG.md` for the full 17-item ranked list._
