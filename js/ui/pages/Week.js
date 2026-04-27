@@ -21,6 +21,7 @@
 import { esc } from '../mount.js';
 import { WeekGrid } from '../components/WeekGrid.js';
 import { UpNextRail } from '../components/UpNextRail.js';
+import bucketMeta from '../bucketMeta.js';
 
 export const WEEK_COPY = Object.freeze({
   TITLE: 'Week Plan',
@@ -80,12 +81,7 @@ function monthDay(d) {
 function renderActivity(a) {
   if (!a || typeof a !== 'object') return '';
   const bucket = a.bucket ?? '';
-  const bucketClass =
-    bucket === 'PROJECT'
-      ? 'chip-project'
-      : bucket === 'COMMUNICATION'
-      ? 'chip-communication'
-      : 'chip-ci';
+  const bucketClass = bucketMeta(a.bucket).chipClass;
   const name = a.name ?? a.catalogEntryId ?? '(unnamed)';
   const dur = a.plannedDurationMinutes ?? 0;
   const kaizenBadge = a.linkedKaizenId

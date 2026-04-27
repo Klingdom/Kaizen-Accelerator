@@ -22,7 +22,7 @@ Iteration 12 (Define-phase cross-page UX review) added 9 new theme-derived candi
 | 2 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
 | 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
 | 4 | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | OPEN | No EOD nudge; day-14 reflection rate target (≥75%) has no activation driver. **Theme T3.** |
-| 5 | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | OPEN | Sprint 13 `--color-*` tokens conflict with `:root` `--*` tokens; 3 independent bucket→class maps will drift. **Prerequisite for T2–T10.** (UX §4, Frontend §5–§6.) |
+| — | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | **DONE (Iteration 13)** | Shipped per `T1_TOKEN_SPEC.md`. Suite 2,635→2,681. AC1–AC8 all PASS. Prerequisite for T2–T10 NOW LANDED. |
 | 6 | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | OPEN | Today closes cold; no "day complete" confirmation, no bridge to tomorrow. Convergent across PM, Growth, Competitive, Analytics. |
 | 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
 | 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
@@ -167,14 +167,13 @@ _Generated: 2026-04-27. Last updated after Iteration 12 (Define-phase cross-page
 ## Iteration 12 New Candidates — Detail
 
 ### C-UX-1: Bucket-tone token consolidation (Theme T1)
-- Status: OPEN
+- **Status: DONE (Iteration 13, 2026-04-27)**
 - Type: improvement
-- Problem: `app.css` has both `--primary: #0f172a` (`:root`) and `--color-primary: #2563eb` (Sprint 13 chip rules). Three independent bucket→CSS-class maps in `ScheduledActivityBlock.js`, `UpNextRail.js`, and `EditDrawer.js` will silently drift under any visual pass. WCAG forced-colors mode unhandled.
-- Expected benefit: Single source of truth for bucket tone; prerequisite for T2–T10. Cross-page visual consistency.
-- Evidence: UX §4 (token split), Frontend §5–§6 pattern 1, QA §8 pattern 7.
+- Problem: `app.css` had `--primary: #0f172a` (`:root`) AND `--color-primary: #2563eb` (Sprint 13 chip rules) as conflicting "primary" tokens. Three independent bucket→CSS-class maps (plus 1 inline ternary) would silently drift under any visual pass. WCAG forced-colors mode unhandled.
+- **Resolution**: Built per `T1_TOKEN_SPEC.md` (system-architect, 244 lines, user-approved). New `js/ui/bucketMeta.js` (89 lines) consolidates 4 derivation sites into single pure helper returning `{bucket, chipClass, dotClass, label, vars}`. `--color-primary` renamed to `--accent-primary` per spec §2.1 (Option A naming policy). UpNextRail dot classes migrated to compound `chip-{bucket}` form. New `@media (forced-colors: active)` block covers 18 selectors using `Mark`/`MarkText`/`CanvasText`. Suite 2,635 → 2,681 (+46 tests across 12 new suites incl. 14 component-level visual-regression locks). All 8 ACs PASS. BucketStrip canonical pattern (`app.css:296-342`) byte-identical via git-diff line-range verification. Prerequisite for T2–T10 NOW LANDED.
+- Evidence at scoring time: UX §4 (token split), Frontend §5–§6 pattern 1, QA §8 pattern 7.
 - Impact 4 / Strategic 5 / Learning 3 / Confidence 5 / Effort 3 / Risk 2
 - Total: 12
-- **Note: PREREQUISITE for any cross-page visual theme work. Should run as Iteration 13 even though score is not the highest.**
 
 ### C-UX-2: BucketStrip blackout fix in edit mode (Theme T2)
 - Status: OPEN

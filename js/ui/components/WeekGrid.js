@@ -36,6 +36,7 @@ import {
   parseMinutesOfDay
 } from '../weekGridMath.js';
 import { formatTimeRange } from '../timeFormat.js';
+import bucketMeta from '../bucketMeta.js';
 
 // Sprint 16a — Week blocks shorter than this height (px) drop the trailing
 // "–HH:MM" range fragment and render only the start time, since the grid
@@ -43,12 +44,6 @@ import { formatTimeRange } from '../timeFormat.js';
 const WG_RANGE_MIN_HEIGHT_PX = 40;
 
 const WEEKDAY_SHORT = Object.freeze(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-
-const BUCKET_CHIP_CLASS = {
-  PROJECT: 'chip-project',
-  COMMUNICATION: 'chip-communication',
-  CI: 'chip-ci'
-};
 
 /**
  * Format an ISO/HH:MM start as a clean `HH:MM` for display.
@@ -83,7 +78,7 @@ function renderBlock(ctx) {
   const h = heightPx(dur, rowHeightPx);
   if (h <= 0) return '';
   const bucket = activity.bucket ?? '';
-  const bucketChipClass = BUCKET_CHIP_CLASS[bucket] ?? '';
+  const bucketChipClass = bucketMeta(bucket).chipClass;
   const userEdited = activity.userEdited === true;
   const startHHMM = formatHHMM(activity.plannedStartAt ?? activity.anchor);
   // Sprint 16a — render "HH:MM–HH:MM" by default, but fall back to the

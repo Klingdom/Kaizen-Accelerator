@@ -1971,9 +1971,9 @@ html, body {
 }
 
 .sa-dur-chip.sa-dur-chip-active {
-  background: var(--color-primary, #2563eb);
-  color: var(--color-primary-contrast, #ffffff);
-  border-color: var(--color-primary, #2563eb);
+  background: var(--accent-primary, #2563eb);
+  color: var(--accent-primary-contrast, #ffffff);
+  border-color: var(--accent-primary, #2563eb);
 }
 
 .sa-dur-chip[aria-pressed="true"] {
@@ -2204,9 +2204,10 @@ html, body {
 .up-next-row:last-child { border-bottom: none; }
 .up-next-time { font-variant-numeric: tabular-nums; width: 44px; color: var(--muted); }
 .up-next-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.up-next-dot-project { background: var(--project-fill); }
-.up-next-dot-communication { background: var(--communication-fill); }
-.up-next-dot-ci { background: var(--ci-fill); }
+.up-next-dot.chip-project { background: var(--project-fill); }
+.up-next-dot.chip-communication { background: var(--communication-fill); }
+.up-next-dot.chip-ci { background: var(--ci-fill); }
+.up-next-dot.chip-unknown { background: var(--color-border-strong, #9ca3af); }
 .up-next-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .up-next-kaizen {
   font-size: 10px;
@@ -2295,3 +2296,45 @@ html, body {
   cursor: pointer;
 }
 .now-pane-close:hover { filter: brightness(1.05); }
+
+/* ------------------------------------------------------------------ */
+/* Forced-colors (Windows High Contrast) — spec §2.3                  */
+/* Preserves bucket discrimination via border/shape when colors are    */
+/* stripped. System-color keywords are used so the OS controls tone.   */
+/* ------------------------------------------------------------------ */
+@media (forced-colors: active) {
+  .bucket-row.bucket-project,
+  .bucket-row.bucket-communication,
+  .bucket-row.bucket-ci,
+  .sa-bucket-chip.chip-project,
+  .sa-bucket-chip.chip-communication,
+  .sa-bucket-chip.chip-ci,
+  .sa-bucket-chip.chip-unknown,
+  .wk-chip.chip-project,
+  .wk-chip.chip-communication,
+  .wk-chip.chip-ci,
+  .wk-chip.chip-unknown,
+  .wg-block.chip-project,
+  .wg-block.chip-communication,
+  .wg-block.chip-ci,
+  .wg-block.chip-unknown {
+    background-color: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+    forced-color-adjust: none;
+  }
+  .wg-block[data-user-edited="true"] {
+    outline: 2px solid Mark;
+    outline-offset: 1px;
+  }
+  .up-next-dot.chip-project,
+  .up-next-dot.chip-communication,
+  .up-next-dot.chip-ci,
+  .up-next-dot.chip-unknown {
+    background-color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+  .bucket-row .bucket-fill {
+    background: CanvasText;
+  }
+}

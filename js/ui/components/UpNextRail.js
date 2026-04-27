@@ -28,12 +28,7 @@
  */
 
 import { esc } from '../mount.js';
-
-const BUCKET_DOT_CLASS = {
-  PROJECT: 'up-next-dot-project',
-  COMMUNICATION: 'up-next-dot-communication',
-  CI: 'up-next-dot-ci'
-};
+import bucketMeta from '../bucketMeta.js';
 
 const TERMINAL_STATES = new Set(['CLOSED', 'SKIPPED', 'DROPPED']);
 
@@ -121,7 +116,7 @@ export function selectUpNext(activities, nowIso) {
  */
 function renderRow(a, kaizenTitleById) {
   const bucket = a.bucket ?? '';
-  const dotClass = BUCKET_DOT_CLASS[bucket] ?? 'up-next-dot-unknown';
+  const dotClass = bucketMeta(bucket).dotClass;
   const time = formatTime(a);
   const name = a.name ?? a.catalogEntryId ?? '(unnamed)';
   const dur = Number(a.plannedDurationMinutes ?? 0);

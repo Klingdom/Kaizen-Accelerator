@@ -28,16 +28,11 @@ import { esc } from '../mount.js';
 import { WhyChip } from './WhyChip.js';
 import { isProtectedBlock, DURATION_OPTIONS } from '../editMode.js';
 import { formatTime, formatTimeRange } from '../timeFormat.js';
+import bucketMeta from '../bucketMeta.js';
 
 // Re-exported so existing callers (and tests) keep working after the
 // Sprint 16a extraction.
 export { formatTime, formatTimeRange };
-
-const BUCKET_CHIP_CLASS = {
-  PROJECT: 'chip-project',
-  COMMUNICATION: 'chip-communication',
-  CI: 'chip-ci'
-};
 
 /**
  * Return a human label for the activity state.
@@ -188,7 +183,7 @@ export function ScheduledActivityBlock(props = {}) {
   const editSelected = !!props.editSelected;
   const protectedBlock = editMode ? isProtectedBlock(a) : false;
 
-  const chipClass = BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown';
+  const chipClass = bucketMeta(a.bucket).chipClass;
   const time = formatTime(a.plannedStartAt ?? a.anchor);
   // Sprint 16a: surface the time as a "HH:MM–HH:MM" range alongside the
   // existing single-time used by the edit-mode <input type="time">.

@@ -200,3 +200,42 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit the 9 Define-phase artifacts.
   - Iteration 13 selected item recommendation: **C-UX-1 (T1 Bucket-Tone Token Consolidation)** — prerequisite for T2–T10 cross-page work. Despite score 12 not being the highest, synthesis explicitly named it the foundation; everything else paints on cracked tokens.
   - Awaiting Phil go-ahead before dispatching Iteration 13.
+
+---
+
+## Iteration 13 — T1 Bucket-Tone Token Consolidation (C-UX-1) (2026-04-27)
+
+- **Selected item**: T1 Bucket-Tone Token Consolidation — single source of truth for bucket→class derivation; resolve `--primary` vs `--color-primary` token conflict; add WCAG forced-colors mode handling. Priority Score 12 (prerequisite for T2–T10 per Iteration 12 synthesis).
+- **Reason for selection**: User explicitly approved Path A. Synthesis (`UX_DESIGN_THEMES.md` §5) named T1 the **prerequisite** for cross-page theme application — every later visual pass paints on cracked tokens without it.
+- **Agents involved**: coordinator (orchestration + reconnaissance + validation), system-architect (`T1_TOKEN_SPEC.md`, 244 lines, user-approved), frontend-engineer (implementation), qa-engineer (test design embedded in spec §7).
+- **Define-phase artifact**: `T1_TOKEN_SPEC.md` v0.1 — 244 lines, user-approved before build dispatch. 5 hard MVP scope decisions (Option A naming policy keeping `--primary` and renaming `--color-primary` → `--accent-primary`; `bucketMeta()` return shape with `bucket/chipClass/dotClass/label/vars`; forced-colors block covering 18 selectors with `Mark`/`MarkText`/`CanvasText`; component-level visual-regression locks; UpNextRail rename to compound `chip-{bucket}` class). Spec recommendation: PROCEED.
+- **Validation results**:
+  - **Test suite**: 2,635 → **2,681 passing** (+46 tests across 12 new suites). 0 failing. 632 suites total. Runtime **1.86s** (was 1.83s pre-Iteration 13) — well under the 3.5s budget with 47% headroom.
+  - **AC sign-off**: All 8 acceptance criteria PASS (AC1–AC7 from spec §10 plus AC8 added at implementation time for the UpNextRail rename verification). No descopes invoked.
+  - **AC6 verification**: `app.css:296-342` (BucketStrip canonical pattern) byte-identical via git diff line-range scan.
+  - **AC1 verification**: grep for `BUCKET_CHIP_CLASS = {` literal returns 0 matches in `js/` (back-compat export uses `Object.freeze({...})` form per spec).
+  - **AC4 verification**: grep for `@media (forced-colors: active)` in `app.css` returns 1 match.
+  - **AC7 verification**: grep for `--color-primary` in `app.css` returns 0 matches.
+  - **AC8 verification**: grep for `up-next-dot-project|up-next-dot-communication|up-next-dot-ci` in `app.css` and `js/` returns 0 matches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **New files**:
+    - `js/ui/bucketMeta.js` (89 lines) — pure helper `bucketMeta(bucket)` + back-compat `BUCKET_CHIP_CLASS` / `BUCKET_DOT_CLASS` / `BUCKET_LABELS` exports.
+    - `tests/ui/bucketMeta.test.js` (150 lines) — unit tests covering all 3 known buckets, lowercase normalization, 5 UNKNOWN fallback cases, stability, named-export aliases.
+    - `tests/ui/bucketMeta.regression.test.js` (265 lines) — component-level visual-regression locks for SAB (4 cases), WeekGrid (3), UpNextRail (4 incl. null), Week page (3), plus 6 CSS structural assertions.
+  - **Modified files**:
+    - `app.css` — 3 `var(--color-primary, ...)` → `var(--accent-primary, ...)`; `--color-primary-contrast` → `--accent-primary-contrast`; UpNextRail dot rules rewritten as compound `.up-next-dot.chip-project` etc.; new `@media (forced-colors: active)` block covering 18 selectors.
+    - `js/ui/components/ScheduledActivityBlock.js` — local `BUCKET_CHIP_CLASS` removed; `bucketMeta` import; `BUCKET_CHIP_CLASS[a.bucket] ?? 'chip-unknown'` → `bucketMeta(a.bucket).chipClass`.
+    - `js/ui/components/WeekGrid.js` — same pattern.
+    - `js/ui/components/UpNextRail.js` — local `BUCKET_DOT_CLASS` removed; emits `chip-{bucket}` compound class via `bucketMeta(bucket).dotClass`.
+    - `js/ui/pages/Week.js` — inline ternary at lines 82-88 replaced with `bucketMeta(a.bucket).chipClass`.
+    - `tests/ui/components/UpNextRail.test.js` — 3 assertions updated to compound-class form per spec §8 step 6.
+- **Spec deviations**: 1 minor. Spec §5 described renaming `--color-primary: #2563eb;` from a `:root` block, but the actual `app.css` had no `:root` definition for `--color-primary` — the token only existed as inline `var(--color-primary, #2563eb)` fallback values. Implementer correctly applied the rename to all 3 `var()` call-sites instead. No functional behavior change.
+- **Risk register outcome**:
+  - R1 (visual regression): mitigated via 6 CSS structural assertions + 14 component-level class-string assertions in `bucketMeta.regression.test.js`.
+  - R2 (test count baseline shift): no shift occurred; baseline 2,635 stable from Iteration 12 close.
+  - R3 (UpNextRail external CSS reference): grep verified 0 hits before rename; safe.
+- **Time spent**: ~1h actual vs 5.5h estimate. Reasons: (a) reconnaissance and grep-confirmation done by orchestrator in advance, (b) spec was concrete enough that implementation was mechanical, (c) the `:root` block deviation noted in spec was actually simpler than spec assumed.
+- **Cross-page impact**: T1 prerequisite NOW LANDED. Iterations 14+ can apply themes T2–T10 to Week, InsightsPortfolio, Portfolio, Kaizen, Catalog without painting on cracked tokens.
+- **Follow-ups**:
+  - Commit the work.
+  - Next-loop top OPEN candidates (after T1): C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), or begin cross-page application starting with Week per the recommended sequencing in `UX_DELTA_OTHER_PAGES.md`.

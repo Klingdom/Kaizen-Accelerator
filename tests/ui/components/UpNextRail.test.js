@@ -165,7 +165,7 @@ describe('UpNextRail — rendering', () => {
     });
     assert.match(html, /class="up-next-time">11:00</);
     assert.match(html, />Charter</);
-    assert.match(html, /up-next-dot-project/);
+    assert.match(html, /up-next-dot chip-project/);
     assert.match(html, /class="up-next-dur">90m</);
   });
 
@@ -178,9 +178,9 @@ describe('UpNextRail — rendering', () => {
       ],
       nowIso: NOW
     });
-    assert.match(html, /up-next-dot-project/);
-    assert.match(html, /up-next-dot-communication/);
-    assert.match(html, /up-next-dot-ci/);
+    assert.match(html, /up-next-dot chip-project/);
+    assert.match(html, /up-next-dot chip-communication/);
+    assert.match(html, /up-next-dot chip-ci/);
   });
 
   test('renders kaizen chip when title is provided', () => {
