@@ -25,7 +25,7 @@ Iteration 13 closed C-UX-1 (T1 token consolidation, prerequisite for cross-page 
 | 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
 | — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
 | 5 | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | OPEN | No EOD nudge; day-14 reflection rate target (≥75%) has no activation driver. **Theme T3. Overlaps C-UX-3.** |
-| 6 | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | OPEN | Today closes cold; no "day complete" confirmation, no bridge to tomorrow. Convergent across PM, Growth, Competitive, Analytics. |
+| — | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | **DONE (Iteration 15)** | Shipped — `EodClosureStrip` renders below CycleCard when day done; CTA opens ReflectionSheet for oldest pending reflection. Suite 2,751→2,810. AC3-1..11 PASS. Daily ritual bookend complete. |
 | 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
 | 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
 | 9 | C-QA-3 | `formatTimeRange` DST-offset ISO test | improvement | 12 | OPEN | All fixtures use UTC `Z`; non-Z ISO input silently mis-displays. |
@@ -189,12 +189,11 @@ _Generated: 2026-04-27. Last updated after Iteration 12 (Define-phase cross-page
 - Total: 11
 
 ### C-UX-3: Closure ritual / day-end strip (Theme T3)
-- Status: OPEN
+- **Status: DONE (Iteration 15, 2026-04-27)**
 - Type: improvement
-- Problem: Today closes cold. No "day complete" confirmation, no pending-reflection nudge, no bridge to tomorrow. Convergent across 4 lenses.
-- Expected benefit: Closes the daily habit loop; drives day-14 reflection rate toward ≥75% target.
-- Evidence: PM §3 (C-PM-4), Growth §3 HR-3 / §7 rank 2, Competitive §3 pattern 4 / §6 rank 4, Analytics §3 step 9.
-- Open question: Is `lastActivityEndsAt` derivable from existing composition data?
+- Problem: Today closed cold. No "day complete" confirmation, no pending-reflection nudge, no bridge to tomorrow. Convergent across 4 lenses.
+- **Resolution**: New `js/ui/components/EodClosureStrip.js` (64 lines) renders single-line strip below CycleCard when day-done condition holds. Trigger: every non-DROPPED activity terminal (CLOSED/SKIPPED) OR `nowIso >= lastActivityEnd`. Strip displays "Day complete · N/M closed · K skipped · P reflections pending"; CTA "Capture reflection →" opens ReflectionSheet for oldest pending reflection via existing `openReflectionSheet()` flow at `app.js:2469`. Architect's open question (is `lastActivityEndsAt` derivable?) confirmed YES — computed from `max(plannedStartAt + plannedDurationMinutes)` across activities. Suite 2,751 → 2,810 (+59). All 11 ACs PASS. Daily ritual bookend complete (paired with C-UX-10 Morning recap from Iteration 14).
+- Evidence at scoring time: PM §3 (C-PM-4), Growth §3 HR-3 / §7 rank 2, Competitive §3 pattern 4 / §6 rank 4, Analytics §3 step 9.
 - Impact 5 / Strategic 5 / Learning 4 / Confidence 3 / Effort 3 / Risk 2
 - Total: 12
 

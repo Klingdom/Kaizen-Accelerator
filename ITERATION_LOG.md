@@ -284,3 +284,37 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit the work (Define artifacts + implementation in one commit).
   - Iteration 15 = Package B add-on = C-UX-3 (EOD closure ritual) per user's "a then b" sequencing. Awaiting go-ahead.
   - Open candidates remaining (post-Iteration 14): C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-3/C-PM-4 (EOD closure, score 12 — queued for Iteration 15), plus the cross-page application loops per `UX_DELTA_OTHER_PAGES.md`.
+
+---
+
+## Iteration 15 — EOD Closure Ritual (C-UX-3) (2026-04-27)
+
+- **Selected item**: C-UX-3 EOD Closure Ritual (score 12, M effort). Theme T3 (Closure Ritual). Pairs with C-UX-10 Morning recap (Iteration 14) as the daily-ritual bookends.
+- **Reason for selection**: User explicit "go" per "a then b" sequencing. Convergent across 4 lenses (PM, Growth, Competitive, Analytics) — biggest UX gap on Today's evening end of the daily ritual.
+- **Agents involved**: coordinator (orchestration + reconnaissance + validation), frontend-engineer (implementation). No new Define-phase artifact — Iteration 14's PRD/Architecture/UX deltas covered the spec.
+- **Validation results**:
+  - **Test suite**: 2,751 → **2,810 passing** (+59 tests across 25 new suites). 0 failing. 676 suites total. Runtime **1.92s** (was 1.88s) — well under the 3.5s budget with 45% headroom.
+  - **AC sign-off**: All 11 acceptance criteria PASS (AC3-1..11). Zero descopes.
+  - **Integrity check**: `git diff --name-only | grep -E "(js/composer|js/domain|js/events|js/services/ReflectionService)"` returns 0 — composer, domain types, event bus, and ReflectionService all untouched.
+  - **T1 token freeze respected**: `git diff app.css | grep -E "^\+\s+--[a-z]"` returns 0 — no new CSS token definitions.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **New files**:
+    - `js/ui/components/EodClosureStrip.js` (64 lines) — pure component renders single-line strip below CycleCard when "day done" condition holds; renders nothing when `eodRecap` is null.
+    - `tests/ui/components/EodClosureStrip.test.js` (184 lines, 25 tests) — null path, AC3-1, AC3-2, AC3-7, AC3-8, singular/plural, accessibility, XSS safety.
+    - `tests/app.iteration15.test.js` (322 lines, 21 tests) — `computeEodRecap` unit cases (all trigger conditions, boundary, DROPPED exclusion, eligible states) + `EOD_OPEN_REFLECTION` handler (AC3-9).
+  - **Modified files**:
+    - `js/ui/pages/Today.js` — added `EodClosureStrip` import, `eodRecap` prop destructuring, render BELOW CycleCard in proposed/accepted/edited render branch only.
+    - `js/app.js` — added `computeEodRecap()` helper (~90 lines) computing trigger conditions (all-terminal OR nowIso past lastActivityEnd) and counts (closed/total/skipped/pendingReflection); wired into renderApp; added `EOD_OPEN_REFLECTION` handler that finds oldest pending reflection via `services.reflectionService.listPending()` (sorted by createdAt) and opens ReflectionSheet via existing `openReflectionSheet()` flow at line 2469.
+    - `tests/ui/pages/Today.test.js` — added Iteration 15 integration test suite (~230 lines) covering AC3-1 through AC3-11.
+    - `app.css` — added `.eod-closure-strip` style block (44 lines) using only existing T1 tokens; mirrors Iteration 14's `.morning-recap` pattern.
+- **Spec deviations**: Zero.
+- **Time spent**: ~1.5h actual vs ~5h estimate.
+- **Strategic outcome**: Daily ritual loop is now structurally complete — morning bridge in (C-UX-10, Iteration 14), end-of-day strip out (C-UX-3, this iteration). Today closes deliberately rather than fading out. Convergent UX gap from Iteration 12 synthesis is now closed.
+- **User-visible change after deploy**:
+  - When the day's last activity ends OR all activities reach terminal state (CLOSED/SKIPPED), a single-line EOD strip appears below the CycleCard: *"Day complete · 5/6 closed · 1 skipped · 2 reflections pending [Capture reflection →]"*
+  - Capture CTA opens the existing ReflectionSheet for the oldest pending reflection
+  - Strip suppresses on empty / infeasible / loading states; suppresses CTA when 0 reflections pending
+- **Follow-ups**:
+  - Commit the work.
+  - Open candidates remaining: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-11 (AdherenceDial momentum, score 11), C-UX-2 (BucketStrip blackout fix, score 11), C-UX-7 (Now/UpNext duplication, score 11), plus cross-page application starting with Week per `UX_DELTA_OTHER_PAGES.md`.
+  - Iteration 12 meta-review trigger now active (3+ loops since last meta-coordinator pass: Iterations 13, 14, 15). Recommend running meta-coordinator next to evaluate scoring weights, candidate-generation patterns, and bundling discipline (Iterations 14 + 15 both bundled small additive items successfully).

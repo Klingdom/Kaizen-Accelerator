@@ -6,6 +6,56 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 15 — 2026-04-27 — EOD Closure Ritual (C-UX-3)
+
+### What changed
+- **New file** `js/ui/components/EodClosureStrip.js` (64 lines) — pure component renders single-line strip below CycleCard when "day done" condition holds; suppresses to empty string when `eodRecap` is null. Mirrors Iteration 14's MorningRecap pattern.
+- **`Today.js` updated**: `EodClosureStrip` renders BELOW CycleCard in the proposed/accepted/edited render branch only. Empty / infeasible / loading branches do not render the strip.
+- **`app.js` updated**:
+  - New `computeEodRecap(state, activities, nowIso)` helper — returns null unless triggered; computes "all terminal" check (every non-DROPPED activity in CLOSED or SKIPPED) AND/OR "time passed" check (`nowIso >= lastActivityEndIso` where `lastActivityEndIso` = max of `plannedStartAt + plannedDurationMinutes` across activities); returns `{closedCount, totalCount, skippedCount, pendingReflectionCount}` when triggered.
+  - New `EOD_OPEN_REFLECTION` action handler — finds oldest pending reflection via `services.reflectionService.listPending()` (sorted by `createdAt`), opens via existing `openReflectionSheet()` flow at line 2469.
+- **`app.css`**: new `.eod-closure-strip` style block (44 lines) using only existing T1 tokens; zero new `:root` definitions.
+- **2 new test files** (506 lines, 46 new tests):
+  - `tests/ui/components/EodClosureStrip.test.js` (184 lines, 25 tests) — null path, AC3-1, AC3-2, AC3-7, AC3-8, singular/plural, accessibility, XSS safety.
+  - `tests/app.iteration15.test.js` (322 lines, 21 tests) — `computeEodRecap` unit cases + `EOD_OPEN_REFLECTION` handler.
+- **Updated** `tests/ui/pages/Today.test.js` (+~230 lines) — Iteration 15 integration tests AC3-1 through AC3-11.
+
+### Why
+Convergent finding across 4 lenses in Iteration 12 synthesis (PM, Growth, Competitive, Analytics): "Today closes cold." No "day complete" confirmation, no pending-reflection nudge, no bridge to tomorrow. Habit loop had no defined end. C-UX-3 ranked score 12 in IMPROVEMENT_BACKLOG; user explicit "go" per "a then b" sequencing after Iteration 14 shipped the morning bookend (C-UX-10).
+
+### Architectural note
+Architect's PRD §244 open question — "Is `lastActivityEndsAt` derivable from existing composition data?" — confirmed YES this iteration. Computed via `max(plannedStartAt + plannedDurationMinutes)` across activities. No new schema, no persistence change. Pure composition over existing data.
+
+### Impact
+- **Test suite**: 2,751 → **2,810 passing** (+59). 0 failing. 676 suites. Runtime **1.92s** (45% headroom under 3.5s budget).
+- **All 11 acceptance criteria** (AC3-1..11) PASS, no descopes.
+- **Integrity preserved**: composer, domain types, event bus, ReflectionService all untouched (verified via `git diff --name-only`).
+- **T1 token freeze respected**: zero new CSS token definitions added.
+- **Time spent**: ~1.5h actual vs ~5h estimate.
+
+### User-visible change after deploy
+When the day's last activity ends OR all activities reach terminal state (CLOSED/SKIPPED), a single-line EOD strip appears below the CycleCard:
+
+> *"Day complete · 5/6 closed · 1 skipped · 2 reflections pending [Capture reflection →]"*
+
+Capture CTA opens the existing `ReflectionSheet` for the oldest pending reflection via existing flow. Strip suppresses on empty / infeasible / loading states; CTA suppresses when zero reflections pending.
+
+### Strategic outcome
+Daily ritual bookend structurally complete — morning bridge IN (C-UX-10, Iteration 14), end-of-day strip OUT (C-UX-3, this iteration). Today no longer closes cold. The convergent UX gap from Iteration 12 synthesis is now closed.
+
+### Backlog updates
+- C-UX-3 → **DONE**.
+- New top OPEN tier (all score 13): C-UX-6 (modal focus traps), C-UX-8 (action-button aria-labels), C-AN-1 (top-of-funnel events).
+- C-PM-4 (End-of-day reflection prompt, score 12) — overlaps significantly with C-UX-3; recommend marking DONE-BY-PROXY in next governance pass.
+
+### Spec deviations
+Zero.
+
+### Meta-coordinator trigger
+Per CLAUDE.md, meta-coordinator should run every 3 completed improvement loops. Iterations 13, 14, 15 are now complete — trigger met. Recommend evaluating: scoring weights (Iteration 14 bundled 3 score-11/12/13 items successfully), bundling discipline ("ONE item per loop" interpreted as "one coherent feature shipment" worked for Iteration 14), Define-phase ROI (3 Define artifacts produced 1.5h implementation vs 6h estimate), candidate generation patterns (governance backfill of 2 missed convergent findings worked smoothly).
+
+---
+
 ## Iteration 14 — 2026-04-27 — CadencePlan Today v1: Morning Recap + Why Chip + BalanceMeter Rename (C-UX-10 + C-UX-12 + C-UX-13)
 
 ### What changed

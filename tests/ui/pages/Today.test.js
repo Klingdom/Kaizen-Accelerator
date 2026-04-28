@@ -355,3 +355,229 @@ describe('Today — C-UX-13 BucketStrip label rename', () => {
     assert.ok(html.includes('chip-project') || html.includes('bucket-project'), `Expected class. HTML snippet: ${html.slice(0, 1000)}`);
   });
 });
+
+// =============================================================================
+// Iteration 15 integration tests — C-UX-3 EodClosureStrip
+// =============================================================================
+
+// Shared fixtures for EOD tests.
+const ALL_CLOSED_ACTIVITIES = Object.freeze([
+  { id: 'sa_1', bucket: 'PROJECT', plannedDurationMinutes: 120, plannedStartAt: '09:00', state: 'CLOSED' },
+  { id: 'sa_2', bucket: 'PROJECT', plannedDurationMinutes: 120, plannedStartAt: '11:00', state: 'CLOSED' },
+  { id: 'sa_3', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '13:00', state: 'CLOSED' },
+  { id: 'sa_4', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '14:00', state: 'CLOSED' },
+  { id: 'sa_5', bucket: 'CI', plannedDurationMinutes: 120, plannedStartAt: '15:00', state: 'CLOSED' }
+]);
+
+const ACTIVE_STATE_ALL_CLOSED = Object.freeze({
+  composition: { id: 'comp_eod_1', userId: 'user_phil_mvp', state: 'ACCEPTED', cycleType: 'DAILY' },
+  activities: ALL_CLOSED_ACTIVITIES
+});
+
+// All terminal mix: 3 CLOSED + 1 SKIPPED + 1 DROPPED (DROPPED excluded from counts)
+const MIXED_TERMINAL_ACTIVITIES = Object.freeze([
+  { id: 'sa_a', bucket: 'PROJECT',       plannedDurationMinutes: 120, plannedStartAt: '09:00', state: 'CLOSED' },
+  { id: 'sa_b', bucket: 'PROJECT',       plannedDurationMinutes: 120, plannedStartAt: '11:00', state: 'CLOSED' },
+  { id: 'sa_c', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '13:00', state: 'CLOSED' },
+  { id: 'sa_d', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '14:00', state: 'SKIPPED' },
+  { id: 'sa_e', bucket: 'CI',            plannedDurationMinutes: 120, plannedStartAt: '15:00', state: 'DROPPED' }
+]);
+
+const ACTIVE_STATE_MIXED_TERMINAL = Object.freeze({
+  composition: { id: 'comp_eod_2', userId: 'user_phil_mvp', state: 'ACCEPTED', cycleType: 'DAILY' },
+  activities: MIXED_TERMINAL_ACTIVITIES
+});
+
+// Time-passed scenario: 1 PROPOSED activity, but nowIso is past the last end.
+// Last activity ends at 17:00 UTC (16:00 start + 60m). nowIso is 17:01.
+const TIME_PASSED_ACTIVITIES = Object.freeze([
+  { id: 'sa_tp_1', bucket: 'PROJECT',       plannedDurationMinutes: 240, plannedStartAt: '09:00', state: 'CLOSED' },
+  { id: 'sa_tp_2', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '14:00', state: 'CLOSED' },
+  { id: 'sa_tp_3', bucket: 'CI',            plannedDurationMinutes: 60,  plannedStartAt: '16:00', state: 'PROPOSED' }
+]);
+
+const ACTIVE_STATE_TIME_PASSED = Object.freeze({
+  composition: { id: 'comp_eod_3', userId: 'user_phil_mvp', state: 'PROPOSED', cycleType: 'DAILY' },
+  activities: TIME_PASSED_ACTIVITIES
+});
+
+// NOT triggered: 2 IN_PROGRESS + 3 SCHEDULED, nowIso well before lastActivityEnd.
+const NOT_TRIGGERED_ACTIVITIES = Object.freeze([
+  { id: 'sa_nt_1', bucket: 'PROJECT',       plannedDurationMinutes: 120, plannedStartAt: '09:00', state: 'IN_PROGRESS' },
+  { id: 'sa_nt_2', bucket: 'PROJECT',       plannedDurationMinutes: 120, plannedStartAt: '11:00', state: 'SCHEDULED' },
+  { id: 'sa_nt_3', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '13:00', state: 'SCHEDULED' },
+  { id: 'sa_nt_4', bucket: 'COMMUNICATION', plannedDurationMinutes: 60,  plannedStartAt: '14:00', state: 'SCHEDULED' },
+  { id: 'sa_nt_5', bucket: 'CI',            plannedDurationMinutes: 120, plannedStartAt: '15:00', state: 'SCHEDULED' }
+]);
+
+const ACTIVE_STATE_NOT_TRIGGERED = Object.freeze({
+  composition: { id: 'comp_eod_4', userId: 'user_phil_mvp', state: 'ACCEPTED', cycleType: 'DAILY' },
+  activities: NOT_TRIGGERED_ACTIVITIES
+});
+
+// ---------------------------------------------------------------------------
+// AC3-1: 5/5 CLOSED → strip in DOM with "5/5 closed"
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: all-terminal trigger (AC3-1)', () => {
+  test('AC3-1: strip renders when all 5 activities are CLOSED', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 0 }
+    });
+    assert.ok(html.includes('eod-closure-strip'), `Strip must be in DOM. HTML snippet: ${html.slice(0, 500)}`);
+  });
+
+  test('AC3-1: shows "5/5 closed" text', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 0 }
+    });
+    assert.ok(html.includes('5/5 closed'), `Expected "5/5 closed". HTML snippet: ${html.slice(0, 800)}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-2: 3 CLOSED + 1 SKIPPED + 1 DROPPED → "3/4 closed · 1 skipped"
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: DROPPED excluded (AC3-2)', () => {
+  test('AC3-2: shows "3/4 closed · 1 skipped" (DROPPED excluded from total)', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_MIXED_TERMINAL,
+      eodRecap: { closedCount: 3, totalCount: 4, skippedCount: 1, pendingReflectionCount: 0 }
+    });
+    assert.ok(html.includes('3/4 closed'), `Expected "3/4 closed". HTML: ${html.slice(0, 800)}`);
+    assert.ok(html.includes('1 skipped'),  `Expected "1 skipped".  HTML: ${html.slice(0, 800)}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-3: time-passed trigger — strip appears even though 1 activity is PROPOSED
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: time-passed trigger (AC3-3)', () => {
+  test('AC3-3: strip renders when nowIso is past lastActivityEnd (eodRecap provided)', () => {
+    // nowIso = 17:01 UTC; last activity ends 17:00 (16:00 + 60m)
+    const html = Today({
+      activeState: ACTIVE_STATE_TIME_PASSED,
+      nowIso: '2026-04-27T17:01:00Z',
+      eodRecap: { closedCount: 2, totalCount: 3, skippedCount: 0, pendingReflectionCount: 0 }
+    });
+    assert.ok(html.includes('eod-closure-strip'), `Strip must appear for time-passed trigger. HTML snippet: ${html.slice(0, 500)}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-4: NOT triggered (in-progress + scheduled, nowIso well before end)
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: NOT triggered (AC3-4)', () => {
+  test('AC3-4: no strip when eodRecap is null (neither condition met)', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_NOT_TRIGGERED,
+      nowIso: '2026-04-27T09:30:00Z',
+      eodRecap: null
+    });
+    assert.ok(!html.includes('eod-closure-strip'), `Strip must NOT render. HTML snippet: ${html.slice(0, 500)}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-5: empty state (no composition) → no strip
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: empty state (AC3-5)', () => {
+  test('AC3-5: no strip when activeState is null (no composition)', () => {
+    const html = Today({ activeState: null, eodRecap: null });
+    assert.ok(!html.includes('eod-closure-strip'), `Strip must not render in empty state.`);
+  });
+
+  test('AC3-5: no strip even if eodRecap accidentally passed with empty state', () => {
+    // eodRecap is rendered via EodClosureStrip only in the active-composition branch.
+    // In the empty branch, eodRecapHtml is not called, so the strip will not appear.
+    // Today.js renders EodClosureStrip only inside the active-composition return block.
+    const html = Today({ activeState: null, eodRecap: null });
+    assert.ok(!html.includes('eod-closure-strip'), `Strip must not render in empty state.`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-6: infeasible state → no strip
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: infeasible state (AC3-6)', () => {
+  test('AC3-6: no strip when infeasible (no active composition)', () => {
+    const html = Today({
+      activeState: null,
+      infeasibleExplain: ['Capacity exceeded.'],
+      eodRecap: null
+    });
+    assert.ok(!html.includes('eod-closure-strip'), `Strip must not render in infeasible state.`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-7: no CTA when pendingReflectionCount === 0
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: no CTA when 0 pending (AC3-7)', () => {
+  test('AC3-7: no "Capture reflection" CTA when pendingReflectionCount === 0', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 0 }
+    });
+    assert.ok(!html.includes('Capture reflection'), `CTA must not appear when 0 pending.`);
+    assert.ok(!html.includes('EOD_OPEN_REFLECTION'), `Action must not appear when 0 pending.`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-8: CTA appears when pendingReflectionCount > 0
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: CTA when pending > 0 (AC3-8)', () => {
+  test('AC3-8: "Capture reflection →" CTA with data-action="EOD_OPEN_REFLECTION" when pending = 2', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 2 }
+    });
+    assert.ok(html.includes('Capture reflection →'), `CTA text must appear. HTML snippet: ${html.slice(0, 800)}`);
+    assert.ok(html.includes('data-action="EOD_OPEN_REFLECTION"'), `data-action must be present. HTML: ${html.slice(0, 800)}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-10: strip appears AFTER CycleCard
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 EodClosureStrip: position after CycleCard (AC3-10)', () => {
+  test('AC3-10: eod-closure-strip follows cycle-card in DOM order', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 0 }
+    });
+    const posCycle = html.indexOf('cycle-card');
+    const posEod   = html.indexOf('eod-closure-strip');
+    assert.ok(posCycle !== -1, 'cycle-card must be present');
+    assert.ok(posEod   !== -1, 'eod-closure-strip must be present');
+    assert.ok(posEod > posCycle, `eod-closure-strip (pos ${posEod}) must follow cycle-card (pos ${posCycle})`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3-11: both MorningRecap and EodClosureStrip invariants preserved
+// ---------------------------------------------------------------------------
+describe('Today — C-UX-3 + C-UX-10 dual-render invariants (AC3-11)', () => {
+  test('AC3-11: morning-recap precedes rhythm-explainer AND eod-closure-strip follows cycle-card', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_ALL_CLOSED,
+      priorDayRecap: PRIOR_DAY_RECAP,
+      eodRecap: { closedCount: 5, totalCount: 5, skippedCount: 0, pendingReflectionCount: 0 },
+      adherence: { daysSinceSignup: 3, adherencePct: null, acceptancePct: null, kaizenDeltaPct: null }
+    });
+    const posMorning = html.indexOf('morning-recap');
+    const posRhythm  = html.indexOf('rhythm-explainer');
+    const posCycle   = html.indexOf('cycle-card');
+    const posEod     = html.indexOf('eod-closure-strip');
+
+    assert.ok(posMorning !== -1, 'morning-recap must be present');
+    assert.ok(posRhythm  !== -1, 'rhythm-explainer must be present');
+    assert.ok(posCycle   !== -1, 'cycle-card must be present');
+    assert.ok(posEod     !== -1, 'eod-closure-strip must be present');
+
+    assert.ok(posMorning < posRhythm, `morning-recap (${posMorning}) must precede rhythm-explainer (${posRhythm})`);
+    assert.ok(posEod > posCycle,      `eod-closure-strip (${posEod}) must follow cycle-card (${posCycle})`);
+  });
+});

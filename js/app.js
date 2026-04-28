@@ -560,6 +560,20 @@ export function renderApp(services, state) {
     const priorDayRecap = daysSinceSignup > 0
       ? computePriorDayRecap(services.repo, DEFAULT_USER.id, todayDate)
       : null;
+    // C-UX-3 (Iteration 15): compute EOD closure recap.
+    // Only computed when a real composition with activities exists.
+    let eodRecap = null;
+    if (mergedActiveState && Array.isArray(mergedActiveState.activities)) {
+      const pendingCount = services.reflectionService
+        ? services.reflectionService.listPending().length
+        : 0;
+      eodRecap = computeEodRecap(
+        mergedActiveState.composition?.state ?? null,
+        mergedActiveState.activities,
+        services.clock.now(),
+        pendingCount
+      );
+    }
     const todayHtml = Today({
       activeState: mergedActiveState,
       loading: state.composerLoading,
@@ -579,6 +593,7 @@ export function renderApp(services, state) {
       editMode: state.editMode,
       catalog: catalogForEdit,
       priorDayRecap,
+      eodRecap,
       whyPlanExpanded: !!state.whyPlanExpanded
     });
     const reflectionSheetHtml = state.reflectionSheet
@@ -855,6 +870,94 @@ export function computePriorDayRecap(repo, userId, todayDateIso) {
   if (closedCount === 0 && skippedCount === 0) return null;
 
   return { closedCount, totalCount, skippedCount, dateIso };
+}
+
+/**
+ * C-UX-3 (Iteration 15) — compute the EOD closure recap for the current day.
+ *
+ * Returns null when the strip should NOT render:
+ *   - activities array is empty
+ *   - composition state is not PROPOSED, ACCEPTED, or EDITED
+ *   - neither trigger condition holds
+ *
+ * Trigger conditions (either suffices):
+ *   1. "All terminal": every non-DROPPED activity is in state CLOSED or SKIPPED.
+ *   2. "Time has passed": nowIso >= lastActivityEndIso, where lastActivityEndIso
+ *      is the max of (plannedStartAt + plannedDurationMinutes) across all activities.
+ *
+ * DROPPED activities are excluded from totalCount and skippedCount in the
+ * returned object. Only CLOSED + SKIPPED contribute to the "all terminal" check
+ * (DROPPED is implicitly excluded from the non-DROPPED set).
+ *
+ * Date math for lastActivityEndIso uses UTC to match ISO start timestamps
+ * stored by the ComposerService.
+ *
+ * Pure read — no mutations, no events.
+ *
+ * @param {string | null} compositionState  — e.g. 'PROPOSED' | 'ACCEPTED' | 'EDITED'
+ * @param {object[]} activities             — array of ScheduledActivity objects
+ * @param {string | null} nowIso            — current ISO timestamp
+ * @param {number} pendingReflectionCount   — count of pending reflections (pre-computed by caller)
+ * @returns {{closedCount: number, totalCount: number, skippedCount: number, pendingReflectionCount: number} | null}
+ */
+export function computeEodRecap(compositionState, activities, nowIso, pendingReflectionCount) {
+  // Only show strip on compositions that have a plan.
+  const ELIGIBLE_STATES = new Set(['PROPOSED', 'ACCEPTED', 'EDITED']);
+  if (!compositionState || !ELIGIBLE_STATES.has(compositionState)) return null;
+  if (!Array.isArray(activities) || activities.length === 0) return null;
+
+  // Separate DROPPED from non-DROPPED activities.
+  const nonDropped = activities.filter((a) => a && a.state !== 'DROPPED');
+  if (nonDropped.length === 0) return null;
+
+  // Trigger 1: all non-DROPPED activities are in a terminal state.
+  const TERMINAL = new Set(['CLOSED', 'SKIPPED', 'DROPPED']);
+  const allTerminal = nonDropped.every((a) => TERMINAL.has(a.state));
+
+  // Trigger 2: wall clock has passed the end of the last activity.
+  let timePassed = false;
+  if (nowIso && typeof nowIso === 'string') {
+    const nowMs = new Date(nowIso).getTime();
+    if (Number.isFinite(nowMs)) {
+      let maxEndMs = -Infinity;
+      for (const a of activities) {
+        if (!a || !a.plannedStartAt) continue;
+        // plannedStartAt may be an ISO timestamp ('2026-04-27T09:00:00Z')
+        // or a bare HH:MM string ('09:00'). For bare HH:MM we treat it as UTC
+        // today — this matches how the composer and formatTime behave.
+        let startMs;
+        const startStr = String(a.plannedStartAt);
+        if (/^\d{2}:\d{2}(:\d{2})?$/.test(startStr)) {
+          // Bare time — prepend today's date in UTC.
+          const todayDate = nowIso.slice(0, 10);
+          startMs = new Date(`${todayDate}T${startStr.slice(0, 5)}:00Z`).getTime();
+        } else {
+          startMs = new Date(startStr).getTime();
+        }
+        if (!Number.isFinite(startMs)) continue;
+        const dur = Number.isFinite(Number(a.plannedDurationMinutes)) ? Number(a.plannedDurationMinutes) : 0;
+        const endMs = startMs + dur * 60 * 1000;
+        if (endMs > maxEndMs) maxEndMs = endMs;
+      }
+      if (Number.isFinite(maxEndMs) && nowMs >= maxEndMs) {
+        timePassed = true;
+      }
+    }
+  }
+
+  if (!allTerminal && !timePassed) return null;
+
+  // Build counts (DROPPED excluded from totals).
+  const closedCount  = nonDropped.filter((a) => a.state === 'CLOSED').length;
+  const skippedCount = nonDropped.filter((a) => a.state === 'SKIPPED').length;
+  const totalCount   = nonDropped.length;
+
+  return {
+    closedCount,
+    totalCount,
+    skippedCount,
+    pendingReflectionCount: Number.isFinite(pendingReflectionCount) ? pendingReflectionCount : 0
+  };
 }
 
 /**
@@ -2130,6 +2233,45 @@ export function buildHandlers(scope) {
       rerender();
     },
 
+    // C-UX-3 (Iteration 15) — open ReflectionSheet for the oldest pending
+    // reflection from the EOD closure strip CTA.
+    EOD_OPEN_REFLECTION(_payload) {
+      const pending = services.reflectionService
+        ? services.reflectionService.listPending()
+        : [];
+      if (pending.length === 0) return;
+      // Find the oldest pending reflection by its createdAt field (or first
+      // in list order if timestamps are absent).
+      const oldest = pending.reduce((best, r) => {
+        if (!best) return r;
+        const bestAt = best.createdAt ?? '';
+        const rAt    = r.createdAt    ?? '';
+        return rAt < bestAt ? r : best;
+      }, null);
+      if (!oldest) return;
+      // Resolve the scheduled activity for display metadata.
+      const acts = services.repo.read('bamx:v1:activities') ?? {};
+      const sa   = oldest.scheduledActivityId ? acts[oldest.scheduledActivityId] : null;
+      const catalog = services.catalogService
+        ? services.catalogService.list(DEFAULT_USER.id)
+        : [];
+      const entry = sa
+        ? ((catalog ?? []).find((c) => c && c.id === sa.catalogEntryId) ?? null)
+        : null;
+      state.reflectionSheet = {
+        reflectionId:            oldest.id,
+        activityId:              oldest.scheduledActivityId ?? null,
+        activityName:            entry?.name ?? sa?.name ?? oldest.id,
+        plannedDurationMinutes:  sa?.plannedDurationMinutes  ?? 0,
+        planVsActualMinutes:     oldest.planVsActualMinutes  ?? 0,
+        actualDurationMinutes:
+          (sa?.plannedDurationMinutes ?? 0) + (oldest.planVsActualMinutes ?? 0),
+        isNonOptional:  entry?.isNonOptional === true,
+        frictionChecked: false
+      };
+      rerender();
+    },
+
     // ---- Sprint 10b Pass B: Portfolio project expand + step actions ----
 
     PORTFOLIO_TOGGLE_KAIZEN(payload) {
@@ -2603,6 +2745,7 @@ export default {
   buildHandlers,
   computeDaysSinceSignup,
   computePriorDayRecap,
+  computeEodRecap,
   extractFormFields,
   handleActivityCompleted,
   handleDurationArrowKey,

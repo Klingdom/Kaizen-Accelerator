@@ -27,6 +27,7 @@ import { EditDrawer } from '../components/EditDrawer.js';
 import { UpNextRail } from '../components/UpNextRail.js';
 import { NowPane } from '../components/NowPane.js';
 import { MorningRecap } from '../components/MorningRecap.js';
+import { EodClosureStrip } from '../components/EodClosureStrip.js';
 import { WhyThisPlan } from '../components/WhyThisPlan.js';
 import {
   DEFAULT_TARGETS,
@@ -104,6 +105,7 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *     activityName?: string
  *   },
  *   priorDayRecap?: {closedCount: number, totalCount: number, skippedCount: number, dateIso: string} | null,
+ *   eodRecap?: {closedCount: number, totalCount: number, skippedCount: number, pendingReflectionCount: number} | null,
  *   whyPlanExpanded?: boolean
  * }} props
  */
@@ -129,6 +131,8 @@ export function Today(props = {}) {
   const editMode = props.editMode ?? null; // null when closed; object when open
   // C-UX-10 (Iteration 14): prior-day recap strip.
   const priorDayRecap = props.priorDayRecap ?? null;
+  // C-UX-3 (Iteration 15): EOD closure strip.
+  const eodRecap = props.eodRecap ?? null;
   // C-UX-12 (Iteration 14): "Why this plan?" expanded state.
   const whyPlanExpanded = !!props.whyPlanExpanded;
 
@@ -266,6 +270,12 @@ export function Today(props = {}) {
       })
     : '';
 
+  // C-UX-3 (Iteration 15): EOD closure strip — shown on PROPOSED, ACCEPTED,
+  // and EDITED compositions only (not empty, infeasible, or loading branches).
+  // The parent (app.js) computes and passes eodRecap; strip suppresses itself
+  // when eodRecap is null.
+  const eodClosureHtml = EodClosureStrip({ eodRecap });
+
   // C-UX-12 (Iteration 14): "Why this plan?" chip — shown on PROPOSED,
   // ACCEPTED, and EDITED states only (not ACTIVE, REJECTED, CLOSED, or
   // editing mode where the chip would be distracting).
@@ -302,6 +312,7 @@ export function Today(props = {}) {
         selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
         undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0
       })}
+      ${eodClosureHtml}
     </div>
     ${upNextRailHtml}
   </div>
