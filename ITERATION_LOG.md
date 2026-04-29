@@ -355,3 +355,33 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit the work.
   - Open candidates remaining: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-11 (AdherenceDial momentum, score 11), C-UX-2 (BucketStrip blackout fix, score 11), C-UX-7 (Now/UpNext duplication, score 11), plus cross-page application starting with Week per `UX_DELTA_OTHER_PAGES.md`.
   - Meta-coordinator trigger remains active (4 loops since last meta pass: Iterations 13, 14, 15, 16). Recommend running meta-coordinator before Iteration 17.
+
+---
+
+## Iteration 17 — Meta-Review of Iterations 9-16 (2026-04-29)
+
+- **Selected item**: Run meta-coordinator pass per CLAUDE.md trigger ("every 3 completed improvement loops"). Trigger had been active for 4 loops (overdue by 1).
+- **Reason for selection**: User explicit "a" selection. Per CLAUDE.md, meta-coordinator evaluates loop performance over time, identifies prioritization failures, refines scoring/selection logic, and recommends changes to the coordinator's operating model.
+- **Agents involved**: coordinator (orchestration), meta-coordinator (single-agent dispatch — meta-review IS the synthesis pass for this kind of evaluation).
+- **Define-phase artifact**: `META_REVIEW.md` v0.1, 247 lines.
+- **Validation results**: No code changes; suite remains 2,834 / 0 / 2.10s. Meta-review is artifact-only.
+- **Outcome**: Loop health rating **5/5**. Eight implementation iterations, zero failing tests at any close, one minor spec deviation, one validation save (Iteration 10), increasing test density at decreasing runtime.
+- **Top 6 recommendations**:
+  1. **§6.1 Bundling discipline** — replace "NEVER implement more than ONE item per loop" with "ONE coherent shipment per loop" gated on 4 conjunctive conditions (single Define artifact, single integrity boundary, single coherence claim, combined estimate ≤ 1.5× normal).
+  2. **§6.2 Pre-flight reconnaissance** — mandatory 4-step grep protocol before agent dispatch every implementation iteration.
+  3. **§6.3 Define-pass mandatory threshold** — required for Effort ≥ M, user-reported defects, or score ≥ 13.
+  4. **§6.4 Convergence bonus + score-13 gate** — `+1 per lens beyond first agreeing, capped at +3`; no candidate scored ≥ 13 without ≥ 3-lens evaluation.
+  5. **§6.5 Composer/engine integrity boundary as written rule** — no implementation may touch `js/composer/`, `js/domain/types.js`, `js/events/`, or `js/engine/orderDay.js` without an architecture-delta artifact and explicit user approval.
+  6. **§6.6 Backlog candidate template** — add required `Lens count` and `Lenses` fields.
+- **Top 3 risks identified**:
+  - **R1** Estimate inflation hides anomalies (5× systematic inflation; future genuinely-hard iteration won't flag).
+  - **R3** Today-page over-investment (6 of 8 iterations touched Today; cross-page T2-T10 sequencing barely started).
+  - **R5** Composer/engine boundary held perfectly because nothing has touched it; team has no recent muscle memory for safe composer modification.
+- **Most surprising finding**: Per-test runtime is *decreasing* (0.99ms → 0.74ms over 269 added tests). Recommend retiring 3.5s ceiling in favor of per-test ms tracking.
+- **Time-estimate calibration verdict**: Systematically inflated by ~5×. Median ratio 0.20 across all implementation iterations.
+- **Recommended next iteration**: Bundle C-UX-6 + C-UX-8 + C-AN-1 as "Today a11y + measurement baseline" — all score 13, all on Today, combined Effort S+S+S, satisfies all 4 proposed bundling conditions.
+- **Backlog housekeeping applied this iteration**: C-PM-4 (End-of-day reflection prompt, score 12) marked DONE-BY-PROXY — Iteration 15's C-UX-3 EOD closure ritual implements the same capability.
+- **Follow-ups**:
+  - Commit the META_REVIEW.md + governance updates.
+  - Phil decides which of §6.1–§6.6 recommendations to formalize as edits to `coordinator.md`. Coordinator does NOT auto-apply changes to operating model.
+  - Iteration 18 selection: per meta-review §9, recommend C-UX-6 + C-UX-8 + C-AN-1 bundle.

@@ -6,6 +6,49 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 17 — 2026-04-29 — Meta-Review of Iterations 9-16
+
+### What changed
+- **New artifact** `META_REVIEW.md` (247 lines, meta-coordinator) — first formal meta-review pass evaluating loop performance over Iterations 9-16. Triggered per CLAUDE.md "every 3 completed improvement loops" (was overdue by 1 iteration).
+- **Backlog housekeeping**: C-PM-4 (End-of-day reflection prompt) marked DONE-BY-PROXY — Iteration 15's C-UX-3 EOD closure ritual implements the same capability.
+- **No code changes.** Suite remains 2,834 / 0 / 2.10s.
+
+### Why
+Per CLAUDE.md, meta-coordinator pass is required every 3 improvement loops to evaluate prioritization, scoring, agent orchestration, and the coordinator's operating model. The trigger had been active for 4 iterations (13, 14, 15, 16) — overdue.
+
+### Loop health verdict: 5/5
+- 8 implementation iterations
+- 0 failing tests at any iteration close
+- 1 minor spec deviation across 6 spec-driven iterations (Iteration 11 copy-string co-location)
+- 1 validation save (Iteration 10 caught C-PM-3 already-shipped before code dispatch)
+- Test growth: 2,565 → 2,834 (+269 tests, +10.5%)
+- Runtime trend: 2.55s → 2.10s (17% faster despite more tests; per-test cost dropped 0.99ms → 0.74ms)
+- Median time-actual / time-estimate ratio: 0.20 (5× efficient)
+
+### Top 6 recommended operating-model changes (META_REVIEW §6, awaiting Phil approval)
+1. **§6.1** Replace "NEVER implement more than ONE item per loop" with "ONE coherent shipment per loop" gated on 4 conjunctive conditions.
+2. **§6.2** Mandatory 4-step pre-flight reconnaissance protocol before every agent dispatch.
+3. **§6.3** Define-pass mandatory for Effort ≥ M, user-reported defects, or score ≥ 13.
+4. **§6.4** Convergence bonus formula `+min(3, max(0, lens_count − 1))` + gate "no score ≥ 13 without ≥ 3-lens evaluation."
+5. **§6.5** Composer/engine integrity boundary as a written non-negotiable rule.
+6. **§6.6** Add `Lens count` and `Lenses` fields to backlog candidate template.
+
+### Top 3 risks identified
+- **R1** Estimate inflation hides anomalies (5× systematic; future hard iteration won't flag).
+- **R3** Today-page over-investment (6 of 8 iterations touched Today; cross-page T2-T10 barely started).
+- **R5** Composer/engine boundary held perfectly because untouched; no recent muscle memory for safe composer changes when E13/E15/E18 require them.
+
+### Most surprising finding
+Per-test runtime is decreasing (0.99ms → 0.74ms) despite +269 tests added. Recommend retiring the 3.5s budget ceiling in favor of per-test ms tracking.
+
+### Recommended next iteration
+**Bundle C-UX-6 + C-UX-8 + C-AN-1** as "Today a11y + measurement baseline." All score 13, all on Today surface, combined Effort S+S+S, satisfies all 4 proposed bundling conditions.
+
+### Spec deviations
+Zero. Meta-review is artifact-only.
+
+---
+
 ## Iteration 16 — 2026-04-29 — Today Time Column Bug Fix (3 root causes)
 
 ### What changed

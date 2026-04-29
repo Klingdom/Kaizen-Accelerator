@@ -24,7 +24,7 @@ Iteration 13 closed C-UX-1 (T1 token consolidation, prerequisite for cross-page 
 | 2 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
 | 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
 | — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
-| 5 | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | OPEN | No EOD nudge; day-14 reflection rate target (≥75%) has no activation driver. **Theme T3. Overlaps C-UX-3.** |
+| — | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | **DONE-BY-PROXY (Iteration 17)** | Iteration 15's C-UX-3 EOD closure ritual implements the same capability — strip surfaces pending reflections + opens existing ReflectionSheet for the oldest pending one. Closed via meta-review backlog adjustment §7.1. |
 | — | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | **DONE (Iteration 15)** | Shipped — `EodClosureStrip` renders below CycleCard when day done; CTA opens ReflectionSheet for oldest pending reflection. Suite 2,751→2,810. AC3-1..11 PASS. Daily ritual bookend complete. |
 | 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
 | 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
