@@ -93,8 +93,10 @@ describe('editMode.applyDurationChange — cascade shift', () => {
     assert.equal(byId.c.plannedStartAt, '10:30');
   });
 
-  test('explicit gap > 1 minute: successor is NOT shifted', () => {
-    // B ends at 11:00, C starts at 11:30 → 30m explicit gap.
+  test('composer-mechanical gap: non-protected successor IS shifted across the gap', () => {
+    // B ends at 11:00, C starts at 11:30 → 30m composer-introduced gap.
+    // Bug 2 fix: cascade now crosses composer gaps; only protected/user-edited
+    // rows act as anchors. C is neither, so it shifts by +30m.
     const acts = [
       mkActivity({ id: 'a', plannedStartAt: '09:00', plannedDurationMinutes: 60 }),
       mkActivity({ id: 'b', plannedStartAt: '10:00', plannedDurationMinutes: 60 }),
@@ -103,7 +105,7 @@ describe('editMode.applyDurationChange — cascade shift', () => {
     const next = applyDurationChange(acts, 'b', 90);
     const byId = Object.fromEntries(next.map((a) => [a.id, a]));
     assert.equal(byId.b.plannedDurationMinutes, 90);
-    assert.equal(byId.c.plannedStartAt, '11:30'); // gap preserved
+    assert.equal(byId.c.plannedStartAt, '12:00'); // shifted by +30m across gap
   });
 
   test('cascade propagates through multiple butting-up successors', () => {

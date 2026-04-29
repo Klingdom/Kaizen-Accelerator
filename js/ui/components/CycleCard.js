@@ -27,6 +27,7 @@
  */
 
 import { esc } from '../mount.js';
+import { parseMinutesOfDay } from '../weekGridMath.js';
 import {
   BucketStrip,
   plannedFromActivities,
@@ -76,20 +77,21 @@ export const CARD_COPY = Object.freeze({
  */
 export function orderActivitiesForDisplay(activities) {
   if (!Array.isArray(activities)) return [];
-  const copy = activities.slice();
-  copy.sort((a, b) => {
-    const ap = a.plannedStartAt ?? a.anchor ?? '';
-    const bp = b.plannedStartAt ?? b.anchor ?? '';
-    if (ap && bp) {
-      if (ap < bp) return -1;
-      if (ap > bp) return 1;
-      return 0;
-    }
-    if (ap && !bp) return -1;
-    if (!ap && bp) return 1;
-    return 0;
+  // Normalise both ISO and HH:MM strings to integer minutes so mixed-format
+  // lists sort by actual wall-clock position rather than lexicographic order.
+  const withIdx = activities.map((a, i) => ({
+    a,
+    i,
+    min: parseMinutesOfDay(a.plannedStartAt ?? a.anchor)
+  }));
+  withIdx.sort((x, y) => {
+    if (x.min == null && y.min == null) return x.i - y.i; // both missing → stable
+    if (x.min == null) return 1;  // missing sinks to end
+    if (y.min == null) return -1;
+    if (x.min === y.min) return x.i - y.i; // tie-break on input order (stable)
+    return x.min - y.min;
   });
-  return copy;
+  return withIdx.map((w) => w.a);
 }
 
 /**

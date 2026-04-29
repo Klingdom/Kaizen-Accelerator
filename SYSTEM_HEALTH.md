@@ -1,6 +1,6 @@
 # BAM-X Kaizen OS — System Health
 
-Phase: MVP build — Iterations 9–15 complete. Branch: `main`. Last committed commit: `487ea19` (Iteration 14). Iteration 15 (EOD Closure Ritual) uncommitted at write time. Suite: **2,810 tests / 0 failing / 676 suites / ~1.92s runtime**.
+Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed commit: `3cd6512` (Iteration 15). Iteration 16 (Today time column bug fix — 3 root causes) uncommitted at write time. Suite: **2,834 tests / 0 failing / 681 suites / ~2.10s runtime**.
 
 ---
 
@@ -38,14 +38,14 @@ Phase: MVP build — Iterations 9–15 complete. Branch: `main`. Last committed 
 
 | Metric | Value |
 |---|---|
-| Tests passing | 2,810 (+245 since Iteration 9 baseline of 2,565) |
+| Tests passing | 2,834 (+269 since Iteration 9 baseline of 2,565) |
 | Tests failing | 0 |
-| Suite count | 676 (+73 since Iteration 9) |
-| Runtime | ~1.92s |
+| Suite count | 681 (+78 since Iteration 9) |
+| Runtime | ~2.10s |
 | Runtime budget | 3.5s |
-| Headroom | ~1.58s (45%) |
+| Headroom | ~1.40s (40%) |
 | Fail rate | 0% |
-| Last green commit | `487ea19` (Iteration 15 work uncommitted) |
+| Last green commit | `3cd6512` (Iteration 16 work uncommitted) |
 
 ---
 
@@ -102,4 +102,4 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-04-27 after Iteration 15 (EOD Closure Ritual, C-UX-3). Daily ritual bookend now complete — morning recap (Iteration 14) + EOD closure strip (this iteration). Convergent UX gap from Iteration 12 synthesis closed. Top remaining P1 OPEN: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13). Meta-coordinator trigger active (3 iterations since last meta pass: 13, 14, 15)._
+_Last updated: 2026-04-29 after Iteration 16 (Today time column bug fix — 3 root causes). User-reported defect closed across DROPPED-row leak, cascade-stops-at-gap, and mixed-format string sort. Three previously-undocumented contracts now explicit and tested. Top remaining P1 OPEN: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13). Meta-coordinator trigger remains active (4 iterations since last meta pass: 13, 14, 15, 16) — recommend running before Iteration 17._

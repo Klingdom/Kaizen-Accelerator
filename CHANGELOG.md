@@ -6,6 +6,74 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 16 — 2026-04-29 — Today Time Column Bug Fix (3 root causes)
+
+### What changed
+Three distinct bugs in the Today time column, all manifesting as the same user-reported symptom ("time column not calculating or updating correctly"), fixed in one comprehensive iteration. User selected Path A (comprehensive fix vs. staged across 3 loops).
+
+### Bug 1 — DROPPED rows leak into render
+- **File**: `js/services/ComposerService.js:803`
+- **Fix**: Added `&& a.state !== 'DROPPED'` filter to `getActiveComposition`'s activity query.
+- **Effect**: After a swap-edit commits, the old DROPPED row no longer appears alongside the fresh new row. Today renders only the live schedule; ghost rows with stale `plannedStartAt` are gone.
+- **Critical scoping**: `getComposition` (audit path, line 820) intentionally NOT changed — preserves audit trail. `reflow()` partition step (line ~561) NOT changed — preserves DROPPED-handling for reflow path.
+
+### Bug 2 — Cascade stops at composer-mechanical gaps
+- **Files**: `js/ui/editMode.js` `applyDurationChange` and `applyStartTimeChange`
+- **Old invariant**: `gap <= 1` minute → cascade; `gap > 1` → stop the entire downstream chain.
+- **New invariant**: cascade ALWAYS propagates the full delta downstream UNLESS a row is protected (in `PROTECTED_CATALOG_IDS`/`PROTECTED_NAMES`/`PROTECTED_SLOT_KINDS`) OR carries `userEdited === true`. The first such pin breaks the cascade, leaving it and all subsequent rows at original times.
+- **Why this matters**: the composer's `orderDay` packer routinely introduces composer-mechanical gaps (lunch break, post-lunch jump to 13:00 anchor, 17:00 reflection wall) that the user perceives as just "the schedule," not deliberate spacing. The old rule stalled cascades at these gaps; the new rule respects user-pinned anchors and ceremony anchors but otherwise propagates fully.
+- **Effect**: Changing an upstream block's duration now correctly shifts ALL downstream non-protected rows, including across composer-mechanical gaps.
+
+### Bug 3 — Mixed-format string sort
+- **File**: `js/ui/components/CycleCard.js` `orderActivitiesForDisplay`; aligned `js/ui/editMode.js:344 sortedByStart`
+- **Fix**: Both sort comparators now normalize via `parseMinutesOfDay` (imported from `js/ui/weekGridMath.js`) to integer minutes before comparing. `editMode.js sortedByStart` also gained the `a?.plannedStartAt ?? a?.anchor` fallback that CycleCard already used.
+- **Effect**: Activities with mixed `plannedStartAt` formats (ISO timestamps from post-`commitEdit` swap path, HH:MM strings from initial composer output) now sort by actual time-of-day instead of lexicographic string comparison.
+
+### Why
+Three parallel diagnostic agents (QA, frontend, architect) independently identified non-overlapping root causes for the same user-visible symptom. QA reproduced Bug 1 as primary (DROPPED rows leak). Architect named Bug 2 as the closest match to Phil's wording ("the next row should correctly show the next increment of time"). Frontend traced Bug 3 through the render path. Bundling all 3 into one iteration prevented residual symptoms across multiple loops.
+
+### Impact
+- **Test suite**: 2,810 → **2,834 passing** (+24). 0 failing. 681 suites. Runtime **2.10s** (40% headroom under 3.5s).
+- **All 12 acceptance criteria** (AC1-1..3 + AC2-1..5 + AC3-1..4) PASS, no descopes.
+- **Integrity preserved**: composer, domain types, event bus, orderDay engine all untouched (verified via `git diff --stat`).
+- **Old `gap > 1` cascade rule completely removed** (0 grep hits in `js/ui/editMode.js`).
+- **Time spent**: ~1.5h actual vs ~8h estimate.
+
+### User-visible change after deploy
+1. After committing a swap edit, ghost rows no longer appear with stale times.
+2. Changing an upstream block's duration now correctly shifts all downstream non-protected rows, including across lunch / post-lunch / 17:00 reflection-wall gaps.
+3. Mixed-format activity rows now appear in correct time order.
+
+### Three previously-undocumented contracts now explicit
+1. **Service-layer**: `getActiveComposition` is the render path (excludes DROPPED); `getComposition` is the audit path (includes DROPPED).
+2. **Cascade**: pin-points are protected slots OR user-edited start times — NOT gap size.
+3. **Sort**: time-column sort normalizes string formats before comparing.
+
+### Tests added (3 new files, 24 tests)
+- `tests/services/ComposerService.droppedFilter.test.js` (128 lines, 4 tests) — Bug 1 round-trip
+- `tests/ui/editMode.cascadeAcrossGaps.test.js` (160 lines, 10 tests) — Bug 2 invariant + protected/user-pinned scenarios
+- `tests/ui/components/CycleCard.sortNormalization.test.js` (145 lines, 10 tests) — Bug 3 mixed-format sort
+
+### Tests updated
+- `tests/ui/editMode.sprint13.test.js` — gap-preservation assertion rebased; non-protected gapped row now shifts (+30m).
+- `tests/ui/editMode.sprint14.test.js` — same.
+- `tests/integration/duration-cascade-time-display.test.js` — 2 tests updated to new cascade-across-gap semantics with correct expected `plannedStartAt` and `sa-when` range values.
+
+No assertions weakened; all updates match correct new behavior.
+
+### Diagnostic artifacts (preserved on disk)
+- `BUG_TIME_COLUMN_QA.md` (149 lines)
+- `BUG_TIME_COLUMN_FRONTEND.md` (214 lines)
+- `BUG_TIME_COLUMN_ARCHITECT.md` (134 lines)
+
+### Spec deviations
+Zero.
+
+### Backlog updates
+None — this was a bug fix, not a backlog candidate. Bug surfaced post-Iteration 15 deploy.
+
+---
+
 ## Iteration 15 — 2026-04-27 — EOD Closure Ritual (C-UX-3)
 
 ### What changed

@@ -341,7 +341,7 @@ function shiftStart(value, deltaMinutes) {
  * @returns {object[]}
  */
 function sortedByStart(activities) {
-  const withIdx = activities.map((a, i) => ({ a, i, min: parseStartMinutes(a?.plannedStartAt) }));
+  const withIdx = activities.map((a, i) => ({ a, i, min: parseStartMinutes(a?.plannedStartAt ?? a?.anchor) }));
   withIdx.sort((x, y) => {
     if (x.min == null && y.min == null) return x.i - y.i;
     if (x.min == null) return 1;
@@ -354,15 +354,17 @@ function sortedByStart(activities) {
 
 /**
  * Apply a duration change to one slot and cascade-shift subsequent
- * activities that were butting up against their predecessor.
+ * downstream activities by the same delta.
  *
  * Rules:
  *   - Target's `plannedDurationMinutes` is replaced.
  *   - `delta = new - old`.
- *   - For each activity (sorted by plannedStartAt) AFTER the target, if its
- *     start was within 1 minute of the previous activity's end, shift it
- *     by `delta`. Preserve explicit gaps (no shift when there's space).
- *   - Activities without a plannedStartAt are left untouched.
+ *   - For each activity (sorted by plannedStartAt ?? anchor) AFTER the target,
+ *     shift it by `delta` unless it is a protected ceremony block or has
+ *     userEdited===true. Protected/user-edited rows act as cascade anchors:
+ *     they and all subsequent rows keep their original start times.
+ *   - Composer-mechanical gaps are NOT cascade stops — only explicit anchors.
+ *   - Activities without a parseable plannedStartAt are left untouched.
  *   - Protected target → throws PROTECTED_BLOCK.
  *   - Invalid duration → throws INVALID_DURATION.
  *   - Input array is NOT mutated; returns a new array with new objects for
@@ -412,52 +414,33 @@ export function applyDurationChange(activities, slotActivityId, newDurationMinut
   const targetSortedIdx = sorted.findIndex((a) => a.id === slotActivityId);
   if (targetSortedIdx < 0) return next;
 
-  // Track the running "end time" through the sorted sequence so we can tell
-  // whether each successor was butting up against its predecessor.
+  // Walk forward through all downstream rows in sorted order, shifting each
+  // unless it is a protected ceremony block or was explicitly user-edited
+  // (i.e. the user pinned its start time in Sprint 14). Gaps introduced by
+  // the composer are NOT treated as cascade stops — only protected/user-edited
+  // rows act as anchors.
   //
-  // Walk forward: for each successor, compare its ORIGINAL start to the
-  // predecessor's new end. If within 1 minute, shift by delta. Otherwise,
-  // leave alone and treat ITS end as the new reference for the next item.
-  let prevEndAfter = null; // predecessor's end time after any shift (minutes)
-  // Seed with the target's NEW end time.
+  // When a row is pinned (protected or userEdited) the cascade STOPS for that
+  // row AND all subsequent rows — they all anchor off the pinned row's
+  // unchanged position.
   const tgtStart = parseStartMinutes(sorted[targetSortedIdx].plannedStartAt);
-  if (tgtStart != null) {
-    prevEndAfter = tgtStart + newDurationMinutes;
-  }
-
-  // Track the pre-shift end (i.e., what the original sequence had as the
-  // predecessor's end time) so we can detect "was butting up" cleanly.
-  let prevEndBefore = tgtStart != null ? tgtStart + oldDuration : null;
 
   for (let i = targetSortedIdx + 1; i < sorted.length; i += 1) {
     const row = sorted[i];
     const origStart = parseStartMinutes(row.plannedStartAt);
-    if (origStart == null || prevEndBefore == null || prevEndAfter == null) {
-      // Can't evaluate the butting-up gap — treat as a break; stop cascading.
-      prevEndBefore = null;
-      prevEndAfter = null;
+    if (origStart == null) {
+      // No parseable start — leave untouched and continue.
       continue;
     }
-    const gap = origStart - prevEndBefore;
-    if (gap <= 1) {
-      // Butting up — shift this row by delta.
-      const shifted = shiftStart(row.plannedStartAt, delta);
-      // Find the row in `next` by id and update start.
-      const idx = next.findIndex((a) => a.id === row.id);
-      if (idx >= 0) {
-        next[idx] = { ...next[idx], plannedStartAt: shifted };
-      }
-      const dur = Number(row.plannedDurationMinutes ?? 0);
-      prevEndBefore = origStart + dur;
-      prevEndAfter = (origStart + delta) + dur;
-    } else {
-      // Deliberate gap — stop the cascade. Subsequent rows keep their
-      // original starts; the shift would only re-propagate if they were
-      // butting up against THIS row, which (unshifted) they may be — but
-      // the user's gap intent takes precedence.
-      const dur = Number(row.plannedDurationMinutes ?? 0);
-      prevEndBefore = origStart + dur;
-      prevEndAfter = origStart + dur;
+    // Protected ceremony blocks and user-pinned rows are anchors: stop here.
+    if (isProtectedBlock(row) || row.userEdited === true) {
+      break;
+    }
+    // Shift this row by the same delta as the target.
+    const shifted = shiftStart(row.plannedStartAt, delta);
+    const idx = next.findIndex((a) => a.id === row.id);
+    if (idx >= 0) {
+      next[idx] = { ...next[idx], plannedStartAt: shifted };
     }
   }
 
@@ -580,15 +563,16 @@ function replaceTimeOnStart(original, newHHMM) {
 
 /**
  * Apply a start-time change to one slot and cascade-shift subsequent
- * butting-up activities by the same delta. Mirrors applyDurationChange's
- * cascade rule (gap <= 1 minute ⇒ butting-up ⇒ shift).
+ * downstream activities by the same delta.
  *
  * Rules:
  *   - Target's `plannedStartAt` is updated (date portion preserved).
  *   - `delta = new - old` in minutes (can be negative).
- *   - For each activity (sorted by plannedStartAt) AFTER the target, if its
- *     original start was within 1 minute of the previous activity's
- *     original end, shift it by `delta`. Deliberate gaps are preserved.
+ *   - For each activity (sorted by plannedStartAt) AFTER the target, shift it
+ *     by `delta` unless it is a protected ceremony block or has userEdited===true.
+ *     Protected/user-edited rows act as cascade anchors: they and all subsequent
+ *     rows are left at their original start times.
+ *   - Composer-mechanical gaps are NOT cascade stops — only explicit anchors.
  *   - Backward-shift guard: if the new start is earlier than the
  *     immediately-preceding activity's end time, throw `OVERLAPS_PRIOR`
  *     with `{priorEndHHMM}` decorated onto the error. The "immediately
@@ -665,35 +649,25 @@ export function applyStartTimeChange(activities, slotActivityId, newHHMM) {
     oldStartMinutes != null ? newStartMinutes - oldStartMinutes : 0;
   if (delta === 0) return next;
 
-  // Walk forward through the sorted order and shift butting-up successors.
-  const targetDuration = Number(target.plannedDurationMinutes ?? 0);
-  let prevEndBefore =
-    oldStartMinutes != null ? oldStartMinutes + targetDuration : null;
-  let prevEndAfter =
-    oldStartMinutes != null ? newStartMinutes + targetDuration : null;
-
+  // Walk forward through all downstream rows in sorted order, shifting each
+  // unless it is a protected ceremony block or was explicitly user-edited.
+  // Composer-mechanical gaps are NOT cascade stops — only protected/user-edited
+  // rows act as anchors and break the cascade.
   for (let i = targetSortedIdx + 1; i < sortedOriginal.length; i += 1) {
     const row = sortedOriginal[i];
     const origStart = parseStartMinutes(row?.plannedStartAt);
-    if (origStart == null || prevEndBefore == null || prevEndAfter == null) {
-      prevEndBefore = null;
-      prevEndAfter = null;
+    if (origStart == null) {
+      // No parseable start — leave untouched and continue.
       continue;
     }
-    const gap = origStart - prevEndBefore;
-    if (gap <= 1) {
-      const shifted = shiftStart(row.plannedStartAt, delta);
-      const idx = next.findIndex((a) => a.id === row.id);
-      if (idx >= 0) {
-        next[idx] = { ...next[idx], plannedStartAt: shifted };
-      }
-      const dur = Number(row.plannedDurationMinutes ?? 0);
-      prevEndBefore = origStart + dur;
-      prevEndAfter = origStart + delta + dur;
-    } else {
-      const dur = Number(row.plannedDurationMinutes ?? 0);
-      prevEndBefore = origStart + dur;
-      prevEndAfter = origStart + dur;
+    // Protected ceremony blocks and user-pinned rows are anchors: stop here.
+    if (isProtectedBlock(row) || row.userEdited === true) {
+      break;
+    }
+    const shifted = shiftStart(row.plannedStartAt, delta);
+    const idx = next.findIndex((a) => a.id === row.id);
+    if (idx >= 0) {
+      next[idx] = { ...next[idx], plannedStartAt: shifted };
     }
   }
 

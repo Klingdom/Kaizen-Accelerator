@@ -800,7 +800,7 @@ export class ComposerService {
     const latest = candidates[0];
     const acts = this._repo.read(ACTIVITIES_KEY) ?? {};
     const activities = Object.values(acts).filter(
-      (a) => a && a.compositionId === latest.id
+      (a) => a && a.compositionId === latest.id && a.state !== 'DROPPED'
     );
     return { composition: latest, activities };
   }

@@ -318,3 +318,40 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit the work.
   - Open candidates remaining: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-11 (AdherenceDial momentum, score 11), C-UX-2 (BucketStrip blackout fix, score 11), C-UX-7 (Now/UpNext duplication, score 11), plus cross-page application starting with Week per `UX_DELTA_OTHER_PAGES.md`.
   - Iteration 12 meta-review trigger now active (3+ loops since last meta-coordinator pass: Iterations 13, 14, 15). Recommend running meta-coordinator next to evaluate scoring weights, candidate-generation patterns, and bundling discipline (Iterations 14 + 15 both bundled small additive items successfully).
+
+---
+
+## Iteration 16 — Today Time Column Bug Fix (3 root causes) (2026-04-29)
+
+- **Selected items**: Bug fix iteration. User reported "the time column is not calculating or updating correctly. The next row should correctly show the next increment of time based on the duration of the task before it." Three parallel diagnostic agents (QA + frontend + architect) found 3 distinct non-overlapping root causes, all manifesting as the same symptom. Phil approved Path A (comprehensive fix in one iteration).
+- **Reason for selection / bundling**: One user-reported defect, three root causes, all in same code path (Today time column rendering / cascade / data flow). Splitting across 3 iterations would leave Phil seeing residual symptoms for 3 loops. Bundled as one coherent "Today time column reliability" iteration.
+- **Agents involved**: coordinator (orchestration + reconnaissance + validation + synthesis), qa-engineer (diagnostic — Bug 1 primary finding), frontend-engineer (diagnostic + implementation — Bug 3 finding + comprehensive fix), system-architect (diagnostic — Bug 2 finding).
+- **Diagnostic artifacts** (3 files, ~500 lines):
+  - `BUG_TIME_COLUMN_QA.md` (149 lines) — 7 hypotheses tested; H5/H6 (DROPPED rows leak) REPRODUCED as primary; H3 (cascade gap-stop) INDETERMINATE.
+  - `BUG_TIME_COLUMN_FRONTEND.md` (214 lines) — render-path trace identified mixed-format string sort in CycleCard.orderActivitiesForDisplay and editMode.sortedByStart fallback misalignment.
+  - `BUG_TIME_COLUMN_ARCHITECT.md` (134 lines) — cascade invariant audit identified `gap > 1` threshold as the user-mental-model mismatch — composer routinely introduces composer-mechanical gaps (lunch, post-lunch jump, 17:00 reflection wall) that the cascade should propagate across.
+- **Validation results**:
+  - **Test suite**: 2,810 → **2,834 passing** (+24 new tests across 3 new test files — droppedFilter, cascadeAcrossGaps, sortNormalization). 0 failing. 681 suites total. Runtime **2.10s** (was 1.92s) — under 3.5s budget with 40% headroom.
+  - **AC sign-off**: All 12 acceptance criteria PASS (AC1-1..3 + AC2-1..5 + AC3-1..4). Zero descopes.
+  - **Integrity check**: `git diff --stat HEAD -- js/composer js/domain/types.js js/events js/engine` returns 0 — composer, domain types, event bus, and orderDay engine all untouched.
+  - **Old behavior removed**: grep for `gap > 1` and `gap <= 1` in `js/ui/editMode.js` returns 0 matches — old cascade-stop-at-gap rule fully removed.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Bug 1 fix** (DROPPED rows leak): added `&& a.state !== 'DROPPED'` filter in `getActiveComposition` at `js/services/ComposerService.js:803`. `getComposition` (audit path, line 820) intentionally untouched. `reflow()` partition step (line ~561) preserved.
+  - **Bug 2 fix** (cascade across composer-mechanical gaps): replaced `gap <= 1` threshold logic in `applyDurationChange` and `applyStartTimeChange` with protected/userEdited anchor check. New invariant: every downstream row shifts by `delta` UNLESS it's protected (in `PROTECTED_CATALOG_IDS`/`PROTECTED_NAMES`/`PROTECTED_SLOT_KINDS`) OR carries `userEdited === true`. The first such pin breaks the cascade loop, leaving it and subsequent rows at original times.
+  - **Bug 3 fix** (mixed-format sort): `CycleCard.orderActivitiesForDisplay` now uses `parseMinutesOfDay` from `weekGridMath.js` to normalize ISO and HH:MM to integer minutes before comparing. `editMode.js:344 sortedByStart` aligned to use the same `a?.plannedStartAt ?? a?.anchor` fallback.
+  - **Tests added** (24): `ComposerService.droppedFilter.test.js` (4 tests, Bug 1 round-trip), `editMode.cascadeAcrossGaps.test.js` (10 tests, Bug 2 invariant + protected/user-pinned scenarios), `CycleCard.sortNormalization.test.js` (10 tests, Bug 3 mixed-format sort).
+  - **Tests updated**: `editMode.sprint13.test.js`, `editMode.sprint14.test.js`, `tests/integration/duration-cascade-time-display.test.js` — gap-preservation assertions rebased to new cascade-across-gap semantics. No assertions weakened; all updated to match correct new behavior.
+- **Spec deviations**: Zero.
+- **Time spent**: ~1.5h actual vs ~8h estimate. Diagnostic-pass-then-comprehensive-fix pattern compounds into faster execution.
+- **Strategic outcome**: User-reported defect closed. Three previously-undocumented contracts now explicit:
+  1. `getActiveComposition` is the render path (excludes DROPPED); `getComposition` is the audit path (includes DROPPED).
+  2. Cascade always propagates fully; pin-points are protected slots OR user-edited start times — NOT gap size.
+  3. Time-column sort normalizes string formats before comparing.
+- **User-visible change after deploy**:
+  1. After committing a swap edit, ghost rows no longer appear with stale times.
+  2. Changing an upstream block's duration now correctly shifts ALL downstream non-protected rows, including across lunch / post-lunch / 17:00 reflection-wall gaps.
+  3. Activities with mixed `plannedStartAt` formats (ISO vs HH:MM) now sort correctly by time.
+- **Follow-ups**:
+  - Commit the work.
+  - Open candidates remaining: C-UX-6 (modal focus traps, score 13), C-UX-8 (action-button aria-labels, score 13), C-AN-1 (top-of-funnel events, score 13), C-UX-11 (AdherenceDial momentum, score 11), C-UX-2 (BucketStrip blackout fix, score 11), C-UX-7 (Now/UpNext duplication, score 11), plus cross-page application starting with Week per `UX_DELTA_OTHER_PAGES.md`.
+  - Meta-coordinator trigger remains active (4 loops since last meta pass: Iterations 13, 14, 15, 16). Recommend running meta-coordinator before Iteration 17.

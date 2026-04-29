@@ -112,41 +112,44 @@ describe('Sprint 13 regression — duration cascade updates visible sa-when time
     );
   });
 
-  test('gapped successor keeps its visible range unchanged', () => {
+  test('composer-mechanical gap: non-protected gapped successor IS shifted', () => {
+    // Bug 2 fix: cascade now crosses composer-introduced gaps. s2 is neither
+    // protected nor user-edited so it shifts by the same +30m delta.
     const acts = [
       mkActivity({ id: 's1', plannedStartAt: '09:00', plannedDurationMinutes: 60 }),
       mkActivity({ id: 's2', plannedStartAt: '11:00', plannedDurationMinutes: 30 }) // 60m gap
     ];
     const next = applyDurationChange(acts, 's1', 90);
     const byId = Object.fromEntries(next.map((a) => [a.id, a]));
-    // s1 gained 30m but the gap was ≥ 30m, so s2 stays put.
-    assert.equal(byId.s2.plannedStartAt, '11:00');
+    // s1 grew by 30m; s2 shifts by the same +30m across the gap.
+    assert.equal(byId.s2.plannedStartAt, '11:30');
     assert.equal(
       readWhen(ScheduledActivityBlock({ activity: byId.s1 })),
       `09:00${EN_DASH}10:30`
     );
     assert.equal(
       readWhen(ScheduledActivityBlock({ activity: byId.s2 })),
-      `11:00${EN_DASH}11:30`
+      `11:30${EN_DASH}12:00`
     );
   });
 
-  test('shrink with explicit gap keeps successor pinned to its original time', () => {
+  test('shrink across composer gap also cascades the non-protected successor', () => {
+    // Bug 2 fix: shrink also cascades across composer gaps for non-protected rows.
     const acts = [
       mkActivity({ id: 's1', plannedStartAt: '09:00', plannedDurationMinutes: 60 }),
       mkActivity({ id: 's2', plannedStartAt: '11:00', plannedDurationMinutes: 30 }) // 60m gap
     ];
     const next = applyDurationChange(acts, 's1', 30);
     const byId = Object.fromEntries(next.map((a) => [a.id, a]));
-    // Shrinking can't push s2 earlier — it stays at 11:00.
-    assert.equal(byId.s2.plannedStartAt, '11:00');
+    // s1 shrunk by 30m; s2 shifts by the same -30m across the gap.
+    assert.equal(byId.s2.plannedStartAt, '10:30');
     assert.equal(
       readWhen(ScheduledActivityBlock({ activity: byId.s1 })),
       `09:00${EN_DASH}09:30`
     );
     assert.equal(
       readWhen(ScheduledActivityBlock({ activity: byId.s2 })),
-      `11:00${EN_DASH}11:30`
+      `10:30${EN_DASH}11:00`
     );
   });
 });
