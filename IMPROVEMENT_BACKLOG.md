@@ -2,9 +2,21 @@
 
 ## Scoring Model
 
-`Total = Impact + Strategic alignment + Learning value + Confidence − Effort − Risk`
+`Total = Impact + Strategic alignment + Learning value + Confidence − Effort − Risk + ConvergenceBonus`
 
-All scores are integers on a 1–5 scale per dimension. Items are sorted descending by Total.
+Where `ConvergenceBonus = min(3, max(0, lens_count − 1))`:
+- 1 lens → +0 (ordinary single-perspective candidate)
+- 2 lenses → +1
+- 3 lenses → +2
+- 4+ lenses → +3 (cap)
+
+All base scores are integers on a 1–5 scale per dimension. Items are sorted descending by Total.
+
+**Score-13 gate**: No candidate may be scored ≥ 13 unless ≥ 3 lenses have independently evaluated it. Single-lens candidates that compute Total ≥ 13 by formula are capped at 12 until multi-lens evaluation lands.
+
+**Required candidate fields** (per coordinator.md §3): Title · Type · Problem · Expected benefit · Evidence · Impact · Strategic · Learning · Confidence · Effort · Risk · **Lens count** · **Lenses** (e.g., `["UX","QA","Frontend"]`) · Total Score.
+
+_Scoring model updated Iteration 18 per META_REVIEW.md §6.4 + §6.6._
 
 ---
 

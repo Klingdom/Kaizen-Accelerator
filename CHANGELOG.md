@@ -6,6 +6,71 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 18 — 2026-04-29 — Operating-Model Update (META_REVIEW §6.1–§6.6 adopted)
+
+### What changed
+User approved all 6 operating-model recommendations from `META_REVIEW.md` §6. Coordinator applied them verbatim to:
+- **`.claude/agents/coordinator.md`** — 5 edits across Non-Negotiable Rules, Step 2, Step 3, Step 4, Step 6.
+- **`IMPROVEMENT_BACKLOG.md`** — header updated with new scoring formula, ConvergenceBonus definition, score-13 gate, required candidate fields.
+
+Each edit is annotated `(§N — adopted Iteration 18 per META_REVIEW.md)` for provenance.
+
+### The 6 changes applied
+
+**§6.1 — Bundling discipline**: Replaced "NEVER implement more than ONE item per loop" with "ONE coherent shipment per loop" gated on 4 conjunctive conditions:
+1. Single Define artifact governs the bundle
+2. Single integrity boundary
+3. Single user-visible coherence claim
+4. Combined estimate ≤ 1.5× normal single-item budget
+
+**§6.2 — Pre-Flight Reconnaissance**: New mandatory 4-step protocol before every agent dispatch:
+1. Code grep on key symbol
+2. Git log scan over last 3 months
+3. Test grep for existing contract locks
+4. Backlog freshness check
+
+If any check disqualifies the candidate, dismiss it and dispatch the next-best (Iteration 10 precedent).
+
+**§6.3 — Define-Pass Mandatory Threshold**: Define-phase artifact REQUIRED before implementation when ANY of:
+- Effort ≥ M (3+ project-hours)
+- User-reported defect (always; dispatch ≥ 2 parallel diagnostic agents incl. QA before fix)
+- Score ≥ 13
+
+OPTIONAL for score-≤11 single-file fixes.
+
+**§6.4 — ConvergenceBonus + Score-13 Gate**:
+- New formula: `Total = Impact + Strategic + Learning + Confidence − Effort − Risk + ConvergenceBonus`
+- `ConvergenceBonus = min(3, max(0, lens_count − 1))`
+- Score-13 gate: no candidate scored ≥ 13 without ≥ 3-lens evaluation
+
+**§6.5 — Composer/Engine Integrity Boundary**: New non-negotiable rule:
+
+> "NEVER modify `js/composer/`, `js/domain/types.js`, `js/events/`, or `js/engine/orderDay.js` without an architecture-delta artifact and explicit user approval."
+
+Codifies the operating practice that has held perfectly across 4 successive bundling iterations (14, 15, 16).
+
+**§6.6 — Backlog Candidate Template**: Added required fields:
+- `Lens count` (integer ≥ 1)
+- `Lenses` (array, e.g., `["UX","QA","Frontend"]`)
+
+Required for every new candidate. Also added "Convergent-Finding Auto-Generation" rule: Define-phase synthesis agents must produce draft candidate stubs for every convergent finding (≥ 2 lenses agreeing).
+
+### Why
+Per CLAUDE.md, the coordinator does NOT auto-apply changes to its operating model — implementation requires explicit user approval. Phil approved all 6 recommendations after the meta-coordinator's Iteration 17 review rated loop health 5/5 and identified these as the highest-leverage improvements to the operating model.
+
+### Impact
+- **No code changes.** Suite remains 2,834 / 0 / 2.10s. No production behavior change.
+- **Operating model now matches proven practice** from Iterations 14, 15, 16 (all of which technically violated the old "ONE item per loop" rule but produced 5/5 outcomes).
+- **Future loops will operate under**: relaxed bundling, mandatory recon, mandatory Define for ≥M / defects / score-13, ConvergenceBonus scoring, composer/engine boundary protection, lens-attribution on every candidate.
+
+### Spec deviations
+Zero. Edits applied verbatim from META_REVIEW §6.
+
+### Iteration 19 queued
+Per META_REVIEW §9 recommendation: bundle **C-UX-6 + C-UX-8 + C-AN-1** as "Today a11y + measurement baseline." Would be the first iteration explicitly run under the new §6.1 bundling rule.
+
+---
+
 ## Iteration 17 — 2026-04-29 — Meta-Review of Iterations 9-16
 
 ### What changed

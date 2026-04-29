@@ -343,14 +343,22 @@ Every improvement loop MUST follow:
 
 ## 🔒 Non-Negotiable Rules
 
-- NEVER implement more than ONE item per loop
+- ONE coherent shipment per loop. A shipment may bundle multiple items only if ALL of:
+  1. **Single Define artifact** governs the bundle (spec / PRD / arch delta / diagnostic report set)
+  2. **Single integrity boundary** — the bundle either modifies the same surface OR fixes one user-visible symptom with non-overlapping root causes
+  3. **Single coherence claim** — the bundle ships one capability the user can describe in one sentence
+  4. **Combined estimate ≤ 1.5× a normal single-item budget** at scoring time
+  If any condition fails, ship as separate iterations.
 - NEVER skip validation
 - NEVER invent requirements
 - ALWAYS use artifacts and repo evidence
 - ALWAYS log results
 - ALWAYS update backlog and iteration log
+- NEVER modify `js/composer/`, `js/domain/types.js`, `js/events/`, or `js/engine/orderDay.js` without an architecture-delta artifact and explicit user approval
 
 If these rules are violated → STOP
+
+_(§6.1 + §6.5 — adopted Iteration 18 per META_REVIEW.md)_
 
 ---
 
@@ -385,6 +393,18 @@ Each agent should propose:
 - 3–5 candidates
 - grounded in evidence
 
+### Define-Pass Mandatory Threshold
+
+A Define-phase artifact (spec / PRD / arch delta / diagnostic report) is **REQUIRED** before implementation when ANY of:
+
+- **Effort ≥ M** (estimated 3+ project-hours)
+- **User-reported defect** (regardless of Effort estimate) — dispatch ≥ 2 parallel diagnostic agents (always include QA + the most likely owner of the surface) before any implementation; synthesize root causes into a single fix iteration only if non-overlapping; otherwise stage
+- **Score ≥ 13** — high-impact / high-strategic candidates carry deviation cost too large for ad-hoc
+
+**OPTIONAL** for score-≤11 candidates with Effort = S (narrow, deterministic, single-file changes).
+
+_(§6.3 — adopted Iteration 18 per META_REVIEW.md)_
+
 ---
 
 ## Step 3 — Consolidate Top 10
@@ -406,7 +426,15 @@ Each candidate MUST include:
 - Confidence (1–5)
 - Effort (1–5)
 - Risk (1–5)
+- **Lens count** (integer ≥ 1) — number of independent specialist lenses that have evaluated this candidate
+- **Lenses** (array, e.g., `["UX", "QA", "Frontend"]`) — explicit attribution of which lenses evaluated
 - Total Score
+
+_(§6.6 — adopted Iteration 18 per META_REVIEW.md)_
+
+### Convergent-Finding Auto-Generation
+
+Every Define-phase synthesis MUST produce, as its final artifact, a draft IMPROVEMENT_BACKLOG candidate stub for every convergent finding (≥ 2 lenses agreeing). The synthesis agent writes these stubs; the coordinator scores and integrates them in the same loop.
 
 ---
 
@@ -417,6 +445,24 @@ Use:
 Priority Score =
 Impact + Strategic Alignment + Learning Value + Confidence
 − Effort − Risk
++ ConvergenceBonus
+
+Where:
+
+`ConvergenceBonus = min(3, max(0, lens_count − 1))`
+
+- 1 lens: +0 (ordinary single-perspective candidate)
+- 2 lenses: +1
+- 3 lenses: +2
+- 4+ lenses: +3 (cap)
+
+### Score-13 Gate
+
+**No candidate may be scored ≥ 13 unless ≥ 3 lenses have independently evaluated it.** This forces multi-lens evidence for the highest-priority work and prevents single-PM-pass score inflation.
+
+When a single-lens candidate computes Total ≥ 13 by formula, cap it at 12 until ≥ 3 lenses evaluate. If the backlog feels stale or under-evaluated, run a multi-lens parallel review pass (Iteration 12 pattern) — it's a known low-cost orchestration.
+
+_(§6.4 — adopted Iteration 18 per META_REVIEW.md)_
 
 ---
 
@@ -443,7 +489,22 @@ Bias toward:
 
 ## Step 6 — Implementation
 
-Delegate to correct agent:
+### Pre-Flight Reconnaissance (MANDATORY before agent dispatch)
+
+Before dispatching the implementation agent, the coordinator MUST run:
+
+1. **Code grep**: `grep -nE "<key symbol from problem statement>" js/` — confirm the gap is real
+2. **Git log scan**: `git log --all --grep=<keyword> -i --since="3 months ago"` — confirm the gap hasn't been quietly closed
+3. **Test grep**: `grep -nE "<key symbol>" tests/` — confirm tests don't already lock the contract
+4. **Backlog cross-check**: re-read the candidate's own evidence stamp; if older than 2 iterations, re-run grep
+
+Log the recon results in the iteration log, even when nothing is caught — this establishes a baseline for catch-rate tracking.
+
+If any check disqualifies the candidate, the candidate is dismissed (mark stale / blocked / done in IMPROVEMENT_BACKLOG.md) and the next-best is dispatched (Iteration 10 precedent).
+
+_(§6.2 — adopted Iteration 18 per META_REVIEW.md)_
+
+### Delegate to correct agent:
 
 - backend-engineer
 - frontend-engineer
@@ -451,7 +512,7 @@ Delegate to correct agent:
 - or others as needed
 
 STRICT RULE:
-- Only implement selected item
+- Only implement the selected shipment (one item, or one bundle satisfying §6.1's 4 conditions)
 - No scope expansion
 
 ---

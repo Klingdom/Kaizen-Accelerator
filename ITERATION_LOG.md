@@ -385,3 +385,34 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit the META_REVIEW.md + governance updates.
   - Phil decides which of §6.1–§6.6 recommendations to formalize as edits to `coordinator.md`. Coordinator does NOT auto-apply changes to operating model.
   - Iteration 18 selection: per meta-review §9, recommend C-UX-6 + C-UX-8 + C-AN-1 bundle.
+
+---
+
+## Iteration 18 — Operating-Model Update (META_REVIEW §6.1–§6.6) (2026-04-29)
+
+- **Selected item**: Apply all 6 operating-model changes from META_REVIEW.md §6 to `.claude/agents/coordinator.md` and `IMPROVEMENT_BACKLOG.md`. User explicit approval ("Adopt operating-model changes §6.1–§6.6").
+- **Reason for selection**: Phil approved all 6 meta-review recommendations. Coordinator does NOT auto-apply changes to operating model — implementation requires explicit user approval, which was granted.
+- **Agents involved**: coordinator (orchestration + edit). No other agents — this is governance-only.
+- **No code changes.** Suite remains 2,834 / 0 / 2.10s. No production behavior change.
+- **Files modified**:
+  - `.claude/agents/coordinator.md` — 5 edits applying §6.1, §6.2, §6.3, §6.4, §6.5, §6.6:
+    - Non-Negotiable Rules: replaced "ONE item per loop" with "ONE coherent shipment per loop" + 4 conjunctive conditions; added composer/engine integrity boundary as a written rule.
+    - Step 2: added Define-pass mandatory threshold (Effort ≥ M, user-reported defect, score ≥ 13).
+    - Step 3: added required `Lens count` and `Lenses` fields to candidate template; added "Convergent-Finding Auto-Generation" subsection requiring synthesis agents to produce draft candidate stubs for every convergent finding (≥ 2 lenses).
+    - Step 4: scoring formula updated to add `ConvergenceBonus` term + score-13 gate.
+    - Step 6: added Pre-Flight Reconnaissance protocol (mandatory 4-step grep before agent dispatch).
+  - `IMPROVEMENT_BACKLOG.md` — header updated with new scoring formula, ConvergenceBonus definition, score-13 gate, required candidate fields list.
+- **All 6 changes traceable**: each edit cites `(§N — adopted Iteration 18 per META_REVIEW.md)` so future coordinator instances know the provenance.
+- **What this changes for future iterations**:
+  - Bundling discipline relaxed to "coherent shipment" rule (already de-facto practice).
+  - Pre-flight recon now mandatory and logged per iteration.
+  - Define-pass mandatory at clear thresholds (M effort, user-reported defects, score ≥ 13).
+  - Score ≥ 13 candidates must have ≥ 3-lens evaluation.
+  - Composer/engine boundary requires arch-delta + user approval.
+  - All new candidates must declare lens count + lenses array.
+- **Spec deviations**: Zero. Edits applied verbatim from META_REVIEW §6.
+- **Outcome**: Operating model now matches proven practice from Iterations 14, 15, 16. Future loops operate under the new rules.
+- **Follow-ups**:
+  - Commit + push.
+  - Iteration 19 selection (Q2 from prior turn) still pending: recommended C-UX-6 + C-UX-8 + C-AN-1 bundle (would be the first iteration explicitly run under the new §6.1 bundling rule).
+  - Q3 (per-test ms metric in SYSTEM_HEALTH) still pending Phil decision.
