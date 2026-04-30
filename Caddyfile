@@ -32,9 +32,15 @@
 	}
 
 	# Health endpoint — matches the Docker HEALTHCHECK probe.
-	respond /health 200 {
-		body "ok"
-		close
+	# Wrapped in `handle` because Caddy v2's canonical directive order
+	# evaluates `handle` blocks before bare `respond` directives. Without
+	# this wrap, the catchall `handle { file_server }` block below claims
+	# the request first, file_server returns 404, and /health never reaches
+	# the bare respond. Wrapping in `handle /health` makes the route
+	# explicit and order-deterministic — first-match-wins between handle
+	# blocks ensures /health short-circuits before the catchall.
+	handle /health {
+		respond "ok" 200
 	}
 
 	# Block internal files from being served, even if .dockerignore fails.
