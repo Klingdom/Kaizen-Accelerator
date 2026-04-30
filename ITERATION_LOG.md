@@ -496,3 +496,41 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **Iter 21 recommendation**: bundle C-AN-1 + C-UX-2 + C-QA-V2-1 ("Baseline + safe fix"). All S-effort, satisfies §6.1 bundling, doesn't trigger §6.5. Awaiting Phil go-ahead.
   - **Iter 22+ recommendation (deferred to after 14-day baseline)**: visible v2 changes — C-UX-V2-1 (RhythmExplainer collapse) + C-UX-V2-2 (single Commit + keyboard) + C-UX-6 (focus traps).
   - Open question: V2-2 scope (a) vs (b). Default: (a). Awaiting Phil decision before Iter 22 dispatch.
+
+---
+
+## Iteration 21 — Today UX v2 "Baseline + Safe Fix" (C-AN-1 + C-UX-2 + C-QA-V2-1) (2026-04-30)
+
+- **Selected items**: Bundle of 3 candidates per Iter 20 synthesis recommendation. C-AN-1 (top-of-funnel events, score 16) + C-UX-2 (BucketStrip blackout fix, score 14) + C-QA-V2-1 (CCC proxy test, score 13). Phil approved the bundle. First iteration to start the latency-target measurement clock.
+- **Reason for selection / bundling**: Iter 20 v2 review identified these 3 as ship-now-safe (no §6.5 trigger from the implementer's perspective; events.js extension is purely additive and approved per §6.5 explicit-user-approval clause). Bundle satisfies §6.1: single Define artifact (Iter 20 review), single integrity boundary (renderer + analytics emit), single coherence claim ("Today now measures itself and shows BucketStrip during edits"), combined effort S+S+S well under 1.5× normal.
+- **Agents involved**: coordinator (orchestration + reconnaissance + architectural decisions for C-AN-1 inline + validation), frontend-engineer (implementation).
+- **Pre-flight reconnaissance** (per §6.2): coordinator read `js/events/events.js`, `ARCHITECTURE.md` §6.1, `app.css:1519-1561+1906`, found EDIT_BEGIN-equivalent at `app.js:1065`. Made architectural decisions for C-AN-1 inline (event names, payload shapes, emit sites) since the Iter 20 multi-lens review serves as the §6.5 architecture-delta. No separate arch-delta needed.
+- **Validation results**:
+  - **Test suite**: 2,843 → **2,866 passing** (+23 tests across 9 new suites, including 2 new test files). 0 failing. 695 suites total. Runtime **3.15s** — under 3.5s budget with 10% headroom (recovered from Iter 19's 4%).
+  - **AC sign-off**: All 15 acceptance criteria PASS (AC-A1..7 + AC-U2-1..4 + AC-Q1..4). No descopes.
+  - **Integrity check**: `git diff --name-only` confirms `js/composer/`, `js/domain/types.js`, `js/engine/orderDay.js` all untouched.
+  - **Determinism preserved**: timestamps via `services.clock.now()`; deterministic fixtures in tests.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/events/events.js` — 2 new constants `TodayPageViewed` + `EditDrawerOpened`; updated `EVENT_NAMES` array (36→38) and default export bundle.
+    - `ARCHITECTURE.md` — appended both events to §6.1 with payload shapes (`{userId, fromRoute: string|null, viewedAt: string}` and `{userId, compositionId, openedAt: string}`).
+    - `js/app.js` — added imports; emit `TodayPageViewed` from `createRouteListener` callback at line 2493 (once per route-entry, guarded by `_prevRoute` sentinel); emit `EditDrawerOpened` from `EDIT` action handler at line 1079; registered no-op subscribers for both.
+    - `app.css` — replaced full-card opacity selector with two narrower selectors targeting `.cycle-activities` and `.triad` only. BucketStrip now visible during edit mode.
+    - `tests/events/events.test.js` — updated `EVENT_NAMES` length assertion (36→38) — required regression fix from adding events.
+  - **New test files**:
+    - `tests/ui/pages/Today.ccc.test.js` (245 lines, 9 tests) — CCC ≤ 12 in active-composition state; per-region word count ≤ 25; deterministic fixtures.
+    - `tests/events/events.todayInstrumentation.test.js` (185 lines, 14 tests) — verifies both events emit at right times with correct payload shapes; tests `_prevRoute` sentinel guards against double-emit on rerender.
+- **Spec deviations**: Zero. Implementer correctly flagged using `.cycle-activities` (actual class in CycleCard.js) instead of the brief's example `.sa-actions` — spec said "verify class names by reading CycleCard.js."
+- **Time spent**: ~1.5h actual vs ~6h estimate. Bundle composition + clear architectural decisions = sub-4× efficiency.
+- **Strategic outcome**:
+  - **Latency measurement clock now ticking.** With `TodayPageViewed` and `EditDrawerOpened` instrumented, the 14-day baseline window for Iter 22's visible v2 changes can begin.
+  - **8-iteration-old C-UX-2 BucketStrip blackout finally closed** — invariant feedback now visible during the edit that triggers it.
+  - **Automated guard against future <10s regressions** via the CCC proxy test. Future iterations adding visual complexity to Today will trip the test.
+- **Latent issues flagged by implementer (not fixed, in scope vs not in scope)**:
+  - RhythmExplainer body text is 45 words (exceeds CCC ≤ 25 limit). Will be fixed in Iter 22 by C-UX-V2-1 auto-collapse.
+  - The `_prevRoute` sentinel resets on full page reload — intended behavior (each page load is a fresh session).
+- **Follow-ups**:
+  - Commit + push.
+  - **14-day baseline window opens at next deploy.** No visible v2 changes (C-UX-V2-1, C-UX-V2-2, C-UX-6) should ship until that window closes — otherwise we contaminate the comparison.
+  - Iter 22+ candidates: C-UX-V2-1 (auto-collapse, 15), C-UX-V2-2 (single Commit + keyboard, 14), C-UX-6 (focus traps, 16). Phil decides V2-2 scope (a/b) before Iter 22 dispatch.
+  - Q3 from Iter 17 meta-review (per-test ms metric) still pending — runtime crept back up to 3.15s; not urgent yet.

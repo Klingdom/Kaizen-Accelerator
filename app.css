@@ -1516,7 +1516,13 @@ html, body {
    Sprint 12 — Edit Mode (drawer + swap chrome)
    ========================================================================== */
 
-.today-editing .cycle-card:not(.cycle-editing) {
+/* Iteration 21 (C-UX-2): Narrow opacity to the activity list and triad only.
+ * BucketStrip (.bucket-strip) is intentionally excluded — users need to see
+ * live bucket totals during edit to avoid invisible bucket violations.
+ * Prior selector applied opacity 0.4 to the entire CycleCard including
+ * BucketStrip (app.css:1519–1522 pre-Iter-21). */
+.today-editing .cycle-card:not(.cycle-editing) .cycle-activities,
+.today-editing .cycle-card:not(.cycle-editing) .triad {
   opacity: 0.4;
   pointer-events: none;
 }

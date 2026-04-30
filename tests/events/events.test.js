@@ -24,6 +24,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // portfolio step-action surface (33 + 2 = 35 total).
 // Sprint 15 W5 adds CycleReflowed for the composer auto re-plan loop
 // (35 + 1 = 36 total).
+// Iteration 21 (C-AN-1) adds TodayPageViewed + EditDrawerOpened for the
+// top-of-funnel latency baseline (36 + 2 = 38 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -60,7 +62,9 @@ const EXPECTED = [
   'WeeklyCycleAccepted',
   'KaizenStepCompleted',
   'KaizenStepScheduled',
-  'CycleReflowed'
+  'CycleReflowed',
+  'TodayPageViewed',
+  'EditDrawerOpened'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {

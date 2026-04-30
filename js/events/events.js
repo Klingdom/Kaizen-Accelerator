@@ -99,6 +99,17 @@ export const KaizenStepScheduled = 'KaizenStepScheduled';
 //                    shifted: number, preserved: number}
 export const CycleReflowed = 'CycleReflowed';
 
+// --- Iteration 21: Top-of-funnel instrumentation (C-AN-1) --------------------
+// Fired by app.js route-change handler and EDIT action handler.
+// Payload shapes:
+//   TodayPageViewed  — {userId, fromRoute: string|null, viewedAt: string}
+//   EditDrawerOpened — {userId, compositionId, openedAt: string}
+// Both events use services.clock.now() for timestamps (deterministic in tests).
+// No consumer in this iteration — events emit to EventBus + events-log.
+// A future MetricsService.recompute will consume them for latency baseline.
+export const TodayPageViewed = 'TodayPageViewed';
+export const EditDrawerOpened = 'EditDrawerOpened';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -139,7 +150,9 @@ export const EVENT_NAMES = Object.freeze([
   WeeklyCycleAccepted,
   KaizenStepCompleted,
   KaizenStepScheduled,
-  CycleReflowed
+  CycleReflowed,
+  TodayPageViewed,
+  EditDrawerOpened
 ]);
 
 /**
@@ -182,5 +195,7 @@ export default Object.freeze({
   KaizenStepCompleted,
   KaizenStepScheduled,
   CycleReflowed,
+  TodayPageViewed,
+  EditDrawerOpened,
   EVENT_NAMES
 });

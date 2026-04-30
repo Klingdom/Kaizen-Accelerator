@@ -61,7 +61,9 @@ import {
   KaizenStepScheduled,
   CycleEdited,
   ActivityStartedLate,
-  CycleReflowed
+  CycleReflowed,
+  TodayPageViewed,
+  EditDrawerOpened
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { getFullCatalog } from './catalog/fullCatalog.js';
@@ -1072,6 +1074,13 @@ export function buildHandlers(scope) {
         projectTypeFilter: 'all',
         expandedBuckets: ['PROJECT']
       };
+      // Iteration 21 (C-AN-1): emit EditDrawerOpened once per edit-mode open.
+      // Timestamp via services.clock.now() for determinism in tests.
+      services.bus.publish(EditDrawerOpened, {
+        userId: DEFAULT_USER.id,
+        compositionId: payload.compositionId,
+        openedAt: services.clock.now()
+      });
       rerender();
     },
 
@@ -2437,6 +2446,9 @@ export function start() {
   services.bus.subscribe(KaizenStepCompleted, () => {});
   services.bus.subscribe(KaizenStepScheduled, () => {});
   services.bus.subscribe(CycleReflowed, () => {});
+  // Iteration 21 (C-AN-1) — no-op subscribers; future MetricsService will consume.
+  services.bus.subscribe(TodayPageViewed, () => {});
+  services.bus.subscribe(EditDrawerOpened, () => {});
 
   const rerender = () => renderApp(services, state);
 
@@ -2462,9 +2474,28 @@ export function start() {
     rerender();
   });
 
+  // Iteration 21 (C-AN-1): track the previous route so we can emit
+  // TodayPageViewed exactly once per route-entry (not on every render).
+  let _prevRoute = null;
+
   const listener = createRouteListener((parsed) => {
-    state.route = parsed.route;
+    const incomingRoute = parsed.route;
+    const fromRoute = _prevRoute;          // capture before mutating
+    const wasOnToday = fromRoute === 'today';
+    _prevRoute = incomingRoute;
+    state.route = incomingRoute;
     state.params = parsed.params;
+    // Emit TodayPageViewed once per route-entry to 'today', not on every render.
+    // Fires on first load (fromRoute===null) and on every navigation TO today
+    // from a different route. Does NOT re-fire when state mutations call rerender()
+    // because the route hasn't changed — listener is only invoked on hashchange.
+    if (incomingRoute === 'today' && !wasOnToday) {
+      services.bus.publish(TodayPageViewed, {
+        userId: DEFAULT_USER.id,
+        fromRoute,
+        viewedAt: services.clock.now()
+      });
+    }
     rerender();
   });
 

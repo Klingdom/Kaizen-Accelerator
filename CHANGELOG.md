@@ -6,6 +6,61 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 21 — 2026-04-30 — Today UX v2 "Baseline + Safe Fix" (C-AN-1 + C-UX-2 + C-QA-V2-1)
+
+### What changed
+First implementation iteration after Iter 20's v2 review. Bundle of 3 candidates per the synthesizer's recommended sequencing — instrumentation FIRST (start the measurement clock), safe functional fix (close 8-iteration-old BucketStrip bug), automated guard (CCC proxy test). All S-effort, all renderer-side, no §6.5 trigger.
+
+**C-AN-1 (top-of-funnel events, score 16)** — instrumentation:
+- 2 new event constants in `js/events/events.js`: `TodayPageViewed` + `EditDrawerOpened`
+- Documented in `ARCHITECTURE.md` §6.1 with payload shapes (`{userId, fromRoute, viewedAt}` and `{userId, compositionId, openedAt}`)
+- Emitted from `js/app.js` route-change handler (line 2493, guarded by `_prevRoute` sentinel — once per route-entry, not per render) and `EDIT` action handler (line 1079)
+- Timestamps via `services.clock.now()` (deterministic)
+- No-op subscribers registered (events flow to events-log; future MetricsService will consume)
+
+**C-UX-2 (BucketStrip blackout fix, score 14)** — CSS narrow:
+- Replaced full-card opacity selector at `app.css:1519` with two narrower selectors targeting `.cycle-activities` and `.triad` only
+- BucketStrip now visible during edit mode — invariant feedback restored during the action that most triggers it
+- 8 iterations after Iter 12 first surfaced this bug
+
+**C-QA-V2-1 (CCC proxy test, score 13)** — new test infrastructure:
+- New file `tests/ui/pages/Today.ccc.test.js` (245 lines, 9 tests)
+- Asserts `CCC ≤ 12` in active-composition state
+- Asserts per-region word count `≤ 25` (≈10s reading at 150 wpm)
+- Pure HTML-parse, no jsdom; deterministic fixtures
+- Automated guard against future iterations adding visual complexity to Today
+
+### Why
+Per Iter 20 synthesis: cannot claim v2 won the latency targets without baseline data. Sequence resolved Analytics-vs-Growth divergence by shipping instrumentation alongside the safe BucketStrip fix and the automated guard. Iter 22+ ships visible v2 changes (C-UX-V2-1 auto-collapse, C-UX-V2-2 keyboard edit, C-UX-6 focus traps) AFTER 14-day baseline closes.
+
+### §6.5 boundary handling
+This iteration touches `js/events/events.js` which is in the §6.5 protected list. Per the rule, "an architecture-delta artifact and explicit user approval" required. Both satisfied:
+- Architecture-delta artifact: Iter 20's `UX_TODAY_V2_ANALYTICS.md` (196 lines) defines the events, payload shapes, and metric formulas
+- Explicit user approval: Phil's "A" choice approving Iter 21 bundle that includes C-AN-1
+Coordinator made architectural decisions inline (event names, emit sites, payload shapes) based on existing service-emit pattern (services.bus.publish). Additions only, no modifications to existing events.
+
+### Impact
+- **Test suite**: 2,843 → **2,866 passing** (+23 tests, +9 suites)
+- **Runtime**: 3.15s under 3.5s budget (10% headroom — recovered from Iter 19's 4%)
+- **All 15 acceptance criteria PASS** (AC-A1..7 + AC-U2-1..4 + AC-Q1..4); no descopes
+- **Composer / domain / engine integrity preserved** (verified via `git diff`)
+- **Time spent**: ~1.5h vs ~6h estimate
+
+### Backlog updates
+- C-AN-1 → DONE
+- C-UX-2 → DONE
+- C-QA-V2-1 → DONE
+- New top OPEN tier: C-UX-6 (16, focus traps), C-UX-V2-1 (15, RhythmExplainer collapse), C-UX-V2-2 (14, single Commit + keyboard) — all held for Iter 22+ until 14-day baseline closes
+
+### Latent issues flagged (not fixed)
+- RhythmExplainer body text is 45 words (exceeds CCC ≤ 25). Will be fixed in Iter 22 by C-UX-V2-1 auto-collapse.
+- CCC test currently flags this regression by design — turns red if Iter 22's auto-collapse increases copy further.
+
+### Spec deviations
+Zero.
+
+---
+
 ## Iteration 20 — 2026-04-30 — Today UX v2 Multi-Lens Review (Define phase)
 
 ### What changed
