@@ -450,3 +450,49 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Add **C-SA-6** to backlog: validator overlap detection (deferred from §3.2 of arch-delta).
   - Decide on Q3 from Iteration 17 meta-review: switch SYSTEM_HEALTH metric from absolute runtime to per-test ms. Now timely given the 4% headroom warning.
   - Open candidates remaining: 3 items at score 13 (C-UX-6 modal focus traps, C-UX-8 action-button aria, C-AN-1 top-of-funnel events), plus the C-SA series and others.
+
+---
+
+## Iteration 20 — Today UX v2 Multi-Lens Review (Define phase) (2026-04-30)
+
+- **Selected item**: User-driven Define-phase event with two measurable performance targets — **<10 seconds to comprehend the proposed schedule** and **<60 seconds to update it and start working**. Same multi-lens parallel pattern as Iteration 12 but calibrated against the new latency targets and deduplicated against work shipped since (C-UX-1, 3, 10, 12, 13, 16's time-column fix, C-SA-4, C-SA-5).
+- **Reason for selection**: User explicit request: "engage all subagents to review and improve the today page." Treated as Define-phase orchestration. The two latency targets are testable user-task metrics that frame every subsequent design decision.
+- **Agents involved**: coordinator (orchestration + verification), ux-designer (primary review + synthesis), product-manager, frontend-engineer, qa-engineer, growth-strategist, analytics, competitive-researcher (7 parallel reviewers + 1 synthesizer = 8 dispatches; 1 rate-limit retry on the synthesis pass).
+- **Define-phase artifacts** (9 files, 2,088 lines):
+  - `UX_TODAY_V2_DESIGN.md` (210 lines)
+  - `UX_TODAY_V2_PRODUCT.md` (223 lines)
+  - `UX_TODAY_V2_FRONTEND.md` (165 lines)
+  - `UX_TODAY_V2_QA.md` (215 lines)
+  - `UX_TODAY_V2_GROWTH.md` (219 lines)
+  - `UX_TODAY_V2_ANALYTICS.md` (196 lines)
+  - `UX_TODAY_V2_COMPETITIVE.md` (95 lines, persisted by coordinator since competitive-researcher is read-only Tier 1)
+  - `UX_TODAY_V2_THEMES.md` (312 lines, synthesis)
+  - `UX_TODAY_V2_DELTA.md` (453 lines, synthesis)
+- **Validation results**:
+  - No code changes; suite remains 2,843 / 0 / ~3.36s.
+  - All 7 reviewers cited file:line for every claim; one model rate-limit hit on synthesis pass, recovered by re-dispatch.
+- **Convergent findings** (≥4 lenses agreed) — all clear §6.4 score-13 gate:
+  1. **V2-1 RhythmExplainer always-on** (5 lenses: UX, PM, Growth, QA, Competitive) — new candidate C-UX-V2-1 score 15.
+  2. **V2-2 Edit-entry friction + dual Commit triad** (5 lenses: UX, PM, Frontend, QA, Competitive) — new candidate C-UX-V2-2 score 14. Default scope: (a) label fix + triad suppression + keyboard shortcut.
+  3. **V2-3 BucketStrip blackout in edit** (4 lenses: UX, PM, QA, Iter 12 baseline) — was C-UX-2 score 11, now 14 with ConvergenceBonus.
+  4. **V2-4 Lack of latency instrumentation** (4 lenses: Analytics, QA, PM, Frontend) — was C-AN-1 score 13, now **16** with ConvergenceBonus.
+  5. **V2-5 Modal focus traps** (4 lenses: UX, PM, QA, Frontend) — was C-UX-6 score 13, now **16** with ConvergenceBonus.
+- **Critical sequencing decision (synthesizer-resolved divergence)**: Analytics wanted instrumentation strict-first (no v2 visible changes until 14-day baseline). Growth + Design wanted visible changes ASAP. Resolution: hybrid. **Iter 21 = baseline + safe functional fix**. Ships V2-4 (C-AN-1 instrumentation) + V2-3 (C-UX-2 BucketStrip CSS fix) + V2-10 (C-QA-V2-1 CCC proxy test). All S-effort, all renderer-side (no §6.5 trigger). Starts measurement clock + closes long-standing functional bug. After 14-day baseline, Iter 22 ships visible v2 changes (V2-1, V2-2, V2-5).
+- **Total v2 effort**: 3 improvement loops (4 if V2-2 takes scope (b) unified drawer redesign).
+- **Anti-themes confirmed (don't adopt)**:
+  1. Motion silent auto-reschedule
+  2. Sunsama 10-15min morning ritual modal
+  3. Tana blank-canvas daily note
+  4. Drag-and-drop as primary scheduling gesture (Iter 12 verdict reaffirmed)
+- **Backlog updates**:
+  - 3 new candidates: C-UX-V2-1 (15), C-UX-V2-2 (14), C-QA-V2-1 (13).
+  - Existing OPEN items rescored with ConvergenceBonus: C-AN-1 13→16, C-UX-6 13→16, C-UX-2 11→14.
+  - New ranked top: C-AN-1 (16), C-UX-6 (16), C-UX-V2-1 (15), C-UX-V2-2 (14), C-UX-2 (14).
+- **Process learning**: 7-lens parallel review pattern reproduced (Iter 12 was first; Iter 20 second). Both runs produced reliable convergent-finding signal. Convergence at ≥4 lenses → score 14+; at 5 lenses → score 15+. Recommendation written into operating model (already adopted §6.4).
+- **Spec deviations**: Zero.
+- **Outcome**: Define phase complete. No code changes this iteration.
+- **Follow-ups**:
+  - Commit the 9 v2 artifacts + governance updates.
+  - **Iter 21 recommendation**: bundle C-AN-1 + C-UX-2 + C-QA-V2-1 ("Baseline + safe fix"). All S-effort, satisfies §6.1 bundling, doesn't trigger §6.5. Awaiting Phil go-ahead.
+  - **Iter 22+ recommendation (deferred to after 14-day baseline)**: visible v2 changes — C-UX-V2-1 (RhythmExplainer collapse) + C-UX-V2-2 (single Commit + keyboard) + C-UX-6 (focus traps).
+  - Open question: V2-2 scope (a) vs (b). Default: (a). Awaiting Phil decision before Iter 22 dispatch.

@@ -6,6 +6,88 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 20 — 2026-04-30 — Today UX v2 Multi-Lens Review (Define phase)
+
+### What changed
+- **9 Define-phase artifacts** (2,088 lines) produced by 7 specialist agents in parallel + synthesis:
+  - `UX_TODAY_V2_DESIGN.md` (ux-designer, 210 lines)
+  - `UX_TODAY_V2_PRODUCT.md` (product-manager, 223 lines)
+  - `UX_TODAY_V2_FRONTEND.md` (frontend-engineer, 165 lines)
+  - `UX_TODAY_V2_QA.md` (qa-engineer, 215 lines)
+  - `UX_TODAY_V2_GROWTH.md` (growth-strategist, 219 lines)
+  - `UX_TODAY_V2_ANALYTICS.md` (analytics, 196 lines)
+  - `UX_TODAY_V2_COMPETITIVE.md` (competitive-researcher, persisted by coordinator, 95 lines)
+  - `UX_TODAY_V2_THEMES.md` (synthesis, 312 lines)
+  - `UX_TODAY_V2_DELTA.md` (synthesis, 453 lines)
+- **3 new backlog candidates**: C-UX-V2-1 (RhythmExplainer auto-collapse, 15), C-UX-V2-2 (single Commit + keyboard, 14), C-QA-V2-1 (CCC proxy test, 13).
+- **3 existing candidates rescored with ConvergenceBonus** (per §6.4): C-AN-1 13→16, C-UX-6 13→16, C-UX-2 11→14.
+- **No code changes.** Suite remains 2,843 / 0 / 3.36s.
+
+### Why
+User asked to "engage all subagents to review and improve the today page" with two explicit user-task targets: <10s comprehension + <60s update-and-start. Treated as Define-phase orchestration (precedent: Iter 12). Pattern reproduced: 7-lens parallel review + ux-designer synthesis. Same multi-lens parallel pattern proven once before; second run confirms reliability.
+
+### Convergent findings (≥4 lenses agreed)
+1. **RhythmExplainer always-on** (5 lenses) — biggest <10s blocker
+2. **Edit-entry friction + dual Commit triad** (5 lenses) — biggest <60s blocker
+3. **BucketStrip blackout in edit mode** (4 lenses) — was C-UX-2 OPEN since Iter 12
+4. **No latency instrumentation** (4 lenses) — cannot claim v2 won targets without baseline
+5. **Modal focus traps missing** (4 lenses) — was C-UX-6 OPEN; WCAG §2.1.2
+
+### Sequencing
+- **Iter 21 = "Baseline + safe fix"**: C-AN-1 instrumentation + C-UX-2 BucketStrip CSS fix + C-QA-V2-1 CCC proxy test. All S-effort, all renderer-side.
+- **Iter 22+ = visible v2 changes** (C-UX-V2-1, C-UX-V2-2, C-UX-6) AFTER 14-day baseline closes.
+
+### Anti-themes confirmed (don't adopt)
+1. Motion silent auto-reschedule
+2. Sunsama 10-15min morning ritual modal
+3. Tana blank-canvas daily note
+4. Drag-and-drop as primary scheduling gesture (Iter 12 verdict reaffirmed)
+
+### Process learning
+Second successful run of 7-lens parallel review pattern (Iter 12 was first). ConvergenceBonus formula (§6.4 from Iter 18) producing useful score discrimination — multi-lens items reliably outrank single-lens by 3+ points.
+
+### Spec deviations
+Zero.
+
+---
+
+## Iteration 19 — 2026-04-30 — Composer Correctness Fixes (C-SA-4 + C-SA-5)
+
+### What changed
+First iteration to ship under the new §6.5 composer/engine boundary protection rule (adopted Iter 18). Architect produced `ARCHITECTURE_DELTA_COMPOSER_BUGS.md` (260 lines), user approved, backend-engineer implemented exactly to spec.
+
+**Bug A (C-SA-4)** — `Composition.date` field never written:
+- Field named `date` (not `compositionDate` per orchestrator's original) — matches existing `composeWeekly.buildDay` convention
+- Added `date: input.date` at `composeDaily.js:664`
+- Added `@property {string} date` to typedef at `types.js:417`
+- Field propagates through accept/commitEdit/reflow paths via `...comp` spread
+
+**Bug B (C-SA-5)** — CI activities placed at anchored ceremony times:
+- `orderDay.js:182-188` empty `if`-body replaced with `break`
+- `afternoonCap` extended (line 141-145) from single-anchor to N-anchor cap covering Mid-Sprint Review, Sprint Review, Sprint Retrospective, Weekly Reflection, End-of-Activity Reflection
+- Same fix class also closes the 14:30/15:00 Deep-vs-Mid-Sprint overlap from prior production data
+
+**Defense-in-depth gap deferred**: `validateComposition.js` has zero overlap detection. New backlog candidate **C-SA-6** added.
+
+### Tests (+9)
+- `composeDaily.test.js` +4 (date field, JSON round-trip, legacy backwards-compat)
+- `orderDay.test.js` +5 (CI prefix-fits, Mid-Sprint cap, Friday weekly+EOA, boundary-tie)
+
+### All 8 acceptance criteria PASS
+AC-A1..3 (date field) + AC-B1..4 (overlap prevention) + AC-D1 (determinism preserved).
+
+### Impact
+- Suite: 2,834 → 2,843 (+9)
+- Runtime: 3.36s — under 3.5s budget but only 4% headroom (was 40% before)
+- Per-test cost: 1.18ms (was 0.74ms post-Iter 16) — new orderDay tests are heavier (full composer integration)
+- Spec deviations: zero
+- Time spent: ~1.5h vs ~6h architect estimate
+
+### Strategic outcome
+Composer now produces dated, non-overlapping schedules. Both production-confirmed bugs closed by single fix class. The §6.5 composer/engine integrity boundary protocol worked as designed on its first invocation.
+
+---
+
 ## Iteration 18 — 2026-04-29 — Operating-Model Update (META_REVIEW §6.1–§6.6 adopted)
 
 ### What changed

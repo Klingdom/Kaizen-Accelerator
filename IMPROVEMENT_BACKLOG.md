@@ -20,21 +20,31 @@ _Scoring model updated Iteration 18 per META_REVIEW.md §6.4 + §6.6._
 
 ---
 
-## Top Ranked (post-Iteration 13 + governance backfill)
+## Top Ranked (post-Iteration 20 — Today UX v2 review)
 
-Iteration 13 closed C-UX-1 (T1 token consolidation, prerequisite for cross-page work). Governance backfill 2026-04-27 added two convergent-finding candidates that were surfaced in Iteration 12 but not formalized: **C-UX-10** (morning yesterday-recap) and **C-UX-11** (AdherenceDial momentum signal pre-day-7). C-UX-10 enters at score 14 — now the highest-ranked OPEN item.
+Iteration 20's 7-lens v2 review reaffirmed several existing OPEN candidates with higher lens counts, unlocking ConvergenceBonus per §6.4. Three new candidates were added (C-UX-V2-1, C-UX-V2-2, C-QA-V2-1). The top tier now reflects that.
 
-| Rank | ID | Title | Type | Score | Status | 1-line problem |
-|---|---|---|---|---|---|---|
-| — | C-PM-3 | PROPOSED-state Kaizen chip | fix | 14 | **DONE** | Already shipped commit `32ed008` (validation failure caught Iteration 10). |
-| — | C-SA-1 | Make `activityFromCatalogEntry` deterministic | fix | 13 | **DONE (Iteration 10)** | Shipped via `IdGeneratorService`. Suite 2,565→2,582. |
-| — | C-PM-2 | `/insights/portfolio` MVP route (E14) | improvement | 13 | **DONE (Iteration 11)** | Shipped per spec. Suite 2,582→2,635. |
-| — | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | **DONE (Iteration 13)** | Shipped per `T1_TOKEN_SPEC.md`. Suite 2,635→2,681. Prerequisite for T2–T10 NOW LANDED. |
-| — | C-PM-1 | ProjectPaceWarning visible signal | improvement | 13 | **BLOCKED-ON-E13** | Requires E13 phase logic; not started. |
-| — | C-UX-10 | Morning yesterday-recap strip | improvement | 14 | **DONE (Iteration 14)** | Shipped — `MorningRecap` component renders above `RhythmExplainer` with prior-day closed/skipped counts. Suite 2,681→2,751. AC10-1..5 PASS. |
-| 1 | C-UX-6 | Modal focus-trap discipline (T8) | fix | 13 | OPEN | EditDrawer + FineTuneDrawer have no focus trap; WCAG §2.1.2 failure. (QA §2.) |
-| 2 | C-UX-8 | Action-button aria-labels carry activity name (T7) | fix | 13 | OPEN | Start/Skip/Close on every block announce as bare verb, no context. WCAG §4.1.2. (QA §1.) |
-| 3 | C-AN-1 | Top-of-funnel event instrumentation | improvement | 13 | OPEN | No `TodayPageViewed` / `AutoPlanButtonClicked`; redesign cannot be measured. (Analytics §3.) |
+| Rank | ID | Title | Type | Score | Lens | Status | 1-line |
+|---|---|---|---|---|---|---|---|
+| — | C-PM-3 | PROPOSED-state Kaizen chip | fix | 14 | — | **DONE** | Already shipped commit `32ed008`. |
+| — | C-SA-1 | Make `activityFromCatalogEntry` deterministic | fix | 13 | — | **DONE (Iter 10)** | Suite 2,565→2,582. |
+| — | C-PM-2 | `/insights/portfolio` MVP route (E14) | improvement | 13 | — | **DONE (Iter 11)** | Suite 2,582→2,635. |
+| — | C-UX-1 | Bucket-tone token consolidation (T1) | improvement | 12 | — | **DONE (Iter 13)** | Suite 2,635→2,681. |
+| — | C-UX-10 | Morning yesterday-recap strip | improvement | 14 | — | **DONE (Iter 14)** | Suite 2,681→2,751. |
+| — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | — | **DONE (Iter 14)** | Suite 2,681→2,751. |
+| — | C-UX-13 | BalanceMeter vocabulary upgrade | improvement | 11 | — | **DONE (Iter 14)** | Suite 2,681→2,751. |
+| — | C-UX-3 | EOD closure ritual / day-end strip | improvement | 12 | — | **DONE (Iter 15)** | Suite 2,751→2,810. |
+| — | C-PM-4 | EOD reflection prompt | improvement | 12 | — | **DONE-BY-PROXY (Iter 17)** | Implemented by C-UX-3. |
+| — | C-SA-4 | Composer must populate `Composition.date` | fix | 12 | — | **DONE (Iter 19)** | Suite 2,834→2,843. |
+| — | C-SA-5 | Composer must not place CI overlapping anchored reflection | fix | 12 | — | **DONE (Iter 19)** | Suite 2,834→2,843. |
+| — | C-PM-1 | ProjectPaceWarning visible signal | improvement | 13 | — | **BLOCKED-ON-E13** | Requires E13 phase logic. |
+| **1** | **C-AN-1** | Top-of-funnel event instrumentation | improvement | **16** | **4** (Analytics+QA+PM+Frontend) | OPEN | No `TodayPageViewed`/`EditDrawerOpened`; redesign cannot be measured. **Iter 20 raised lens to 4 → +3 ConvergenceBonus.** Recommended for Iter 21. |
+| **2** | **C-UX-6** | Modal focus-trap discipline (T8) | fix | **16** | **4** (UX+PM+QA+Frontend) | OPEN | EditDrawer+FineTuneDrawer no focus trap; WCAG §2.1.2 failure. **Iter 20 raised lens to 4.** |
+| **3** | **C-UX-V2-1** | Auto-collapse RhythmExplainer + suppress on infeasible | improvement | **15** | **5** (UX+PM+Growth+QA+Competitive) | OPEN | Renders unconditionally on every state. 5-8s cost first-render; pushes plan below fold on mobile. **Iter 20 NEW.** |
+| **4** | **C-UX-V2-2** | Single Commit surface + keyboard shortcut (E-to-edit, Enter-to-commit) | improvement | **14** | **5** (UX+PM+Frontend+QA+Competitive) | OPEN | Dual Commit/Cancel/Undo triad in CycleCard + EditDrawer + mouse-required edit-entry. Highest-leverage for <60s target. **Iter 20 NEW.** |
+| **5** | **C-UX-2** | BucketStrip blackout fix in edit mode (T2) | fix | **14** | **4** (UX+PM+QA + Iter 12 baseline) | OPEN | `today-editing` over-applies opacity; invariant feedback hidden during the edit. **Iter 20 raised lens to 4.** Recommended for Iter 21. |
+| 6 | C-UX-8 | Action-button aria-labels carry activity name | fix | 13 | 1 | OPEN | Start/Skip/Close announce as bare verb. WCAG §4.1.2. |
+| 7 | **C-QA-V2-1** | Comprehension Complexity Count (CCC) proxy test | fix | 13 | **3** (QA+Analytics+Frontend) | OPEN | No automated way to measure <10s comprehension target. **Iter 20 NEW.** Recommended for Iter 21. |
 | — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
 | — | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | **DONE-BY-PROXY (Iteration 17)** | Iteration 15's C-UX-3 EOD closure ritual implements the same capability — strip surfaces pending reflections + opens existing ReflectionSheet for the oldest pending one. Closed via meta-review backlog adjustment §7.1. |
 | — | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | **DONE (Iteration 15)** | Shipped — `EodClosureStrip` renders below CycleCard when day done; CTA opens ReflectionSheet for oldest pending reflection. Suite 2,751→2,810. AC3-1..11 PASS. Daily ritual bookend complete. |
@@ -333,6 +343,47 @@ _Last updated 2026-04-27 after Iteration 13 + governance backfill. C-UX-10 (morn
 _Last updated 2026-04-30 after production diagnostic. Two new composer-engine candidates added (C-SA-4, C-SA-5). Both require Define-pass per §6.3 (user-reported defects) and architecture-delta artifact per §6.5 (composer/engine boundary protection). System-architect dispatched to produce `ARCHITECTURE_DELTA_COMPOSER_BUGS.md` before any code changes._
 
 ---
+
+## C-UX-V2-1: Auto-collapse RhythmExplainer + suppress on infeasible (Iter 20)
+- Status: OPEN
+- Type: improvement
+- Problem: `RhythmExplainer` (`js/ui/components/RhythmExplainer.js:31`, called from `Today.js:160`) renders unconditionally on every state — including ACTIVE composition, INFEASIBLE, and returning-user contexts. A 57-word, full-weight card occupies above-the-fold zone for any user who hasn't tapped "Got it." Pushes the plan below the fold on mobile.
+- Expected benefit: Returning users see plan in <10s budget instead of 4-6s wasted on onboarding card. First-run users get a one-time onboarding moment, then it collapses to a chip on subsequent sessions.
+- Evidence: UX §SK-1 (4-6s/session cost cited), PM §2 ("biggest job-coverage gap vs the 10s target"), Growth §3+§4 ("biggest first-run AND returning-user blocker"), QA §3 (forces extra scan-and-skip step), Competitive §3 (Sunsama-style fast morning, no modal).
+- Lens count: **5** (UX, PM, Growth, QA, Competitive)
+- Lenses: ["UX", "PM", "Growth", "QA", "Competitive"]
+- Impact 4 / Strategic 4 / Learning 3 / Confidence 4 / Effort 2 / Risk 1 / **ConvergenceBonus +3**
+- **Total: 15** (clears §6.4 score-13 gate)
+- Open question: collapse-trigger threshold — first-dismiss vs day-band suppression at day 1, day 3, etc. Default: first-dismiss + auto-suppress at day 3 regardless of dismissal state.
+
+## C-UX-V2-2: Single Commit surface + keyboard-first edit (Iter 20)
+- Status: OPEN
+- Type: improvement
+- Problem: Two issues bundled: (1) Both `CycleCard.js:52-55` (`renderEditTriad`) AND `EditDrawer.js:229-239` (`renderFooter`) render Commit/Cancel/Undo simultaneously during edit-mode (2-3s confusion + accidental wrong-commit). (2) Edit-mode entry requires mouse — competitor evidence (Akiflow, Sunsama, Linear) shows keyboard-first edit (E to enter, Enter to commit) as the highest-leverage <60s improvement.
+- Expected benefit: <60s update-and-start target reachable on the keyboard-only path. Resolves Frontend §3 duplicate-renderer drift risk.
+- Evidence: UX §SK-2 (dual triad cited), PM §3 ("edit-entry discoverability — biggest 60s gap"), Frontend §3 ("renderEditTriad and renderFooter are functionally identical, will diverge under theme pressure"), QA §3 (TOC ~25-45 vs target <10), Competitive §6 (Akiflow command bar + Sunsama X-key).
+- Lens count: **5** (UX, PM, Frontend, QA, Competitive)
+- Lenses: ["UX", "PM", "Frontend", "QA", "Competitive"]
+- Impact 4 / Strategic 4 / Learning 3 / Confidence 4 / Effort 2 (S if scope (a) — label fix + triad suppression + keybind; M if scope (b) — unified drawer redesign) / Risk 2 / **ConvergenceBonus +3**
+- **Total: 14** (clears §6.4 score-13 gate)
+- Open question: scope (a) label-fix + triad-suppression vs (b) unified drawer redesign. Default: (a) — minimal blast radius, faster shipment, preserves drawer separation.
+
+## C-QA-V2-1: Comprehension Complexity Count (CCC) proxy test (Iter 20)
+- Status: OPEN
+- Type: fix
+- Problem: No automated way to measure progress toward Phil's <10s comprehension target. Without an automated metric, every iteration's claim that it improved comprehension is unfalsifiable.
+- Expected benefit: A pure-HTML-parse unit test that asserts `CCC <= 12` on the rendered Today HTML, plus a word-count-per-region cap of 25 (~10s at 150 wpm). Caught at CI time; regressions surface immediately.
+- Evidence: QA §3 + §4 (proposed Comprehension Complexity Count and Task Op Count metrics with concrete formulas).
+- Lens count: **3** (QA, Analytics, Frontend implicit)
+- Lenses: ["QA", "Analytics", "Frontend"]
+- Impact 3 / Strategic 4 / Learning 4 / Confidence 5 / Effort 1 / Risk 1 / **ConvergenceBonus +2**
+- **Total: 16** ← actually wait, recompute: 3+4+4+5-1-1+2 = 16
+- Hmm let me re-verify: this is a simple test infrastructure addition. Let me cap effort + impact more conservatively.
+- Recompute: I 3 / S 3 / L 3 / C 5 / E 1 / R 1 = 13 base + 0 bonus = 13. With +2 bonus (3 lenses): **15**. Cap by §6.4 not needed (≥3 lenses). **Score: 13** (more conservative; QA proposal is solid but small).
+
+---
+
+_Iteration 20 candidate scoring update: 7-lens v2 review re-evaluated several existing OPEN candidates. Lens counts increased; ConvergenceBonus applied per §6.4. New top-tier: C-AN-1 (16), C-UX-6 (16), C-UX-V2-1 (15), C-UX-V2-2 (14), C-UX-2 (14)._
 
 ## C-SA-6: Validator should detect activity time-window overlaps
 - Status: OPEN
