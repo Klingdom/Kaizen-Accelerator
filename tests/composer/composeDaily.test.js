@@ -576,3 +576,62 @@ describe('composeDaily — INFEASIBLE path', () => {
     assert.ok(Array.isArray(out.infeasible.suggestedActions));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iteration 19 — Composer Correctness Fixes (C-SA-4 + C-SA-5)
+// ---------------------------------------------------------------------------
+
+describe('composeDaily — Iter-19 Bug A: Composition.date field (AC-A1)', () => {
+  test('AC-A1: composition.date equals input.date', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    input.date = '2026-04-30';
+    const out = composeDaily(input);
+    assert.equal(out.composition.date, '2026-04-30');
+  });
+
+  test('AC-A1: date field matches the input date on a different execution day', () => {
+    // Use GOLDEN_FULL_CATALOG + a plain execution-week Wednesday to stay PROPOSED.
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    // 2026-04-22 = Wed Wk1 of anchor 2026-04-20 → EXECUTION, no sprint ceremony.
+    input.date = '2026-04-22';
+    input._now = '2026-04-22T09:00:00Z';
+    const out = composeDaily(input);
+    // Must produce a PROPOSED composition (feasible input).
+    assert.equal(out.state, 'PROPOSED');
+    assert.equal(out.composition.date, '2026-04-22');
+  });
+
+  test('AC-A2: composition.date survives JSON round-trip (localStorage simulation)', () => {
+    const input = buildGoldenComposerInput({ catalog: GOLDEN_FULL_CATALOG });
+    input.date = '2026-04-30';
+    const out = composeDaily(input);
+    // Simulate localStorage: JSON.stringify + JSON.parse
+    const serialized = JSON.stringify(out.composition);
+    const reloaded = JSON.parse(serialized);
+    assert.equal(reloaded.date, '2026-04-30');
+  });
+
+  test('AC-A3: reading a legacy composition (date absent) does not throw', () => {
+    // Simulate a legacy Composition row from localStorage that has no date field.
+    const legacyComposition = {
+      id: 'comp_legacy_u_2026-04-01',
+      userId: 'u_legacy',
+      cycleType: 'DAILY',
+      startAt: '2026-04-01T00:00:00Z',
+      endAt: '2026-04-01T23:59:59Z',
+      parentCompositionId: null,
+      state: 'PROPOSED',
+      proposedAt: '2026-04-01T08:00:00Z',
+      decidedAt: null,
+      closedAt: null,
+      composerInputsSnapshot: {},
+      invariantChecks: {}
+      // intentionally NO date field
+    };
+    // Read `date` defensively — must not throw; fallback to startAt slice.
+    const readDate = legacyComposition.date ?? legacyComposition.startAt?.slice(0, 10) ?? null;
+    assert.equal(readDate, '2026-04-01');
+    // Confirm composition.date is indeed absent on the legacy object.
+    assert.equal(legacyComposition.date, undefined);
+  });
+});

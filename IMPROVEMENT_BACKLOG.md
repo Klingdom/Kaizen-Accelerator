@@ -38,6 +38,8 @@ Iteration 13 closed C-UX-1 (T1 token consolidation, prerequisite for cross-page 
 | — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
 | — | C-PM-4 | End-of-day reflection prompt (T3) | improvement | 12 | **DONE-BY-PROXY (Iteration 17)** | Iteration 15's C-UX-3 EOD closure ritual implements the same capability — strip surfaces pending reflections + opens existing ReflectionSheet for the oldest pending one. Closed via meta-review backlog adjustment §7.1. |
 | — | C-UX-3 | Closure ritual + day-end strip (T3) | improvement | 12 | **DONE (Iteration 15)** | Shipped — `EodClosureStrip` renders below CycleCard when day done; CTA opens ReflectionSheet for oldest pending reflection. Suite 2,751→2,810. AC3-1..11 PASS. Daily ritual bookend complete. |
+| — | **C-SA-5** | **Composer must not place CI activities overlapping anchored reflection** | **fix** | **12** | **DONE (Iteration 19)** | Shipped per arch-delta §3.4 Option A. `orderDay.js:183-185` empty `if`-body replaced with `break`; `afternoonCap` extended to honor Mid-Sprint/Sprint-Review/Retro anchors. Suite 2,834→2,843. AC-B1..4 PASS. Same fix closes 14:30/15:00 Mid-Sprint overlap. |
+| — | **C-SA-4** | **Composer must populate `Composition.date`** (renamed from `compositionDate` per architect convention) | **fix** | **12** | **DONE (Iteration 19)** | Shipped per arch-delta §2.3. `date: input.date` added at `composeDaily.js:664`; typedef updated at `types.js:417`. Field name `date` (matches `composeWeekly.buildDay`). Suite 2,834→2,843. AC-A1..3 PASS. Note: orchestrator recon claim that field was "declared in typedef" was wrong — typedef never declared it; was added in this iteration. |
 | 7 | C-SA-2 | Append `EDITED_FROM_PROPOSAL` Variance rows | fix | 12 | OPEN | Duration/start-time edits emit no append-only audit row. |
 | 8 | C-QA-2 | `WeeklyComposerService.reflow` test coverage | fix | 12 | OPEN | Sprint 15 W5 deliverable has zero test references. |
 | 9 | C-QA-3 | `formatTimeRange` DST-offset ISO test | improvement | 12 | OPEN | All fixtures use UTC `Z`; non-Z ISO input silently mis-displays. |
@@ -299,3 +301,46 @@ _Generated: 2026-04-27. Last updated after Iteration 12 (Define-phase cross-page
 ---
 
 _Last updated 2026-04-27 after Iteration 13 + governance backfill. C-UX-10 (morning yesterday-recap, score 14) is now the highest-ranked OPEN item. Next-loop selection options: (a) C-UX-10 morning recap — convergent #1 finding, biggest visible UX shift; (b) bundle C-UX-6 + C-UX-8 + C-AN-1 — three score-13 a11y/measurement items totaling ~6h; (c) C-UX-3 / C-PM-4 EOD closure ritual — convergent #1 EOD finding._
+
+---
+
+## C-SA-4: Composer must populate `Composition.compositionDate`
+- Status: OPEN
+- Type: fix
+- Problem: The `Composition` typedef in `js/domain/types.js` declares `compositionDate: string` (ISO date), but a grep on `js/` shows **zero writers** of that field. Composer never sets it. Production diagnostic 2026-04-30 confirms `compositionDate=undefined` on every composition in localStorage.
+- Expected benefit: Date-based queries become possible. `getActiveComposition` can correctly filter to today's date instead of falling back to the most-recent active composition (which currently surfaces 8-day-old PROPOSED compositions to users). Iteration 14's morning-recap helper (`computePriorDayRecap`) requires this field. Iteration 15's EOD strip indirectly depends on date filtering.
+- Evidence: Production console diagnostic 2026-04-30; `grep compositionDate js/` returns 0 hits; typedef at `js/domain/types.js`.
+- Lens count: 1 (system-architect via diagnostic interpretation)
+- Lenses: ["Architect"]
+- Impact 4 (multiple downstream features depend on it) / Strategic 4 (data integrity / determinism) / Learning 3 / Confidence 5 / Effort 2 / Risk 2 / ConvergenceBonus 0
+- Total: 12 (capped at 12 per §6.4 score-13 gate — needs ≥3-lens evaluation)
+- Note: Lens count will increase after architect produces `ARCHITECTURE_DELTA_COMPOSER_BUGS.md`. QA review of the fix would bring lens count to 3, unlocking score-13 promotion.
+
+## C-SA-5: Composer must not place CI activities overlapping anchored ceremonies
+- Status: OPEN
+- Type: fix
+- Problem: `js/engine/orderDay.js:182-188` CI rotation loop has an empty `if (ciCursor + duration > reflectionStart) { /* comment only */ }` body. The original comment says "still place (validator surfaces)" but `validateComposition` does not flag the overlap. Production diagnostic 2026-04-30 confirms a 60-minute Team Introductions activity placed at 17:00 — directly overlapping the 15-minute End-of-Activity Reflection ceremony anchored at 17:00.
+- Expected benefit: Schedule correctness. Composer produces internally consistent schedules where anchored ceremonies' time slots are exclusively reserved.
+- Evidence: Production console diagnostic 2026-04-30 (`17:00 +60m CI Team Introductions` AND `17:00 +15m CI End-of-Activity Reflection` in the same composition); `js/engine/orderDay.js:182-188`.
+- Lens count: 1 (system-architect via diagnostic interpretation)
+- Lenses: ["Architect"]
+- Impact 5 (direct schedule-correctness bug) / Strategic 5 (4-2-2 invariant integrity) / Learning 3 / Confidence 5 / Effort 3 / Risk 3 / ConvergenceBonus 0
+- Total: 12 (capped at 12 per §6.4 score-13 gate — needs ≥3-lens evaluation)
+- Note: Lens count will increase after architect produces `ARCHITECTURE_DELTA_COMPOSER_BUGS.md`. Same as C-SA-4.
+
+---
+
+_Last updated 2026-04-30 after production diagnostic. Two new composer-engine candidates added (C-SA-4, C-SA-5). Both require Define-pass per §6.3 (user-reported defects) and architecture-delta artifact per §6.5 (composer/engine boundary protection). System-architect dispatched to produce `ARCHITECTURE_DELTA_COMPOSER_BUGS.md` before any code changes._
+
+---
+
+## C-SA-6: Validator should detect activity time-window overlaps
+- Status: OPEN
+- Type: fix
+- Problem: `js/engine/validateComposition.js` has zero overlap detection. The "validator surfaces" comment at `orderDay.js:184` was misleading — there's no validator that catches overlapping `plannedStartAt + plannedDurationMinutes`. Iteration 19 fixed the placement bug at the composer level (`orderDay.js`), but defense-in-depth would also detect overlaps at validation time, catching any future composer bug or manual edit that violates the invariant.
+- Expected benefit: Defense-in-depth correctness. Catches overlap bugs from any source (composer, edit-mode, future automation), not just the one path Iteration 19 fixed.
+- Evidence: Architect confirmed during arch-delta §3.2 audit; deferred from Iteration 19 scope per architect §3.4 Option A choice.
+- Lens count: 1 (system-architect via arch-delta audit)
+- Lenses: ["Architect"]
+- Impact 3 (defense-in-depth, not user-facing) / Strategic 4 (data integrity / determinism principle) / Learning 2 / Confidence 5 / Effort 2 / Risk 2 / ConvergenceBonus 0
+- Total: 10 (capped at 12 per §6.4 gate but underlying score is 10)

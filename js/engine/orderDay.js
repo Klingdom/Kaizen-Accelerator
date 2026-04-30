@@ -138,11 +138,23 @@ export function orderDay(placed, input) {
   let cursorMorning = morningDeepStart;
   let cursorAfternoon = afternoonDeepStart;
   const reflectionStart = parseClock(CEREMONY_ANCHORS.END_OF_ACTIVITY_REFLECTION);
-  // Weekly Reflection on Fri PM eats the 16:30 slot — cap afternoon cursor at 16:30 in that case.
-  const hasWeeklyRefl = anchored.some((p) => p.catalogEntryId === 'gen_weekly_reflection');
-  const afternoonCap = hasWeeklyRefl
-    ? parseClock(CEREMONY_ANCHORS.WEEKLY_REFLECTION)
-    : reflectionStart;
+  // Cap the afternoon cursor at the earliest ceremony anchor that falls in
+  // the afternoon window. This prevents Deep slices and COMM fillers from
+  // overrunning anchored ceremonies (Weekly Reflection at 16:30,
+  // Mid-Sprint Review at 15:00, Sprint Review at 14:00,
+  // Sprint Retrospective at 15:30, or End-of-Activity Reflection at 17:00).
+  const AFTERNOON_CEREMONY_ANCHORS = [
+    { id: 'gen_weekly_reflection', time: CEREMONY_ANCHORS.WEEKLY_REFLECTION },
+    { id: 'cer_mid_sprint_review', time: CEREMONY_ANCHORS.MID_SPRINT_REVIEW },
+    { id: 'cer_sprint_review', time: CEREMONY_ANCHORS.SPRINT_REVIEW },
+    { id: 'cer_sprint_retrospective', time: CEREMONY_ANCHORS.SPRINT_RETROSPECTIVE }
+  ];
+  let afternoonCap = reflectionStart;
+  for (const { id, time } of AFTERNOON_CEREMONY_ANCHORS) {
+    if (anchored.some((p) => p.catalogEntryId === id)) {
+      afternoonCap = Math.min(afternoonCap, parseClock(time));
+    }
+  }
 
   for (const d of deep) {
     // Try morning first.
@@ -181,7 +193,10 @@ export function orderDay(placed, input) {
   let ciCursor = Math.max(cursorAfternoon, afternoonDeepStart);
   for (const c of ci) {
     if (ciCursor + c.plannedDurationMinutes > reflectionStart) {
-      // past reflection anchor — still place (validator surfaces)
+      // Would overlap End-of-Activity Reflection anchor — stop placing.
+      // Unplaced CI items retain plannedStartAt=null; downstream
+      // validateComposition + relaxConfigurable handle the shortfall.
+      break;
     }
     c.plannedStartAt = formatClock(ciCursor);
     ciCursor += c.plannedDurationMinutes;

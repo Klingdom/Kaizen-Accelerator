@@ -414,6 +414,7 @@ export const User = null;
  * @property {string|null} closedAt
  * @property {ComposerInputsSnapshot} composerInputsSnapshot
  * @property {InvariantChecks} invariantChecks
+ * @property {string} date                                   // ISO date 'YYYY-MM-DD' — the working day this composition plans for
  */
 export const Composition = null;
 

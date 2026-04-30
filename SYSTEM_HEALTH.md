@@ -38,14 +38,15 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value |
 |---|---|
-| Tests passing | 2,834 (+269 since Iteration 9 baseline of 2,565) |
+| Tests passing | 2,843 (+278 since Iteration 9 baseline of 2,565) |
 | Tests failing | 0 |
-| Suite count | 681 (+78 since Iteration 9) |
-| Runtime | ~2.10s |
+| Suite count | 686 (+83 since Iteration 9) |
+| Runtime | **~3.36s ⚠️** |
 | Runtime budget | 3.5s |
-| Headroom | ~1.40s (40%) |
+| Headroom | **~0.14s (4% — APPROACHING BUDGET)** |
+| Per-test cost | 1.18 ms/test (was 0.74 ms post-Iter 16 — Iter 19 added full-composer integration tests) |
 | Fail rate | 0% |
-| Last green commit | `3cd6512` (Iteration 16 work uncommitted) |
+| Last green commit | `af63289` (Iteration 19 work uncommitted) |
 
 ---
 

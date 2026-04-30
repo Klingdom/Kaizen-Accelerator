@@ -416,3 +416,37 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit + push.
   - Iteration 19 selection (Q2 from prior turn) still pending: recommended C-UX-6 + C-UX-8 + C-AN-1 bundle (would be the first iteration explicitly run under the new §6.1 bundling rule).
   - Q3 (per-test ms metric in SYSTEM_HEALTH) still pending Phil decision.
+
+---
+
+## Iteration 19 — Composer Correctness Fixes (C-SA-4 + C-SA-5) (2026-04-30)
+
+- **Selected items**: Bundled fix of two composer bugs surfaced by production diagnostic. Ran under the new §6.1 bundling rule (one Define artifact, one integrity boundary, one coherence claim) and §6.5 boundary rule (composer/engine modifications require architecture-delta + user approval).
+- **Reason for selection**: Both bugs were user-reported defects (per §6.3 mandate Define-pass), confirmed in production diagnostic 2026-04-30. Bundled because they share the composer/engine integrity boundary and one coherence claim ("composer produces clean, dated, non-overlapping schedules").
+- **Agents involved**: coordinator (orchestration + reconnaissance + arch-delta dispatch + validation), system-architect (`ARCHITECTURE_DELTA_COMPOSER_BUGS.md`, 260 lines), backend-engineer (implementation).
+- **Define-phase artifact**: `ARCHITECTURE_DELTA_COMPOSER_BUGS.md` v0.1, 260 lines. PROCEED-AS-DESIGNED verdict. User-approved field-name decision: `date` (matches existing `composeWeekly.buildDay` convention) instead of orchestrator's original `compositionDate`. Architect also corrected two coordinator recon errors (typedef did not declare a date field; Iter 14 morning recap doesn't depend on a missing field — it derives from `startAt.slice(0,10)`).
+- **Pre-flight reconnaissance** (per §6.2): coordinator grep'd `compositionDate` (0 hits — confirms field never written), grep'd reflection anchor logic in `orderDay.js`, identified empty `if`-body at lines 183-185 with misleading "validator surfaces" comment.
+- **Defense-in-depth finding (deferred)**: Architect confirmed `validateComposition.js` has zero overlap detection. The "validator surfaces" comment in `orderDay.js:184` was incorrect — there's no overlap validator. Deferred to new backlog candidate **C-SA-6** (validator overlap detection).
+- **Validation results**:
+  - **Test suite**: 2,834 → **2,843 passing** (+9 tests across 3 new test cases for Bug A + 5 for Bug B + 1 supporting). 0 failing. 686 suites total. Runtime **3.36s** — under 3.5s budget but only 4% headroom (notable; see Risks).
+  - **AC sign-off**: All 8 acceptance criteria PASS (AC-A1..3 + AC-B1..4 + AC-D1). No descopes.
+  - **Determinism preserved**: `date: input.date` is pure read-through; no `Date.now()` / `Math.random()` introduced.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/domain/types.js` — added `@property {string} date` to Composition typedef (line 417).
+    - `js/composer/composeDaily.js` — added `date: input.date` at line 664; field propagates through `accept` / `commitEdit` / `reflow` paths via `...comp` spread (verified by grep).
+    - `js/engine/orderDay.js` — replaced 3-line `hasWeeklyRefl` / single-cap logic at lines 141-145 with 12-line `AFTERNOON_CEREMONY_ANCHORS` loop computing `afternoonCap = min(reflectionStart, earliestPresentAfternoonCeremony)` covering Weekly Reflection (16:30), Mid-Sprint Review (15:00), Sprint Review (14:00), Sprint Retrospective (15:30); replaced empty `if`-body in CI loop (line 183-185) with `break` + comment.
+    - `tests/composer/composeDaily.test.js` — +4 tests (AC-A1×2, AC-A2 round-trip, AC-A3 backwards-compat).
+    - `tests/engine/orderDay.test.js` — +5 tests (AC-B1 prefix-fits, AC-B2×2 Mid-Sprint cap, AC-B3 Friday weekly+EOA cap, AC-B4 boundary-tie).
+- **Spec deviations**: Zero. All changes match arch-delta §2.3, §3.4, §3.5 exactly.
+- **Time spent**: ~1.5h actual vs ~6h architect estimate (S+S-to-M).
+- **Strategic outcome**:
+  - Composer now produces dated, non-overlapping schedules.
+  - Both production-confirmed bugs (17:00 reflection overlap + 14:30/15:00 Mid-Sprint overlap) closed by single fix class (afternoonCap extension).
+  - The §6.5 composer/engine integrity boundary protocol worked as designed — first iteration under that rule, no scope creep, no spec deviations, clean validation.
+- **Risk surfaced**: Suite runtime **3.36s with only 4% headroom** under 3.5s budget. Iteration 17 meta-review §4.2 already recommended retiring the absolute-runtime ceiling in favor of per-test ms tracking. Worth elevating now since we're close to the budget. Per-test cost: 3358ms / 2843 tests = **1.18ms/test** — that's ~60% higher than the 0.74ms/test from Iteration 16 baseline. Investigation: likely the new orderDay tests are heavier than average (full composer runs); possibly worth optimizing or accepting.
+- **Follow-ups**:
+  - Commit + push.
+  - Add **C-SA-6** to backlog: validator overlap detection (deferred from §3.2 of arch-delta).
+  - Decide on Q3 from Iteration 17 meta-review: switch SYSTEM_HEALTH metric from absolute runtime to per-test ms. Now timely given the 4% headroom warning.
+  - Open candidates remaining: 3 items at score 13 (C-UX-6 modal focus traps, C-UX-8 action-button aria, C-AN-1 top-of-funnel events), plus the C-SA series and others.

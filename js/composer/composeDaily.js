@@ -661,6 +661,7 @@ export function composeDaily(input) {
       explain: why
     },
     invariantChecks: validation.detail,
+    date: input.date,
     activities: finalPlaced.map((a) => ({
       ...a,
       compositionId,
