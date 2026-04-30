@@ -22,6 +22,12 @@ CATALOG_GAPS.md
 PROJECT_TYPE_30D_KAIZEN.md
 docs
 
+# All other .md files (governance, specs, reviews, iteration logs,
+# changelogs, etc.). Catches everything added in Iterations 9-18+
+# and prevents future docs from leaking into the runtime image
+# served at the public URL. The browser does not need markdown.
+*.md
+
 # Tests — they run in CI (GitHub Actions), not at runtime
 tests
 tests/**
