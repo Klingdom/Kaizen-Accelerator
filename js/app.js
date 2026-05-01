@@ -63,7 +63,8 @@ import {
   ActivityStartedLate,
   CycleReflowed,
   TodayPageViewed,
-  EditDrawerOpened
+  EditDrawerOpened,
+  RowOutputClicked
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { getFullCatalog } from './catalog/fullCatalog.js';
@@ -1484,6 +1485,32 @@ export function buildHandlers(scope) {
       rerender();
     },
 
+    // C-UX-COL (Q2): clicking .sa-artifact opens OutputArtifactDialog early
+    // (before the activity is closed) and emits RowOutputClicked for analytics.
+    // Reuses the existing OPEN_CLOSE_DIALOG flow — same dialog, same schema
+    // resolution. The user can review the artifact definition, then dismiss
+    // without submitting (CLOSE_CLOSE_DIALOG handles the dismissal).
+    OPEN_OUTPUT_ARTIFACT(payload) {
+      if (!payload || !payload.activityId) return;
+      const looked = lookupActivity(services, payload.activityId);
+      if (!looked) return;
+      const schema = looked.entry?.outputArtifact?.schema ?? 'TEXT';
+      state.openDialog = {
+        kind: 'CLOSE',
+        activityId: payload.activityId,
+        schema,
+        artifactDef: looked.entry?.outputArtifact ?? { schema, name: 'Output' }
+      };
+      // Emit RowOutputClicked analytics event.
+      services.bus.publish(RowOutputClicked, {
+        userId: DEFAULT_USER.id,
+        activityId: payload.activityId,
+        catalogEntryId: looked.activity?.catalogEntryId ?? null,
+        clickedAt: services.clock.now()
+      });
+      rerender();
+    },
+
     CLOSE_CLOSE_DIALOG(_payload) {
       state.openDialog = null;
       rerender();
@@ -2449,6 +2476,9 @@ export function start() {
   // Iteration 21 (C-AN-1) — no-op subscribers; future MetricsService will consume.
   services.bus.subscribe(TodayPageViewed, () => {});
   services.bus.subscribe(EditDrawerOpened, () => {});
+  // C-UX-COL (Q2): no-op subscriber for RowOutputClicked; future MetricsService
+  // will consume for proactive artifact engagement rate metric.
+  services.bus.subscribe(RowOutputClicked, () => {});
 
   const rerender = () => renderApp(services, state);
 
@@ -2493,7 +2523,8 @@ export function start() {
       services.bus.publish(TodayPageViewed, {
         userId: DEFAULT_USER.id,
         fromRoute,
-        viewedAt: services.clock.now()
+        viewedAt: services.clock.now(),
+        layoutVersion: 'v2'  // C-UX-COL: cohort split for pre/post column refactor
       });
     }
     rerender();

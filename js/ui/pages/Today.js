@@ -308,6 +308,7 @@ export function Today(props = {}) {
         ceilings: strips.ceilings,
         nowIso,
         kaizenTitleById: props.kaizenTitleById ?? {},
+        catalog: props.catalog ?? [],
         editMode: isEditing,
         selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
         undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0

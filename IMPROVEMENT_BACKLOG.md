@@ -43,6 +43,7 @@ Iteration 20's 7-lens v2 review reaffirmed several existing OPEN candidates with
 | **3** | **C-UX-V2-1** | Auto-collapse RhythmExplainer + suppress on infeasible | improvement | **15** | **5** (UX+PM+Growth+QA+Competitive) | OPEN | Renders unconditionally on every state. 5-8s cost first-render; pushes plan below fold on mobile. **Iter 20 NEW.** |
 | **4** | **C-UX-V2-2** | Single Commit surface + keyboard shortcut (E-to-edit, Enter-to-commit) | improvement | **14** | **5** (UX+PM+Frontend+QA+Competitive) | OPEN | Dual Commit/Cancel/Undo triad in CycleCard + EditDrawer + mouse-required edit-entry. Highest-leverage for <60s target. **Iter 20 NEW.** |
 | — | C-UX-2 | BucketStrip blackout fix in edit mode (T2) | fix | 14 | 4 | **DONE (Iter 21)** | Shipped. `app.css` selector at line ~1524 narrowed to `.cycle-activities` + `.triad` only. BucketStrip visible during edit. AC-U2-1..4 PASS. |
+| — | C-UX-COL | Today row column refactor (intention→outputArtifact, remove state label) | improvement | 18 | 6 | **DONE (Iter 22)** | Shipped. 6-lens convergence (UX+PM+FE+QA+Analytics+Competitive). 5 columns down from 6. `.sa-intention` placeholder replaced with `.sa-artifact` (clickable, opens OutputArtifactDialog); `.sa-state-label` removed; `<li>` aria-label semantic encoding; `layoutVersion: 'v2'` cohort tag; `RowOutputClicked` event. 0 §6.5 hits except 1 permitted event addition. Suite 2,866→2,892. AC-01..10 PASS. |
 | 6 | C-UX-8 | Action-button aria-labels carry activity name | fix | 13 | 1 | OPEN | Start/Skip/Close announce as bare verb. WCAG §4.1.2. |
 | — | C-QA-V2-1 | Comprehension Complexity Count (CCC) proxy test | fix | 13 | 3 | **DONE (Iter 21)** | Shipped. New `tests/ui/pages/Today.ccc.test.js` (245 lines, 9 tests). Asserts CCC ≤ 12 active-composition + per-region word count ≤ 25. AC-Q1..4 PASS. |
 | — | C-UX-12 | "Why this plan?" rationale chip | improvement | 13 | **DONE (Iteration 14)** | Shipped — `WhyThisPlan` component reads `composerInputsSnapshot.explain`; expand/collapse with aria-expanded; rule-grouped display. AC12-1..5 PASS. |
@@ -395,3 +396,50 @@ _Iteration 20 candidate scoring update: 7-lens v2 review re-evaluated several ex
 - Lenses: ["Architect"]
 - Impact 3 (defense-in-depth, not user-facing) / Strategic 4 (data integrity / determinism principle) / Learning 2 / Confidence 5 / Effort 2 / Risk 2 / ConvergenceBonus 0
 - Total: 10 (capped at 12 per §6.4 gate but underlying score is 10)
+
+---
+
+## C-UX-COL-1: CLOSED-state actual/planned duration ratio (Iter 22 deferral)
+- Status: OPEN
+- Type: improvement
+- Problem: Once a block is CLOSED, the row still shows just `{plannedDurationMinutes}m`. The actual time tracked is invisible on the row — only inspectable via dialog or downstream insight pages. Sunsama shows planned-vs-actual on every row; BAM-X has the data but doesn't surface it.
+- Expected benefit: Inline planned-vs-actual ratio creates a meaningful deviation signal at-glance (e.g., "47m / 45m" = slight overrun). Reinforces evidence-linkage on completed activities.
+- Evidence: UX_TODAY_COLUMNS_UX.md §recommendations (CLOSED-state enhancement on `.sa-duration`); UX_TODAY_COLUMNS_COMPETITIVE.md §7 Rank 1 (Sunsama planned-time chip pattern).
+- Lens count: 2 (UX, Competitive)
+- Lenses: ["UX", "Competitive"]
+- Open questions:
+  - O-1: Does ActivityService record `closedAt` / `actualDurationMinutes` anywhere? UX artifact flagged this as Q-open. Confirm before scoring.
+- Impact 3 / Strategic 3 / Learning 3 / Confidence 4 / Effort 2 / Risk 1 / ConvergenceBonus +1
+- **Total: 11**
+
+---
+
+## C-UX-COL-2: Linear-style section grouping for Today rows (Iter 22 deferral)
+- Status: OPEN
+- Type: improvement
+- Problem: All rows render in a single flat list regardless of state. Linear and Motion both group rows into sections (Todo / In Progress / Done; Today / Overdue) which dramatically compresses scanning latency.
+- Expected benefit: Section grouping (PROPOSED / SCHEDULED / IN_PROGRESS / CLOSED+SKIPPED) makes state communicable through position rather than label. Latency proxy: time-to-find-current-block should drop. Validates the Iter 22 state-label removal by replacing the lost cue with a stronger one.
+- Evidence: UX_TODAY_COLUMNS_COMPETITIVE.md §7 Rank 2 (Linear icon-only status with section grouping).
+- Lens count: 1 (Competitive)
+- Lenses: ["Competitive"]
+- Open questions:
+  - Does this fight the existing CycleCard composition-state model (which groups by composition, not by activity-state within composition)?
+  - Section ordering: chronological (current first) or by-state-priority (active → scheduled → done)?
+- Impact 4 / Strategic 3 / Learning 3 / Confidence 3 / Effort 3 / Risk 2 / ConvergenceBonus 0
+- **Total: 8** (capped per §6.4 — single-lens score-13 gate)
+
+---
+
+## C-AN-3: `producedExpectedOutput: boolean` field on ActivityCompleted (Iter 22 deferral)
+- Status: OPEN
+- Type: improvement
+- Problem: `ActivityCompleted` payload doesn't distinguish whether the user produced the catalog-documented `outputArtifact` versus filing an ad-hoc artifact. Without this, we can't compute the analytics KPI "% of activities closed with the expected output" — which is the validation metric for the Iter 22 column refactor.
+- Expected benefit: Validates whether surfacing `outputArtifact` inline (Iter 22) drives users to actually produce that documented output. Closes the analytics measurement loop on the column refactor.
+- Evidence: UX_TODAY_COLUMNS_ANALYTICS.md §3 (event payload changes section).
+- Lens count: 1 (Analytics)
+- Lenses: ["Analytics"]
+- Open questions:
+  - Touches `js/events/events.js` (§6.5) — payload shape change requires arch-delta. Additive field probably backward-compatible but needs confirmation.
+  - Where is the comparison done — at close-dialog submit time (compare submitted artifact kind to expected) or at event-emit time?
+- Impact 3 / Strategic 4 / Learning 4 / Confidence 4 / Effort 2 / Risk 2 / ConvergenceBonus 0
+- **Total: 11** (capped per §6.4 — single-lens score-13 gate; needs PM lens to unlock)

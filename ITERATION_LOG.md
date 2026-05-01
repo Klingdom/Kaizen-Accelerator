@@ -534,3 +534,44 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **14-day baseline window opens at next deploy.** No visible v2 changes (C-UX-V2-1, C-UX-V2-2, C-UX-6) should ship until that window closes — otherwise we contaminate the comparison.
   - Iter 22+ candidates: C-UX-V2-1 (auto-collapse, 15), C-UX-V2-2 (single Commit + keyboard, 14), C-UX-6 (focus traps, 16). Phil decides V2-2 scope (a/b) before Iter 22 dispatch.
   - Q3 from Iter 17 meta-review (per-test ms metric) still pending — runtime crept back up to 3.15s; not urgent yet.
+
+---
+
+## Iteration 22 — 2026-05-01 — Today row column refactor (C-UX-COL)
+
+- **Selected item**: User-directive feature (not a backlog candidate). Phil flagged 2 row columns as broken: `.sa-intention` placeholder ("One line: what outcome by close?") was a question not an answer; `.sa-state-label` ("proposed/scheduled/in progress") was redundant noise.
+- **Reason for selection**: Direct user directive mid-stream. Coordinator routed through 6-lens Define-pass (UX + PM + Frontend + QA + Analytics + Competitive) to validate before dispatching. Convergence was strong (6/6 lenses agree). Synthesis score 18 = base 15 + ConvergenceBonus +3 (6 lenses).
+- **Agents involved**: ux-designer, product-manager, frontend-engineer (twice — Define + Build), qa-engineer, analytics, competitive-researcher (read-only — coordinator wrote artifact). 6 Define artifacts + 1 synthesis delta + 1 build pass.
+- **Validation results**:
+  - Tests: 2,866 → **2,892** (+26 net: +13 new column tests + 5 RowOutputClicked tests + ~8 redirected/updated)
+  - Runtime: 3.15s → **3.31s** (5% headroom; within 3.5s budget)
+  - All 10 ACs PASS (per `PRODUCT_TODAY_COLUMNS.md`)
+  - CCC proxy ≤ 12 regions — no regression
+  - **§6.5 boundary**: 1 permitted addition (`RowOutputClicked` event constant). Zero composer/engine/types/orderDay touches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/events/events.js` — +1 event constant `RowOutputClicked` (38 → 39); updated EVENT_NAMES + default export
+    - `ARCHITECTURE.md` — `RowOutputClicked` payload doc; `TodayPageViewed` payload extended with optional `layoutVersion` field
+    - `js/ui/components/ScheduledActivityBlock.js` — removed `.sa-intention` + `.sa-state-label` template lines; added `.sa-artifact` rendering with click handler; rewrote `<li>` aria-label for semantic state encoding
+    - `js/ui/components/CycleCard.js` — added `catalog` prop; built `catalogById` map; threaded `outputArtifact` to `ScheduledActivityBlock`
+    - `js/ui/pages/Today.js` — pass `catalog` prop down to CycleCard
+    - `app.css` — `grid-template-columns` 7 → 6 tracks; removed `.sa-intention` / `.sa-intention .placeholder` / `.sa-state-label` rules; added `.sa-artifact` rules with overflow/ellipsis/nowrap; updated mobile breakpoint
+    - `js/app.js` — `RowOutputClicked` import + `OPEN_OUTPUT_ARTIFACT` data-action handler; `layoutVersion: 'v2'` added to `TodayPageViewed` emission at line 2493; no-op subscriber registered
+    - `tests/ui/components/ScheduledActivityBlock.test.js` — 3 intention tests redirected to artifact assertions; 3 state-label text assertions removed; +13 new column-refactor tests
+    - `tests/events/events.todayInstrumentation.test.js` — count 38→39; +5 `RowOutputClicked` tests
+    - `tests/events/events.test.js` — `RowOutputClicked` added to EXPECTED list
+  - **New Define artifacts** (7): `UX_TODAY_COLUMNS_UX.md`, `PRODUCT_TODAY_COLUMNS.md`, `UX_TODAY_COLUMNS_FRONTEND.md`, `UX_TODAY_COLUMNS_QA.md`, `UX_TODAY_COLUMNS_ANALYTICS.md`, `UX_TODAY_COLUMNS_COMPETITIVE.md`, `UX_TODAY_COLUMNS_DELTA.md`
+- **Spec deviations**: Zero. All Q1–Q7 locked decisions honored. Implementer made one positive deviation: repurposed `stateLabel()` helper to power `<li>` aria-label instead of retaining as dead code (PRD §4 said "retain even though unused").
+- **Time spent**: ~2–3h actual vs 3–5h estimate. Tightly-bounded scope + clear synthesis + 100% catalog coverage on `outputArtifact` = no implementation surprises.
+- **Strategic outcome**:
+  - **Evidence-linkage visible at planning step.** `outputArtifact` was previously surfaced only on close. Inline rendering makes the deliberate-ratification model — what you commit to producing — visible during ratification, not just measurement. Genuine competitive white space (0/10 best-in-class tools surface this).
+  - **Phil's instinct validated by competitive research.** 9/10 best-in-class tools omit textual state labels per row. ClickUp is the lone outlier and is widely critiqued.
+  - **Analytics baseline preserved via cohorting** — `layoutVersion: 'v2'` tagged on every `TodayPageViewed` post-deploy. v1 baseline data from Iter 21 → today is still queryable as the comparison cohort.
+- **Latent issues flagged by implementer (not fixed)**:
+  - Edit-mode protected blocks: artifact column remains clickable (intentional — review-without-edit affordance, but worth a manual QA pass)
+  - Mobile viewport: 6-track grid at 375px untested by visual regression — manual QA listed in implementer §areas-needing-QA-attention
+- **Follow-ups**:
+  - Commit + push (this iteration's deliverables + paused lunch-block Define artifacts as bystanders)
+  - Manual QA: load Today page, click `.sa-artifact` to open `OutputArtifactDialog`, verify ARIA via screen reader, verify mobile at 375px
+  - Lunch-block Define-pass remains paused — `ARCHITECTURE_DELTA_LUNCH_BLOCK.md` and `PRD_LUNCH_BLOCK.md` written but require Phil decisions on 3 open questions before dispatch
+  - Iter 23+ candidates: C-UX-V2-1 (15), C-UX-V2-2 (14), C-UX-6 (16) still queued for v2 visible changes (held until 14-day baseline closes); new candidates C-UX-COL-1, C-UX-COL-2, C-AN-3 added (all deferred from this iteration)

@@ -6,6 +6,52 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 22 — 2026-05-01 — Today row column refactor (C-UX-COL)
+
+### What changed
+User-directive feature, not an improvement-loop candidate. Phil flagged that two row columns were noise: the `.sa-intention` placeholder ("One line: what outcome by close?") was a question rather than an answer, and the `.sa-state-label` ("proposed/scheduled/in progress") was redundant with composition state and visual treatment. Coordinator dispatched a 6-lens parallel Define-pass (UX, PM, Frontend, QA, Analytics, Competitive) — strong convergence (6/6 lenses agree). Synthesis at `UX_TODAY_COLUMNS_DELTA.md` scored the bundle 18 (base 15 + ConvergenceBonus +3). Frontend-engineer implemented in a single pass.
+
+**Column changes (per row in `ScheduledActivityBlock.js`):**
+- REMOVED `.sa-state-label` — competitive research confirmed 9/10 best-in-class scheduling tools do not show textual state per row; state inferable from CSS class + visual treatment
+- REMOVED `.sa-intention` placeholder — was always rendering "One line: what outcome by close?" with no input affordance
+- ADDED `.sa-artifact` rendering `CatalogEntry.outputArtifact.name` (with `.kind` fallback). Clickable — opens existing `OutputArtifactDialog`. Collapses silently when null (e.g., custom user activities). Genuine competitive white space — 0/10 competitors surface expected output inline.
+- KEPT all 4 columns Phil flagged: time band, focus area (bucket chip), activity name, duration
+
+**Aria-label semantic encoding** (required by QA, blocks ship):
+- `<li>` aria-label now encodes state semantically: `"Activity: ${name}, ${state}, ${time}, ${duration} minutes"`
+- `stateLabel()` helper repurposed — was rendering visible label, now powers aria-label only. Better than dead-code retention.
+
+**Analytics cohorting (per Iter 21 baseline preservation):**
+- `TodayPageViewed` payload extended with `layoutVersion: 'v2'` field
+- Pre-refactor sessions remain `layoutVersion: 'v1'` (or absent — treated as v1) for split-cohort analysis
+- New event `RowOutputClicked` with payload `{userId, activityId, catalogEntryId, clickedAt}` — wired to clickable artifact column
+
+### Why
+- "One line" placeholder violated the deliberate-ratification model: the system was asking the user a question rather than informing them what the documented outcome of the activity is
+- State label was redundant noise — every row showed "scheduled" 95% of the time
+- `outputArtifact` already exists in the catalog (100% coverage, 60/60 entries verified by FE) but was only surfaced on close (via `OutputArtifactDialog`) — promoting it to inline render makes evidence-linkage visible at the planning step
+
+### Impact
+- Test suite: 2,866 → **2,892** (+26)
+- Runtime: 3.15s → **3.31s** (within 3.5s budget; 5% headroom)
+- §6.5 boundary: 1 permitted addition (`RowOutputClicked` event constant); composer/engine/types untouched
+- All 10 ACs PASS (per `PRODUCT_TODAY_COLUMNS.md`)
+- CCC proxy ≤ 12 regions maintained
+- Touched files: `js/events/events.js`, `ARCHITECTURE.md`, `js/ui/components/ScheduledActivityBlock.js`, `js/ui/components/CycleCard.js`, `js/ui/pages/Today.js`, `app.css`, `js/app.js` + 3 test files
+- Define artifacts produced (7 lens reviews + 1 synthesis): `UX_TODAY_COLUMNS_UX.md`, `PRODUCT_TODAY_COLUMNS.md`, `UX_TODAY_COLUMNS_FRONTEND.md`, `UX_TODAY_COLUMNS_QA.md`, `UX_TODAY_COLUMNS_ANALYTICS.md`, `UX_TODAY_COLUMNS_COMPETITIVE.md`, `UX_TODAY_COLUMNS_DELTA.md`
+
+### Deferrals (added to backlog)
+- C-UX-COL-1: CLOSED-state actual/planned duration ratio
+- C-UX-COL-2: Linear-style section grouping (PROPOSED / SCHEDULED / ACTIVE / COMPLETE)
+- C-AN-3: `producedExpectedOutput: boolean` field on `ActivityCompleted` event payload
+
+### Other artifacts produced this session (paused, not implemented)
+Lunch-block Define-pass also ran during this session (per separate user directive: "If you are planning on lunch from 12:00–13:00 then put a card in for that"). Two artifacts written, work paused awaiting Phil decisions on 3 open questions:
+- `ARCHITECTURE_DELTA_LUNCH_BLOCK.md` — system-architect delta with §6.5 hits identified (3, all justified)
+- `PRD_LUNCH_BLOCK.md` — product-manager PRD with 14 ACs
+
+---
+
 ## Iteration 21 — 2026-04-30 — Today UX v2 "Baseline + Safe Fix" (C-AN-1 + C-UX-2 + C-QA-V2-1)
 
 ### What changed

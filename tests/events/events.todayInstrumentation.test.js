@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import {
   TodayPageViewed,
   EditDrawerOpened,
+  RowOutputClicked,
   EVENT_NAMES,
   CycleReflowed
 } from '../../js/events/events.js';
@@ -61,9 +62,9 @@ describe('EVENT_NAMES — includes new events', () => {
     );
   });
 
-  test('EVENT_NAMES has 38 entries (36 prior + 2 new)', () => {
-    // Prior count was 36 (CycleReflowed was last). +2 = 38.
-    assert.equal(EVENT_NAMES.length, 38);
+  test('EVENT_NAMES has 39 entries (36 prior + 2 Iter-21 + 1 C-UX-COL)', () => {
+    // Prior count was 36 (CycleReflowed was last). +2 Iter-21 = 38. +1 C-UX-COL = 39.
+    assert.equal(EVENT_NAMES.length, 39);
   });
 
   test('TodayPageViewed appears after CycleReflowed in EVENT_NAMES', () => {
@@ -196,5 +197,52 @@ describe('regression — prior events still present', () => {
 
   test('CycleReflowed named export unchanged', () => {
     assert.equal(CycleReflowed, 'CycleReflowed');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C-UX-COL (Q2): RowOutputClicked — new event added in column refactor
+// ---------------------------------------------------------------------------
+describe('RowOutputClicked — C-UX-COL event (Q2)', () => {
+  test('RowOutputClicked equals the string "RowOutputClicked"', () => {
+    assert.equal(RowOutputClicked, 'RowOutputClicked');
+  });
+
+  test('EVENT_NAMES includes RowOutputClicked', () => {
+    assert.ok(
+      EVENT_NAMES.includes('RowOutputClicked'),
+      'RowOutputClicked missing from EVENT_NAMES'
+    );
+  });
+
+  test('RowOutputClicked appears after EditDrawerOpened in EVENT_NAMES', () => {
+    const openedIdx = EVENT_NAMES.indexOf('EditDrawerOpened');
+    const clickedIdx = EVENT_NAMES.indexOf('RowOutputClicked');
+    assert.ok(
+      clickedIdx > openedIdx,
+      `RowOutputClicked (${clickedIdx}) should come after EditDrawerOpened (${openedIdx})`
+    );
+  });
+
+  test('RowOutputClicked payload shape contract', () => {
+    const bus = new EventBus();
+    let captured = null;
+    bus.subscribe(RowOutputClicked, (p) => { captured = p; });
+
+    bus.publish(RowOutputClicked, {
+      userId: 'user_phil_mvp',
+      activityId: 'sa_abc',
+      catalogEntryId: 'cat_12_pdca_cycle',
+      clickedAt: '2026-04-30T10:00:00.000Z'
+    });
+
+    assert.ok(captured !== null, 'handler was not called');
+    assert.equal(typeof captured.userId, 'string', 'userId must be string');
+    assert.equal(typeof captured.activityId, 'string', 'activityId must be string');
+    assert.ok(
+      captured.catalogEntryId === null || typeof captured.catalogEntryId === 'string',
+      'catalogEntryId must be string or null'
+    );
+    assert.equal(typeof captured.clickedAt, 'string', 'clickedAt must be ISO string');
   });
 });

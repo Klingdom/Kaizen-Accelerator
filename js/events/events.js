@@ -102,13 +102,22 @@ export const CycleReflowed = 'CycleReflowed';
 // --- Iteration 21: Top-of-funnel instrumentation (C-AN-1) --------------------
 // Fired by app.js route-change handler and EDIT action handler.
 // Payload shapes:
-//   TodayPageViewed  — {userId, fromRoute: string|null, viewedAt: string}
+//   TodayPageViewed  — {userId, fromRoute: string|null, viewedAt: string,
+//                        layoutVersion?: string}
 //   EditDrawerOpened — {userId, compositionId, openedAt: string}
 // Both events use services.clock.now() for timestamps (deterministic in tests).
 // No consumer in this iteration — events emit to EventBus + events-log.
 // A future MetricsService.recompute will consume them for latency baseline.
 export const TodayPageViewed = 'TodayPageViewed';
 export const EditDrawerOpened = 'EditDrawerOpened';
+
+// --- Column refactor: output-artifact row click (C-UX-COL Q2) ----------------
+// Fired by app.js OPEN_OUTPUT_ARTIFACT handler when user clicks .sa-artifact.
+// Payload shape:
+//   RowOutputClicked — {userId, activityId, catalogEntryId, clickedAt: string}
+// Timestamp via services.clock.now() (deterministic in tests).
+// Added in the Today row column refactor iteration (C-UX-COL).
+export const RowOutputClicked = 'RowOutputClicked';
 
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
@@ -152,7 +161,8 @@ export const EVENT_NAMES = Object.freeze([
   KaizenStepScheduled,
   CycleReflowed,
   TodayPageViewed,
-  EditDrawerOpened
+  EditDrawerOpened,
+  RowOutputClicked
 ]);
 
 /**
@@ -197,5 +207,6 @@ export default Object.freeze({
   CycleReflowed,
   TodayPageViewed,
   EditDrawerOpened,
+  RowOutputClicked,
   EVENT_NAMES
 });

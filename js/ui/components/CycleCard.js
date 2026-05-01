@@ -106,7 +106,8 @@ export function orderActivitiesForDisplay(activities) {
  *   pinnedId?: string,
  *   nowIso?: string,
  *   compositionState?: string,
- *   explainById?: Record<string, {ref: string, rule: string, detail: string}>
+ *   explainById?: Record<string, {ref: string, rule: string, detail: string}>,
+ *   catalogById?: Record<string, object>
  * }} opts
  */
 function renderActivityList(activities, opts) {
@@ -116,11 +117,17 @@ function renderActivityList(activities, opts) {
   }
   const explainById = opts.explainById ?? {};
   const kaizenTitleById = opts.kaizenTitleById ?? {};
+  const catalogById = opts.catalogById ?? {};
   const editMode = !!opts.editMode;
   const selectedActivityId = opts.selectedActivityId ?? null;
   return ordered
-    .map((a) =>
-      ScheduledActivityBlock({
+    .map((a) => {
+      // C-UX-COL: resolve outputArtifact from catalog at the caller layer.
+      // ScheduledActivityBlock is a pure render function — it does not
+      // access the catalog. We pass the pre-resolved scalar here.
+      const catalogEntry = a.catalogEntryId ? (catalogById[a.catalogEntryId] ?? null) : null;
+      const outputArtifact = catalogEntry?.outputArtifact ?? null;
+      return ScheduledActivityBlock({
         activity: a,
         showStart: opts.showStart,
         pinned: opts.pinnedId === a.id,
@@ -129,9 +136,10 @@ function renderActivityList(activities, opts) {
         explainEntry: explainById[a.catalogEntryId] ?? null,
         kaizenTitle: a.linkedKaizenId ? (kaizenTitleById[a.linkedKaizenId] ?? null) : null,
         editMode,
-        editSelected: editMode && selectedActivityId === a.id
-      })
-    )
+        editSelected: editMode && selectedActivityId === a.id,
+        outputArtifact
+      });
+    })
     .join('\n');
 }
 
@@ -187,6 +195,7 @@ ${renderActivityList(activities, {
     compositionState: 'PROPOSED',
     explainById,
     kaizenTitleById: extras.kaizenTitleById ?? {},
+    catalogById: extras.catalogById ?? {},
     editMode,
     selectedActivityId
   })}
@@ -198,7 +207,7 @@ ${renderActivityList(activities, {
 /**
  * Render the ACCEPTED / ACTIVE variant.
  */
-function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById, editMode, selectedActivityId, undoCount }) {
+function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount }) {
   const compId = composition.id;
   const planned = plannedFromActivities(activities);
   // Pin: prefer IN_PROGRESS, else first SCHEDULED.
@@ -228,6 +237,7 @@ ${renderActivityList(activities, {
     nowIso,
     compositionState: isActive ? 'ACTIVE' : 'ACCEPTED',
     kaizenTitleById: kaizenTitleById ?? {},
+    catalogById: catalogById ?? {},
     editMode: edit,
     selectedActivityId
   })}
@@ -258,7 +268,8 @@ function renderRejected(composition) {
  *   targets?: object,
  *   floors?: object,
  *   ceilings?: object,
- *   nowIso?: string
+ *   nowIso?: string,
+ *   catalog?: Array<object>
  * }} props
  * @returns {string}
  */
@@ -281,7 +292,21 @@ export function CycleCard(props = {}) {
   const editMode = !!props.editMode;
   const selectedActivityId = props.selectedActivityId ?? null;
   const undoCount = Number.isFinite(props.undoCount) ? props.undoCount : 0;
-  const extras = { kaizenTitleById, editMode, selectedActivityId, undoCount };
+
+  // C-UX-COL: build catalogById map once here (O(n)) so renderActivityList
+  // can resolve outputArtifact per-activity without passing the full array
+  // down to the pure-render leaf (ScheduledActivityBlock). Pattern matches
+  // the existing explainById and kaizenTitleById lookups.
+  const catalogById = {};
+  if (Array.isArray(props.catalog)) {
+    for (const entry of props.catalog) {
+      if (entry && typeof entry.id === 'string') {
+        catalogById[entry.id] = entry;
+      }
+    }
+  }
+
+  const extras = { kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount };
 
   switch (composition.state) {
     case 'PROPOSED':

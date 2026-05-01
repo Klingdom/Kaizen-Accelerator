@@ -131,38 +131,43 @@ describe('ScheduledActivityBlock — state variants', () => {
     plannedStartAt: '09:00'
   };
 
-  test('PROPOSED state → state label "proposed"', () => {
+  // AC-04: .sa-state-label text is removed; state communicated via CSS class
+  // on <li> and aria-label only.
+  test('PROPOSED state → sa-state-proposed class on <li> (no text label)', () => {
     const html = ScheduledActivityBlock({
       activity: { ...baseActivity, state: 'PROPOSED' }
     });
     assert.match(html, /sa-state-proposed/);
-    assert.match(html, />proposed</);
+    // State text must NOT appear as visible label content
+    assert.ok(!html.includes('sa-state-label'), 'sa-state-label element must be absent');
   });
 
-  test('SCHEDULED state → state label "scheduled"', () => {
+  test('SCHEDULED state → sa-state-scheduled class on <li> (no text label)', () => {
     const html = ScheduledActivityBlock({
       activity: { ...baseActivity, state: 'SCHEDULED' }
     });
     assert.match(html, /sa-state-scheduled/);
-    assert.match(html, />scheduled</);
+    assert.ok(!html.includes('sa-state-label'), 'sa-state-label element must be absent');
   });
 
-  test('IN_PROGRESS state → "in progress" label', () => {
+  test('IN_PROGRESS state → sa-state-in_progress class on <li> (no text label)', () => {
     const html = ScheduledActivityBlock({
       activity: { ...baseActivity, state: 'IN_PROGRESS' }
     });
     assert.match(html, /sa-state-in_progress/);
-    assert.match(html, />in progress</);
+    assert.ok(!html.includes('sa-state-label'), 'sa-state-label element must be absent');
   });
 
-  test('CLOSED state → "closed" label', () => {
+  // AC-05: CLOSED state still readable via CSS class (opacity 0.55 applied by CSS)
+  test('CLOSED state → sa-state-closed class on <li>', () => {
     const html = ScheduledActivityBlock({
       activity: { ...baseActivity, state: 'CLOSED' }
     });
     assert.match(html, /sa-state-closed/);
   });
 
-  test('SKIPPED state → "skipped" label', () => {
+  // AC-06: SKIPPED state still readable via CSS class + skip-reason chip
+  test('SKIPPED state → sa-state-skipped class on <li>', () => {
     const html = ScheduledActivityBlock({
       activity: { ...baseActivity, state: 'SKIPPED' }
     });
@@ -366,7 +371,9 @@ describe('ScheduledActivityBlock — computeElapsedMinutes', () => {
   });
 });
 
-describe('ScheduledActivityBlock — intention (read-only)', () => {
+// AC-01/AC-02/AC-08: intention tests redirected to test outputArtifact rendering.
+// The old .sa-intention placeholder tests are replaced with .sa-artifact column tests.
+describe('ScheduledActivityBlock — outputArtifact column (replaces intention)', () => {
   const baseActivity = {
     id: 'sa_i',
     name: 'Deep Block',
@@ -375,24 +382,30 @@ describe('ScheduledActivityBlock — intention (read-only)', () => {
     state: 'PROPOSED'
   };
 
-  test('empty intention renders placeholder copy from §6.5.8', () => {
+  // AC-01: no .sa-intention element in rendered output
+  test('old .sa-intention placeholder text does NOT appear', () => {
     const html = ScheduledActivityBlock({ activity: baseActivity });
-    assert.match(html, /One line: what outcome by close\?/);
+    assert.ok(!html.includes('One line: what outcome by close?'), 'old intention placeholder must be absent');
+    assert.ok(!html.includes('sa-intention'), '.sa-intention class must be absent');
   });
 
-  test('set intention renders the value', () => {
+  // AC-02: outputArtifact.name renders when provided
+  test('renders outputArtifact.name when provided', () => {
     const html = ScheduledActivityBlock({
-      activity: { ...baseActivity, intention: 'Close the PRFAQ draft' }
+      activity: baseActivity,
+      outputArtifact: { name: 'Sprint Backlog', schema: 'DOCUMENT', required: true }
     });
-    assert.match(html, /Close the PRFAQ draft/);
-    assert.ok(!html.includes('One line: what outcome'));
+    assert.match(html, /Sprint Backlog/);
+    assert.match(html, /sa-artifact/);
   });
 
-  test('intention is HTML-escaped', () => {
+  // AC-02: outputArtifact.name is HTML-escaped (XSS guard)
+  test('outputArtifact.name is HTML-escaped', () => {
     const html = ScheduledActivityBlock({
-      activity: { ...baseActivity, intention: '<script>alert(1)</script>' }
+      activity: baseActivity,
+      outputArtifact: { name: '<script>xss</script>', schema: 'TEXT', required: true }
     });
-    assert.ok(!html.includes('<script>alert'));
+    assert.ok(!html.includes('<script>xss'), 'unescaped script tag must not appear');
     assert.match(html, /&lt;script&gt;/);
   });
 });
@@ -473,5 +486,301 @@ describe('ScheduledActivityBlock — XSS / injection', () => {
     });
     assert.ok(!html.includes('sa"onerror'));
     assert.match(html, /&quot;/);
+  });
+});
+
+// ============================================================
+// C-UX-COL refactor — new tests (13 total)
+// ============================================================
+
+describe('ScheduledActivityBlock — AC-01/AC-04: state-label removal', () => {
+  const base = {
+    id: 'sa_t',
+    name: 'Test Activity',
+    bucket: 'CI',
+    plannedDurationMinutes: 30,
+    plannedStartAt: '09:00'
+  };
+
+  // AC-04: the literal text "proposed", "scheduled", "in progress" must not
+  // appear inside a .sa-state-label element.
+  test('no .sa-state-label element in any state', () => {
+    for (const state of ['PROPOSED', 'SCHEDULED', 'IN_PROGRESS', 'CLOSED', 'SKIPPED']) {
+      const html = ScheduledActivityBlock({ activity: { ...base, state } });
+      assert.ok(!html.includes('sa-state-label'),
+        `sa-state-label must not appear for state ${state}`);
+    }
+  });
+
+  // AC-09: stateLabel() function is retained (exported indirectly — verifiable by
+  // checking the module exports; the function is used in aria-label generation).
+  // We verify its output appears in aria-label, not in a label div.
+  test('state string appears in <li> aria-label, not in a label div', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'PROPOSED' }
+    });
+    assert.match(html, /aria-label="Activity:[^"]*proposed[^"]*"/);
+    assert.ok(!html.includes('sa-state-label'));
+  });
+});
+
+describe('ScheduledActivityBlock — AC-02/AC-03: outputArtifact column', () => {
+  const base = {
+    id: 'sa_oa',
+    name: 'PDCA Cycle',
+    bucket: 'CI',
+    plannedDurationMinutes: 30,
+    plannedStartAt: '10:00',
+    state: 'PROPOSED'
+  };
+
+  // Test 1 (QA §5 #1): outputArtifact.name renders when CatalogEntry has one
+  test('renders outputArtifact.name when provided', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: 'Current-condition measurement', schema: 'NUMERIC', required: true }
+    });
+    assert.match(html, /Current-condition measurement/);
+    assert.match(html, /class="sa-artifact"/);
+  });
+
+  // Test 2 (QA §5 #2): fallback to kind is not needed per Q1 decision —
+  // we use name always. Verify name takes priority over schema display.
+  test('outputArtifact.name takes priority; schema is not exposed in row', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: 'C&E Matrix', schema: 'DOCUMENT', required: true }
+    });
+    assert.match(html, /C&amp;E Matrix/);        // HTML-escaped
+    // schema type should not appear as a visible label in row
+    assert.ok(!html.includes('>DOCUMENT<'), 'schema string must not appear as row text');
+  });
+
+  // Test 3 (QA §5 #3): null outputArtifact renders empty without breaking grid
+  test('null outputArtifact renders empty sa-artifact-empty div (AC-03)', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: null
+    });
+    assert.match(html, /sa-artifact sa-artifact-empty/);
+    assert.ok(!html.includes('undefined'), 'must not render the string "undefined"');
+    assert.ok(!html.includes('One line'), 'must not render old intention placeholder');
+  });
+
+  // Test 4 (QA §5 #3): missing outputArtifact prop renders safely (no prop = null)
+  test('missing outputArtifact prop renders safely empty', () => {
+    const html = ScheduledActivityBlock({ activity: base });
+    assert.match(html, /sa-artifact/);
+    assert.ok(!html.includes('undefined'));
+  });
+
+  // Test 5 (QA §6 edge case #4): outputArtifact.name with HTML special chars
+  test('outputArtifact.name HTML-escaped (XSS guard)', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: '<script>alert(1)</script>', schema: 'TEXT', required: true }
+    });
+    assert.ok(!html.includes('<script>alert'), 'raw script tag must not appear');
+    assert.match(html, /&lt;script&gt;/);
+  });
+
+  // Test 6 (edge case): empty string name treated as null
+  test('empty string outputArtifact.name renders empty column (EC-07)', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: '', schema: 'TEXT', required: true }
+    });
+    assert.match(html, /sa-artifact sa-artifact-empty/);
+  });
+});
+
+describe('ScheduledActivityBlock — AC-04/Q2: .sa-artifact click target', () => {
+  const base = {
+    id: 'sa_click',
+    name: 'Sprint Retro',
+    bucket: 'CI',
+    plannedDurationMinutes: 60,
+    plannedStartAt: '14:00',
+    state: 'SCHEDULED'
+  };
+
+  // Test 4 (QA §5 #4): click on .sa-artifact opens OutputArtifactDialog (data-action wired)
+  test('.sa-artifact has data-action=OPEN_OUTPUT_ARTIFACT when name present', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: 'Retrospective Actions', schema: 'TWO_LIST', required: true }
+    });
+    assert.match(html, /data-action="OPEN_OUTPUT_ARTIFACT"/);
+  });
+
+  // Test 5 (QA §5 #5): payload carries activityId
+  test('.sa-artifact data-payload contains activityId', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: { name: 'Retrospective Actions', schema: 'TWO_LIST', required: true }
+    });
+    assert.match(html, /data-action="OPEN_OUTPUT_ARTIFACT"[^>]*sa_click/);
+  });
+
+  // Empty artifact has NO click action (collapses silently)
+  test('.sa-artifact-empty does NOT have data-action', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      outputArtifact: null
+    });
+    // The empty div should not carry the click handler
+    const emptyMatch = html.match(/sa-artifact-empty[^>]*/);
+    assert.ok(emptyMatch, 'sa-artifact-empty must be present');
+    assert.ok(!emptyMatch[0].includes('OPEN_OUTPUT_ARTIFACT'), 'empty column must not be clickable');
+  });
+});
+
+describe('ScheduledActivityBlock — Q7: ARIA state in <li>', () => {
+  const base = {
+    id: 'sa_aria',
+    name: 'Daily Standup',
+    bucket: 'COMMUNICATION',
+    plannedDurationMinutes: 15,
+    plannedStartAt: '09:00'
+  };
+
+  // Test 7 (QA §5 #7): <li> aria-label includes name, state, time, duration
+  test('<li> aria-label encodes name, state, time, duration for PROPOSED', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'PROPOSED' }
+    });
+    assert.match(html, /aria-label="Activity: Daily Standup, proposed, 09:00, 15 minutes"/);
+  });
+
+  test('<li> aria-label encodes IN_PROGRESS state', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'IN_PROGRESS' }
+    });
+    assert.match(html, /aria-label="Activity: Daily Standup, in progress, 09:00, 15 minutes"/);
+  });
+
+  test('<li> aria-label encodes CLOSED state', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'CLOSED' }
+    });
+    assert.match(html, /aria-label="Activity: Daily Standup, closed, 09:00, 15 minutes"/);
+  });
+
+  test('<li> aria-label encodes SKIPPED state', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'SKIPPED' }
+    });
+    assert.match(html, /aria-label="Activity: Daily Standup, skipped, 09:00, 15 minutes"/);
+  });
+});
+
+describe('ScheduledActivityBlock — AC-05/AC-06: state readability without label', () => {
+  const base = {
+    id: 'sa_rd',
+    name: 'Test',
+    bucket: 'PROJECT',
+    plannedDurationMinutes: 60,
+    plannedStartAt: '10:00'
+  };
+
+  // Test 9 (QA §5): IN_PROGRESS elapsed timer still renders
+  test('IN_PROGRESS: elapsed timer renders alongside artifact column', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        ...base, state: 'IN_PROGRESS',
+        actualStartAt: '2026-04-30T10:00:00Z'
+      },
+      nowIso: '2026-04-30T10:45:00Z',
+      outputArtifact: { name: '1-Pager', schema: 'DOCUMENT', required: true }
+    });
+    assert.match(html, /sa-elapsed/);
+    assert.match(html, /45m elapsed/);
+    assert.match(html, /1-Pager/);
+  });
+
+  // Test 10 (QA §5): SKIPPED skip-reason still renders
+  test('SKIPPED: skip-reason chip still renders', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        ...base, state: 'SKIPPED',
+        reasonCodeIfSkipped: 'MEETING_CONFLICT'
+      }
+    });
+    assert.match(html, /sa-skip-reason/);
+    assert.match(html, /MEETING_CONFLICT/);
+    assert.match(html, /sa-state-skipped/);
+  });
+
+  // Test 11 (QA §5): CLOSED row has sa-state-closed class
+  test('CLOSED: row has sa-state-closed class even without label', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...base, state: 'CLOSED' }
+    });
+    assert.match(html, /sa-state-closed/);
+    assert.ok(!html.includes('sa-state-label'), 'no text label element');
+  });
+});
+
+describe('ScheduledActivityBlock — AC-07: edit mode preserved', () => {
+  const base = {
+    id: 'sa_edit',
+    name: 'PDCA Cycle',
+    bucket: 'CI',
+    plannedDurationMinutes: 30,
+    plannedStartAt: '10:00',
+    state: 'PROPOSED',
+    catalogEntryId: 'cat_12_pdca'
+  };
+
+  // Test 8 (QA §5): edit-mode chrome positions correctly
+  test('edit mode: Select and Remove buttons render correctly', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      editMode: true,
+      editSelected: false,
+      outputArtifact: { name: 'PDCA Output', schema: 'TEXT', required: true }
+    });
+    assert.match(html, /data-action="EDIT_SELECT_SLOT"/);
+    assert.match(html, /data-action="EDIT_REMOVE_SLOT"/);
+    // Artifact column still renders in edit mode (read-only)
+    assert.match(html, /PDCA Output/);
+  });
+
+  test('edit mode: artifact column read-only (no edit input added)', () => {
+    const html = ScheduledActivityBlock({
+      activity: base,
+      editMode: true,
+      editSelected: true,
+      outputArtifact: { name: 'Sprint Backlog', schema: 'DOCUMENT', required: true }
+    });
+    assert.match(html, /Sprint Backlog/);
+    // No edit input injected for the artifact column
+    assert.ok(!/<input[^>]*Sprint Backlog/.test(html), 'artifact column must be read-only');
+  });
+});
+
+describe('ScheduledActivityBlock — AC-03: Lunch/null-catalog rows', () => {
+  // Test 12 (QA §5): Lunch block (no outputArtifact) renders empty artifact column
+  test('null outputArtifact (Lunch block) renders empty column without breaking grid', () => {
+    const html = ScheduledActivityBlock({
+      activity: {
+        id: 'sa_lunch',
+        name: 'Lunch',
+        bucket: 'CI',
+        plannedDurationMinutes: 60,
+        plannedStartAt: '12:00',
+        state: 'SCHEDULED',
+        catalogEntryId: 'gen_lunch'
+      },
+      outputArtifact: null,
+      showStart: true
+    });
+    assert.match(html, /sa-artifact sa-artifact-empty/);
+    // Grid integrity: other columns still present
+    assert.match(html, /sa-when/);
+    assert.match(html, /sa-bucket-chip/);
+    assert.match(html, /sa-name/);
+    assert.match(html, /sa-duration/);
+    assert.ok(!html.includes('undefined'), 'no undefined in output');
   });
 });

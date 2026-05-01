@@ -7,7 +7,7 @@
  *   activity:          required — ScheduledActivity row
  *   showStart:         boolean — show the Start button (enabled in Sprint 5)
  *   pinned:            boolean — pin-the-first-block styling
- *   compositionState:  string — parent composition state (affects intention readout)
+ *   compositionState:  string — parent composition state
  *   nowIso:            string — ISO timestamp for elapsed-timer readout on IN_PROGRESS
  *   explainEntry:      {ref, rule, detail} — if provided and composition is
  *                      PROPOSED, a WhyChip is rendered on the trailing edge.
@@ -15,13 +15,27 @@
  *                      render a "part of: [title]" chip under the name.
  *                      Surfaced across ALL states including PROPOSED so the
  *                      user sees project linkage before accepting.
+ *   outputArtifact:    {name: string, schema: string, required: boolean} | null —
+ *                      pre-resolved from CatalogEntry by the caller (CycleCard).
+ *                      When non-null, the .sa-artifact column renders the artifact
+ *                      name and is clickable to open OutputArtifactDialog early.
+ *                      When null (Lunch, custom blocks), the column renders empty.
+ *
+ * Column layout (C-UX-COL refactor — 5 structural columns):
+ *   1. .sa-when        — time range (HH:MM–HH:MM)
+ *   2. .sa-bucket-chip — bucket label chip
+ *   3. .sa-name        — activity name + inline badges
+ *   4. .sa-duration    — planned minutes
+ *   5. .sa-artifact    — output artifact name (NEW — replaces .sa-intention)
+ *   [removed] .sa-state-label — was "proposed/scheduled/…"; state now in
+ *             <li> aria-label and CSS class only.
  *
  * State variants (Sprint 5):
- *   PROPOSED     — bucket chip + read-only intention + why-chip (if given)
+ *   PROPOSED     — bucket chip + artifact column + why-chip (if given)
  *   SCHEDULED    — same + enabled Start button + Skip button
  *   IN_PROGRESS  — elapsed timer + Close button (artifact dialog on click)
- *   CLOSED       — state label "closed" + no actions
- *   SKIPPED      — state label "skipped" + reason label
+ *   CLOSED       — row dimmed via .sa-state-closed; no text label
+ *   SKIPPED      — danger border + skip-reason chip
  */
 
 import { esc } from '../mount.js';
@@ -161,7 +175,8 @@ function renderSkipReason(a) {
  *   nowIso?: string,
  *   explainEntry?: {ref: string, rule: string, detail: string} | null,
  *   editMode?: boolean,
- *   editSelected?: boolean
+ *   editSelected?: boolean,
+ *   outputArtifact?: {name: string, schema: string, required: boolean} | null
  * }} props
  * @returns {string}
  */
@@ -183,6 +198,11 @@ export function ScheduledActivityBlock(props = {}) {
   const editSelected = !!props.editSelected;
   const protectedBlock = editMode ? isProtectedBlock(a) : false;
 
+  // C-UX-COL: pre-resolved output artifact definition from CatalogEntry.
+  // Caller (CycleCard) resolves catalogEntryId → CatalogEntry.outputArtifact.
+  // Null when the catalog entry has no artifact (Lunch, custom blocks).
+  const outputArtifact = props.outputArtifact ?? null;
+
   const chipClass = bucketMeta(a.bucket).chipClass;
   const time = formatTime(a.plannedStartAt ?? a.anchor);
   // Sprint 16a: surface the time as a "HH:MM–HH:MM" range alongside the
@@ -194,7 +214,6 @@ export function ScheduledActivityBlock(props = {}) {
   const timeEditable = editMode && editSelected && !protectedBlock;
   const name = a.name ?? a.catalogEntryId ?? '(unnamed)';
   const duration = a.plannedDurationMinutes ?? 0;
-  const intention = a.intention ?? '';
   const state = a.state ?? 'PROPOSED';
   const carried = a.carriedOver ? '<span class="carried-badge" title="carried from yesterday">carried</span>' : '';
   const kaizenChip = (kaizenTitle && a.linkedKaizenId)
@@ -210,12 +229,21 @@ export function ScheduledActivityBlock(props = {}) {
     editMode && editSelected ? 'edit-selected' : ''
   ].filter(Boolean).join(' ');
 
-  // Intention is read-only this sprint (placeholder from §6.5.8).
-  const intentionBlock = `<div class="sa-intention" aria-label="intention">${
-    intention
-      ? esc(intention)
-      : '<span class="placeholder">One line: what outcome by close?</span>'
-  }</div>`;
+  // C-UX-COL: output artifact column (replaces .sa-intention).
+  // Renders the expected output name pre-resolved from CatalogEntry.
+  // Clickable to open OutputArtifactDialog early (Q2). Collapses silently
+  // when outputArtifact is null (Q3). Always read-only — artifact is catalog-
+  // defined, not editable per slot.
+  const artifactName = outputArtifact?.name && outputArtifact.name.length > 0
+    ? outputArtifact.name
+    : null;
+  const artifactPayload = esc(JSON.stringify({ activityId: a.id ?? '' }));
+  const artifactBlock = artifactName
+    ? `<div class="sa-artifact" title="${esc(artifactName)}" data-action="OPEN_OUTPUT_ARTIFACT" data-payload='${artifactPayload}' role="button" tabindex="0" aria-label="Output artifact: ${esc(artifactName)}">` +
+      `<span class="sa-artifact-icon" aria-hidden="true">📄</span>` +
+      `<span class="sa-artifact-name">${esc(artifactName)}</span>` +
+      `</div>`
+    : `<div class="sa-artifact sa-artifact-empty"></div>`;
 
   // Why-chip: only rendered for PROPOSED compositions (PROPOSED state) with
   // a matching explain entry. On ACCEPTED/ACTIVE we hide it per Sprint 5 spec.
@@ -262,15 +290,21 @@ export function ScheduledActivityBlock(props = {}) {
   // backgrounds.
   const userEdited = a.userEdited === true;
 
-  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}" data-user-edited="${userEdited ? 'true' : 'false'}"${selectAttrs}>
+  // C-UX-COL Q7: encode state semantically in aria-label so screen readers
+  // can announce it after .sa-state-label removal. Format:
+  // "Activity: [name], [state label], [time], [duration] minutes"
+  const ariaStateLabel = stateLabel(state);
+  const ariaTime = time || 'unscheduled';
+  const liAriaLabel = `aria-label="Activity: ${esc(name)}, ${esc(ariaStateLabel)}, ${esc(ariaTime)}, ${esc(String(duration))} minutes"`;
+
+  return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}" data-user-edited="${userEdited ? 'true' : 'false'}"${selectAttrs} ${liAriaLabel}>
   <div class="sa-when"${whenAria}>${whenInner}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>
-  ${intentionBlock}
+  ${artifactBlock}
   ${renderElapsed(a, nowIso)}
   ${renderSkipReason(a)}
-  <div class="sa-state-label">${esc(stateLabel(state))}</div>
   ${runtimeActions}
   ${editChrome}
   ${durationChips}

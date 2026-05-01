@@ -365,9 +365,10 @@ html, body {
 
 .sa-block {
   display: grid;
-  /* Sprint 16a — bump the leading time column from 60px to 100px so the
-     new "HH:MM–HH:MM" range fits comfortably without truncating. */
-  grid-template-columns: 100px 120px 1fr 60px 1fr 90px 80px;
+  /* C-UX-COL refactor: 6 tracks (was 7). Removed 90px .sa-state-label track;
+     .sa-intention (1fr) renamed to .sa-artifact (1fr — same width).
+     Sprint 16a — leading time column 100px for "HH:MM–HH:MM" range. */
+  grid-template-columns: 100px 120px 1fr 60px 1fr 80px;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -430,22 +431,27 @@ html, body {
   font-size: 13px;
 }
 
-.sa-intention {
+/* C-UX-COL: .sa-artifact replaces .sa-intention. Renders the expected output
+   artifact name from CatalogEntry. Muted, truncated, icon-prefixed. Clickable
+   (cursor pointer) to open OutputArtifactDialog early (Q2).
+   .sa-artifact-empty collapses silently (no placeholder text) for null entries. */
+.sa-artifact {
   color: var(--muted);
   font-size: 13px;
-  font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
-.sa-intention .placeholder { color: var(--border-strong); }
-
-.sa-state-label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: right;
+.sa-artifact:hover .sa-artifact-name {
+  text-decoration: underline;
+}
+.sa-artifact-empty {
+  cursor: default;
+}
+.sa-artifact-icon {
+  margin-right: 4px;
+  font-size: 12px;
 }
 
 .sa-block.sa-state-closed { opacity: 0.55; }
@@ -1404,8 +1410,7 @@ html, body {
   .sa-bucket-chip,
   .sa-name,
   .sa-duration,
-  .sa-intention,
-  .sa-state-label {
+  .sa-artifact {
     text-align: left;
   }
 

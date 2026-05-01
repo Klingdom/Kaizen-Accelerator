@@ -26,6 +26,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // (35 + 1 = 36 total).
 // Iteration 21 (C-AN-1) adds TodayPageViewed + EditDrawerOpened for the
 // top-of-funnel latency baseline (36 + 2 = 38 total).
+// C-UX-COL column refactor adds RowOutputClicked for .sa-artifact click
+// analytics (38 + 1 = 39 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -64,7 +66,8 @@ const EXPECTED = [
   'KaizenStepScheduled',
   'CycleReflowed',
   'TodayPageViewed',
-  'EditDrawerOpened'
+  'EditDrawerOpened',
+  'RowOutputClicked'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {
