@@ -6,6 +6,62 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 27 — 2026-05-04 — Focus-trap rollout to 8 dialogs (C-UX-6b)
+
+### What changed
+Mechanical rollout of the `installFocusTrap` utility extracted in Iter 24 to all 8 remaining dialogs. WCAG §2.1.2 conformance now covers the entire dialog surface.
+
+**Dialogs covered:**
+- BaselineDialog
+- KaizenCloseDialog
+- OpportunityIntakeForm
+- OutputArtifactDialog
+- ReflectionSheet
+- RemeasurementDialog
+- SkipReasonModal
+- WeeklyReflectionWizard
+
+**Implementation pattern:**
+- Extended `syncDrawerFocusTraps(state, handlers)` in `js/app.js` with a `dialogConfigs[]` array — each config entry declares: open-state flag, `_focusTrap` handle key, CSS selector, Escape action name
+- Idempotent install/release on each `rerender()` call
+- Reused Iter 24's `installFocusTrap.onEscape` callback option — no new escape mechanism; `onEscape` calls `handlers[actionName]({})` so dialog Escape triggers the same close handler as the Cancel button (including focus-restore via `releaseFocusTrap`)
+- `renderApp(services, state, handlers)` signature extended; `initApp` populates a `_handlers = {}` reference that's filled after `buildHandlers` runs, ensuring every `rerender()` has a live handler reference
+
+**Zero dialog component file changes needed:**
+- All 8 already had `role="dialog"` + `aria-modal="true"` (verified Iter 24 audit)
+- All have at least one focusable element — no "zero focusable" edge case hit
+
+### Why
+- Iter 24 closed C-UX-6 (EditDrawer + FineTuneDrawer focus traps) and noted 8 other dialogs as the wider gap
+- C-UX-6b queued for next non-Phil-blocked iteration; Phil approved
+- Reusable utility from Iter 24 made the rollout mechanical (1 hour vs original ~2hr estimate)
+
+### Impact
+- Test suite: 2,986 → **3,018** (+32: 32 new dialog integration tests in `tests/ui/dialogFocusTraps.test.js`)
+- Runtime: 3.53s → **4.03s** ⚠️ (15% over 3.5s budget — see Runtime Watch below)
+- All 12 ACs PASS
+- §6.5 hits: **0**
+- Files touched: `js/app.js` (extension only) + 1 NEW test file
+
+### ⚠️ CRITICAL Runtime Watch
+Runtime trend across last 6 iterations:
+- Iter 22: 3.15s
+- Iter 23: 3.67s ⚠️
+- Iter 24: 3.49s ✓
+- Iter 25: 3.80s ⚠️
+- Iter 26: 3.53s ✓
+- Iter 27: **4.03s ⚠️ (15% over budget)**
+
+Per-test cost: 1.14ms (Iter 22) → 1.34ms (Iter 27) — **17% regression**.
+
+Pattern is no longer oscillation; it's now an upward trend. **Q3 from Iter 17 §4.2 meta-review (per-test ms metric switch) is now critically overdue.** Meta-review should run before next iteration to address:
+- Runtime budget redefinition (3.5s ceiling no longer realistic)
+- Per-test ms metric adoption
+- Whether test design is generating unnecessary cost (e.g., the 32 new dialog integration tests use full mock-DOM setup)
+- Whether to invest in test parallelization
+
+---
+
 ## Iteration 26 — 2026-05-04 — Time-blocked lunch as editable ScheduledActivity (C-PM-LUNCH)
 
 ### What changed

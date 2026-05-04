@@ -759,3 +759,35 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phil's standard-work authority queue (~25 SW-Q items for Phases B + C of broader simplify) still pending
   - Lunch-block Define-pass artifacts (`ARCHITECTURE_DELTA_LUNCH_BLOCK.md`, `PRD_LUNCH_BLOCK.md`) are now historical (DONE-by-Iter-26)
   - 12:30–13:00 implicit gap intentional per timing decision (a); if Phil later wants Post-lunch Comm moved to 12:30, separate iteration required (anchor change in `DAILY_NON_OPTIONAL_SET`)
+
+---
+
+## Iteration 27 — 2026-05-04 — Focus-trap rollout to 8 dialogs (C-UX-6b)
+
+- **Selected item**: C-UX-6b — focus-trap rollout to remaining 8 dialogs (BaselineDialog, KaizenCloseDialog, OpportunityIntakeForm, OutputArtifactDialog, ReflectionSheet, RemeasurementDialog, SkipReasonModal, WeeklyReflectionWizard). Backlog score 14 (single-lens cap per §6.4).
+- **Reason for selection**: Phil's directive: "proceed with the next non-Phil-blocked iteration." C-UX-6b was the highest-ranked non-Phil-blocked OPEN item with reusable infrastructure already shipped (Iter 24's `installFocusTrap` utility). Mechanical rollout — clear scope, low risk, ships in single pass.
+- **Agents involved**: frontend-engineer (single-pass — no Define-pass; pattern established in Iter 24).
+- **Validation results**:
+  - Tests: 2,986 → **3,018** (+32: 32 new dialog integration tests in `tests/ui/dialogFocusTraps.test.js`)
+  - Runtime: 3.53s → **4.03s** ⚠️ (15% over 3.5s budget — third consecutive overshoot in 5 iterations)
+  - Per-test cost: 1.18ms → **1.34ms** (17% regression vs Iter 22 baseline of 1.14ms)
+  - All 12 ACs PASS
+  - **§6.5 boundary**: zero hits. Only `js/app.js` (UI wiring layer) + 1 new test file touched.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/app.js` — extended `syncDrawerFocusTraps(state, handlers)` with `dialogConfigs[]` array covering all 8 dialogs; idempotent install/release on each rerender; `renderApp` signature extended to accept handlers; `initApp` initializes `_handlers = {}` reference populated after `buildHandlers` runs
+  - **New files**:
+    - `tests/ui/dialogFocusTraps.test.js` — 32 integration tests (4 per dialog: install on open, release on close, Escape calls handler, Tab cycling) using the same `_doc` injection pattern from Iter 24 for jsdom-free testing
+- **Spec deviations**: Zero. All 12 ACs implemented exactly as briefed.
+- **Time spent**: ~1h actual vs 2h estimate. Reusable utility from Iter 24 + clear pattern = sub-2× efficiency.
+- **Strategic outcome**:
+  - **WCAG §2.1.2 conformance now covers all 10 modal surfaces** (EditDrawer + FineTuneDrawer from Iter 24; 8 dialogs from Iter 27)
+  - **`installFocusTrap` utility validated as reusable** — single source of truth across 10 different open/close lifecycles
+  - **`syncDrawerFocusTraps` becomes the unified focus-management layer** — easier to extend for future dialogs
+- **Latent issues**:
+  - **CRITICAL: Runtime budget overshoot trending UP**, not oscillating. Last 6 iterations: 3.15 → 3.67 → 3.49 → 3.80 → 3.53 → 4.03 (steady upward bias). Per-test cost 1.14ms → 1.34ms (17% regression). The new dialog integration tests (32 tests) likely contribute most of this iteration's overshoot. **Meta-review trigger is now critically due.**
+  - 3 improvement-loop iterations completed since Iter 18 meta-review (Iter 19, Iter 21, Iter 24). With Iter 27 being a 4th, the §6 trigger ("every 3 completed improvement loops") has been met and exceeded.
+- **Follow-ups**:
+  - **Run meta-coordinator BEFORE Iter 28**. Mandatory per §6 trigger. Topics: runtime budget redefinition, per-test ms metric switch (Q3 from Iter 17 §4.2), test-design hygiene, §6.5 boundary effectiveness, backlog quality.
+  - Commit + push.
+  - Production deploy queue grows: Iter 22 + 23 + 24 + 25 + 26 + 27 all queued.

@@ -362,11 +362,21 @@ function createState() {
     // C-UX-12 (Iteration 14) — "Why this plan?" disclosure chip state.
     // Collapses on each new page load (plan changes daily).
     whyPlanExpanded: false,
-    // C-UX-6: focus trap handles for EditDrawer and FineTuneDrawer.
-    // Each handle is the opaque object returned by installFocusTrap().
+    // C-UX-6: focus trap handles for EditDrawer, FineTuneDrawer, and all 8
+    // modal dialogs wired in Iter 27 (C-UX-6b). Each handle is the opaque
+    // object returned by installFocusTrap(); null means trap not installed.
     _focusTrap: {
       editDrawer: null,
-      fineTuneDrawer: null
+      fineTuneDrawer: null,
+      // Iter 27 — 8 remaining dialogs.
+      baselineDialog: null,
+      kaizenCloseDialog: null,
+      opportunityIntakeForm: null,
+      outputArtifactDialog: null,
+      reflectionSheet: null,
+      remeasurementDialog: null,
+      skipReasonModal: null,
+      weeklyReflectionWizard: null
     }
   };
 }
@@ -528,18 +538,22 @@ export function mergeOrphanActivities(activeState, orphans) {
 }
 
 /**
- * C-UX-6: Synchronise focus-trap installation with current drawer open/closed
- * state. Called after every mountHtml so the trap always targets fresh DOM.
+ * C-UX-6 / C-UX-6b: Synchronise focus-trap installation with current drawer
+ * and dialog open/closed state. Called after every mountHtml so the trap
+ * always targets fresh DOM.
  *
- * Both EditDrawer and FineTuneDrawer are rendered as `<aside>` elements inside
- * the app shell. We query them by their stable class names after each render.
+ * Drawers (EditDrawer, FineTuneDrawer) are rendered as `<aside>` elements.
+ * Dialogs are rendered as `<section role="dialog">` elements inside the page.
+ * We query them by their stable CSS class names after each render.
  *
  * This function is a no-op when `document` is not available (i.e. in tests).
  *
  * @param {object} state
+ * @param {Record<string, Function>} [handlers]  — action handler map, used for
+ *   onEscape callbacks so Escape closes the dialog and triggers focus-restore.
  */
 /* istanbul ignore next — browser only */
-function syncDrawerFocusTraps(state) {
+function syncDrawerFocusTraps(state, handlers = {}) {
   if (typeof document === 'undefined') return;
   if (!state._focusTrap) return;
 
@@ -562,6 +576,76 @@ function syncDrawerFocusTraps(state) {
     releaseFocusTrap(state._focusTrap.fineTuneDrawer);
     state._focusTrap.fineTuneDrawer = null;
   }
+
+  // ---- Iter 27 (C-UX-6b): 8 remaining modal dialogs -------------------
+  // Each entry: [stateFlag, trapKey, cssSelector, escapeHandlerName]
+  // stateFlag  — truthy when the dialog is open
+  // trapKey    — key on state._focusTrap to store the handle
+  // cssSelector — querySelector to locate the dialog root in the DOM
+  // escapeHandlerName — handler to invoke when Escape is pressed inside trap
+  const dialogConfigs = [
+    {
+      open: !!state.baselineDialog,
+      key: 'baselineDialog',
+      selector: '.bd-modal',
+      onEscapeAction: 'CLOSE_BASELINE_DIALOG'
+    },
+    {
+      open: !!state.closeKaizenDialog,
+      key: 'kaizenCloseDialog',
+      selector: '.kcd-modal',
+      onEscapeAction: 'CLOSE_CLOSE_KAIZEN_DIALOG'
+    },
+    {
+      open: !!(state.portfolio && state.portfolio.intakeForm),
+      key: 'opportunityIntakeForm',
+      selector: '.oif-modal',
+      onEscapeAction: 'OPP_CANCEL_INTAKE'
+    },
+    {
+      open: !!(state.openDialog && state.openDialog.kind === 'CLOSE'),
+      key: 'outputArtifactDialog',
+      selector: '.oad-modal',
+      onEscapeAction: 'CLOSE_CLOSE_DIALOG'
+    },
+    {
+      open: !!state.reflectionSheet,
+      key: 'reflectionSheet',
+      selector: '.rs-modal',
+      onEscapeAction: 'CLOSE_REFLECTION'
+    },
+    {
+      open: !!state.remeasurementDialog,
+      key: 'remeasurementDialog',
+      selector: '.rd-modal',
+      onEscapeAction: 'CLOSE_REMEASUREMENT_DIALOG'
+    },
+    {
+      open: !!(state.openDialog && state.openDialog.kind === 'SKIP'),
+      key: 'skipReasonModal',
+      selector: '.srm-modal',
+      onEscapeAction: 'CLOSE_SKIP_MODAL'
+    },
+    {
+      open: !!state.wizard,
+      key: 'weeklyReflectionWizard',
+      selector: '.wrw-modal',
+      onEscapeAction: 'WRW_CLOSE'
+    }
+  ];
+
+  for (const cfg of dialogConfigs) {
+    if (cfg.open && !state._focusTrap[cfg.key]) {
+      const el = document.querySelector(cfg.selector);
+      const onEscape = typeof handlers[cfg.onEscapeAction] === 'function'
+        ? () => handlers[cfg.onEscapeAction]({})
+        : undefined;
+      state._focusTrap[cfg.key] = installFocusTrap(el ?? null, { onEscape });
+    } else if (!cfg.open && state._focusTrap[cfg.key]) {
+      releaseFocusTrap(state._focusTrap[cfg.key]);
+      state._focusTrap[cfg.key] = null;
+    }
+  }
 }
 
 /**
@@ -570,8 +654,10 @@ function syncDrawerFocusTraps(state) {
  *
  * @param {object} services
  * @param {object} state
+ * @param {Record<string, Function>} [handlers]  — optional action handler map;
+ *   forwarded to syncDrawerFocusTraps for dialog Escape wiring (Iter 27).
  */
-export function renderApp(services, state) {
+export function renderApp(services, state, handlers = {}) {
   const {
     composerService,
     kaizenService,
@@ -757,11 +843,12 @@ export function renderApp(services, state) {
   const pageWithToast = `${toastHtml}${pageHtml}`;
   const shellHtml = AppShell({ route: state.route, pageHtml: pageWithToast });
   mountHtml(APP_ROOT_ID, shellHtml);
-  // C-UX-6: install/release focus traps after every render so the trap
-  // always matches the current DOM. Browser-only; mountHtml is already
-  // guarded, so this block is unreachable in test environments.
+  // C-UX-6 / C-UX-6b: install/release focus traps after every render so
+  // the trap always matches the current DOM. Passes handlers for dialog
+  // Escape wiring (Iter 27). Browser-only; mountHtml is already guarded,
+  // so this block is unreachable in test environments.
   /* istanbul ignore next — browser only */
-  syncDrawerFocusTraps(state);
+  syncDrawerFocusTraps(state, handlers);
 }
 
 /**
@@ -2575,7 +2662,11 @@ export function start() {
   // will consume for proactive artifact engagement rate metric.
   services.bus.subscribe(RowOutputClicked, () => {});
 
-  const rerender = () => renderApp(services, state);
+  // Iter 27 (C-UX-6b): _handlers is a mutable reference so rerender can
+  // forward it to syncDrawerFocusTraps for Escape wiring even though handlers
+  // are built after rerender is defined. Populated below after buildHandlers().
+  let _handlers = {};
+  const rerender = () => renderApp(services, state, _handlers);
 
   // Sprint 6 P0-T4: bridge ActivityCompleted → ReflectionService.stubOnClose,
   // then surface the ReflectionSheet. Keeps the service graph acyclic.
@@ -2629,6 +2720,8 @@ export function start() {
   globalThis.addEventListener('hashchange', listener);
 
   const handlers = buildHandlers({ services, state, rerender });
+  // Iter 27: wire handlers into rerender's focus-trap sync (see _handlers above).
+  _handlers = handlers;
   attachRootClickListener(APP_ROOT_ID, handlers);
 
   // Sprint 12: keyboard shortcuts scoped to edit mode.
