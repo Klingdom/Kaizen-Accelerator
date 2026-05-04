@@ -245,3 +245,312 @@ If Phil prefers cross-page progress, the alternative is a Week-page T2 + T10 pas
 3. **Approve convergence bonus + score-13 gate (§6.4)?** Default if unanswered: keep current formula; rely on coordinator judgment to gate score-13 selections.
 4. **Approve next iteration as bundled C-UX-6 + C-UX-8 + C-AN-1?** Default if unanswered: take whichever is at top of `IMPROVEMENT_BACKLOG.md` rank table — currently C-UX-6.
 5. **Mark C-PM-4 as DONE-BY-PROXY?** Default if unanswered: leave OPEN; will surface again as a duplicate of C-UX-3 in next backlog refresh.
+
+---
+
+# §7. Meta-Review Iter 27 (covering Iter 18 → Iter 27)
+
+Owner: meta-coordinator
+Status: v0.2 — second formal meta-review pass.
+Trigger: 4 pure improvement-loop iterations since Iter 18 (Iter 19, 21, 24, 27); §6 cadence ("every 3 completed improvement loops") met and exceeded by one. Presenting symptom: sustained upward runtime trend (3.15s → 4.03s across last 6 iterations; per-test cost 1.14ms → 1.34ms = +17%).
+Scope: BAM-X Kaizen OS at `C:\Users\philk\kaizen`. Reviewed: `META_REVIEW.md` §1–§6, `ITERATION_LOG.md` Iter 18–27 (~410 lines), `IMPROVEMENT_BACKLOG.md` (full), `SYSTEM_HEALTH.md` (current snapshot), `CHANGELOG.md` (top 10 entries), `.claude/agents/coordinator.md`, `.claude/agents/CLAUDE.md`, `tests/ui/dialogFocusTraps.test.js` (header + structure), `tests/ui/focusTrap.test.js` (size).
+
+---
+
+## §7.0 Iteration Performance Scorecard (Iter 18–27)
+
+| #  | Title (short)                                  | Define? | Items   | Spec dev. | Tests Δ  | Runtime  | per-test | §6.5 hits | Outcome |
+|----|------------------------------------------------|---------|---------|-----------|----------|----------|----------|-----------|---------|
+| 18 | Operating-model adoption (META §6.1–§6.6)      | n/a     | 6 rules | 0         | 0        | 2.10s    | 0.74ms   | 0         | 5 — codified de-facto practice |
+| 19 | Composer correctness (C-SA-4 + C-SA-5)         | Y arch  | 2       | 0         | +9       | 3.36s    | 1.18ms   | 3 (lic.)  | 5 — first §6.5 use; clean |
+| 20 | Today UX v2 multi-lens review (Define only)    | Y 9art  | 0 code  | 0         | 0        | 3.36s    | —        | 0         | 5 — produced 5 convergent findings |
+| 21 | C-AN-1 + C-UX-2 + C-QA-V2-1 ("baseline+safe")  | reused  | 3 bun.  | 0         | +23      | 3.15s    | 1.10ms   | 0         | 5 — measurement clock started |
+| 22 | C-UX-COL row column refactor (user-directive)  | Y 6lens | 1       | 0 (+1 pos.)| +26     | 3.31s    | 1.14ms   | 1 (event) | 5 — competitive white-space |
+| 23 | C-PM-SIMPLIFY-A (user-directive)               | Y 7lens | 1       | 0         | +7       | **3.67s** ⚠️| 1.27ms | 0         | 5 — 11→5 regions, 4 compensations |
+| 24 | C-UX-6 modal focus traps                       | reused  | 1       | 0 (+2 ann.)| +30     | 3.49s    | 1.19ms   | 0         | 5 — reusable utility produced |
+| 25 | C-PM-SIMPLIFY-A2 (user-directive)              | none    | 1       | 0 (+2 min)| +14      | **3.80s** ⚠️| 1.29ms | 0         | 4 — dead `state.fineTune` left in |
+| 26 | C-PM-LUNCH (user-directive)                    | reused* | 1       | 0         | +43      | 3.53s    | 1.18ms   | 3 (pred.) | 5 — exact §6.5 prediction match |
+| 27 | C-UX-6b focus-trap rollout (mech. follow-up)   | none    | 1       | 0         | +32      | **4.03s** ⚠️| 1.34ms | 0         | 4 — runtime regression introduced |
+
+*reused = Iter 22's lunch-block Define-pass artifacts (3 weeks paused) finally consumed.
+
+**Aggregate.** 9 iterations (excl. Iter 18 governance). 8/9 outcome quality ≥ 5; one 4-rated iteration (Iter 27, due to runtime regression). Zero major spec deviations across the entire window. 4 user-directive iterations (22, 23, 25, 26) ran outside the backlog scoring path on direct Phil request — all produced strong outcomes. Median time-actual / time-estimate ≈ 0.30 (~3× efficient — improved from §4.1's 5× but still reflects systematic estimate inflation).
+
+---
+
+## §7.1 Runtime Budget Update
+
+### Finding
+
+The 3.5s ceiling is no longer realistic and is no longer informative.
+
+Data:
+- Suite Iter 9 → Iter 27: **2,565 → 3,018 tests** (+18%)
+- Runtime Iter 9 → Iter 27: **2.10s → 4.03s** (+92%)
+- Per-test cost Iter 9 → Iter 27: **0.82ms → 1.34ms** (+63%)
+- Last 6 iterations have crossed the 3.5s budget in **4 of 6** (Iter 23, 25, 27 over; Iter 24, 26 under by margin <50ms; only Iter 21 cleanly under).
+- The per-test cost trend is the real signal: tests added in the v2/strip/lunch/focus-trap window are heavier than 2025 baseline tests. Iter 27's 32 dialog integration tests jumped runtime by 0.50s in one iteration — that is **15.6ms per test added**, ~12× the rolling per-test mean.
+
+The 3.5s budget was set when per-test cost was ~0.74ms. At 1.34ms (today's true marginal), 3.5s would only allow ~2,612 tests — we are 406 tests past that. The budget is functionally dead; coordinator is no longer using it as a decision tool.
+
+### Recommendation
+
+**Two-axis budget**, replacing single-number ceiling:
+
+1. **Rolling per-test ceiling: 1.5ms / test** (current 1.34ms gives 12% headroom). This is the primary metric. It is unit-stable as the suite grows.
+2. **Absolute runtime alarm: 5.0s** (Iter 27 = 4.03s gives 19% headroom). This is the secondary safety rail — flags only if either the ceiling drifts upward OR the suite grows by ~25% beyond today.
+
+Rationale for not picking 4.5s: it would absorb Iter 27's overshoot without forcing root-cause work on the per-test cost trend. The per-test trend is the leading indicator; absolute runtime is the lagging indicator. We should react to the leading indicator.
+
+### Operating-model delta
+
+- `SYSTEM_HEALTH.md` Quality Scores table: replace single "Runtime budget: 3.5s" row with two rows: "Per-test ceiling: 1.5ms/test" (primary) and "Runtime alarm: 5.0s" (secondary).
+- `coordinator.md` Step 7 Validation: add "If per-test cost > 1.5ms, run `node --prof` on the slowest test file and either optimize or justify in the iteration log."
+
+---
+
+## §7.2 Per-Test ms Metric Adoption Decision
+
+### Finding
+
+Q3 from Iter 17 §4.2 ("switch SYSTEM_HEALTH from absolute runtime to per-test ms") has been deferred 4 times: Iter 19 ("not urgent"), Iter 23 ("becoming relevant"), Iter 25 ("overdue"), Iter 27 ("critically overdue"). At each deferral the runtime trend deteriorated. This is a textbook example of repeated-issue not-converted-to-rule from §6 of meta-review template.
+
+The deferral was rational at Iter 19 (per-test was 1.18ms — still healthy). It became irrational by Iter 23 (1.27ms with no plan to investigate). The coordinator's "watch item but not blocking" phrasing across 4 iterations is the failure mode: a watch item that is never acted on is just a postponed decision.
+
+### Recommendation
+
+**Adopt now.** Per-test ms / test is the primary runtime metric going forward. Threshold = 1.5ms (per §7.1 above).
+
+Three concrete uses:
+1. SYSTEM_HEALTH dashboard reports `runtime / test_count` as headline metric.
+2. Iteration log mandatory field: `per_test_ms` computed at close.
+3. Coordinator Step 7 validation: any iteration that *increases* per-test ms by >5% triggers a 1-line iteration-log entry naming the test file responsible (cheap; no investigation required unless ceiling breached).
+
+### Operating-model delta
+
+- `coordinator.md` Step 8.1 ITERATION_LOG.md template: add `per_test_ms` field to required entries.
+- `SYSTEM_HEALTH.md`: per §7.1 above.
+- Mark Iter 17 §4.2 Q3 as RESOLVED in next coordinator pass.
+
+---
+
+## §7.3 Test-Design Hygiene
+
+### Finding
+
+Iter 27 added 32 dialog integration tests in a single new file (`tests/ui/dialogFocusTraps.test.js`, 346 LOC). Each test simulates a full focus-trap install/release lifecycle through `installFocusTrap` with a stubbed `_doc`. The runtime jumped 0.50s for a 32-test addition (15.6ms/test — ~12× the rolling mean of 1.34ms).
+
+Compare to Iter 24's `tests/ui/focusTrap.test.js` (441 LOC, 26 tests) — same `_doc` injection pattern, same surface, but those tests run within rolling per-test cost. Iter 24's tests target the utility primitive. Iter 27's tests target the integration of that primitive across 8 dialogs. The integration tests aren't *wrong*, but they are heavy-per-test.
+
+Audit verdict on the question "could unit tests cover this?":
+- AC10 (utility is REUSED, not re-implemented) — already locked by Iter 24's tests; Iter 27's test of this is duplicative.
+- AC1–8 (8 dialogs each install/release) — these are 8 essentially identical assertions. Could be parameterized (1 test, 8 fixtures) at ~4× lower cost.
+- AC9 (Escape calls handler) and AC12 (Tab cycles) — already locked by Iter 24's utility tests. Re-asserting per dialog is paranoia, not coverage.
+
+This is **shallow-coverage debt**: 32 tests, ~10–15 of which provide marginal information beyond Iter 24's utility tests.
+
+Pattern observed across the window:
+- Iter 22: +26 tests (efficient — most are different surface assertions)
+- Iter 23: +7 net (efficient — moved tests with components to `_backup/`)
+- Iter 26: +43 tests (largely necessary — composer/catalog assertions, weekly parity)
+- Iter 27: +32 tests (~50% redundant per the analysis above)
+
+### Recommendation
+
+**Three rules, ordered by enforcement strength:**
+
+1. **Per-iteration test-cost budget (soft):** A single iteration may not increase per-test ms by more than 5% unless the rationale is logged. Iter 27 increased it 13% (1.18 → 1.34); under this rule it would have required justification and likely test-design rework.
+
+2. **Parameterization-first guidance (testing principle):** When N essentially-identical tests differ only by fixture (e.g., 8 dialogs × 4 ACs = 32 tests), the default is **1 parameterized test runner over a fixtures table**, not N copies. This is a documentation rule, not enforced.
+
+3. **Integration-vs-unit tier preference:** Per `tests/ui/focusTrap.test.js` precedent, prefer `_doc`-injected unit tests over integration tests when the unit-test pattern can isolate the same contract. Iter 27 should have been 4 parameterized unit tests across 8 dialog fixtures (~8 logical tests at ~1.5ms each = ~12ms total), not 32 integration tests at 15.6ms each (~500ms total).
+
+### Operating-model delta
+
+- `coordinator.md` Step 6 Implementation: add a sub-rule "Test-design hygiene — parameterize identical-shape tests; prefer `_doc`-injection unit tests over integration tests when isolation is feasible. Per-iteration per-test-ms increase >5% requires a 1-line rationale in iteration log."
+- No new artifact required. This is a coding-conventions rule that lives in coordinator's pre-flight on test-heavy iterations.
+
+---
+
+## §7.4 §6.5 Boundary Effectiveness Audit
+
+### Finding
+
+The composer/engine integrity boundary (§6.5, adopted Iter 18) has held cleanly across **all 9 iterations** since adoption. Concrete results:
+
+| Iter | §6.5 hits | Predicted? | Defect prevented? |
+|------|-----------|------------|-------------------|
+| 19   | 3 (licensed via arch-delta) | Yes — architect specified `composeDaily.js`, `orderDay.js`, `types.js` | Bug A + Bug B latent overlap; one fix class closed both |
+| 20   | 0 | n/a (Define-only) | n/a |
+| 21   | 0 (events.js add was renderer-side, permitted) | Yes — explicit user approval clause invoked | n/a |
+| 22   | 1 (events.js: `RowOutputClicked`) | Yes — coordinator inline arch decision | n/a |
+| 23   | 0 | Yes — UI-strip-only | n/a |
+| 24   | 0 | Yes — pure UI utility | n/a |
+| 25   | 0 | Yes — chrome removal | n/a |
+| 26   | **3 (composeDaily, composeWeekly, validateComposition) — exactly as architect predicted** | Yes — `ARCHITECTURE_DELTA_LUNCH_BLOCK.md` predicted "3 hits, no orderDay/types/events touch" | Capacity-neutrality preserved; new bucket=null sentinel chosen over new enum |
+| 27   | 0 | Yes — UI-wiring-only | n/a |
+
+**Iter 26 is the strongest evidence.** The architect predicted 3 specific hits before any code was written. The implementer landed exactly 3 hits, in exactly those files, with zero churn into orderDay/types/events. This is the §6.5 boundary functioning as designed — predictable, traceable, no scope creep.
+
+**Iter 19 is the second-strongest.** The deferred-finding `C-SA-6` (validator overlap detection) was surfaced *because* the architect's audit of orderDay revealed the misleading "validator surfaces" comment. The §6.5-mandated arch-delta directly produced new backlog work.
+
+### Recommendation
+
+**Hold boundary at current scope. Do not extend, do not contract.** The boundary is doing exactly what it was designed for. Three specific clarifications:
+
+1. **`js/composer/lunchBlock.js` (new in Iter 26) inherits §6.5 protection.** It is in `js/composer/`. The path-based rule already covers it. Add a one-line note to coordinator.md Non-Negotiable Rules to make this explicit: "Path rule is recursive: any new file under `js/composer/`, `js/engine/`, or `js/events/` falls under §6.5 from creation."
+
+2. **Renderer-side `js/events/events.js` constant additions** (Iter 21 + Iter 22) are *not* exempt — they were arch-delta-approved inline by coordinator at Iter 21 and tracked by lens-level review at Iter 22. The rule is working as intended; do not add a "renderer-only" exemption.
+
+3. **The `js/ui/focusTrap.js` utility (Iter 24) is correctly outside §6.5** despite being shared across 10 dialogs. It is UI infrastructure, not composition/engine logic. Boundary is correctly drawn.
+
+### Operating-model delta
+
+- `coordinator.md` Non-Negotiable Rules: amend §6.5 wording to add: "Path rule is recursive — any new file created under the protected paths inherits §6.5 from the moment of creation."
+- No backlog or process changes.
+
+---
+
+## §7.5 Backlog Hygiene Rules
+
+### Finding
+
+Three issues identified:
+
+**Issue A — Stale OPEN entries.** `C-UX-V2-1` (auto-collapse RhythmExplainer, score 15) is listed as OPEN in `IMPROVEMENT_BACKLOG.md` line 44, but `RhythmExplainer.js` was moved to `_backup/` in Iter 23 (`js/ui/components/_backup/RhythmExplainer.js`). The entire premise of the candidate (the always-on render) no longer exists. This is **DONE-BY-PROXY (Iter 23)** by exactly the same pattern as C-PM-4 → C-UX-3 (Iter 17).
+
+**Issue B — Stale OPEN entries (suspected).** `C-UX-7` (Now/Up-Next duplication fix, score 11) — both NowPane and UpNextRail-on-Today were removed at Iter 23 (NowPane moved to `_backup/`; UpNextRail removed from Today.js imports though kept on Week). The duplication on Today no longer exists. Probably DONE-BY-PROXY-Iter-23.
+
+**Issue C — Phil-authority queue is opaque.** Multiple iterations (23, 25 follow-ups) reference a "~25 SW-Q queue" that gates C-PM-SIMPLIFY-B and C-PM-SIMPLIFY-C. There is no consolidated list anywhere. Phil cannot batch-answer because the questions are scattered across artifact files (`UX_TODAY_SIMPLIFY_*.md` and the lunch-block PRD).
+
+### Recommendation
+
+**Three actions:**
+
+1. **DONE-BY-PROXY sweep on every meta-review.** Each meta-review must run a 1-pass audit: for each OPEN candidate, grep the symbol it targets; if the symbol no longer exists in `js/`, mark DONE-BY-PROXY with cross-reference to the iteration that removed it. C-UX-V2-1 and (probably) C-UX-7 should be marked now.
+
+2. **Stale-after date on candidates.** Already recommended in §4.5 of Iter 17 meta-review; never adopted. Recommend now: every candidate gets a `lastEvidenceConfirmed: <date>` field. If older than 4 iterations *and* not selected, the candidate is auto-flagged for re-grep before being scoreable.
+
+3. **Phil-authority queue consolidation.** Create a single artifact `PHIL_AUTHORITY_QUEUE.md` (or a clearly-titled section in IMPROVEMENT_BACKLOG.md) listing every Phil-blocked question by ID, source artifact, and dependency. This unblocks Phil to answer in batches and gives coordinator a single place to check before declaring work Phil-blocked.
+
+### Operating-model delta
+
+- `coordinator.md` Step 8 ("Update System Artifacts"): add explicit DONE-BY-PROXY sweep as part of Update IMPROVEMENT_BACKLOG step. Trigger: every meta-review and every iteration close where files were moved/deleted.
+- New artifact: `PHIL_AUTHORITY_QUEUE.md` (or new section in IMPROVEMENT_BACKLOG.md).
+- IMPROVEMENT_BACKLOG candidate template: add `lastEvidenceConfirmed` field per §6.6 amendment.
+
+---
+
+## §7.6 Score-13 Gate Refinement
+
+### Finding
+
+The single-lens score-13 cap (§6.4, adopted Iter 18) was challenged in this window by 4 user-directive iterations (22, 23, 25, 26) that shipped *without* lens-convergence and worked fine. Specifically:
+
+- Iter 22 (C-UX-COL): coordinator routed to a 6-lens Define-pass *after* Phil's directive. The gate worked correctly here — the 6 lenses validated the directive and uncovered architecture decisions (cohort tagging, semantic aria) that wouldn't have surfaced from the directive alone.
+- Iter 23 (C-PM-SIMPLIFY-A): same — 7-lens Define-pass converged 7/7 on stripping but 6/7 on relocating-not-deleting. The 1-lens dissent (Competitive) prevented "strategic regression to Motion-tier opaque scheduling." Gate value-add: very high.
+- Iter 25 (C-PM-SIMPLIFY-A2): no Define-pass; user directive shipped directly. Score 13, single-lens (Phil). Worked fine.
+- Iter 26 (C-PM-LUNCH): reused 3-week-old 2-lens Define-pass. Score 13, 2 lenses. Worked fine.
+
+Iter 25 and Iter 26 are mild evidence that the gate is sometimes **overprotective** — both were tightly-scoped, low-risk, and clearly-authored by Phil. But they are also small-sample and benefited from the gate's existence (Phil was confident because prior iterations had been multi-lens validated).
+
+The gate did *not* fail in any iteration. It correctly forced multi-lens review on Iter 22 + 23 (highest-risk in the window) and correctly allowed bypass on Iter 25 + 26 (clear directive, low-risk).
+
+### Recommendation
+
+**Hold the score-13 gate as-is.** The 4-data-point window does not justify changing a rule that has produced zero failures. Two minor clarifications:
+
+1. **User-directive bypass is implicit, not explicit.** Iter 22, 23, 25, 26 all bypassed because Phil directed them. Codify: "User-directive features may bypass the score-13 lens-count gate at user's discretion. Coordinator must still run a Define-pass if Effort ≥ M (per §6.3) — that rule is independent."
+
+2. **DONE-BY-PROXY check before promoting.** When a multi-lens review (e.g., Iter 20's 7-lens v2 review) bumps an existing single-lens candidate from score 11 → score 14 via ConvergenceBonus (e.g., C-UX-2 BucketStrip at Iter 20), coordinator should re-grep the candidate's symbol *before* the bump takes effect. Iter 20 did this implicitly; making it explicit prevents promoting stale candidates to high priority.
+
+### Operating-model delta
+
+- `coordinator.md` §6.4 Score-13 Gate: append "User-directive features bypass this gate at user's discretion; the §6.3 Define-pass mandate (Effort/defect/score thresholds) still applies independently."
+- `coordinator.md` Step 6 Pre-Flight Reconnaissance: add "before applying ConvergenceBonus to an existing candidate, re-run grep on the candidate's symbol — promotion to score-13+ tier requires evidence freshness."
+
+---
+
+## §7.7 Pace Sustainability Signals
+
+### Finding
+
+Iter 19 → Iter 27 = 9 iterations across ~5 days of active work (clusters: Iter 18–21 over 1 day; Iter 22 alone; Iter 23–27 over 24 hours). Iter 24–27 were 4 iterations in 24 hours.
+
+Pace metrics:
+- 9 iterations / ~5 active days = 1.8 iterations/day average
+- 4 iterations / 1 day = 4 iterations/day peak (Iter 24–27)
+- Define-pass artifact volume: Iter 20 produced 9 artifacts (2,088 lines); Iter 22 produced 7; Iter 23 produced 7. Total Define-phase output across the window: **~30 artifacts, ~6,500 lines** of analysis docs.
+
+Debt signals visible in the data:
+1. **Production deploy queue is 6 iterations deep** (Iter 22 + 23 + 24 + 25 + 26 + 27 all queued). No production validation has occurred since Iter 21. This is the strongest debt signal — the loop is *implementing* faster than it is *validating in production*.
+2. **Iter 25 spec deviations** (`state.fineTune` retained as dead state slice): the only iteration in the window with a "minor deviation that requires follow-up cleanup." Linked to the back-to-back Path A dispatch — Iter 25 didn't get a thinking pause before Iter 26 dispatched.
+3. **Iter 27 runtime regression** (32 redundant tests): same shape — fast dispatch, no test-design review, runtime cost not surfaced until close.
+4. **Phil-authority queue at ~25 items**: the loop is *generating* Phil-blocked questions faster than Phil is answering them (Iter 23 spawned ~5; Iter 26 spawned 0 — those questions were 3 weeks old).
+
+Working signals:
+- Zero major spec deviations across all 9 iterations
+- Zero failed validations
+- §6.5 boundary held in all 9
+- Test count grew 18% with zero failures introduced
+
+### Recommendation
+
+**The pace is generating debt that is small but accumulating. Specific guardrails:**
+
+1. **Production-deploy gate.** No more than 4 iterations may queue without a production deploy. At 4-deep, the next iteration must include a "deploy + smoke verify" step *before* implementation. Currently 6-deep — this is the most actionable signal in the entire meta-review.
+
+2. **Back-to-back dispatch cooling-off.** When Phil approves Path A (back-to-back dispatch), coordinator must add an explicit 1-paragraph review pause between iterations: "Iter N close — what surfaced that should change Iter N+1 plan?" This would have caught Iter 25's `state.fineTune` cleanup before Iter 26 dispatched.
+
+3. **Test-design pre-flight on test-heavy iterations.** When an estimated test addition is >20 tests, coordinator must spend ~2 minutes asking "is this parameterizable?" before dispatch. This would have caught Iter 27.
+
+4. **Phil-authority queue limit.** When the queue exceeds 20 unanswered SW-Q items, coordinator must surface a "consolidate and ask Phil to batch" recommendation. Currently 25. This is overdue.
+
+### Operating-model delta
+
+- `coordinator.md` Step 5 Selection: add "Production-deploy gate: if >4 iterations queued, next iteration must include deploy step."
+- `coordinator.md` Step 6 Implementation: add "Back-to-back dispatch — coordinator inserts 1-paragraph review pause between Path A iterations" and "Test-heavy pre-flight — for estimated >20 test additions, run parameterization check."
+- `coordinator.md` Step 8 Update Artifacts: add "Phil-authority queue size — if >20, surface batch-consolidation recommendation."
+
+---
+
+## §7.8 New Operating-Model Rules Surfaced
+
+Beyond the topic-specific recommendations above, the iter-by-iter review surfaced two rule patterns worth codifying:
+
+### §7.8.1 Reusable Utility Pattern
+
+**Observation:** Iter 24 produced `js/ui/focusTrap.js` as a dependency-injectable utility. Iter 27 then mechanically applied it across 8 dialogs in a single iteration. This is the same shape as Iter 13's T1 token consolidation enabling Iter 14 + Iter 22 + Iter 23. **First iteration produces the primitive; second iteration applies it broadly; third+ iterations consume it without thinking about it.**
+
+This pattern is high-leverage:
+- Iter 24 cost: ~1h to produce the utility + 1 dialog conversion
+- Iter 27 cost: ~1h to apply to 8 dialogs (would have been 8h if each were bespoke)
+
+**Rule:** When a Define-pass identifies an N-dialog or N-component pattern, prefer to ship the primitive first as a single-instance proof, then mechanical rollout in a follow-up iteration. Do not bundle "primitive + 9-instance rollout" in one iteration — the primitive design needs validation before rollout.
+
+### §7.8.2 Define-Pass Dormancy / Resurrection Pattern
+
+**Observation:** Iter 26 consumed Define-pass artifacts from 3 weeks earlier (`ARCHITECTURE_DELTA_LUNCH_BLOCK.md`, `PRD_LUNCH_BLOCK.md`). The 3-week dormancy did not invalidate the artifacts — they were still consumable directly with one minor adjustment (60 min → 30 min duration per Phil's update). This validates the artifact-driven model: written artifacts have long shelf life.
+
+**However:** the implementer report flagged that Phil's directive "30 min" was easy to miss against the architect's specified "60 min." The Define-pass artifact was 3 weeks old, but the user-directive update was 1 day old. The cost to spot the conflict was low (one careful read), but the cost in a less-disciplined iteration could be high.
+
+**Rule:** When resurrecting a Define-pass artifact older than 5 iterations, coordinator must run a "directive-vs-spec" diff: scan recent (last 5 iterations) iteration logs for any user directive that contradicts the dormant spec. Append a 1-line resurrection note to the artifact at the head: "Resurrected Iter N. Directives since original date: [list]."
+
+### Operating-model delta
+
+- `coordinator.md` Step 2 Define-Pass: add §7.8.1 "Primitive-first rollout" subsection + §7.8.2 "Dormant Define-pass resurrection" subsection.
+- No new artifacts required.
+
+---
+
+## §7 Summary
+
+The Iter 18–27 window is **strong on every output metric** (zero major deviations, 8/9 iterations rated 5/5, §6.5 boundary 100% held, suite grew 18% with zero failures) but **weak on three feedback signals**:
+
+1. Runtime trend not acted on across 4 deferrals (§7.1, §7.2)
+2. Test-design hygiene drift in Iter 27 (§7.3)
+3. Production-deploy queue at 6-deep with no validation pause (§7.7)
+
+The fundamental loop is healthy. The system is choosing better work over time (Iter 20's 7-lens v2 review is a higher-quality version of Iter 12's 7-lens cross-page review). What is not happening: the system is not yet *acting on its own monitoring signals* (per-test ms, Phil queue size, deploy queue depth) without explicit human prompt. That is the meta-system gap this meta-review addresses.
+
+_End of §7 — Meta-Review Iter 27._

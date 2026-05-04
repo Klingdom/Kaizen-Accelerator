@@ -36,17 +36,19 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 ## Quality Scores
 
-| Metric | Value |
-|---|---|
-| Tests passing | 2,843 (+278 since Iteration 9 baseline of 2,565) |
-| Tests failing | 0 |
-| Suite count | 686 (+83 since Iteration 9) |
-| Runtime | **~3.36s ⚠️** |
-| Runtime budget | 3.5s |
-| Headroom | **~0.14s (4% — APPROACHING BUDGET)** |
-| Per-test cost | 1.18 ms/test (was 0.74 ms post-Iter 16 — Iter 19 added full-composer integration tests) |
-| Fail rate | 0% |
-| Last green commit | `af63289` (Iteration 19 work uncommitted) |
+| Metric | Value | Status |
+|---|---|---|
+| Tests passing | 3,018 (+453 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests failing | 0 | ✅ |
+| Suite count | 703 (+100 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.34 ms/test** | ⚠️ approaching ceiling |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (12% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.14ms (Iter 22) → 1.34ms (Iter 27) — **+63% since Iter 9** | ⚠️ upward trend |
+| Fail rate | 0% | ✅ |
+| Last green commit | `77af231` (Iter 27 shipped, pushed) | ✅ |
+| **Production deploy queue** | **6 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27)** | 🚨 **OVER GATE (max 4 per META §7.7)** |
 
 ---
 
