@@ -6,6 +6,66 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 26 — 2026-05-04 — Time-blocked lunch as editable ScheduledActivity (C-PM-LUNCH)
+
+### What changed
+User-directive feature, Phase 2 of Phil's "Today page simplify + perfect day" directive (Path A — back-to-back with Iter 25). Resolves the 3-week-paused lunch-block Define-pass with all 4 OQ defaults locked. Lunch is now a default-on, capacity-neutral, fully-editable ScheduledActivity.
+
+**Composer changes (§6.5 hits — 3 files, exactly as architect predicted):**
+- `js/composer/composeDaily.js` — imports `injectLunchBlock`; calls AFTER `orderDay`, BEFORE `validateComposition` (per arch delta §3 pseudo-flow STEP 8.5)
+- `js/composer/composeWeekly.js` — same injection inside `buildDay` for weekly parity (Mon–Fri)
+- `js/engine/validateComposition.js` — filter `bucket===null` from bucket-sum loop (1-line addition; preserves capacity-neutrality invariant)
+
+**New helper module:**
+- `js/composer/lunchBlock.js` (~95 LOC) — pure helper exporting `injectLunchBlock(activities, input, idGen, clock)`. No DOM, no global state. 22 dedicated unit tests in `tests/composer/lunchBlock.test.js` (~180 LOC).
+
+**Catalog seed (60 → 61 entries):**
+- New `recovery_lunch` CatalogEntry in `js/catalog/seed/ceremoniesAndGenerics.js`
+- `defaultDurationMinutes: 30` (Phil's directive, not architect's original 60)
+- `bucket: null` sentinel (capacity-neutral; no new enum value needed)
+- `focusArea: 'CONTINUOUS_IMPROVEMENT'` (OQ-1 default — reuses existing enum, zero §6.5 hit on `types.js`)
+- `outputArtifact: { required: false }` (OQ-2 default — lunch produces nothing)
+- `isNonOptional: false` (skippable), `isAnchor: false` (movable)
+
+**Locked decisions (all from Phil Path A approval):**
+- Duration: 30 min (was 60 in arch delta — adjusted per Phil's directive)
+- Start: 12:00 (Noon)
+- Default-on; capacity-neutral
+- OQ-1 focusArea: reuse `CONTINUOUS_IMPROVEMENT`
+- OQ-2 `outputArtifact.required: false`
+- OQ-4 weekly parity: YES
+- Comm timing: (a) status quo — Post-lunch Comm stays at 13:00; 12:30–13:00 becomes a small implicit gap
+
+### Why
+- Phil's directive: *"For the today page always have a timeblocked lunch. Start with a 30 minute time blocked lunch at Noon and a timeblocked post-lunch high-value communication activity after that."*
+- Lunch was previously an implicit 12:00–13:00 capacity-neutral void (per `ENGINE_DESIGN.md:340`); no card rendered, not editable
+- Surfacing as a ScheduledActivity card flows through every existing row-aware code path EXCEPT capacity math (preserved via `bucket===null` filter in validate)
+- Zero blast radius on the 4-2-2 invariant or INFEASIBLE behavior
+
+### Impact
+- Test suite: 2,943 → **2,986** (+43: 22 new lunchBlock unit tests + ~21 catalog/composer/seed assertions)
+- Runtime: 3.80s → **3.53s** ✅ (Iter 25 overshoot resolved; back under 3.5s budget)
+- Catalog: 60 → 61 entries (`recovery_lunch` added)
+- Zero touches to: `js/engine/orderDay.js`, `js/domain/types.js`, `js/events/events.js`
+- All 16 ACs PASS (14 from PRD + 2 Phase 2 additions)
+
+### Bugs fixed during implementation (existing latent gaps)
+1. `tests/catalog/seed/bulkFill.test.js` was asserting `e.inputs.length > 0` for ALL entries; lunch correctly has empty `inputs[]` (no required inputs). Test patched with exemption for `recovery_lunch`.
+2. `js/catalog/seed/exportFullCatalog.js` validated `typeof e.bucket !== 'string'` on all entries; failed on `bucket: null` sentinel. Validator patched with allow-list for `recovery_lunch`.
+
+### Strategic outcome
+- **3-week-paused Define-pass closed.** The arch delta and PRD from 2026-04-30 (commit `5970cd7`) finally land in production code.
+- **Composer/engine boundary held.** §6.5 hit count exactly matched architect's prediction (3); zero scope creep.
+- **Phil's "perfect day" lunch component complete.** Combined with Iter 25's table-style schedule and existing 13:00 Post-lunch Comm anchor, the Today schedule now reads as: morning Deep + AM Comm → Lunch (12:00–12:30) → buffer (12:30–13:00) → Post-lunch Comm (13:00–13:30) → afternoon Deep → CI → Reflection.
+- **Phase 2 of Phil's simplify directive complete.** Phase 1 (Iter 25) + Phase 2 (Iter 26) shipped same day per Path A.
+
+### Notes for Phil
+- Production deploy queue: Iter 22 + 23 + 24 + 25 + 26 will all land on the next deploy
+- Manual QA: load `/today`, verify Lunch card at 12:00; click row's Update button; select different duration; verify state updates
+- 12:30–13:00 implicit gap is intentional per timing decision (a). If you want this filled (e.g., move Post-lunch Comm to 12:30), separate iteration required (`composeDaily.js` anchor change — additional §6.5 hit).
+
+---
+
 ## Iteration 25 — 2026-05-04 — Today simplify Phase 2 strip + table-style schedule (C-PM-SIMPLIFY-A2)
 
 ### What changed

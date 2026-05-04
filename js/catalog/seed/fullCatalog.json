@@ -2781,5 +2781,44 @@
     "enabledByUser": true,
     "version": 1,
     "sourceRef": "CATALOG_GAPS.md §H.2 v0.3.1"
+  },
+  {
+    "id": "recovery_lunch",
+    "activityNumber": null,
+    "name": "Lunch",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "cadence": "DAILY",
+    "trigger": "Default lunch window 12:00 local",
+    "inputs": [],
+    "outputArtifact": {
+      "name": "Lunch (no artifact)",
+      "schema": "TEXT",
+      "required": false
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Step away from work.",
+      "2. Eat.",
+      "3. Return at the planned end time."
+    ],
+    "bucket": null,
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "ARCHITECTURE_DELTA_LUNCH_BLOCK.md §5",
+    "defaultStart": "12:00",
+    "slotKind": "LUNCH"
   }
 ]

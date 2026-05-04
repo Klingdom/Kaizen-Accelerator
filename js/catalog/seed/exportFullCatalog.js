@@ -50,10 +50,12 @@ export function exportFullCatalog(opts = {}) {
     throw err;
   }
   // Sanity: every entry has the fields the browser will consume.
+  // Iter 26: recovery_lunch has bucket===null intentionally (capacity-neutral
+  // sentinel). Allow null bucket for that entry only.
   const missing = [];
   for (const e of catalog) {
     if (typeof e.id !== 'string') missing.push(`${e.id}.id`);
-    if (typeof e.bucket !== 'string') missing.push(`${e.id}.bucket`);
+    if (e.id !== 'recovery_lunch' && typeof e.bucket !== 'string') missing.push(`${e.id}.bucket`);
     if (typeof e.isNonOptional !== 'boolean') missing.push(`${e.id}.isNonOptional`);
     if (!Array.isArray(e.dependsOn)) missing.push(`${e.id}.dependsOn`);
   }

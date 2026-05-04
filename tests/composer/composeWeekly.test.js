@@ -730,3 +730,60 @@ describe('composeWeekly — broad integration snapshot', () => {
     assert.equal(ids.length, 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter 26 — Weekly lunch block (AC10, OQ-4 weekly parity = YES)
+// ---------------------------------------------------------------------------
+
+describe('composeWeekly — Iter 26: lunch block per day (AC10)', () => {
+  test('AC10: every day has exactly one lunch activity (slotKind=LUNCH)', () => {
+    const w = composeWeekly(buildInput());
+    for (let i = 0; i < 5; i += 1) {
+      const day = w.days[i];
+      const lunches = day.activities.filter((a) => a.slotKind === 'LUNCH');
+      assert.equal(lunches.length, 1, `day ${i} must have exactly one lunch activity`);
+    }
+  });
+
+  test('AC10: lunch plannedStartAt is 12:00 on every day', () => {
+    const w = composeWeekly(buildInput());
+    for (const day of w.days) {
+      const lunch = day.activities.find((a) => a.slotKind === 'LUNCH');
+      assert.ok(lunch, 'lunch must be present');
+      assert.equal(lunch.plannedStartAt, '12:00');
+    }
+  });
+
+  test('AC10: lunch has bucket===null on every day (capacity-neutral)', () => {
+    const w = composeWeekly(buildInput());
+    for (const day of w.days) {
+      const lunch = day.activities.find((a) => a.slotKind === 'LUNCH');
+      assert.equal(lunch.bucket, null);
+    }
+  });
+
+  test('AC10: lunch does not appear in day.plannedByBucket totals', () => {
+    const w = composeWeekly(buildInput());
+    for (let i = 0; i < 5; i += 1) {
+      const day = w.days[i];
+      // plannedByBucket only sums PROJECT/COMMUNICATION/CI; lunch is excluded.
+      const lunchMinutes = day.activities
+        .filter((a) => a.slotKind === 'LUNCH')
+        .reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0);
+      const bucketTotal = (day.plannedByBucket?.PROJECT ?? 0) +
+        (day.plannedByBucket?.COMMUNICATION ?? 0) +
+        (day.plannedByBucket?.CI ?? 0);
+      // Sum of bucket activities should NOT include lunch minutes.
+      const allActivitiesTotal = day.activities.reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0);
+      assert.equal(allActivitiesTotal, bucketTotal + lunchMinutes,
+        `day ${i}: bucket total + lunch should equal all activities total`);
+    }
+  });
+
+  test('each day lunch id is unique (tied to date)', () => {
+    const w = composeWeekly(buildInput());
+    const lunchIds = w.days.map((d) => d.activities.find((a) => a.slotKind === 'LUNCH')?.id);
+    const unique = new Set(lunchIds);
+    assert.equal(unique.size, 5, 'each day lunch activity must have a unique id');
+  });
+});

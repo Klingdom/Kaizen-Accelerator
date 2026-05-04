@@ -117,7 +117,12 @@ export function validateComposition({
     return fail('INVALID_INPUT', { message: 'userDailyCapacityMinutes must be positive' });
   }
 
-  const total = activities.reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0);
+  // Iter 26: exclude capacity-neutral rows (bucket===null, e.g. lunch) from
+  // all capacity and bucket sums. sumBucket() already skips them naturally
+  // via the `a.bucket === bucket` guard. Only the total needs an explicit filter.
+  const total = activities
+    .filter((a) => a.bucket !== null && a.bucket !== undefined)
+    .reduce((s, a) => s + (a.plannedDurationMinutes ?? 0), 0);
   const effectiveCap = userDailyCapacityMinutes - externalMinutesToday;
 
   if (total > effectiveCap) {

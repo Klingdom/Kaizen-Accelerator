@@ -79,6 +79,9 @@ function bucketByFamily(entry) {
  */
 export function applyBucketMap(drafts) {
   return drafts.map((d) => {
+    // Iter 26: recovery_lunch is capacity-neutral (bucket: null is intentional).
+    // Allow-list it so bucketByFamily does not throw BUCKET_UNRESOLVABLE.
+    if (d.slotKind === 'LUNCH') return d;
     if (d.bucket !== null && d.bucket !== undefined) return d;
     const direct = BUCKET_BY_NUMBER[d.activityNumber];
     const bucket = direct ?? bucketByFamily(d);

@@ -17,10 +17,10 @@ describe('fullCatalog — Node pipeline path', () => {
     __resetCache();
   });
 
-  test('getFullCatalog returns 60 entries', async () => {
+  test('getFullCatalog returns 61 entries (Iter 26: +1 recovery_lunch)', async () => {
     const catalog = await getFullCatalog();
     assert.equal(catalog.length, EXPECTED_CATALOG_SIZE);
-    assert.equal(catalog.length, 60);
+    assert.equal(catalog.length, 61);
   });
 
   test('getFullCatalog is idempotent (returns same instance on second call)', async () => {
@@ -38,12 +38,13 @@ describe('fullCatalog — Node pipeline path', () => {
     await getFullCatalog();
     const cached = getCachedCatalog();
     assert.ok(Array.isArray(cached));
-    assert.equal(cached.length, 60);
+    assert.equal(cached.length, 61); // Iter 26: +1 recovery_lunch
   });
 
-  test('every entry has a bucket', async () => {
+  test('every entry has a bucket (null allowed for recovery_lunch — capacity-neutral)', async () => {
     const catalog = await getFullCatalog();
-    const missing = catalog.filter((e) => !e.bucket);
+    // recovery_lunch intentionally has bucket===null; all others must have a string bucket.
+    const missing = catalog.filter((e) => e.id !== 'recovery_lunch' && !e.bucket);
     assert.deepEqual(missing, []);
   });
 

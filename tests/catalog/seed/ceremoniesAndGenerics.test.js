@@ -14,8 +14,8 @@ import {
 describe('buildCeremoniesAndGenerics — sizes and shape', () => {
   const all = buildCeremoniesAndGenerics();
 
-  test('produces exactly 11 entries (6 ceremonies + 5 generics)', () => {
-    assert.equal(all.length, 11);
+  test('produces exactly 12 entries (6 ceremonies + 6 generics incl. Iter 26 recovery_lunch)', () => {
+    assert.equal(all.length, 12);
   });
 
   test('6 ceremony ids are all present', () => {
@@ -25,15 +25,16 @@ describe('buildCeremoniesAndGenerics — sizes and shape', () => {
     }
   });
 
-  test('5 generic ids are all present (incl. Lessons Learned per §H.2 v0.3.1)', () => {
+  test('6 generic ids are all present (incl. Lessons Learned + Iter 26 recovery_lunch)', () => {
     const ids = new Set(all.map((e) => e.id));
     for (const id of Object.values(GENERIC_IDS)) {
       assert.ok(ids.has(id), `missing generic id ${id}`);
     }
     assert.ok(ids.has('gen_lessons_learned'));
+    assert.ok(ids.has('recovery_lunch'), 'Iter 26: recovery_lunch must be present');
   });
 
-  test('every entry has every required field populated (no nulls on ceremony/generic)', () => {
+  test('every entry has every required field populated (no nulls on ceremony/generic; bucket null allowed for recovery_lunch)', () => {
     for (const e of all) {
       assert.equal(typeof e.id, 'string');
       assert.equal(e.activityNumber, null);
@@ -44,14 +45,30 @@ describe('buildCeremoniesAndGenerics — sizes and shape', () => {
       assert.ok(e.defaultDurationMinutes > 0);
       assert.equal(typeof e.cadence, 'string');
       assert.equal(typeof e.trigger, 'string');
-      assert.ok(Array.isArray(e.inputs) && e.inputs.length > 0);
+      // recovery_lunch has inputs:[] (no inputs for a lunch break)
+      if (e.id !== 'recovery_lunch') {
+        assert.ok(Array.isArray(e.inputs) && e.inputs.length > 0, `${e.id} inputs empty`);
+      } else {
+        assert.ok(Array.isArray(e.inputs), 'recovery_lunch inputs must be an array');
+      }
       assert.equal(typeof e.outputArtifact, 'object');
       assert.equal(typeof e.outputArtifact.name, 'string');
       assert.equal(typeof e.outputArtifact.schema, 'string');
-      assert.equal(e.outputArtifact.required, true);
+      // recovery_lunch has outputArtifact.required=false (no artifact produced).
+      // All other entries must have required=true.
+      if (e.id !== 'recovery_lunch') {
+        assert.equal(e.outputArtifact.required, true, `${e.id} outputArtifact.required must be true`);
+      } else {
+        assert.equal(e.outputArtifact.required, false, 'recovery_lunch outputArtifact.required must be false');
+      }
       assert.ok(Array.isArray(e.participants) && e.participants.length > 0);
       assert.ok(Array.isArray(e.procedure) && e.procedure.length > 0);
-      assert.equal(typeof e.bucket, 'string');
+      // recovery_lunch has bucket===null (capacity-neutral sentinel).
+      if (e.id !== 'recovery_lunch') {
+        assert.equal(typeof e.bucket, 'string', `${e.id} bucket must be a string`);
+      } else {
+        assert.equal(e.bucket, null, 'recovery_lunch bucket must be null');
+      }
       assert.equal(typeof e.isNonOptional, 'boolean');
       assert.ok(Array.isArray(e.dependsOn));
       assert.ok(Array.isArray(e.appliesToRoles) && e.appliesToRoles.length > 0);
@@ -129,5 +146,31 @@ describe('buildCeremoniesAndGenerics — sizes and shape', () => {
     const ll = all.find((e) => e.id === GENERIC_IDS.LESSONS_LEARNED);
     assert.equal(ll.outputArtifact.schema, 'DOCUMENT');
     assert.equal(ll.outputArtifact.required, true);
+  });
+
+  // --- Iter 26: recovery_lunch specific assertions ---
+
+  test('Iter 26: recovery_lunch exists with id=recovery_lunch', () => {
+    const lunch = all.find((e) => e.id === GENERIC_IDS.LUNCH);
+    assert.ok(lunch, 'recovery_lunch must exist in buildCeremoniesAndGenerics()');
+    assert.equal(lunch.id, 'recovery_lunch');
+  });
+
+  test('Iter 26: recovery_lunch has correct fields (AC1, AC8, AC14, AC15)', () => {
+    const lunch = all.find((e) => e.id === 'recovery_lunch');
+    assert.equal(lunch.name, 'Lunch');
+    // AC15: 30 min (Phil directive), NOT the architect original 60
+    assert.equal(lunch.defaultDurationMinutes, 30, 'AC15: duration must be 30 min');
+    assert.equal(lunch.defaultStart, '12:00', 'AC1: default start must be 12:00');
+    // AC8: lunch is optional (skippable) and not an anchor
+    assert.equal(lunch.isNonOptional, false, 'AC8: lunch must be skippable');
+    assert.equal(lunch.isAnchor, undefined, 'isAnchor is false (not stored as explicit true)');
+    // AC14: no artifact required
+    assert.equal(lunch.outputArtifact.required, false, 'AC14: outputArtifact.required must be false');
+    // Capacity-neutral sentinel
+    assert.equal(lunch.bucket, null, 'AC2: bucket must be null (capacity-neutral)');
+    assert.equal(lunch.slotKind, 'LUNCH');
+    assert.equal(lunch.cadence, 'DAILY');
+    assert.equal(lunch.enabledByUser, true);
   });
 });

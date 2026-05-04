@@ -19,7 +19,12 @@ describe('applyBulkFill — §E defaults land on every entry', () => {
     for (const e of final) {
       assert.ok(e.cadence, `${e.id}.cadence missing`);
       assert.ok(e.trigger, `${e.id}.trigger missing`);
-      assert.ok(Array.isArray(e.inputs) && e.inputs.length > 0, `${e.id}.inputs missing`);
+      // Iter 26: recovery_lunch has inputs:[] intentionally (no required inputs for lunch).
+      if (e.id !== 'recovery_lunch') {
+        assert.ok(Array.isArray(e.inputs) && e.inputs.length > 0, `${e.id}.inputs missing`);
+      } else {
+        assert.ok(Array.isArray(e.inputs), 'recovery_lunch.inputs must be an array');
+      }
       assert.ok(e.outputArtifact, `${e.id}.outputArtifact missing`);
       assert.ok(Array.isArray(e.participants) && e.participants.length > 0, `${e.id}.participants missing`);
       assert.ok(Array.isArray(e.appliesToRoles) && e.appliesToRoles.length > 0, `${e.id}.appliesToRoles missing`);

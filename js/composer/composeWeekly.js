@@ -42,6 +42,7 @@
  */
 
 import { getCurrentNext } from '../catalog/progression.js';
+import { injectLunchBlock } from './lunchBlock.js'; // Iter 26: §6.5 hit 3 of 3
 
 /**
  * Days of the week we plan: Monday..Friday.
@@ -540,7 +541,12 @@ function buildDay(ctx) {
     remaining.CI -= dur;
   }
 
-  // Summary sums.
+  // Iter 26: inject lunch block post-fill, pre-summary.
+  // bucket===null means the summed totals below stay accurate for 4-2-2 math.
+  // §6.5 hit: approved modification (OQ-4 weekly parity = YES).
+  injectLunchBlock(placed, { dailyCapacityMinutes: capacityMinutes, date });
+
+  // Summary sums (bucket===null rows are naturally excluded by `a.bucket in acc`).
   const summed = placed.reduce(
     (acc, a) => {
       if (a.bucket in acc) acc[a.bucket] += a.plannedDurationMinutes ?? 0;

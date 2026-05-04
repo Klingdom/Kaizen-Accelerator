@@ -31,19 +31,22 @@ describe('exportFullCatalog — build-script behavior', () => {
     assert.ok(existsSync(JSON_PATH), `expected JSON at ${JSON_PATH}`);
   });
 
-  test('file contents parse as JSON array of 60 entries', () => {
+  test('file contents parse as JSON array of 61 entries (Iter 26: +1 recovery_lunch)', () => {
     const raw = readFileSync(JSON_PATH, 'utf8');
     const parsed = JSON.parse(raw);
     assert.ok(Array.isArray(parsed), 'parsed JSON should be an array');
     assert.equal(parsed.length, EXPECTED_CATALOG_SIZE);
-    assert.equal(parsed.length, 60);
+    assert.equal(parsed.length, 61);
   });
 
-  test('every entry has bucket + isNonOptional + dependsOn fields set', () => {
+  test('every entry has bucket + isNonOptional + dependsOn fields set (bucket null allowed for recovery_lunch)', () => {
     const catalog = JSON.parse(readFileSync(JSON_PATH, 'utf8'));
     for (const e of catalog) {
       assert.equal(typeof e.id, 'string', `missing id on ${JSON.stringify(e)}`);
-      assert.equal(typeof e.bucket, 'string', `missing bucket on ${e.id}`);
+      // recovery_lunch has bucket===null intentionally (capacity-neutral sentinel).
+      if (e.id !== 'recovery_lunch') {
+        assert.equal(typeof e.bucket, 'string', `missing bucket on ${e.id}`);
+      }
       assert.equal(
         typeof e.isNonOptional,
         'boolean',

@@ -30,6 +30,7 @@ import { pickCommFiller } from '../engine/pickCommFiller.js';
 import { orderDay } from '../engine/orderDay.js';
 import { validateComposition } from '../engine/validateComposition.js';
 import { relaxConfigurable } from '../engine/relaxConfigurable.js';
+import { injectLunchBlock } from './lunchBlock.js'; // Iter 26: STEP 8.5
 
 /**
  * DAILY_NON_OPTIONAL_SET per ENGINE_DESIGN §1.2 heading. Canonical ids from
@@ -524,6 +525,17 @@ export function composeDaily(input) {
   // STEP 8 — Order the day (sets plannedStartAt on each block).
   // ---------------------------------------------------------------------
   orderDay(placed, input);
+
+  // ---------------------------------------------------------------------
+  // STEP 8.5 — Inject lunch block (Iter 26).
+  //
+  // Runs AFTER orderDay so the packer never sees the lunch row (it would
+  // pack it into the morning or afternoon block sequence).
+  // Runs BEFORE validate so validators can see the lunch row.
+  // bucket===null means validateComposition skips it in all capacity sums.
+  // §6.5 hit: 1 of 3 approved modifications to this file.
+  // ---------------------------------------------------------------------
+  injectLunchBlock(placed, input);
 
   // ---------------------------------------------------------------------
   // STEP 9 — Validate + relax.

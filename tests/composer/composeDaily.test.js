@@ -91,7 +91,8 @@ describe('composeDaily — STEP 2: non-optional placement', () => {
   test('places all 4 DAILY_NON_OPTIONAL_SET entries', () => {
     const input = buildGoldenComposerInput();
     const out = composeDaily(input);
-    assert.ok(out.placed.length >= 4, `expected ≥4 placed blocks, got ${out.placed.length}`);
+    // Iter 26: >= 5 (was >= 4) because lunch is now injected as STEP 8.5
+    assert.ok(out.placed.length >= 5, `expected ≥5 placed blocks (4 non-optionals + lunch), got ${out.placed.length}`);
 
     // The 4 anchors we expect present by slot/name.
     const byName = out.placed.map((p) => p.name);
@@ -518,7 +519,11 @@ describe('composeDaily — GOLDEN §1.9 end-to-end (critical)', () => {
     assert.ok(pdca);
 
     // Total minutes ≤ capacity − external.
-    const total = out.placed.reduce((a, b) => a + b.plannedDurationMinutes, 0);
+    // Iter 26: exclude bucket===null rows (lunch) from the capacity sum — they are
+    // capacity-neutral and validateComposition already excludes them.
+    const total = out.placed
+      .filter((b) => b.bucket !== null && b.bucket !== undefined)
+      .reduce((a, b) => a + b.plannedDurationMinutes, 0);
     assert.ok(total <= 480 - 60);
 
     // why[] has all expected rule references.
@@ -633,5 +638,89 @@ describe('composeDaily — Iter-19 Bug A: Composition.date field (AC-A1)', () =>
     assert.equal(readDate, '2026-04-01');
     // Confirm composition.date is indeed absent on the legacy object.
     assert.equal(legacyComposition.date, undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter 26 — Lunch block assertions (AC1, AC2, AC9, AC10, AC15, AC16)
+// ---------------------------------------------------------------------------
+
+describe('composeDaily — Iter 26: lunch block (AC1, AC2, AC9, AC15, AC16)', () => {
+  function buildMinimalInput(overrides = {}) {
+    return {
+      cycleType: 'DAILY',
+      userId: 'u_lunch_test',
+      date: '2026-04-30',
+      dailyCapacityMinutes: 480,
+      externalMinutesToday: 0,
+      role: ['PRACTITIONER'],
+      varianceQueue: [],
+      catalog: GOLDEN_FULL_CATALOG,
+      sprintPhase: 'EXECUTION',
+      sprintAnchorDate: '2026-04-28', // Not a ceremony day relative to 2026-04-30
+      ...overrides
+    };
+  }
+
+  test('AC1: placed contains exactly one lunch activity', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunches = out.placed.filter((a) => a.slotKind === 'LUNCH');
+    assert.equal(lunches.length, 1, 'exactly one lunch activity must be in placed');
+  });
+
+  test('AC1: lunch plannedStartAt is 12:00', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.placed.find((a) => a.slotKind === 'LUNCH');
+    assert.ok(lunch, 'lunch must be present');
+    assert.equal(lunch.plannedStartAt, '12:00');
+  });
+
+  test('AC15: lunch plannedDurationMinutes is 30 (Phil directive)', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.placed.find((a) => a.slotKind === 'LUNCH');
+    assert.equal(lunch.plannedDurationMinutes, 30);
+  });
+
+  test('AC2: lunch bucket is null (capacity-neutral)', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.placed.find((a) => a.slotKind === 'LUNCH');
+    assert.equal(lunch.bucket, null);
+  });
+
+  test('AC2: lunch does NOT consume PROJECT/COMMUNICATION/CI capacity', () => {
+    const out = composeDaily(buildMinimalInput());
+    // Validate passes → capacity math is unaffected by lunch.
+    assert.equal(out.state, 'PROPOSED');
+    assert.equal(out.validation.ok, true);
+  });
+
+  test('AC9: validateComposition passes with lunch in placed (bucket=null filtered)', () => {
+    const out = composeDaily(buildMinimalInput());
+    assert.equal(out.validation.ok, true, `validation failed: ${out.validation.failureCode}`);
+  });
+
+  test('AC16: Post-lunch Comm anchor at 13:00 is unchanged', () => {
+    const out = composeDaily(buildMinimalInput());
+    const postLunchComm = out.placed.find((a) => a.slotKind === 'POST_LUNCH_COMM');
+    assert.ok(postLunchComm, 'Post-lunch Comm must still be present');
+    assert.equal(postLunchComm.anchor, '13:00', 'Post-lunch Comm anchor must remain at 13:00');
+  });
+
+  test('AC8: lunch isNonOptional is false', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.placed.find((a) => a.slotKind === 'LUNCH');
+    assert.equal(lunch.isNonOptional, false);
+  });
+
+  test('lunch catalogEntryId is recovery_lunch', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.placed.find((a) => a.slotKind === 'LUNCH');
+    assert.equal(lunch.catalogEntryId, 'recovery_lunch');
+  });
+
+  test('lunch appears in composition.activities', () => {
+    const out = composeDaily(buildMinimalInput());
+    const lunch = out.composition.activities.find((a) => a.slotKind === 'LUNCH');
+    assert.ok(lunch, 'lunch must appear in composition.activities');
   });
 });

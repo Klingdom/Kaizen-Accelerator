@@ -31,7 +31,8 @@ export const GENERIC_IDS = Object.freeze({
   COMM_GENERIC: 'gen_value_added_communication',
   END_OF_ACTIVITY_REFLECTION: 'gen_end_of_activity_reflection',
   WEEKLY_REFLECTION: 'gen_weekly_reflection',
-  LESSONS_LEARNED: 'gen_lessons_learned'
+  LESSONS_LEARNED: 'gen_lessons_learned',
+  LUNCH: 'recovery_lunch'
 });
 
 /**
@@ -394,6 +395,43 @@ function buildGenerics() {
       enabledByUser: true,
       version: 1,
       sourceRef: 'CATALOG_GAPS.md §H.2 v0.3.1'
+    },
+    // --- Iter 26: Lunch block as editable ScheduledActivity (ARCHITECTURE_DELTA_LUNCH_BLOCK.md) ---
+    // bucket: null is INTENTIONAL — this entry is capacity-neutral.
+    // validateComposition filters bucket===null rows out of all bucket sums.
+    // bucketMap.js allow-lists this id so it does not throw BUCKET_UNRESOLVABLE.
+    {
+      id: GENERIC_IDS.LUNCH,
+      activityNumber: null,
+      name: 'Lunch',
+      focusArea: 'CONTINUOUS_IMPROVEMENT', // OQ-1: reuse CI — no types.js touch required
+      defaultDurationMinutes: 30,           // Phil's directive: 30 min (not architect's 60)
+      cadence: 'DAILY',
+      trigger: 'Default lunch window 12:00 local',
+      inputs: [],
+      outputArtifact: {
+        name: 'Lunch (no artifact)',
+        schema: 'TEXT',
+        required: false                     // OQ-2: lunch produces no artifact
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Step away from work.',
+        'b. Eat.',
+        'c. Return at the planned end time.'
+      ],
+      bucket: null,                         // SENTINEL: capacity-neutral (not PROJECT/COMMUNICATION/CI)
+      isNonOptional: false,                 // AC8: user can skip per day
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'FACILITATOR', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'ARCHITECTURE_DELTA_LUNCH_BLOCK.md §5',
+      // Non-standard fields read by the composer at emit time.
+      defaultStart: '12:00',
+      slotKind: 'LUNCH'
     }
   ];
 }

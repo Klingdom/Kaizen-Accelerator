@@ -84,8 +84,13 @@ describe('applyBucketMap — §H.1 approved table', () => {
     }
   });
 
-  test('every entry in final pipeline has a non-null bucket value', () => {
+  test('every entry in final pipeline has a non-null bucket value (recovery_lunch excepted — intentional null)', () => {
     for (const e of pipeline) {
+      // Iter 26: recovery_lunch has bucket===null intentionally (capacity-neutral).
+      if (e.id === 'recovery_lunch') {
+        assert.equal(e.bucket, null, 'recovery_lunch must keep bucket===null through bucketMap');
+        continue;
+      }
       assert.ok(e.bucket, `${e.id} missing bucket`);
       assert.ok(['PROJECT', 'COMMUNICATION', 'CI'].includes(e.bucket), `${e.id} bucket invalid: ${e.bucket}`);
     }

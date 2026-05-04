@@ -33,7 +33,7 @@ test('smoke: AUTO_PLAN produces a feasible PROPOSED composition with browser see
   const active = services.composerService.getActiveComposition(DEFAULT_USER.id);
   assert.ok(active);
   assert.equal(active.composition.state, 'PROPOSED');
-  assert.ok(active.activities.length >= 6);
+  assert.ok(active.activities.length >= 7); // Iter 26: +1 lunch block
 });
 
 test('smoke: AUTO_PLAN → ACCEPT gives ACCEPTED + all SCHEDULED', () => {

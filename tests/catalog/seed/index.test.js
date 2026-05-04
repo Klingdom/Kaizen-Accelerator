@@ -13,12 +13,12 @@ import { buildCatalog, EXPECTED_CATALOG_SIZE } from '../../../js/catalog/seed/in
 describe('buildCatalog — orchestration', () => {
   const catalog = buildCatalog();
 
-  test('produces 60 entries (49 numbered + 6 ceremonies + 5 generics)', () => {
-    assert.equal(EXPECTED_CATALOG_SIZE, 60);
-    assert.equal(catalog.length, 60);
+  test('produces 61 entries (49 numbered + 6 ceremonies + 6 generics incl. Iter 26 recovery_lunch)', () => {
+    assert.equal(EXPECTED_CATALOG_SIZE, 61);
+    assert.equal(catalog.length, 61);
   });
 
-  test('no entry has a null cadence/trigger/inputs/outputArtifact/participants/bucket', () => {
+  test('no entry has a null cadence/trigger/inputs/outputArtifact/participants — bucket may be null for recovery_lunch', () => {
     const missing = [];
     for (const e of catalog) {
       for (const field of [
@@ -26,12 +26,15 @@ describe('buildCatalog — orchestration', () => {
         'trigger',
         'inputs',
         'outputArtifact',
-        'participants',
-        'bucket'
+        'participants'
       ]) {
         if (e[field] === null || e[field] === undefined) {
           missing.push(`${e.id}.${field}`);
         }
+      }
+      // bucket===null is intentional for recovery_lunch (capacity-neutral sentinel).
+      if (e.id !== 'recovery_lunch' && (e.bucket === null || e.bucket === undefined)) {
+        missing.push(`${e.id}.bucket`);
       }
     }
     assert.deepEqual(missing, [], `null fields: ${missing.join(', ')}`);

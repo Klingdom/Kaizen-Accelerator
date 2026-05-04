@@ -32,8 +32,8 @@ import { applyProcedureNormalization } from './normalizeProcedures.js';
  * Build the fully-populated catalog. Accepts the source file path (for
  * tests that want to pin a fixture path).
  *
- * Total output size: 49 (numbered rows, no #17) + 6 ceremonies + 5 generics
- * = **60 entries**.
+ * Total output size: 49 (numbered rows, no #17) + 6 ceremonies + 6 generics
+ * = **61 entries** (Iter 26: +1 recovery_lunch).
  *
  * @param {{sourceFilePath?: string}} [opts]
  * @returns {import('../../domain/types.js').CatalogEntry[]}
@@ -56,8 +56,8 @@ export function buildCatalog(opts = {}) {
 }
 
 /**
- * Expected row count: 49 numbered (no #17) + 6 ceremonies + 5 generics.
+ * Expected row count: 49 numbered (no #17) + 6 ceremonies + 6 generics (incl. Iter 26 recovery_lunch).
  */
-export const EXPECTED_CATALOG_SIZE = 60;
+export const EXPECTED_CATALOG_SIZE = 61;
 
 export default buildCatalog;
