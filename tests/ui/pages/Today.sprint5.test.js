@@ -1,6 +1,9 @@
 /**
- * Sprint 5 extensions to Today.test.js — covers fine-tune, dialogs,
- * infeasible banner.
+ * Sprint 5 extensions to Today.test.js — covers dialogs, infeasible banner.
+ *
+ * Iter 25: Removed Fine-tune drawer tests (FineTuneButton + FineTuneDrawer
+ * removed from Today render path). InfeasibleBanner test updated to not
+ * assert fine-tune button presence in Today header.
  */
 
 import { test, describe } from 'node:test';
@@ -8,14 +11,14 @@ import assert from 'node:assert/strict';
 
 import { Today } from '../../../js/ui/pages/Today.js';
 
-describe('Today — Fine-tune drawer', () => {
-  test('renders a Fine-tune button in the header', () => {
+describe('Today — Iter 25: Fine-tune drawer removed', () => {
+  test('no Fine-tune button in Today header (Iter 25 removal)', () => {
     const html = Today({ activeState: null });
-    assert.match(html, /class="fine-tune-btn"/);
-    assert.match(html, /data-action="FINE_TUNE_TOGGLE"/);
+    assert.ok(!html.includes('fine-tune-btn'), 'FineTuneButton must be absent from Today header');
+    assert.ok(!html.includes('FINE_TUNE_TOGGLE'), 'FINE_TUNE_TOGGLE action must not appear in Today');
   });
 
-  test('when fineTune.open=true, the drawer is visible', () => {
+  test('fineTune prop is accepted but ignored (no drawer rendered)', () => {
     const html = Today({
       activeState: null,
       fineTune: {
@@ -25,21 +28,8 @@ describe('Today — Fine-tune drawer', () => {
         activeKaizenId: null
       }
     });
-    assert.match(html, /ftd-drawer[^"]*ftd-open/);
-    assert.match(html, /aria-hidden="false"/);
-  });
-
-  test('when fineTune.open=false, drawer is hidden', () => {
-    const html = Today({
-      activeState: null,
-      fineTune: {
-        open: false,
-        capacityMinutes: 480,
-        externalMinutesToday: 0,
-        activeKaizenId: null
-      }
-    });
-    assert.match(html, /aria-hidden="true"/);
+    assert.ok(!html.includes('ftd-drawer'), 'FineTuneDrawer must not render (Iter 25 removal)');
+    assert.ok(!html.includes('fine-tune-btn'), 'FineTuneButton must not render');
   });
 });
 
@@ -90,9 +80,10 @@ describe('Today — InfeasibleBanner (P2-T1)', () => {
     });
     assert.match(html, /class="infeasible-banner"/);
     assert.match(html, /role="alert"/);
-    // Fine-tune button appears inside the banner too.
+    // InfeasibleBanner renders its own fine-tune button internally (in the banner).
+    // Today header no longer has a fine-tune button (Iter 25).
     const fineTuneMatches = (html.match(/fine-tune-btn/g) ?? []).length;
-    assert.ok(fineTuneMatches >= 2, `expected at least 2 fine-tune buttons (header + banner), got ${fineTuneMatches}`);
+    assert.ok(fineTuneMatches >= 1, `expected at least 1 fine-tune button (in banner), got ${fineTuneMatches}`);
   });
 
   test('accepts structured infeasible prop too', () => {

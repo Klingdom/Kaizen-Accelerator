@@ -7,11 +7,16 @@
  *   NowPane, RhythmExplainer, UpNextRail, EodClosureStrip removed from render path.
  *   See js/ui/components/_backup/ for archived component files.
  *
+ * Phase 2 (Iter 25):
+ *   Removed AdherenceDial, FineTuneButton, FineTuneDrawer from render path.
+ *   Today header renders only the day badge.
+ *   Activity list now has column headers + per-row Update button (EDIT_QUICK_UPDATE).
+ *   Dead props removed: adherence, targets, floors, ceilings, fineTune.
+ *
  * Responsibilities:
  *   - Given an active Composition + its children, render a CycleCard.
  *   - If no Composition exists for the user, render the first-run banner
  *     copy + an AutoPlanButton as the primary CTA.
- *   - Render the Fine-tune button + drawer (P1-T2).
  *   - On INFEASIBLE composer result, render InfeasibleBanner (P2-T1).
  *   - Render any open modal (OutputArtifactDialog or SkipReasonModal).
  *
@@ -23,17 +28,10 @@
 import { esc } from '../mount.js';
 import { CycleCard } from '../components/CycleCard.js';
 import { AutoPlanButton } from '../components/AutoPlanButton.js';
-import { AdherenceDial } from '../components/AdherenceDial.js';
-import { FineTuneDrawer, FineTuneButton } from '../components/FineTuneDrawer.js';
 import { InfeasibleBanner } from '../components/InfeasibleBanner.js';
 import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
 import { EditDrawer } from '../components/EditDrawer.js';
-import {
-  DEFAULT_TARGETS,
-  DEFAULT_FLOORS,
-  DEFAULT_CEILINGS
-} from '../components/BucketStrip.js';
 import { validateEditState } from '../editMode.js';
 
 /**
@@ -85,18 +83,8 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *   isFirstRun?: boolean,
  *   infeasible?: {explain: string[]} | null,
  *   infeasibleExplain?: string[] | null,
- *   adherence?: object,
- *   targets?: object,
- *   floors?: object,
- *   ceilings?: object,
+ *   daysSinceSignup?: number | null,
  *   nowIso?: string,
- *   fineTune?: {
- *     open: boolean,
- *     capacityMinutes: number,
- *     externalMinutesToday: number,
- *     activeKaizenId: string | null,
- *     availableKaizens?: Array<{id: string, title: string}>
- *   },
  *   openDialog?: null | {
  *     kind: 'CLOSE' | 'SKIP',
  *     activityId: string,
@@ -119,14 +107,7 @@ export function Today(props = {}) {
     (Array.isArray(props.infeasibleExplain) && props.infeasibleExplain.length > 0
       ? { explain: props.infeasibleExplain }
       : null);
-  const adherence = props.adherence ?? {
-    adherencePct: null,
-    acceptancePct: null,
-    kaizenDeltaPct: null,
-    daysSinceSignup: 0
-  };
   const nowIso = props.nowIso ?? null;
-  const fineTune = props.fineTune ?? null;
   const openDialog = props.openDialog ?? null;
   const editMode = props.editMode ?? null; // null when closed; object when open
   // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
@@ -134,34 +115,22 @@ export function Today(props = {}) {
   const eodRecap = props.eodRecap ?? null;
   const whyPlanExpanded = !!props.whyPlanExpanded;
 
-  const strips = {
-    targets: props.targets ?? DEFAULT_TARGETS,
-    floors: props.floors ?? DEFAULT_FLOORS,
-    ceilings: props.ceilings ?? DEFAULT_CEILINGS
-  };
+  // Iter 25: daysSinceSignup passed directly (no longer derived from adherence).
+  // Falls back to reading from the legacy adherence.daysSinceSignup shape if
+  // app.js still passes the old prop during a transition window.
+  const rawDaysSinceSignup =
+    props.daysSinceSignup != null
+      ? props.daysSinceSignup
+      : (props.adherence?.daysSinceSignup ?? null);
+  const daysSinceSignup = Number.isFinite(rawDaysSinceSignup) ? rawDaysSinceSignup : null;
 
-  // Header — day-counter badge + AdherenceDial + Fine-tune trigger.
-  const daysSinceSignup = Number.isFinite(adherence.daysSinceSignup)
-    ? adherence.daysSinceSignup
-    : null;
+  // Header — day-counter badge only (Iter 25: AdherenceDial + FineTuneButton removed).
   const dayBadge = daysSinceSignup !== null
     ? `<span class="today-day-badge" aria-label="day ${esc(String(daysSinceSignup + 1))} since signup">Day ${esc(String(daysSinceSignup + 1))}</span>`
     : '';
   const header = `<header class="today-header">
   ${dayBadge}
-  ${AdherenceDial(adherence)}
-  ${FineTuneButton()}
 </header>`;
-
-  const drawer = fineTune
-    ? FineTuneDrawer({
-        capacityMinutes: fineTune.capacityMinutes ?? 480,
-        externalMinutesToday: fineTune.externalMinutesToday ?? 0,
-        activeKaizenId: fineTune.activeKaizenId ?? null,
-        availableKaizens: fineTune.availableKaizens ?? [],
-        open: !!fineTune.open
-      })
-    : '';
 
   const modal = renderOpenDialog(openDialog);
 
@@ -173,7 +142,6 @@ export function Today(props = {}) {
     <p class="empty-copy">${esc(TODAY_COPY.INFEASIBLE)}</p>
     ${AutoPlanButton({ loading, variant: 'primary' })}
   </section>
-  ${drawer}
   ${modal}
 </main>`;
   }
@@ -194,7 +162,6 @@ export function Today(props = {}) {
     <p class="empty-copy">${esc(emptyCopy)}</p>
     ${AutoPlanButton({ loading, variant: 'primary' })}
   </section>
-  ${drawer}
   ${modal}
 </main>`;
   }
@@ -208,13 +175,11 @@ export function Today(props = {}) {
   const compositionForRender = isEditing
     ? { ...activeState.composition, state: activeState.composition.state }
     : activeState.composition;
+  // Iter 25: validateEditState no longer needs bucket targets/floors/ceilings
+  // from Today — those were only for BucketStrip which is now removed. We pass
+  // empty objects so the call signature is preserved without dead prop drilling.
   const violations = isEditing
-    ? validateEditState(
-        activitiesForRender,
-        strips.targets,
-        strips.floors,
-        strips.ceilings
-      ).violations
+    ? validateEditState(activitiesForRender, {}, {}, {}).violations
     : [];
   const editDrawerHtml = isEditing
     ? EditDrawer({
@@ -237,9 +202,6 @@ export function Today(props = {}) {
       ${CycleCard({
         composition: compositionForRender,
         activities: activitiesForRender,
-        targets: strips.targets,
-        floors: strips.floors,
-        ceilings: strips.ceilings,
         nowIso,
         kaizenTitleById: props.kaizenTitleById ?? {},
         catalog: props.catalog ?? [],
@@ -252,7 +214,6 @@ export function Today(props = {}) {
       })}
     </div>
   </div>
-  ${drawer}
   ${editDrawerHtml}
   ${modal}
 </main>`;

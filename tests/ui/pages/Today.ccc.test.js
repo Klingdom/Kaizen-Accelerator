@@ -7,17 +7,18 @@
  *     why-this-plan (top-level), up-next-rail, eod-closure.
  *   These components are no longer rendered directly by Today.js.
  *   WhyThisPlan and MorningRecap are now rendered inside CycleCard.
- *   Remaining regions: 5 (header, adherence-dial, cycle-card, bucket-strip,
- *   cycle-activities).
- *   CCC bound updated from ≤12 to ≤6 to remain a useful regression guard.
- *   Removed `renderActiveWithExplainer` helper (rhythmExplainerDismissed prop
- *   removed from Today.js).
- *   Removed 4 stale PROSE_REGIONS entries (all absent after Phase A).
+ *
+ * Iter 25 update:
+ *   Removed 2 more regions: adherence-dial + bucket-strip.
+ *   Today header now renders only the day badge.
+ *   BucketStrip removed from CycleCard.
+ *   Remaining regions: 3 (header, cycle-card, cycle-activities).
+ *   CCC bound updated from ≤6 to ≤4.
  *
  * Based on UX_TODAY_V2_QA.md §1 and UX_TODAY_V2_THEMES.md §5.
  *
  * CCC definition: count of distinct UI regions visible in a rendered Today
- * HTML string. Each named region below scores +1. Assert CCC ≤ 6 for the
+ * HTML string. Each named region below scores +1. Assert CCC ≤ 4 for the
  * active-composition (PROPOSED + activities) state.
  *
  * All fixtures are deterministic. No Date.now(), no Math.random().
@@ -67,23 +68,22 @@ function extractProseText(html, cssClass) {
 // ---------------------------------------------------------------------------
 // CCC: count distinct named regions present in the rendered HTML.
 //
-// Phase A registry — 5 regions remain after stripping Today.js to
-// header + CycleCard. Bound updated to ≤ 6 (tight enough to catch regressions).
+// Iter 25 registry — 3 regions remain after removing adherence-dial +
+// bucket-strip. Bound updated to ≤ 4 (tight enough to catch regressions).
 //
 // Region registry — each entry is a [name, pattern] pair. A region scores
 // +1 if its pattern is found anywhere in the HTML string.
 // ---------------------------------------------------------------------------
 const REGIONS = [
   ['header',          /class="today-header"/],
-  ['adherence-dial',  /class="adherence-dial/],
   ['cycle-card',      /class="cycle-card/],
-  ['bucket-strip',    /class="bucket-strip"/],
   ['cycle-activities',/class="cycle-activities"/],
 ];
 
-// Intentionally NOT in REGIONS (Phase A removal — kept for reference):
+// Intentionally NOT in REGIONS (Phase A + Iter 25 removals — kept for reference):
 //   morning-recap, rhythm-explainer, now-pane, up-next-mobile,
-//   why-this-plan (top-level), up-next-rail, eod-closure.
+//   why-this-plan (top-level), up-next-rail, eod-closure,
+//   adherence-dial, bucket-strip.
 // WhyThisPlan and MorningRecap now render INSIDE CycleCard (counted under cycle-card).
 
 function computeCCC(html) {
@@ -139,16 +139,11 @@ const ACTIVE_STATE = {
   ]
 };
 
-// Active-composition render — Phase A: rhythmExplainerDismissed prop removed.
+// Active-composition render — Iter 25: adherence prop removed; daysSinceSignup passed directly.
 function renderActiveComposition() {
   return Today({
     activeState: ACTIVE_STATE,
-    adherence: {
-      adherencePct: null,
-      acceptancePct: null,
-      kaizenDeltaPct: null,
-      daysSinceSignup: 5
-    }
+    daysSinceSignup: 5
   });
 }
 
@@ -156,12 +151,7 @@ function renderActiveComposition() {
 function renderEmpty() {
   return Today({
     activeState: null,
-    adherence: {
-      adherencePct: null,
-      acceptancePct: null,
-      kaizenDeltaPct: null,
-      daysSinceSignup: 5
-    }
+    daysSinceSignup: 5
   });
 }
 
@@ -170,27 +160,26 @@ function renderEmpty() {
 // ---------------------------------------------------------------------------
 
 describe('CCC — active-composition state (PROPOSED + activities)', () => {
-  test('AC-Q2: CCC ≤ 6 in active-composition state (Phase A: 5 regions remain)', () => {
-    // Phase A baseline: 5 regions (header, adherence-dial, cycle-card,
-    // bucket-strip, cycle-activities). Bound ≤ 6 gives one slot of headroom
-    // for future additions without a false alarm.
+  test('AC-Q2: CCC ≤ 4 in active-composition state (Iter 25: 3 regions remain)', () => {
+    // Iter 25 baseline: 3 regions (header, cycle-card, cycle-activities).
+    // Bound ≤ 4 gives one slot of headroom for future additions.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 6,
-      `CCC is ${ccc}, expected ≤ 6. Present regions: ${
+      ccc <= 4,
+      `CCC is ${ccc}, expected ≤ 4. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
   });
 
-  test('CCC >= 4 in active-composition state (lower bound guards against silent empties)', () => {
-    // At minimum header + cycle-card + bucket-strip + cycle-activities must be present.
+  test('CCC >= 3 in active-composition state (lower bound guards against silent empties)', () => {
+    // At minimum header + cycle-card + cycle-activities must be present.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc >= 4,
-      `CCC is ${ccc}, expected ≥ 4. Present regions: ${
+      ccc >= 3,
+      `CCC is ${ccc}, expected ≥ 3. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
@@ -241,24 +230,32 @@ describe('CCC — active-composition state (PROPOSED + activities)', () => {
 });
 
 describe('CCC — empty state', () => {
-  test('AC-Q2: CCC ≤ 4 in empty state (header + adherence-dial only)', () => {
+  test('AC-Q2: CCC ≤ 2 in empty state (header only)', () => {
     const html = renderEmpty();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 4,
-      `CCC is ${ccc} in empty state, expected ≤ 4. Present regions: ${
+      ccc <= 2,
+      `CCC is ${ccc} in empty state, expected ≤ 2. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
   });
 });
 
-describe('CCC — regression guard: BucketStrip always present in active state', () => {
-  test('bucket-strip is a distinct CCC region (confirms it contributes to count)', () => {
+describe('CCC — regression guard: core regions always present in active state', () => {
+  test('Iter 25: bucket-strip is NOT present (removed from CycleCard)', () => {
     const html = renderActiveComposition();
     assert.ok(
-      /class="bucket-strip"/.test(html),
-      'bucket-strip must be present in active-composition HTML'
+      !/class="bucket-strip"/.test(html),
+      'bucket-strip must be ABSENT from active-composition HTML (Iter 25 removal)'
+    );
+  });
+
+  test('Iter 25: adherence-dial is NOT present (removed from Today header)', () => {
+    const html = renderActiveComposition();
+    assert.ok(
+      !/class="adherence-dial"/.test(html),
+      'adherence-dial must be ABSENT from Today HTML (Iter 25 removal)'
     );
   });
 
@@ -267,6 +264,14 @@ describe('CCC — regression guard: BucketStrip always present in active state',
     assert.ok(
       /class="cycle-activities"/.test(html),
       'cycle-activities must be present in active-composition HTML'
+    );
+  });
+
+  test('column header row is present in active state (Iter 25 addition)', () => {
+    const html = renderActiveComposition();
+    assert.ok(
+      /sa-col-headers/.test(html),
+      'sa-col-headers must be present in active-composition HTML'
     );
   });
 });

@@ -103,14 +103,15 @@ describe('Today page — onboarding hint rendering', () => {
     assert.ok(!html.includes('today-onboarding-hint'));
   });
 
-  test('does NOT render hint when daysSinceSignup is absent', () => {
+  test('does NOT render hint when daysSinceSignup is absent (Iter 25 behaviour)', () => {
+    // Iter 25: daysSinceSignup defaults to null when omitted (no legacy default of 0).
+    // No daysSinceSignup → no day badge → no onboarding hint.
     const html = Today({
       activeState: null
-      // adherence not provided → default daysSinceSignup=0 → hint WILL show.
+      // neither daysSinceSignup nor adherence provided
     });
-    // Default adherence still has daysSinceSignup=0 so hint DOES show;
-    // this test captures that branch (day-0 shows welcome).
-    assert.match(html, /Welcome to CadencePlan/);
+    assert.ok(!html.includes('today-onboarding-hint'), 'hint must not render when daysSinceSignup is absent');
+    assert.ok(!html.includes('today-day-badge'), 'day badge must not render when daysSinceSignup is absent');
   });
 
   test('hint renders in empty state (Phase A: rhythm-explainer removed, ordering test removed)', () => {

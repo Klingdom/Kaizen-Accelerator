@@ -109,12 +109,26 @@ describe('CycleCard — PROPOSED variant', () => {
     assert.match(html, new RegExp(CARD_COPY.PROPOSED_HEADER));
   });
 
-  test('includes BucketStrip', () => {
+  test('Iter 25: does NOT include BucketStrip (removed)', () => {
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    assert.match(html, /bucket-strip/);
+    assert.ok(!html.includes('bucket-strip'), 'bucket-strip must be absent (Iter 25 removal)');
+  });
+
+  test('Iter 25: includes column header row with 6 headers', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.ok(html.includes('sa-col-headers'), 'sa-col-headers must be present');
+    assert.ok(html.includes('Time of Day'), 'Time of Day header must be present');
+    assert.ok(html.includes('Focus Area'), 'Focus Area header must be present');
+    assert.ok(html.includes('Standard Work Name'), 'Standard Work Name header must be present');
+    assert.ok(html.includes('Planned Duration'), 'Planned Duration header must be present');
+    assert.ok(html.includes('Expected Output'), 'Expected Output header must be present');
+    assert.match(html, /role="columnheader"/, 'role="columnheader" must be present for a11y');
   });
 
   test('includes all 8 activity blocks in plan order', () => {
@@ -321,8 +335,8 @@ describe('CycleCard — unknown state', () => {
   });
 });
 
-describe('CycleCard — custom targets pass through to BucketStrip', () => {
-  test('weekly targets propagate', () => {
+describe('CycleCard — Iter 25: BucketStrip removed, targets props are no-op', () => {
+  test('targets/floors/ceilings props are accepted but no longer render BucketStrip', () => {
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES,
@@ -330,7 +344,8 @@ describe('CycleCard — custom targets pass through to BucketStrip', () => {
       floors: { PROJECT: 600, COMMUNICATION: 300, CI: 300 },
       ceilings: { PROJECT: 1320, COMMUNICATION: 750, CI: 750 }
     });
-    assert.match(html, /1200/);
+    assert.ok(!html.includes('bucket-strip'), 'bucket-strip must be absent even when targets passed');
+    assert.ok(html.includes('cycle-activities'), 'cycle-activities must still render');
   });
 });
 
@@ -381,15 +396,15 @@ describe('CycleCard.orderActivitiesForDisplay', () => {
   });
 });
 
-describe('CycleCard — bucket summary reflects planned minutes', () => {
-  test('8-block 4-2-2 sample shows near-golden minutes', () => {
+describe('CycleCard — Iter 25: bucket minutes no longer rendered in BucketStrip', () => {
+  test('activity durations are visible in sa-duration columns, not BucketStrip', () => {
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    // 240 PROJECT, 105 COMM, 105 CI — but BucketStrip renders these.
-    // We just assert the BucketStrip section exists and includes the numbers.
-    assert.match(html, />240</);
+    // BucketStrip is removed; activity durations still render via sa-duration.
+    assert.ok(!html.includes('bucket-strip'), 'BucketStrip must be absent');
+    assert.ok(html.includes('sa-duration'), 'sa-duration columns must still render');
   });
 });
 

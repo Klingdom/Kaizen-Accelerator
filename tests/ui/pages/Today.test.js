@@ -33,6 +33,14 @@ const ACTIVE_STATE = {
       plannedDurationMinutes: 15,
       plannedStartAt: '09:00',
       state: 'PROPOSED'
+    },
+    {
+      id: 'sa_focus',
+      name: 'Deep Work',
+      bucket: 'PROJECT',
+      plannedDurationMinutes: 120,
+      plannedStartAt: '10:00',
+      state: 'PROPOSED'
     }
   ]
 };
@@ -92,9 +100,14 @@ describe('Today — loaded state with a PROPOSED composition', () => {
     assert.ok(!html.includes(TODAY_COPY.FIRST_RUN));
   });
 
-  test('AdherenceDial header always renders', () => {
+  test('Iter 25: AdherenceDial is NOT rendered (removed from Today header)', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.match(html, /adherence-dial/);
+    assert.ok(!html.includes('adherence-dial'), 'adherence-dial must be absent from Today output (Iter 25 removal)');
+  });
+
+  test('Iter 25: FineTuneButton is NOT rendered', () => {
+    const html = Today({ activeState: ACTIVE_STATE });
+    assert.ok(!html.includes('ftd-btn'), 'FineTuneButton must be absent from Today output (Iter 25 removal)');
   });
 });
 
@@ -153,50 +166,72 @@ describe('Today — loading state', () => {
   });
 });
 
-describe('Today — adherence passthrough', () => {
-  test('passes adherence props to AdherenceDial', () => {
+describe('Today — daysSinceSignup passthrough (Iter 25)', () => {
+  test('daysSinceSignup=14 renders Day 15 badge', () => {
     const html = Today({
       activeState: null,
-      adherence: {
-        adherencePct: 82,
-        acceptancePct: 91,
-        kaizenDeltaPct: 14,
-        daysSinceSignup: 14
-      }
+      daysSinceSignup: 14
     });
-    assert.match(html, />82%</);
-    assert.match(html, />91%</);
-    assert.match(html, />\+14%</);
+    assert.match(html, /Day 15/);
+    assert.match(html, /today-day-badge/);
   });
 
-  test('default adherence → empty dial copy', () => {
+  test('daysSinceSignup via legacy adherence.daysSinceSignup still works', () => {
+    const html = Today({
+      activeState: null,
+      adherence: { daysSinceSignup: 7 }
+    });
+    assert.match(html, /Day 8/);
+  });
+
+  test('no daysSinceSignup → no day badge', () => {
     const html = Today({ activeState: null });
-    assert.match(html, /Building your baseline/);
+    assert.ok(!html.includes('today-day-badge'));
   });
 });
 
 // ---------------------------------------------------------------------------
-// C-UX-13 — BucketStrip BalanceMeter labels
+// Iter 25 — column header labels + Update button guards
 // ---------------------------------------------------------------------------
-describe('Today — C-UX-13 BucketStrip label rename', () => {
-  test('AC13-5: renders "Deep Work" label in active state', () => {
+describe('Today — Iter 25: column headers in activity list', () => {
+  test('AC4: column header row renders "Time of Day"', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Deep Work'), `Expected "Deep Work" label. HTML snippet: ${html.slice(0, 1000)}`);
+    assert.ok(html.includes('Time of Day'), 'Expected "Time of Day" column header');
   });
 
-  test('AC13-5: renders "Communication" label in active state', () => {
+  test('AC4: column header row renders "Focus Area"', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Communication'), `Expected "Communication" label.`);
+    assert.ok(html.includes('Focus Area'), 'Expected "Focus Area" column header');
   });
 
-  test('AC13-5: renders "Improvement" label in active state', () => {
+  test('AC4: column header row renders "Standard Work Name"', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Improvement'), `Expected "Improvement" label.`);
+    assert.ok(html.includes('Standard Work Name'), 'Expected "Standard Work Name" column header');
   });
 
-  test('AC13-6: chip-project class string is preserved', () => {
+  test('AC4: column header row renders "Planned Duration"', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('chip-project') || html.includes('bucket-project'), `Expected class. HTML snippet: ${html.slice(0, 1000)}`);
+    assert.ok(html.includes('Planned Duration'), 'Expected "Planned Duration" column header');
+  });
+
+  test('AC4: column header row renders "Expected Output"', () => {
+    const html = Today({ activeState: ACTIVE_STATE });
+    assert.ok(html.includes('Expected Output'), 'Expected "Expected Output" column header');
+  });
+
+  test('AC4: column header row renders "Update" header', () => {
+    const html = Today({ activeState: ACTIVE_STATE });
+    assert.ok(html.includes('Update'), 'Expected "Update" column header');
+  });
+
+  test('AC5: column header row uses role="columnheader" semantics', () => {
+    const html = Today({ activeState: ACTIVE_STATE });
+    assert.match(html, /role="columnheader"/, 'Expected role="columnheader" for a11y');
+  });
+
+  test('AC6: non-protected activity row has an Update button', () => {
+    const html = Today({ activeState: ACTIVE_STATE });
+    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'Expected EDIT_QUICK_UPDATE action on Update button');
   });
 });
 

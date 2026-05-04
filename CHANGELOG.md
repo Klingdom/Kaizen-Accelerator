@@ -6,6 +6,49 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 25 — 2026-05-04 — Today simplify Phase 2 strip + table-style schedule (C-PM-SIMPLIFY-A2)
+
+### What changed
+User-directive feature, second strip pass on Today page. Phil: *"remove the adherence, acceptance, and kaizen delta section... remove the deep work, communication, and improvement time band content... Remove the Fine-tune today section for now also. And create headers for the schedule: Time of Day, Focus Area, Standard Work Name, Planned Duration for Standard Work, Expected Output, and an update button to quickly change duration for standard work."* Phil approved Path A — Phase 1 + Phase 2 dispatched back-to-back (Iter 25 = Phase 1; Iter 26 = Phase 2 lunch block).
+
+**Removed (visual chrome):**
+- `AdherenceDial` from Today header — adherence/acceptance/kaizen-delta surface gone
+- `BucketStrip` from CycleCard (both PROPOSED and ACCEPTED variants) — deep work / comm / improvement time-band content gone
+- `FineTuneButton` + `FineTuneDrawer` wiring from Today header + render path
+
+**Added (table-style schedule):**
+- 6-column header row above activities list with screen-reader semantics (`role="row"` + `role="columnheader"`):
+  - **Time of Day** · **Focus Area** · **Standard Work Name** · **Planned Duration** · **Expected Output** · **Update**
+- Per-row Update button (column 6) — visible on non-protected rows; absent for protected blocks (Daily Standup, etc.)
+- New `EDIT_QUICK_UPDATE` action handler in `js/app.js` — single click enters edit-mode + selects row + shows duration chips (reuses existing chip infrastructure from Iter 13/14)
+- `aria-label` on Update button names the activity for screen readers
+
+**Component file dispositions:**
+- `AdherenceDial.js` — kept in place (no other Today usage; removal from import only)
+- `BucketStrip.js` — kept in place (still importable for future use)
+- `FineTuneDrawer.js` — kept in place (`InfeasibleBanner.js` still imports `FineTuneButton`)
+
+### Why
+- Continued Phil's simplification directive (Iter 23 was the first strip pass; Iter 25 the second)
+- Removes scoring/measurement chrome that wasn't earning its persistent place
+- Replaces tabular data with explicit column headers (improves scanability + aligns with Phil's mental model of the schedule as a "standard work" table)
+- Update button externalizes the duration-change affordance from edit-mode (1 click vs 3 clicks)
+
+### Impact
+- Test suite: 2,929 → **2,943** (+14 net)
+- Runtime: 3.49s → **3.80s** ⚠️ (9% over 3.5s budget — Iter 23 overshoot pattern returns; per-test cost 1.19ms → 1.29ms)
+- CCC region count: 5 → **3** (header, cycle-card, cycle-activities; new bound asserted at ≤4 + ≥2)
+- All 13 ACs PASS
+- §6.5 hits: **0**
+
+### ⚠️ Runtime budget watch
+Runtime crossed the 3.5s budget for the second time in 3 iterations (Iter 23 closed at 3.67s; Iter 24 recovered to 3.49s; Iter 25 at 3.80s). Per-test cost has trended up from 1.14ms (Iter 22) → 1.19ms (Iter 24) → 1.29ms (Iter 25). Q3 from Iter 17 §4.2 meta-review (per-test ms metric switch) is now relevant. **Recommendation**: trigger meta-review at Iter 27 (next pure improvement-loop iteration) to consider runtime budget redefinition.
+
+### Latent state cleanup deferred
+`state.fineTune` retained in `createState()` because `AUTO_PLAN` and `FINE_TUNE_APPLY` action handlers still read from it for compose-pipeline overrides (capacity, externalMinutes, activeKaizenId). The drawer UI is hidden but the state slice is load-bearing. Removing the slice requires engine-side compose-input refactor — flagged as a follow-up cleanup, NOT done in this iteration.
+
+---
+
 ## Iteration 24 — 2026-05-04 — Modal focus-trap discipline (C-UX-6)
 
 ### What changed

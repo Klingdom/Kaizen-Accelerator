@@ -196,7 +196,9 @@ export function ScheduledActivityBlock(props = {}) {
       : null;
   const editMode = !!props.editMode;
   const editSelected = !!props.editSelected;
-  const protectedBlock = editMode ? isProtectedBlock(a) : false;
+  // Iter 25: protectedBlock is now checked unconditionally (not just in edit mode)
+  // so the Update button can be suppressed for protected activities regardless of mode.
+  const protectedBlock = isProtectedBlock(a);
 
   // C-UX-COL: pre-resolved output artifact definition from CatalogEntry.
   // Caller (CycleCard) resolves catalogEntryId → CatalogEntry.outputArtifact.
@@ -297,12 +299,21 @@ export function ScheduledActivityBlock(props = {}) {
   const ariaTime = time || 'unscheduled';
   const liAriaLabel = `aria-label="Activity: ${esc(name)}, ${esc(ariaStateLabel)}, ${esc(ariaTime)}, ${esc(String(duration))} minutes"`;
 
+  // Iter 25: per-row Update button. Dispatches EDIT_QUICK_UPDATE which enters
+  // edit mode and selects this slot in a single action. Protected blocks (e.g.
+  // Daily Standup) never get an Update button — they cannot be changed.
+  // In edit mode the button is suppressed (no-op would confuse the UX).
+  const updateButtonHtml = (!protectedBlock && !editMode)
+    ? `<button type="button" class="sa-update-btn" data-action="EDIT_QUICK_UPDATE" data-payload='${activityIdPayload}' aria-label="Update duration for ${esc(name)}">Update</button>`
+    : `<div class="sa-update-empty" aria-hidden="true"></div>`;
+
   return `<li class="${classes}" data-activity-id="${esc(a.id ?? '')}" data-bucket="${esc(a.bucket ?? '')}" data-user-edited="${userEdited ? 'true' : 'false'}"${selectAttrs} ${liAriaLabel}>
   <div class="sa-when"${whenAria}>${whenInner}</div>
   <div class="sa-bucket-chip ${esc(chipClass)}" aria-label="bucket ${esc(a.bucket ?? '')}">${esc(a.bucket ?? '')}</div>
   <div class="sa-name">${esc(name)}${carried}${kaizenChip}</div>
   <div class="sa-duration">${esc(String(duration))}m</div>
   ${artifactBlock}
+  <div class="sa-update">${updateButtonHtml}</div>
   ${renderElapsed(a, nowIso)}
   ${renderSkipReason(a)}
   ${runtimeActions}

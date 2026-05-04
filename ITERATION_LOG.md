@@ -664,3 +664,46 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Production deploy (Iter 22 + 23 + 24 all queued for the same deploy).
   - Phil's standard-work answers still unblocking Phases B + C of simplification + lunch block.
   - C-UX-6b queued for next non-Phil-blocked iteration.
+
+---
+
+## Iteration 25 — 2026-05-04 — Today simplify Phase 2 strip + table-style schedule (C-PM-SIMPLIFY-A2)
+
+- **Selected item**: User-directive feature. Phil: remove AdherenceDial / BucketStrip / FineTuneButton chrome; add 6-column table-style schedule headers + per-row Update button. Phil approved Path A (back-to-back Phase 1 + Phase 2 dispatch).
+- **Reason for selection**: Direct user directive; second strip pass after Iter 23. Bundled all 5 UI removals + new column-headers + Update affordance into single iteration since they share the CycleCard render path.
+- **Agents involved**: frontend-engineer (single-pass — no Define-pass needed; clear concrete asks).
+- **Validation results**:
+  - Tests: 2,929 → **2,943** (+14 net)
+  - Runtime: 3.49s → **3.80s** ⚠️ (9% over 3.5s budget; per-test cost 1.19ms → 1.29ms — runtime budget watch flagged in SYSTEM_HEALTH)
+  - CCC region count: 5 → **3** (further simplification beyond Iter 23); new bound asserted at ≤4 + ≥2
+  - All 13 ACs PASS
+  - **§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/ui/pages/Today.js` — removed AdherenceDial + FineTuneButton/Drawer imports + renders + dead props (adherence, fineTune, rhythmExplainerDismissed); reduced header to day badge only; passes `daysSinceSignup` directly
+    - `js/ui/components/CycleCard.js` — removed both BucketStrip renders (PROPOSED + ACCEPTED variants); removed BucketStrip + DEFAULT_TARGETS/FLOORS/CEILINGS imports; removed dead props
+    - `js/ui/components/ScheduledActivityBlock.js` — added `.sa-update` column (column 6) with Update button; `isProtectedBlock()` now evaluated unconditionally (not just edit-mode) to gate Update button visibility
+    - `js/app.js` — removed FineTuneDrawer/Button state computation paths feeding Today; added `EDIT_QUICK_UPDATE` action handler dispatching `EDIT` then `EDIT_SELECT_SLOT` for one-click duration entry
+    - `app.css` — `grid-template-columns` for `.sa-block` 6 → 7 tracks (added Update column); new `.sa-update` styles; new `.sa-header-row` styles; removed orphaned BucketStrip / AdherenceDial / FineTune styles
+    - 6 test files updated (Today.test.js, Today.ccc.test.js, Today.sprint5/11/12.test.js, CycleCard.test.js, ScheduledActivityBlock.test.js)
+  - **Component files**: ALL kept in place (none moved to backup):
+    - `AdherenceDial.js` — kept (no other Today usage; just import removed)
+    - `BucketStrip.js` — kept (importable for future use)
+    - `FineTuneDrawer.js` — KEPT IN PLACE because `InfeasibleBanner.js` still imports `FineTuneButton`
+- **Spec deviations**: Two minor:
+  1. `isProtectedBlock()` now unconditional rather than edit-mode-only — clarification, not deviation; required to gate Update button visibility outside edit mode. Backward-safe (CSS classes still gate on `editMode`).
+  2. `state.fineTune` retained in `createState()` because compose-pipeline handlers still read it. Drawer UI hidden; state slice load-bearing. Removing requires engine-side compose-input refactor; flagged as follow-up cleanup.
+- **Time spent**: ~2h actual vs 2-3h estimate.
+- **Strategic outcome**:
+  - **CCC region count compressed from 11 (pre-Iter 23) → 5 (Iter 23) → 3 (Iter 25)**. The Today page is now genuinely minimal: header, CycleCard, activities list. Phil's "single boxed area" vision essentially complete on the UI side.
+  - **Schedule now reads as a table.** Column headers + per-row Update button align with Phil's mental model of the Today page as a standard-work schedule.
+  - **Quick duration update affordance** (1 click vs 3) reduces friction for the most-frequent edit operation.
+  - **Phase 2 (lunch block) ready to dispatch** — Phil locked all 4 OQ defaults; lunch ships next iteration.
+- **Latent issues**:
+  - **Runtime budget overshoot returns**: 3.80s vs 3.5s. Iter 23 → Iter 24 → Iter 25 pattern (3.67 → 3.49 → 3.80). Per-test cost trending up. Q3 from Iter 17 §4.2 (per-test ms metric switch) is overdue. Recommend meta-review trigger at Iter 27.
+  - **Dead state slice**: `state.fineTune` is load-bearing for compose pipeline but UI is gone. Cleanup requires engine-side refactor.
+  - `EditDrawer.violations` now always passed empty `[]` since BucketStrip removed; bucket-floor/ceiling violation display surface removed (intentional — paired visual context gone).
+- **Follow-ups**:
+  - Commit + push.
+  - Dispatch Iter 26 (Phase 2 lunch block) immediately per Phil's Path A approval.
+  - Production deploy queue: Iter 22 + 23 + 24 + 25 will all land together when Phil deploys.

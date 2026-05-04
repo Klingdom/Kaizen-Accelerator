@@ -629,17 +629,10 @@ export function renderApp(services, state) {
       loading: state.composerLoading,
       isFirstRun: activeState === null && daysSinceSignup <= 1,
       infeasibleExplain: state.infeasibleExplain,
-      adherence: {
-        adherencePct: null,
-        acceptancePct: null,
-        kaizenDeltaPct: null,
-        daysSinceSignup
-      },
+      daysSinceSignup,
       nowIso: services.clock.now(),
-      fineTune: state.fineTune,
       openDialog: state.openDialog,
       kaizenTitleById,
-      rhythmExplainerDismissed: !!state.rhythmExplainerDismissed,
       editMode: state.editMode,
       catalog: catalogForEdit,
       priorDayRecap,
@@ -1158,6 +1151,56 @@ export function buildHandlers(scope) {
         return;
       }
       state.editMode.selectedActivityId = payload.activityId;
+      rerender();
+    },
+
+    // Iter 25: EDIT_QUICK_UPDATE — shortcut from the per-row Update button.
+    // Enters edit mode (if not already open) for the composition that owns the
+    // activity, then selects that activity so duration chips immediately appear.
+    // If already in edit mode, just selects the slot (no-op on protected blocks).
+    EDIT_QUICK_UPDATE(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+      const activityId = payload.activityId;
+
+      // If not in edit mode, find the owning composition and enter edit mode.
+      if (!state.editMode) {
+        const activeState = services.composerService.getActiveComposition(DEFAULT_USER.id);
+        if (!activeState) return;
+        const compositionId = activeState.composition.id;
+        const active = services.composerService.getComposition(compositionId);
+        if (!active) return;
+        const snapshot = active.activities.map((a) => ({ ...a }));
+        state.editMode = {
+          compositionId,
+          snapshotActivities: snapshot,
+          activities: snapshot.map((a) => ({ ...a })),
+          selectedActivityId: null,
+          undoStack: [],
+          searchQuery: '',
+          projectTypeFilter: 'all',
+          expandedBuckets: ['PROJECT']
+        };
+        services.bus.publish(EditDrawerOpened, {
+          userId: DEFAULT_USER.id,
+          compositionId,
+          openedAt: services.clock.now()
+        });
+      }
+
+      // Now select the target slot (protected slots are rejected by EDIT_SELECT_SLOT logic).
+      const target = state.editMode.activities.find((a) => a.id === activityId);
+      if (!target) { rerender(); return; }
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.INFO,
+          "This block can't be changed — it's required for your daily rhythm.",
+          rerender
+        );
+        rerender();
+        return;
+      }
+      state.editMode.selectedActivityId = activityId;
       rerender();
     },
 

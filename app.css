@@ -321,10 +321,11 @@ html, body {
 
 .sa-block {
   display: grid;
-  /* C-UX-COL refactor: 6 tracks (was 7). Removed 90px .sa-state-label track;
-     .sa-intention (1fr) renamed to .sa-artifact (1fr — same width).
+  /* Iter 25: 7 tracks (was 6). Added .sa-update column (72px) for the per-row
+     Update button. Removed .sa-state-label (was removed earlier).
+     Columns: time(100px) | bucket(120px) | name(1fr) | duration(60px) | artifact(1fr) | update(72px)
      Sprint 16a — leading time column 100px for "HH:MM–HH:MM" range. */
-  grid-template-columns: 100px 120px 1fr 60px 1fr 80px;
+  grid-template-columns: 100px 120px 1fr 60px 1fr 72px;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -408,6 +409,62 @@ html, body {
 .sa-artifact-icon {
   margin-right: 4px;
   font-size: 12px;
+}
+
+/* Iter 25 — Update column (6th structural column in .sa-block grid) */
+.sa-update {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-update-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sa-update-btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.sa-update-empty {
+  /* Empty placeholder for protected blocks — keeps grid alignment */
+}
+
+/* Iter 25 — Column header row above the activity list */
+.sa-col-headers {
+  display: grid;
+  grid-template-columns: 100px 120px 1fr 60px 1fr 72px;
+  gap: 10px;
+  padding: 4px 12px;
+  margin-bottom: 4px;
+}
+
+.sa-col-hdr {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-col-hdr-duration {
+  text-align: right;
+}
+
+.sa-col-hdr-update {
+  text-align: center;
 }
 
 .sa-block.sa-state-closed { opacity: 0.55; }
@@ -1273,8 +1330,12 @@ html, body {
     grid-template-columns: 1fr;
   }
 
+  .sa-col-headers {
+    grid-template-columns: 60px 120px 1fr 80px;
+  }
+
   .sa-block {
-    /* 7-col grid collapses to 3 rows: time+chip+name | intention | duration+state+start */
+    /* 7-col grid collapses to 4 cols at narrow widths */
     grid-template-columns: 60px 120px 1fr 80px;
     grid-template-rows: auto auto;
     gap: 8px 10px;
@@ -1354,11 +1415,16 @@ html, body {
     padding: 10px;
   }
 
+  .sa-col-headers {
+    display: none; /* column headers collapse on very narrow screens */
+  }
+
   .sa-when,
   .sa-bucket-chip,
   .sa-name,
   .sa-duration,
-  .sa-artifact {
+  .sa-artifact,
+  .sa-update {
     text-align: left;
   }
 

@@ -81,7 +81,9 @@ describe('Today — edit mode render', () => {
     assert.equal(html.includes('today-editing'), false);
   });
 
-  test('BucketStrip reflects editMode.activities (live)', () => {
+  test('Iter 25: BucketStrip removed — editMode.activities shown in activity list, not strip', () => {
+    // BucketStrip was removed from CycleCard in Iter 25.
+    // Activity durations are still visible in .sa-duration columns.
     const edited = [
       mkActivity({ bucket: 'PROJECT', plannedDurationMinutes: 30 }),
       mkActivity({ id: 'sa_2', bucket: 'CI', plannedDurationMinutes: 90 })
@@ -103,14 +105,11 @@ describe('Today — edit mode render', () => {
       },
       catalog: CATALOG
     });
-    // BucketStrip should show the edited totals: PROJECT=30, CI=90.
-    // The <span class="planned">VALUE</span> carries the planned minutes.
-    const bucketStrip = html.slice(
-      html.indexOf('class="bucket-strip"'),
-      html.indexOf('</ul>', html.indexOf('class="bucket-strip"'))
-    );
-    assert.match(bucketStrip, /<span class="planned">30<\/span>/);
-    assert.match(bucketStrip, /<span class="planned">90<\/span>/);
+    // BucketStrip must be absent.
+    assert.ok(!html.includes('bucket-strip'), 'BucketStrip must be absent (Iter 25)');
+    // Activity durations still render in sa-duration spans.
+    assert.match(html, /30m/, 'PROJECT 30m must appear in sa-duration');
+    assert.match(html, /90m/, 'CI 90m must appear in sa-duration');
   });
 
   test('EditDrawer receives editMode.selectedActivityId', () => {

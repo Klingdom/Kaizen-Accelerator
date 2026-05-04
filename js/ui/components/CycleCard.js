@@ -39,13 +39,6 @@
 
 import { esc } from '../mount.js';
 import { parseMinutesOfDay } from '../weekGridMath.js';
-import {
-  BucketStrip,
-  plannedFromActivities,
-  DEFAULT_TARGETS,
-  DEFAULT_FLOORS,
-  DEFAULT_CEILINGS
-} from './BucketStrip.js';
 import { ScheduledActivityBlock } from './ScheduledActivityBlock.js';
 import { AcceptEditRejectTriad } from './AcceptEditRejectTriad.js';
 import { AutoPlanButton } from './AutoPlanButton.js';
@@ -300,11 +293,31 @@ function buildExplainById(composition) {
 }
 
 /**
+ * Render the schedule column header row above the activity list.
+ * Uses role="row" + role="columnheader" so screen readers can navigate
+ * the grid semantically without a full <table> element.
+ *
+ * 6 columns matching .sa-block grid-template-columns:
+ *   Time of Day | Focus Area | Standard Work Name | Planned Duration | Expected Output | Update
+ *
+ * @returns {string}
+ */
+function renderActivityColumnHeaders() {
+  return `<div class="sa-col-headers" role="row" aria-label="Schedule column headers">
+  <div class="sa-col-hdr sa-col-hdr-when" role="columnheader" aria-sort="none">Time of Day</div>
+  <div class="sa-col-hdr sa-col-hdr-bucket" role="columnheader">Focus Area</div>
+  <div class="sa-col-hdr sa-col-hdr-name" role="columnheader">Standard Work Name</div>
+  <div class="sa-col-hdr sa-col-hdr-duration" role="columnheader">Planned Duration</div>
+  <div class="sa-col-hdr sa-col-hdr-artifact" role="columnheader">Expected Output</div>
+  <div class="sa-col-hdr sa-col-hdr-update" role="columnheader">Update</div>
+</div>`;
+}
+
+/**
  * Render the PROPOSED variant — the hero path.
  */
-function renderProposed(composition, activities, strips, extras = {}) {
+function renderProposed(composition, activities, extras = {}) {
   const compId = composition.id;
-  const planned = plannedFromActivities(activities);
   const explainById = buildExplainById(composition);
   const editMode = !!extras.editMode;
   const selectedActivityId = extras.selectedActivityId ?? null;
@@ -331,12 +344,7 @@ function renderProposed(composition, activities, strips, extras = {}) {
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>
-  ${BucketStrip({
-    planned,
-    targets: strips.targets,
-    floors: strips.floors,
-    ceilings: strips.ceilings
-  })}
+  ${renderActivityColumnHeaders()}
   <ul class="cycle-activities" role="list">
 ${renderActivityList(activities, {
     showStart: false,
@@ -356,9 +364,8 @@ ${eodFooter ? `  ${eodFooter}` : ''}
 /**
  * Render the ACCEPTED / ACTIVE variant.
  */
-function renderAccepted(composition, activities, strips, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount, priorDayRecap, eodRecap, whyPlanExpanded, morningRecapExpanded }) {
+function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount, priorDayRecap, eodRecap, whyPlanExpanded, morningRecapExpanded }) {
   const compId = composition.id;
-  const planned = plannedFromActivities(activities);
   // Pin: prefer IN_PROGRESS, else first SCHEDULED.
   const inProgress = activities.find((a) => a.state === 'IN_PROGRESS');
   const pinnedActivity =
@@ -386,12 +393,7 @@ function renderAccepted(composition, activities, strips, { isActive, nowIso, kai
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>
-  ${BucketStrip({
-    planned,
-    targets: strips.targets,
-    floors: strips.floors,
-    ceilings: strips.ceilings
-  })}
+  ${renderActivityColumnHeaders()}
   <ul class="cycle-activities" role="list">
 ${renderActivityList(activities, {
     showStart: !edit,
@@ -428,9 +430,6 @@ function renderRejected(composition) {
  * @param {{
  *   composition:          object,
  *   activities?:          Array<object>,
- *   targets?:             object,
- *   floors?:              object,
- *   ceilings?:            object,
  *   nowIso?:              string,
  *   catalog?:             Array<object>,
  *   priorDayRecap?:       object | null,
@@ -451,11 +450,6 @@ export function CycleCard(props = {}) {
   if (!composition) {
     return '<article class="cycle-card cycle-missing">(no composition)</article>';
   }
-  const strips = {
-    targets: props.targets ?? DEFAULT_TARGETS,
-    floors: props.floors ?? DEFAULT_FLOORS,
-    ceilings: props.ceilings ?? DEFAULT_CEILINGS
-  };
   const editMode = !!props.editMode;
   const selectedActivityId = props.selectedActivityId ?? null;
   const undoCount = Number.isFinite(props.undoCount) ? props.undoCount : 0;
@@ -494,16 +488,16 @@ export function CycleCard(props = {}) {
 
   switch (composition.state) {
     case 'PROPOSED':
-      return renderProposed(composition, activities, strips, extras);
+      return renderProposed(composition, activities, extras);
     case 'ACCEPTED':
     case 'EDITED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, ...extras });
+      return renderAccepted(composition, activities, { isActive: false, nowIso, ...extras });
     case 'ACTIVE':
-      return renderAccepted(composition, activities, strips, { isActive: true, nowIso, ...extras });
+      return renderAccepted(composition, activities, { isActive: true, nowIso, ...extras });
     case 'REJECTED':
       return renderRejected(composition);
     case 'CLOSED':
-      return renderAccepted(composition, activities, strips, { isActive: false, nowIso, ...extras });
+      return renderAccepted(composition, activities, { isActive: false, nowIso, ...extras });
     default:
       return `<article class="cycle-card cycle-unknown" data-composition-id="${esc(composition.id ?? '')}" data-state="${esc(composition.state ?? '')}">
   <p>Unknown composition state: ${esc(composition.state ?? 'null')}</p>

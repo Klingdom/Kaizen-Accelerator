@@ -784,3 +784,60 @@ describe('ScheduledActivityBlock — AC-03: Lunch/null-catalog rows', () => {
     assert.ok(!html.includes('undefined'), 'no undefined in output');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter 25 — Update button (AC6, AC7, AC8, AC9)
+// ---------------------------------------------------------------------------
+describe('ScheduledActivityBlock — Iter 25: Update button', () => {
+  const nonProtectedActivity = {
+    id: 'sa_pdca',
+    name: 'PDCA Cycle',
+    bucket: 'CI',
+    plannedDurationMinutes: 30,
+    plannedStartAt: '10:00',
+    state: 'PROPOSED'
+  };
+
+  // AC6: non-protected activity has Update button
+  test('AC6: non-protected activity renders an Update button', () => {
+    const html = ScheduledActivityBlock({ activity: nonProtectedActivity });
+    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'Update button must render for non-protected blocks');
+  });
+
+  // AC9: Update button has aria-label naming the activity
+  test('AC9: Update button aria-label names the activity', () => {
+    const html = ScheduledActivityBlock({ activity: nonProtectedActivity });
+    assert.match(html, /aria-label="Update duration for PDCA Cycle"/, 'aria-label must name the activity');
+  });
+
+  // AC7: protected block does NOT show Update button (in edit mode)
+  test('AC7: activity in editMode does NOT render Update button', () => {
+    const html = ScheduledActivityBlock({
+      activity: nonProtectedActivity,
+      editMode: true
+    });
+    assert.ok(!html.includes('EDIT_QUICK_UPDATE'), 'Update button must be suppressed in edit mode');
+  });
+
+  // AC8: clicking Update dispatches EDIT_QUICK_UPDATE (data-action wired)
+  test('AC8: Update button dispatches EDIT_QUICK_UPDATE with activityId payload', () => {
+    const html = ScheduledActivityBlock({ activity: nonProtectedActivity });
+    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'data-action must be EDIT_QUICK_UPDATE');
+    assert.match(html, /activityId.*sa_pdca/, 'payload must carry activityId');
+  });
+
+  // .sa-update column always renders (empty for protected/edit-mode, button otherwise)
+  test('.sa-update column always present in row', () => {
+    const html = ScheduledActivityBlock({ activity: nonProtectedActivity });
+    assert.match(html, /class="sa-update"/, '.sa-update column must always be present in row');
+  });
+
+  // Update button aria-label escapes XSS in activity name
+  test('Update button aria-label HTML-escapes activity name', () => {
+    const html = ScheduledActivityBlock({
+      activity: { ...nonProtectedActivity, name: '<script>xss</script>' }
+    });
+    assert.ok(!html.includes('<script>xss'), 'raw script tag must not appear in aria-label');
+    assert.match(html, /aria-label="Update duration for &lt;script&gt;xss/);
+  });
+});
