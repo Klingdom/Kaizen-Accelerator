@@ -13,7 +13,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { EodClosureStrip } from '../../../js/ui/components/EodClosureStrip.js';
+import { EodClosureStrip } from '../../../../js/ui/components/_backup/EodClosureStrip.js';
 
 // ---------------------------------------------------------------------------
 // Null / missing recap — renders nothing

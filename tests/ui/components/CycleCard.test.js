@@ -392,3 +392,228 @@ describe('CycleCard — bucket summary reflects planned minutes', () => {
     assert.match(html, />240</);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase A additions — WhyThisPlan disclosure, MorningRecap disclosure,
+// EOD CTA footer, aria-live current-activity summary.
+// ---------------------------------------------------------------------------
+
+const EXPLAIN_ENTRIES = [
+  { ref: 'cat_001', rule: 'R5_DEEP_PAYLOAD', detail: 'DMAIC Define (60m)' },
+  { ref: 'cat_002', rule: 'R1_NON_OPTIONAL', detail: 'Daily Standup (15m)' }
+];
+
+const PROPOSED_COMP_WITH_EXPLAIN = {
+  ...PROPOSED_COMP,
+  composerInputsSnapshot: { explain: EXPLAIN_ENTRIES }
+};
+
+const PRIOR_DAY_RECAP = {
+  closedCount: 4,
+  totalCount: 5,
+  skippedCount: 1,
+  dateIso: '2026-04-27'
+};
+
+const EOD_RECAP = {
+  closedCount: 5,
+  totalCount: 5,
+  skippedCount: 0,
+  pendingReflectionCount: 2
+};
+
+const EOD_RECAP_NO_PENDING = {
+  closedCount: 5,
+  totalCount: 5,
+  skippedCount: 0,
+  pendingReflectionCount: 0
+};
+
+describe('CycleCard — Phase A: WhyThisPlan disclosure in header (A2)', () => {
+  test('A2: WhyThisPlan collapsed button renders in PROPOSED header when explain data present', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP_WITH_EXPLAIN,
+      activities: SAMPLE_ACTIVITIES,
+      whyPlanExpanded: false
+    });
+    assert.ok(html.includes('why-this-plan'), 'why-this-plan must be present in CycleCard');
+    assert.ok(html.includes('aria-expanded="false"'), 'chip must be collapsed by default');
+    assert.ok(html.includes('TOGGLE_WHY_PLAN'), 'toggle action must be wired');
+  });
+
+  test('A2: WhyThisPlan expanded when whyPlanExpanded=true', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP_WITH_EXPLAIN,
+      activities: SAMPLE_ACTIVITIES,
+      whyPlanExpanded: true
+    });
+    assert.ok(html.includes('aria-expanded="true"'), 'chip must be expanded');
+    assert.ok(html.includes('Deep work payload'), 'R5 heading must render when expanded');
+    assert.ok(html.includes('DMAIC Define (60m)'), 'detail must render when expanded');
+  });
+
+  test('A2: WhyThisPlan absent when explain is empty', () => {
+    const compNoExplain = {
+      ...PROPOSED_COMP,
+      composerInputsSnapshot: { explain: [] }
+    };
+    const html = CycleCard({
+      composition: compNoExplain,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.ok(!html.includes('why-this-plan'), 'why-this-plan must not render when explain is empty');
+  });
+
+  test('A2: WhyThisPlan absent in ACCEPTED state when no explain data', () => {
+    const html = CycleCard({
+      composition: { ...PROPOSED_COMP, state: 'ACCEPTED' },
+      activities: SAMPLE_ACTIVITIES.map((a) => ({ ...a, state: 'SCHEDULED' }))
+    });
+    assert.ok(!html.includes('why-this-plan'), 'why-this-plan must not render without explain data');
+  });
+
+  test('A2: WhyThisPlan absent during edit mode (not distracting)', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP_WITH_EXPLAIN,
+      activities: SAMPLE_ACTIVITIES,
+      editMode: true,
+      whyPlanExpanded: false
+    });
+    assert.ok(!html.includes('why-this-plan'), 'why-this-plan must be suppressed in edit mode');
+  });
+});
+
+describe('CycleCard — Phase A: MorningRecap disclosure in header (A3)', () => {
+  test('A3: MorningRecap renders in CycleCard header when priorDayRecap is truthy', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      priorDayRecap: PRIOR_DAY_RECAP
+    });
+    assert.ok(html.includes('morning-recap'), 'morning-recap must render in CycleCard when priorDayRecap present');
+    assert.ok(html.includes('4/5 closed'), 'recap copy must include closed count');
+    assert.ok(html.includes('1 skipped'), 'recap copy must include skip count');
+  });
+
+  test('A3: MorningRecap absent when priorDayRecap is null', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      priorDayRecap: null
+    });
+    assert.ok(!html.includes('morning-recap'), 'morning-recap must not render when priorDayRecap is null');
+  });
+
+  test('A3: MorningRecap absent when priorDayRecap not provided', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.ok(!html.includes('morning-recap'), 'morning-recap must not render when priorDayRecap not provided');
+  });
+
+  test('A3: MorningRecap suppressed in edit mode', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      priorDayRecap: PRIOR_DAY_RECAP,
+      editMode: true
+    });
+    assert.ok(!html.includes('morning-recap'), 'morning-recap must be suppressed in edit mode');
+  });
+});
+
+describe('CycleCard — Phase A: EOD reflection CTA in footer (A4)', () => {
+  test('A4: EOD footer renders when eodRecap has pendingReflectionCount > 0', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      eodRecap: EOD_RECAP
+    });
+    assert.ok(html.includes('cycle-eod-footer'), 'cycle-eod-footer must render when eodRecap present');
+    assert.ok(html.includes('EOD_OPEN_REFLECTION'), 'EOD_OPEN_REFLECTION action must be present');
+    assert.ok(html.includes('Capture reflection'), 'CTA text must be present');
+  });
+
+  test('A4: EOD footer shows counters without CTA when pendingReflectionCount === 0', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      eodRecap: EOD_RECAP_NO_PENDING
+    });
+    assert.ok(html.includes('cycle-eod-footer'), 'cycle-eod-footer must render even when no pending');
+    assert.ok(!html.includes('EOD_OPEN_REFLECTION'), 'EOD_OPEN_REFLECTION must not appear when pending=0');
+    assert.ok(html.includes('5/5 closed'), 'counters must still render');
+  });
+
+  test('A4: no EOD footer when eodRecap is null', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES,
+      eodRecap: null
+    });
+    assert.ok(!html.includes('cycle-eod-footer'), 'cycle-eod-footer must not render when eodRecap is null');
+    assert.ok(!html.includes('EOD_OPEN_REFLECTION'), 'EOD_OPEN_REFLECTION must not appear');
+  });
+
+  test('A4: no EOD footer when eodRecap not provided', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.ok(!html.includes('cycle-eod-footer'), 'cycle-eod-footer must not render when eodRecap not provided');
+  });
+
+  test('A4: EOD footer also renders in ACCEPTED state', () => {
+    const html = CycleCard({
+      composition: { ...PROPOSED_COMP, state: 'ACCEPTED' },
+      activities: SAMPLE_ACTIVITIES.map((a) => ({ ...a, state: 'CLOSED' })),
+      eodRecap: EOD_RECAP
+    });
+    assert.ok(html.includes('cycle-eod-footer'), 'cycle-eod-footer must render in ACCEPTED state');
+    assert.ok(html.includes('EOD_OPEN_REFLECTION'), 'EOD action must be reachable in ACCEPTED state');
+  });
+});
+
+describe('CycleCard — Phase A: aria-live current-activity summary (A5)', () => {
+  test('A5: header contains aria-live="polite" region', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.match(html, /aria-live="polite"/, 'CycleCard header must have aria-live="polite"');
+    assert.match(html, /cycle-now-summary/, 'cycle-now-summary element must be present');
+  });
+
+  test('A5: aria-live region names the current in-progress activity', () => {
+    const activitiesWithInProgress = SAMPLE_ACTIVITIES.map((a, i) =>
+      i === 0 ? { ...a, state: 'IN_PROGRESS' } : a
+    );
+    const html = CycleCard({
+      composition: { ...PROPOSED_COMP, state: 'ACTIVE' },
+      activities: activitiesWithInProgress,
+      nowIso: '2026-04-27T09:15:00Z'
+    });
+    assert.ok(html.includes('Now: Daily Standup'), 'aria-live must name the IN_PROGRESS activity');
+  });
+
+  test('A5: aria-live falls back to "No current activity" when nothing in progress', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+      // no nowIso → SCHEDULED activities with no date context → fallback
+    });
+    assert.ok(
+      html.includes('No current activity') || html.includes('Up next:'),
+      'aria-live must have a non-empty summary'
+    );
+  });
+
+  test('A5: aria-atomic="true" on the live region', () => {
+    const html = CycleCard({
+      composition: PROPOSED_COMP,
+      activities: SAMPLE_ACTIVITIES
+    });
+    assert.match(html, /aria-atomic="true"/, 'live region must have aria-atomic="true"');
+  });
+});

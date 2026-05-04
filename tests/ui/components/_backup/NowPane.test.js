@@ -5,7 +5,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NowPane, selectNowState, nowPaneVariant } from '../../../js/ui/components/NowPane.js';
+import { NowPane, selectNowState, nowPaneVariant } from '../../../../js/ui/components/_backup/NowPane.js';
 
 const NOW = '2026-04-22T10:00:00Z';
 

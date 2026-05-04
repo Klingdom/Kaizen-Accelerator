@@ -113,16 +113,17 @@ describe('Today page — onboarding hint rendering', () => {
     assert.match(html, /Welcome to CadencePlan/);
   });
 
-  test('hint appears BEFORE the rhythm explainer in DOM order', () => {
+  test('hint renders in empty state (Phase A: rhythm-explainer removed, ordering test removed)', () => {
+    // Phase A: RhythmExplainer moved to _backup. The DOM-ordering assertion
+    // between hint and rhythm-explainer is no longer applicable.
+    // Guard: confirm the hint still renders without the explainer.
     const html = Today({
       activeState: null,
       adherence: { daysSinceSignup: 0 }
     });
     const hintIdx = html.indexOf('today-onboarding-hint');
-    const rhythmIdx = html.indexOf('rhythm-explainer');
     assert.ok(hintIdx >= 0, 'expected hint to render');
-    assert.ok(rhythmIdx >= 0, 'expected rhythm explainer to render');
-    assert.ok(hintIdx < rhythmIdx, 'hint must appear before rhythm explainer');
+    assert.ok(!html.includes('rhythm-explainer'), 'rhythm-explainer must not render (Phase A removal)');
   });
 
   test('hint also renders on infeasible state (empty-ish state)', () => {

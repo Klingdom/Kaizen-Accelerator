@@ -12,7 +12,7 @@
  * Pure render. No state. Parent owns the dismissed flag.
  */
 
-import { esc } from '../mount.js';
+import { esc } from '../../mount.js';
 
 export const RHYTHM_EXPLAINER_COPY = Object.freeze({
   HEADING: 'Your 4-2-2 daily rhythm',

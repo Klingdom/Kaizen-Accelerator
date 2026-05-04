@@ -21,7 +21,7 @@
  *   nowIso:     ISO timestamp marking "now".
  */
 
-import { esc } from '../mount.js';
+import { esc } from '../../mount.js';
 
 const TERMINAL_STATES = new Set(['CLOSED', 'SKIPPED', 'DROPPED']);
 

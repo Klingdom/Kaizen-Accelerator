@@ -6,6 +6,50 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 23 — 2026-05-04 — Today simplify Phase A (C-PM-SIMPLIFY-A)
+
+### What changed
+User-directive feature, second simplification pass on the Today page. Phil: *"I am still not happy with the today page. Lets simplify first... Keep the header and then remove everything except the Today, composed boxed area."* Coordinator dispatched 7-lens parallel Define-pass (UX, PM, Architect, Frontend, QA, Growth, Competitive) — 7/7 lens convergence on stripping Today.js to header + CycleCard. Synthesis at `UX_TODAY_SIMPLIFY_DELTA.md` scored bundle 15 (base 12 + ConvergenceBonus +3). Phase A approved with all 6 default decisions; Phases B and C deferred pending Phil's standard-work content authority.
+
+**Phase A — Pure UI strip + 4 compensations:**
+- `js/ui/pages/Today.js` stripped from 11 elements to header + CycleCard + conditional drawers/modals
+- `RhythmExplainer.js`, `NowPane.js`, `EodClosureStrip.js` moved to `js/ui/components/_backup/` (reversible — git blame preserved)
+- `WhyThisPlan.js` and `MorningRecap.js` source files KEPT — relocated as collapsed-by-default disclosures inside `CycleCard` header
+- `UpNextRail.js` source file KEPT (used by Week.js) — just removed from Today render path
+
+**4 compensations addressing QA-identified regressions:**
+- WhyThisPlan: collapsed disclosure inside CycleCard header (preserves competitive differentiation per `UX_TODAY_SIMPLIFY_COMPETITIVE.md` §9 — deletion would have been "strategic regression to Motion-tier opaque")
+- MorningRecap: same pattern (preserves Day-2 retention pull mechanism per `UX_TODAY_SIMPLIFY_GROWTH.md`)
+- EOD reflection CTA: relocated to CycleCard footer (preserves the only `EOD_OPEN_REFLECTION` entry point)
+- NowPane compensation: `aria-live="polite"` summary in CycleCard header (preserves screen-reader awareness of current activity — the 3 aria-live regions QA flagged as MEDIUM-risk)
+
+**§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+
+### Why
+- Today page surface complexity (11 persistent elements) violated Phil's intuitive comprehension threshold
+- 7-lens convergence: removing chrome compresses scanning latency without sacrificing the competitive differentiators that live inside CycleCard
+- Phase A is independently shippable — no dependency on Phil's standard-work answers (which gate Phases B + C)
+
+### Impact
+- Test suite: 2,892 → **2,899** (+7 net: ~95 obsolete tests deleted, ~102 new Phase A guards added)
+- Runtime: 3.31s → **3.67s** ⚠️ (slightly over 3.5s budget; per-test cost 1.14ms → 1.27ms — flagged in SYSTEM_HEALTH; Iter 17 §4.2 per-test ms metric switch remains pending)
+- CCC region count: ~7 → **5** (well under the ≤12 ceiling; new bound asserted at ≤6 + ≥4)
+- All 10 Phase A ACs PASS
+- Touched files: `Today.js`, `CycleCard.js`, `app.css`, 3 test files updated, 3 components moved + 3 test files moved
+- §6.5 hits: **0**
+
+### Phase B and C deferred
+- **Phase B** (composer rebalance: end-of-deep-cycles comm anchor + 120 min comm budget + CI sacredness) — HIGH risk; gates on Phil's SW-Q6 through SW-Q10
+- **Phase C** (no-projects discovery branch) — LOW risk; gates on Phil's SW-Q1 through SW-Q5 standard-work content
+- Both queued in `IMPROVEMENT_BACKLOG.md` as C-PM-SIMPLIFY-B and C-PM-SIMPLIFY-C with explicit Phil-authority dependencies
+
+### Notes for Phil
+- Production deploy of Iter 22 still pending — Iter 23 ships on top
+- Lunch-block Define artifacts also pending Phil decisions (3 OQs)
+- Total Phil-authority queue is now ~25 SW-Q items + 6 architectural decisions across Today simplify + lunch block
+
+---
+
 ## Iteration 22 — 2026-05-01 — Today row column refactor (C-UX-COL)
 
 ### What changed

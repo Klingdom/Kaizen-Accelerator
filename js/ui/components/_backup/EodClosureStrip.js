@@ -30,7 +30,7 @@
  * @returns {string}
  */
 
-import { esc } from '../mount.js';
+import { esc } from '../../mount.js';
 
 export function EodClosureStrip({ eodRecap } = {}) {
   if (!eodRecap || typeof eodRecap !== 'object') return '';

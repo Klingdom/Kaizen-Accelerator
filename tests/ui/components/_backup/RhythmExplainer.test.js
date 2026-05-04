@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import {
   RhythmExplainer,
   RHYTHM_EXPLAINER_COPY
-} from '../../../js/ui/components/RhythmExplainer.js';
+} from '../../../../js/ui/components/_backup/RhythmExplainer.js';
 
 describe('RhythmExplainer', () => {
   test('renders heading, body, and dismiss button when not dismissed', () => {

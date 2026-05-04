@@ -575,3 +575,53 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Manual QA: load Today page, click `.sa-artifact` to open `OutputArtifactDialog`, verify ARIA via screen reader, verify mobile at 375px
   - Lunch-block Define-pass remains paused — `ARCHITECTURE_DELTA_LUNCH_BLOCK.md` and `PRD_LUNCH_BLOCK.md` written but require Phil decisions on 3 open questions before dispatch
   - Iter 23+ candidates: C-UX-V2-1 (15), C-UX-V2-2 (14), C-UX-6 (16) still queued for v2 visible changes (held until 14-day baseline closes); new candidates C-UX-COL-1, C-UX-COL-2, C-AN-3 added (all deferred from this iteration)
+
+---
+
+## Iteration 23 — 2026-05-04 — Today simplify Phase A (C-PM-SIMPLIFY-A)
+
+- **Selected item**: User-directive feature, second Today simplification pass. Phil flagged 11-component Today page as too complex; wanted radical strip to header + CycleCard only, with perfect-day defaults (4h project + 2h comm + sacred CI) and a no-projects discovery flow. Coordinator routed through 7-lens parallel Define-pass before dispatch.
+- **Reason for selection**: Direct user directive. 7/7 lens convergence on stripping; 6/7 on relocating WhyThisPlan + MorningRecap as collapsed disclosures (not deleting). Bundle scored 15 (base 12 + ConvergenceBonus +3). Three-phase split adopted: Phase A (pure strip + 4 compensations) ships independently with no Phil-content dependency; Phases B (composer rebalance, HIGH risk) and C (no-projects branch) deferred pending Phil's standard-work answers.
+- **Agents involved**: ux-designer, product-manager, system-architect, frontend-engineer (Define + Build), qa-engineer, growth-strategist, competitive-researcher (read-only — coordinator wrote artifact). 7 Define artifacts + 1 synthesis delta + 1 build pass.
+- **Validation results**:
+  - Tests: 2,892 → **2,899** (+7 net; ~95 obsolete tests deleted, ~102 new Phase A guards added)
+  - Runtime: 3.31s → **3.67s** ⚠️ (slightly over 3.5s budget; per-test cost rose from 1.14ms to 1.27ms — flagged for SYSTEM_HEALTH attention; Iter 17 §4.2 per-test ms metric switch still pending)
+  - CCC region count: ~7 → **5** (well under ≤12 ceiling; new bound asserted at ≤6 + ≥4)
+  - All 10 Phase A ACs PASS (A1–A10)
+  - **§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/ui/pages/Today.js` — stripped from 11 elements to header + CycleCard + conditional drawers/modals; removed imports for MorningRecap, RhythmExplainer, NowPane, UpNextRail, WhyThisPlan, EodClosureStrip; props now flow through CycleCard
+    - `js/ui/components/CycleCard.js` — added WhyThisPlan disclosure region (collapsed default), MorningRecap disclosure region (collapsed default), EOD reflection CTA in footer, `aria-live="polite"` current-activity summary in header
+    - `app.css` — removed Today-only selectors for moved components; added `.cycle-eod-footer` and `.cycle-now-summary` rules
+    - `tests/ui/pages/Today.test.js` — deleted ~8 describe blocks asserting removed-from-Today components; added Phase A render guards (header + CycleCard only)
+    - `tests/ui/pages/Today.ccc.test.js` — pruned REGIONS / PROSE_REGIONS lists; tightened CCC bound to ≤6 + ≥4
+    - `tests/ui/pages/Today.sprint11.test.js` — removed RhythmExplainer ordering assertion
+    - `tests/ui/components/CycleCard.test.js` — added 25 Phase A tests covering all 4 compensations
+  - **Moved files** (now under `_backup/` directories — reversible, git blame preserved):
+    - `js/ui/components/_backup/RhythmExplainer.js`
+    - `js/ui/components/_backup/NowPane.js`
+    - `js/ui/components/_backup/EodClosureStrip.js`
+    - `tests/ui/components/_backup/RhythmExplainer.test.js`
+    - `tests/ui/components/_backup/NowPane.test.js`
+    - `tests/ui/components/_backup/EodClosureStrip.test.js`
+  - **KEPT in place** (still used elsewhere or relocated as disclosures):
+    - `js/ui/components/UpNextRail.js` (Week.js dependency)
+    - `js/ui/components/WhyThisPlan.js` (now inside CycleCard)
+    - `js/ui/components/MorningRecap.js` (now inside CycleCard)
+- **Spec deviations**: Zero. All 6 default decisions implemented as specified.
+  - One observation: `RHYTHM_EXPLAINER_DISMISS` action handler in app.js is now an orphan (no component fires it). Implementer left in place deliberately — removing would be churn; harmless.
+- **Time spent**: ~1.5h actual vs 2–3h estimate. Define-pass + 6 locked decisions = no implementation surprises.
+- **Strategic outcome**:
+  - **Today page surface complexity reduced 11 → 5 regions** without sacrificing the 4 differentiators that live in CycleCard (WhyThisPlan rationale, MorningRecap evidence, EOD ritual, current-activity awareness).
+  - **Phil's literal directive honored where it served the product**: stripped chrome, kept boxed area. **Where literal interpretation would cause regression** (deleting WhyThisPlan = strategic regression to Motion-tier opaque scheduling per `UX_TODAY_SIMPLIFY_COMPETITIVE.md` §9), the synthesis convinced Phil to relocate-not-delete via collapsed disclosure. He approved the recommendation (chose "A" — defaults).
+  - **Phasing discipline confirmed**: bundle Phase A could ship without Phil's standard-work content. Phase B and C wait for Phil-authority answers.
+- **Latent issues flagged**:
+  - Runtime overshoot: 3.67s vs 3.5s budget. Per-test cost regression suggests CycleCard now does more work per render. Not urgent (still <4s); flagged in SYSTEM_HEALTH.
+  - Iter 22 production deploy still not done — Iter 23 ships on top whenever Phil deploys.
+- **Follow-ups**:
+  - Commit + push.
+  - Production deploy (one deploy lands both Iter 22 column refactor AND Iter 23 simplification).
+  - Phil's standard-work authority queue (~25 SW-Q items) gates Phases B + C.
+  - Lunch-block Define-pass also paused awaiting Phil's 3 open questions.
+  - Runtime budget overshoot (Q3 from Iter 17 meta-review) becoming relevant — per-test ms metric switch should be reconsidered next meta-review trigger.

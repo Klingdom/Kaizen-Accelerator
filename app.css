@@ -116,51 +116,7 @@ html, body {
   text-transform: uppercase;
 }
 
-.rhythm-explainer {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent2, var(--ci-fill));
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  box-shadow: var(--shadow);
-}
-
-.rhythm-explainer-body { flex: 1; }
-
-.rhythm-explainer-title {
-  margin: 0 0 6px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.rhythm-explainer-copy {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.rhythm-explainer-dismiss {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--fg);
-  font: inherit;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.rhythm-explainer-dismiss:hover {
-  background: var(--primary);
-  color: var(--primary-contrast);
-  border-color: var(--primary);
-}
+/* .rhythm-explainer rules removed — Phase A (component moved to _backup) */
 
 .today-empty,
 .today-infeasible {
@@ -1377,15 +1333,7 @@ html, body {
     font-size: 18px;
   }
 
-  .rhythm-explainer {
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .rhythm-explainer-dismiss {
-    align-self: flex-start;
-  }
+  /* .rhythm-explainer media rules removed — Phase A */
 
   .bucket-row {
     grid-template-columns: 90px 1fr;
@@ -2258,55 +2206,7 @@ html, body {
   .today-body .up-next-rail:not(.up-next-mobile) { display: none; }
 }
 
-/* W3 — Now pane. */
-.now-pane {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  margin: 8px 0;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg);
-}
-.now-pane-in-progress {
-  border-color: var(--success);
-  background: color-mix(in srgb, var(--ci-bg) 60%, white);
-}
-.now-pane-upcoming {
-  border-color: var(--communication-fill);
-  background: color-mix(in srgb, var(--communication-bg) 60%, white);
-}
-.now-pane-open {
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  color: var(--muted);
-}
-.now-pane-body { display: flex; align-items: baseline; gap: 8px; flex: 1; }
-.now-pane-label {
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-.now-pane-name { font-size: 14px; color: var(--fg); }
-.now-pane-elapsed {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: var(--muted);
-}
-.now-pane-close {
-  appearance: none;
-  border: 1px solid var(--success);
-  background: var(--success);
-  color: var(--primary-contrast);
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  font-weight: 600;
-  cursor: pointer;
-}
-.now-pane-close:hover { filter: brightness(1.05); }
+/* .now-pane rules removed — Phase A (component moved to _backup; aria-live in CycleCard) */
 
 /* ------------------------------------------------------------------ */
 /* Forced-colors (Windows High Contrast) — spec §2.3                  */
@@ -2350,28 +2250,18 @@ html, body {
   }
 }
 
-/* ---------------------------------------------------------------------------
- * C-UX-10 — MorningRecap (Iteration 14)
- * Single-line informational strip above RhythmExplainer.
- * Uses T1 tokens only — no new color variables.
- * --------------------------------------------------------------------------- */
-.morning-recap {
-  padding: 6px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 0.8125rem;
-  color: var(--muted);
-  line-height: 1.4;
-  margin-bottom: 8px;
-}
+/* .morning-recap rules removed — Phase A (MorningRecap now inside CycleCard; styles inherited via .cycle-header) */
 
 /* ---------------------------------------------------------------------------
- * C-UX-3 — EodClosureStrip (Iteration 15)
- * Single-line informational strip below CycleCard confirming day is done.
- * Uses T1 tokens only — no new color variables.
+ * C-UX-3 — EodClosureStrip removed from Today; CTA relocated to CycleCard footer.
+ * .eod-closure-strip rules removed — Phase A.
+ * New .cycle-eod-footer rules below.
  * --------------------------------------------------------------------------- */
-.eod-closure-strip {
+
+/* ---------------------------------------------------------------------------
+ * Phase A — CycleCard EOD footer (relocated from EodClosureStrip)
+ * --------------------------------------------------------------------------- */
+.cycle-eod-footer {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2386,16 +2276,16 @@ html, body {
   margin-top: 8px;
 }
 
-.eod-closure-status {
+.cycle-eod-status {
   font-weight: 600;
   color: var(--fg);
 }
 
-.eod-closure-counters {
+.cycle-eod-counters {
   flex: 1;
 }
 
-.eod-closure-cta {
+.cycle-eod-cta {
   background: transparent;
   border: none;
   padding: 0;
@@ -2406,8 +2296,28 @@ html, body {
   text-underline-offset: 2px;
 }
 
-.eod-closure-cta:hover {
+.cycle-eod-cta:hover {
   opacity: 0.8;
+}
+
+/* Phase A — aria-live current-activity summary in CycleCard header */
+.cycle-now-summary {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Phase A — MorningRecap inside CycleCard header */
+.cycle-header .morning-recap {
+  padding: 6px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 6px;
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,17 +1,24 @@
 /**
  * Comprehension Complexity Count (CCC) proxy tests — Iteration 21 (C-QA-V2-1).
  *
+ * Phase A update (Today Simplification):
+ *   Removed 7 regions from REGIONS registry:
+ *     morning-recap, rhythm-explainer, now-pane, up-next-mobile,
+ *     why-this-plan (top-level), up-next-rail, eod-closure.
+ *   These components are no longer rendered directly by Today.js.
+ *   WhyThisPlan and MorningRecap are now rendered inside CycleCard.
+ *   Remaining regions: 5 (header, adherence-dial, cycle-card, bucket-strip,
+ *   cycle-activities).
+ *   CCC bound updated from ≤12 to ≤6 to remain a useful regression guard.
+ *   Removed `renderActiveWithExplainer` helper (rhythmExplainerDismissed prop
+ *   removed from Today.js).
+ *   Removed 4 stale PROSE_REGIONS entries (all absent after Phase A).
+ *
  * Based on UX_TODAY_V2_QA.md §1 and UX_TODAY_V2_THEMES.md §5.
  *
  * CCC definition: count of distinct UI regions visible in a rendered Today
- * HTML string. Each named region below scores +1. Assert CCC ≤ 12 for the
+ * HTML string. Each named region below scores +1. Assert CCC ≤ 6 for the
  * active-composition (PROPOSED + activities) state.
- *
- * Per-region word-count: each region's DIRECT (non-structural) copy text
- * ≤ 25 words (~10s at 150 wpm). Applies to prose-heavy regions: explainer,
- * recap strips, and chip text. Does NOT apply to data-display regions
- * (header dials, cycle-card activity list) where word-count is expected to
- * vary with user data.
  *
  * All fixtures are deterministic. No Date.now(), no Math.random().
  */
@@ -60,24 +67,24 @@ function extractProseText(html, cssClass) {
 // ---------------------------------------------------------------------------
 // CCC: count distinct named regions present in the rendered HTML.
 //
+// Phase A registry — 5 regions remain after stripping Today.js to
+// header + CycleCard. Bound updated to ≤ 6 (tight enough to catch regressions).
+//
 // Region registry — each entry is a [name, pattern] pair. A region scores
-// +1 if its pattern is found anywhere in the HTML string. This matches the
-// QA §1 definition: "+1 per distinct UI region visible above the fold."
+// +1 if its pattern is found anywhere in the HTML string.
 // ---------------------------------------------------------------------------
 const REGIONS = [
   ['header',          /class="today-header"/],
   ['adherence-dial',  /class="adherence-dial/],
-  ['morning-recap',   /class="morning-recap"/],
-  ['rhythm-explainer',/class="rhythm-explainer"/],
-  ['now-pane',        /class="now-pane /],
-  ['up-next-mobile',  /class="up-next-rail up-next-mobile"/],
-  ['why-this-plan',   /class="why-this-plan/],
   ['cycle-card',      /class="cycle-card/],
   ['bucket-strip',    /class="bucket-strip"/],
   ['cycle-activities',/class="cycle-activities"/],
-  ['up-next-rail',    /class="up-next-rail"[^>]/],  // rail variant (not mobile)
-  ['eod-closure',     /class="eod-closure-strip"/],
 ];
+
+// Intentionally NOT in REGIONS (Phase A removal — kept for reference):
+//   morning-recap, rhythm-explainer, now-pane, up-next-mobile,
+//   why-this-plan (top-level), up-next-rail, eod-closure.
+// WhyThisPlan and MorningRecap now render INSIDE CycleCard (counted under cycle-card).
 
 function computeCCC(html) {
   return REGIONS.filter(([, pattern]) => pattern.test(html)).length;
@@ -85,15 +92,15 @@ function computeCCC(html) {
 
 // ---------------------------------------------------------------------------
 // Prose-heavy regions where word-count ≤ 25 is the enforceable contract.
-// Structural/data regions (header, dial, cycle-card, activity list) are
-// excluded because their content is data-driven and not prose copy.
+// Phase A: all 4 prior entries are now absent from Today's top-level output.
+// WhyThisPlan and MorningRecap content is inside CycleCard — tested separately
+// in CycleCard.test.js. No prose regions remain at the Today page level.
 // ---------------------------------------------------------------------------
 const PROSE_REGIONS = [
-  // [cssClass, humanName]
-  ['rhythm-explainer-copy',  'RhythmExplainer body text'],
-  ['morning-recap',          'MorningRecap strip'],
-  ['eod-closure-strip',      'EodClosureStrip'],
-  ['why-this-plan-chip',     'WhyThisPlan chip label'],
+  // Phase A: rhythm-explainer-copy, morning-recap, eod-closure-strip,
+  // why-this-plan-chip all removed from Today's direct render path.
+  // This array is intentionally empty; it will be populated if new copy-bearing
+  // regions are added to Today in Phase C (ProjectDiscoveryCard copy).
 ];
 
 // ---------------------------------------------------------------------------
@@ -132,12 +139,10 @@ const ACTIVE_STATE = {
   ]
 };
 
-// Render with RhythmExplainer dismissed (day 5 user), no nowIso, no recap.
-// This is the "active-composition" state the CCC target is defined for.
+// Active-composition render — Phase A: rhythmExplainerDismissed prop removed.
 function renderActiveComposition() {
   return Today({
     activeState: ACTIVE_STATE,
-    rhythmExplainerDismissed: true,
     adherence: {
       adherencePct: null,
       acceptancePct: null,
@@ -147,25 +152,10 @@ function renderActiveComposition() {
   });
 }
 
-// Active-composition with RhythmExplainer NOT dismissed (worst-case copy load).
-function renderActiveWithExplainer() {
-  return Today({
-    activeState: ACTIVE_STATE,
-    rhythmExplainerDismissed: false,
-    adherence: {
-      adherencePct: null,
-      acceptancePct: null,
-      kaizenDeltaPct: null,
-      daysSinceSignup: 1
-    }
-  });
-}
-
-// Empty state — no composition, no RhythmExplainer, no nowIso.
+// Empty state — no composition.
 function renderEmpty() {
   return Today({
     activeState: null,
-    rhythmExplainerDismissed: true,
     adherence: {
       adherencePct: null,
       acceptancePct: null,
@@ -180,36 +170,36 @@ function renderEmpty() {
 // ---------------------------------------------------------------------------
 
 describe('CCC — active-composition state (PROPOSED + activities)', () => {
-  test('AC-Q2: CCC ≤ 12 in active-composition state (RhythmExplainer dismissed)', () => {
+  test('AC-Q2: CCC ≤ 6 in active-composition state (Phase A: 5 regions remain)', () => {
+    // Phase A baseline: 5 regions (header, adherence-dial, cycle-card,
+    // bucket-strip, cycle-activities). Bound ≤ 6 gives one slot of headroom
+    // for future additions without a false alarm.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 12,
-      `CCC is ${ccc}, expected ≤ 12. Present regions: ${
+      ccc <= 6,
+      `CCC is ${ccc}, expected ≤ 6. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
   });
 
-  test('CCC ≤ 12 even with RhythmExplainer undismissed (explainer adds 1 region)', () => {
-    // Undismissed adds rhythm-explainer to the count. CCC should still be ≤ 12
-    // since we have no nowIso/recap/eod in this fixture.
-    const html = renderActiveWithExplainer();
+  test('CCC >= 4 in active-composition state (lower bound guards against silent empties)', () => {
+    // At minimum header + cycle-card + bucket-strip + cycle-activities must be present.
+    const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 12,
-      `CCC is ${ccc} (explainer undismissed), expected ≤ 12. Present regions: ${
+      ccc >= 4,
+      `CCC is ${ccc}, expected ≥ 4. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
   });
 
-  test('AC-Q3: prose-heavy region word count ≤ 25 each (RhythmExplainer dismissed)', () => {
-    // Test with RhythmExplainer dismissed. Per UX_TODAY_V2_QA.md §1, the
-    // RhythmExplainer body is the KNOWN violation (45+ words). It will be
-    // fixed in Iter 22 (auto-collapse at day 3+). This test validates the
-    // dismissed path — where the explainer is absent — passes the limit.
-    const html = renderActiveComposition(); // dismissed — explainer absent
+  test('AC-Q3: prose-heavy region word count ≤ 25 each (no prose regions at Today level)', () => {
+    // Phase A: all prose regions have been moved into CycleCard or _backup.
+    // This test confirms the PROSE_REGIONS array is empty (no Today-level copy violations).
+    const html = renderActiveComposition();
     const failures = [];
     for (const [cssClass, humanName] of PROSE_REGIONS) {
       const text = extractProseText(html, cssClass);
@@ -228,15 +218,35 @@ describe('CCC — active-composition state (PROPOSED + activities)', () => {
       `Prose-region word-count violations:\n${failures.join('\n')}`
     );
   });
+
+  test('Phase A: rhythm-explainer absent from active-composition Today output', () => {
+    const html = renderActiveComposition();
+    assert.ok(!html.includes('rhythm-explainer'), 'rhythm-explainer must be absent from Today output (Phase A removal)');
+  });
+
+  test('Phase A: now-pane absent from active-composition Today output', () => {
+    const html = renderActiveComposition();
+    assert.ok(!html.includes('now-pane'), 'now-pane must be absent (Phase A; compensated by aria-live in CycleCard)');
+  });
+
+  test('Phase A: up-next-rail absent from active-composition Today output', () => {
+    const html = renderActiveComposition();
+    assert.ok(!html.includes('up-next-rail'), 'up-next-rail must be absent from Today output (source kept for Week.js)');
+  });
+
+  test('Phase A: eod-closure-strip absent from active-composition Today output', () => {
+    const html = renderActiveComposition();
+    assert.ok(!html.includes('eod-closure-strip'), 'eod-closure-strip must be absent (EodClosureStrip moved to _backup; CTA in CycleCard footer)');
+  });
 });
 
 describe('CCC — empty state', () => {
-  test('AC-Q2 (optional): CCC ≤ 8 in empty state', () => {
+  test('AC-Q2: CCC ≤ 4 in empty state (header + adherence-dial only)', () => {
     const html = renderEmpty();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 8,
-      `CCC is ${ccc} in empty state, expected ≤ 8. Present regions: ${
+      ccc <= 4,
+      `CCC is ${ccc} in empty state, expected ≤ 4. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );

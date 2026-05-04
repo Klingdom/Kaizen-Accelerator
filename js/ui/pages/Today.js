@@ -1,6 +1,12 @@
 /**
  * Today page container (E10-T2 + Sprint 5 additions).
  *
+ * Phase A simplification (Today Simplification sprint):
+ *   Today renders ONLY: header + CycleCard + conditional drawers/modals.
+ *   WhyThisPlan, MorningRecap, EOD CTA relocated into CycleCard.
+ *   NowPane, RhythmExplainer, UpNextRail, EodClosureStrip removed from render path.
+ *   See js/ui/components/_backup/ for archived component files.
+ *
  * Responsibilities:
  *   - Given an active Composition + its children, render a CycleCard.
  *   - If no Composition exists for the user, render the first-run banner
@@ -22,13 +28,7 @@ import { FineTuneDrawer, FineTuneButton } from '../components/FineTuneDrawer.js'
 import { InfeasibleBanner } from '../components/InfeasibleBanner.js';
 import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
-import { RhythmExplainer } from '../components/RhythmExplainer.js';
 import { EditDrawer } from '../components/EditDrawer.js';
-import { UpNextRail } from '../components/UpNextRail.js';
-import { NowPane } from '../components/NowPane.js';
-import { MorningRecap } from '../components/MorningRecap.js';
-import { EodClosureStrip } from '../components/EodClosureStrip.js';
-import { WhyThisPlan } from '../components/WhyThisPlan.js';
 import {
   DEFAULT_TARGETS,
   DEFAULT_FLOORS,
@@ -129,11 +129,9 @@ export function Today(props = {}) {
   const fineTune = props.fineTune ?? null;
   const openDialog = props.openDialog ?? null;
   const editMode = props.editMode ?? null; // null when closed; object when open
-  // C-UX-10 (Iteration 14): prior-day recap strip.
+  // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
   const priorDayRecap = props.priorDayRecap ?? null;
-  // C-UX-3 (Iteration 15): EOD closure strip.
   const eodRecap = props.eodRecap ?? null;
-  // C-UX-12 (Iteration 14): "Why this plan?" expanded state.
   const whyPlanExpanded = !!props.whyPlanExpanded;
 
   const strips = {
@@ -155,18 +153,6 @@ export function Today(props = {}) {
   ${FineTuneButton()}
 </header>`;
 
-  // Rhythm explainer — onboarding moment that teaches the 4-2-2 split.
-  // Parent owns the dismissed flag; we only render when not dismissed.
-  const rhythmExplainerHtml = RhythmExplainer({
-    dismissed: !!props.rhythmExplainerDismissed
-  });
-
-  // C-UX-10 (Iteration 14): morning recap strip. Suppressed on day 0
-  // (no yesterday) and when no prior-day recap data is available.
-  const morningRecapHtml = (daysSinceSignup !== 0 && priorDayRecap)
-    ? MorningRecap({ priorDayRecap })
-    : '';
-
   const drawer = fineTune
     ? FineTuneDrawer({
         capacityMinutes: fineTune.capacityMinutes ?? 480,
@@ -182,8 +168,6 @@ export function Today(props = {}) {
   if (infeasible) {
     return `<main class="today-page" data-route="today">
   ${header}
-  ${morningRecapHtml}
-  ${rhythmExplainerHtml}
   ${InfeasibleBanner({ infeasible })}
   <section class="today-infeasible" aria-live="polite">
     <p class="empty-copy">${esc(TODAY_COPY.INFEASIBLE)}</p>
@@ -206,8 +190,6 @@ export function Today(props = {}) {
     return `<main class="today-page" data-route="today">
   ${header}
   ${hintHtml}
-  ${morningRecapHtml}
-  ${rhythmExplainerHtml}
   <section class="today-empty">
     <p class="empty-copy">${esc(emptyCopy)}</p>
     ${AutoPlanButton({ loading, variant: 'primary' })}
@@ -248,58 +230,10 @@ export function Today(props = {}) {
     : '';
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
-  const nowPaneHtml = nowIso
-    ? NowPane({ activities: activitiesForRender, nowIso })
-    : '';
-  const upNextRailHtml = nowIso
-    ? UpNextRail({
-        activities: activitiesForRender,
-        nowIso,
-        kaizenTitleById: props.kaizenTitleById ?? {},
-        limit: 5,
-        variant: 'rail'
-      })
-    : '';
-  const upNextMobileHtml = nowIso
-    ? UpNextRail({
-        activities: activitiesForRender,
-        nowIso,
-        kaizenTitleById: props.kaizenTitleById ?? {},
-        limit: 5,
-        variant: 'mobile'
-      })
-    : '';
-
-  // C-UX-3 (Iteration 15): EOD closure strip — shown on PROPOSED, ACCEPTED,
-  // and EDITED compositions only (not empty, infeasible, or loading branches).
-  // The parent (app.js) computes and passes eodRecap; strip suppresses itself
-  // when eodRecap is null.
-  const eodClosureHtml = EodClosureStrip({ eodRecap });
-
-  // C-UX-12 (Iteration 14): "Why this plan?" chip — shown on PROPOSED,
-  // ACCEPTED, and EDITED states only (not ACTIVE, REJECTED, CLOSED, or
-  // editing mode where the chip would be distracting).
-  const cycleState = compositionForRender?.state ?? '';
-  const whyEligible =
-    (cycleState === 'PROPOSED' || cycleState === 'ACCEPTED' || cycleState === 'EDITED') &&
-    !isEditing;
-  const explainForWhy = whyEligible
-    ? (compositionForRender?.composerInputsSnapshot?.explain ?? null)
-    : null;
-  const whyThisPlanHtml = WhyThisPlan({
-    explain: explainForWhy,
-    expanded: whyPlanExpanded
-  });
-
   return `<main class="${mainClass}" data-route="today">
   ${header}
-  ${morningRecapHtml}
-  ${rhythmExplainerHtml}
-  ${nowPaneHtml}
-  ${upNextMobileHtml}
   <div class="today-body">
     <div class="today-card-col">
-      ${whyThisPlanHtml}
       ${CycleCard({
         composition: compositionForRender,
         activities: activitiesForRender,
@@ -311,11 +245,12 @@ export function Today(props = {}) {
         catalog: props.catalog ?? [],
         editMode: isEditing,
         selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
-        undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0
+        undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
+        priorDayRecap,
+        eodRecap,
+        whyPlanExpanded
       })}
-      ${eodClosureHtml}
     </div>
-    ${upNextRailHtml}
   </div>
   ${drawer}
   ${editDrawerHtml}
