@@ -6,6 +6,42 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 24 — 2026-05-04 — Modal focus-trap discipline (C-UX-6)
+
+### What changed
+First non-Phil-blocked improvement-loop iteration after the user-directive sequence (Iter 22 + 23). Phil's "proceed" interpreted as next-best item; coordinator selected C-UX-6 (score 16, 4 lenses) — WCAG §2.1.2 keyboard-trap conformance fix on `EditDrawer` and `FineTuneDrawer`. Self-contained a11y improvement; no baseline contamination concern (not a UX-comprehension change).
+
+**Implementation:**
+- New utility `js/ui/focusTrap.js` (~170 LOC) — pure, dependency-injectable; exports `installFocusTrap(rootEl, options)` returning a teardown handle
+- `EditDrawer.js`: added `aria-modal="true"` to dialog `<aside>`
+- `FineTuneDrawer.js`: added `aria-modal="true"` and `aria-label="Fine-tune day capacity"` (when open)
+- `js/app.js`: wired `syncDrawerFocusTraps` into render lifecycle; new Escape handler for FineTuneDrawer (placed before edit-mode guard so it always fires regardless of edit state); existing EditDrawer Escape preserved + now properly restores focus
+- New test file `tests/ui/focusTrap.test.js` (~290 LOC, 26 unit tests)
+
+**Behavior:**
+- On open: previously-focused element saved; focus moves to first focusable in dialog
+- Tab from last focusable wraps to first; Shift+Tab from first wraps to last
+- On close: focus restores to saved trigger; falls back to `document.body` if trigger no longer in DOM
+- Escape closes both drawers and triggers focus-restore via render-cycle teardown
+
+### Why
+- WCAG §2.1.2 (No Keyboard Trap, inverse direction) was failing on EditDrawer and FineTuneDrawer — keyboard-only users could tab out of the modal into background content while drawer was logically "open"
+- 4-lens convergence (UX, PM, QA, Frontend) on the diagnosis at Iter 20 review
+- No baseline-contamination risk — pure a11y fix, ships cleanly during the v2 measurement window
+
+### Impact
+- Test suite: 2,899 → **2,929** (+30: 26 new focusTrap tests + 4 drawer aria tests)
+- Runtime: 3.67s → **3.49s** ✅ (Iter 23 budget overshoot resolved; back under 3.5s ceiling)
+- Per-test cost: 1.27ms → 1.19ms (improved)
+- All 12 ACs PASS
+- Touched files: `EditDrawer.js`, `FineTuneDrawer.js`, `app.js`, 2 test files modified, 2 NEW files (`focusTrap.js`, `focusTrap.test.js`)
+- §6.5 hits: **0**
+
+### Latent gap noted (queued for future)
+The audit also identified **8 other dialogs** with `role="dialog"` + `aria-modal="true"` but likely missing focus traps: BaselineDialog, KaizenCloseDialog, OpportunityIntakeForm, OutputArtifactDialog, ReflectionSheet, RemeasurementDialog, SkipReasonModal, WeeklyReflectionWizard. Scope-locked this iteration to the original C-UX-6 backlog item (just the 2 drawers); wider audit added to backlog as **C-UX-6b** (focus-trap rollout to remaining 8 dialogs).
+
+---
+
 ## Iteration 23 — 2026-05-04 — Today simplify Phase A (C-PM-SIMPLIFY-A)
 
 ### What changed

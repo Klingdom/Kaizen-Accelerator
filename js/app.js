@@ -104,6 +104,10 @@ import {
   attachRootClickListener
 } from './ui/mount.js';
 import {
+  installFocusTrap,
+  releaseFocusTrap
+} from './ui/focusTrap.js';
+import {
   createRouteListener,
   parseHash,
   buildHash
@@ -357,7 +361,13 @@ function createState() {
     editMode: null,
     // C-UX-12 (Iteration 14) — "Why this plan?" disclosure chip state.
     // Collapses on each new page load (plan changes daily).
-    whyPlanExpanded: false
+    whyPlanExpanded: false,
+    // C-UX-6: focus trap handles for EditDrawer and FineTuneDrawer.
+    // Each handle is the opaque object returned by installFocusTrap().
+    _focusTrap: {
+      editDrawer: null,
+      fineTuneDrawer: null
+    }
   };
 }
 
@@ -515,6 +525,43 @@ export function mergeOrphanActivities(activeState, orphans) {
     },
     activities: [...orphans]
   };
+}
+
+/**
+ * C-UX-6: Synchronise focus-trap installation with current drawer open/closed
+ * state. Called after every mountHtml so the trap always targets fresh DOM.
+ *
+ * Both EditDrawer and FineTuneDrawer are rendered as `<aside>` elements inside
+ * the app shell. We query them by their stable class names after each render.
+ *
+ * This function is a no-op when `document` is not available (i.e. in tests).
+ *
+ * @param {object} state
+ */
+/* istanbul ignore next — browser only */
+function syncDrawerFocusTraps(state) {
+  if (typeof document === 'undefined') return;
+  if (!state._focusTrap) return;
+
+  // --- EditDrawer ---
+  const editOpen = !!state.editMode;
+  if (editOpen && !state._focusTrap.editDrawer) {
+    const el = document.querySelector('.edit-drawer');
+    state._focusTrap.editDrawer = installFocusTrap(el ?? null);
+  } else if (!editOpen && state._focusTrap.editDrawer) {
+    releaseFocusTrap(state._focusTrap.editDrawer);
+    state._focusTrap.editDrawer = null;
+  }
+
+  // --- FineTuneDrawer ---
+  const ftOpen = !!(state.fineTune && state.fineTune.open);
+  if (ftOpen && !state._focusTrap.fineTuneDrawer) {
+    const el = document.querySelector('.ftd-drawer');
+    state._focusTrap.fineTuneDrawer = installFocusTrap(el ?? null);
+  } else if (!ftOpen && state._focusTrap.fineTuneDrawer) {
+    releaseFocusTrap(state._focusTrap.fineTuneDrawer);
+    state._focusTrap.fineTuneDrawer = null;
+  }
 }
 
 /**
@@ -717,6 +764,11 @@ export function renderApp(services, state) {
   const pageWithToast = `${toastHtml}${pageHtml}`;
   const shellHtml = AppShell({ route: state.route, pageHtml: pageWithToast });
   mountHtml(APP_ROOT_ID, shellHtml);
+  // C-UX-6: install/release focus traps after every render so the trap
+  // always matches the current DOM. Browser-only; mountHtml is already
+  // guarded, so this block is unreachable in test environments.
+  /* istanbul ignore next — browser only */
+  syncDrawerFocusTraps(state);
 }
 
 /**
@@ -2542,8 +2594,20 @@ export function start() {
   // Sprint 13: arrow keys cycle DURATION_OPTIONS when a slot is selected.
   //   ArrowLeft  → one step down (stops at 15)
   //   ArrowRight → one step up   (stops at 90)
+  // C-UX-6: Escape also closes FineTuneDrawer when it is open (regardless of
+  //         whether edit mode is active). Escape is always honoured from inside
+  //         a modal even when focus is on a form element (WCAG intent).
   /* istanbul ignore next — browser only */
   globalThis.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      // FineTuneDrawer Escape: check this first so it fires even when
+      // editMode is also active (unlikely but safe to handle).
+      if (state.fineTune && state.fineTune.open) {
+        ev.preventDefault();
+        handlers.FINE_TUNE_TOGGLE({});
+        return;
+      }
+    }
     if (!state.editMode) return;
     // Skip shortcuts while the user is typing in a form field.
     const tag = ev.target?.tagName?.toLowerCase?.();

@@ -89,6 +89,11 @@ describe('EditDrawer — structural contract', () => {
     assert.match(html, /role="dialog"/);
   });
 
+  test('renders aria-modal="true" (AC1 — WCAG §2.1.2)', () => {
+    const html = EditDrawer({ catalog: CATALOG });
+    assert.match(html, /aria-modal="true"/);
+  });
+
   test('renders a dismiss × that wires EDIT_CANCEL', () => {
     const html = EditDrawer({ catalog: CATALOG });
     assert.match(html, /edit-drawer-dismiss/);

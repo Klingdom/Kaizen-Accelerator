@@ -39,6 +39,21 @@ describe('FineTuneDrawer — structure', () => {
     assert.match(html, /ftd-open/);
   });
 
+  test('open=true renders aria-modal="true" (AC2 — WCAG §2.1.2)', () => {
+    const html = FineTuneDrawer({ capacityMinutes: 480, open: true });
+    assert.match(html, /aria-modal="true"/);
+  });
+
+  test('closed does NOT render aria-modal (not modal when hidden)', () => {
+    const html = FineTuneDrawer({ capacityMinutes: 480, open: false });
+    assert.ok(!html.includes('aria-modal'), 'closed drawer should not have aria-modal');
+  });
+
+  test('renders aria-label="Fine-tune day capacity" (AC2)', () => {
+    const html = FineTuneDrawer({ capacityMinutes: 480 });
+    assert.match(html, /aria-label="Fine-tune day capacity"/);
+  });
+
   test('has a Cancel + Apply button', () => {
     const html = FineTuneDrawer({ capacityMinutes: 480 });
     assert.match(html, /<button[^>]*class="ftd-cancel"/);

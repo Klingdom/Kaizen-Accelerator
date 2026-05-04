@@ -73,7 +73,7 @@ export function FineTuneDrawer(props = {}) {
 
   const classes = `ftd-drawer${open ? ' ftd-open' : ''}`;
 
-  return `<aside class="${classes}" data-drawer="fine-tune" aria-hidden="${open ? 'false' : 'true'}" role="dialog">
+  return `<aside class="${classes}" data-drawer="fine-tune" aria-hidden="${open ? 'false' : 'true'}" role="dialog"${open ? ' aria-modal="true"' : ''} aria-label="Fine-tune day capacity">
   <header class="ftd-header">
     <h2 class="ftd-title">Fine-tune today</h2>
     <button type="button" class="ftd-close" data-action="FINE_TUNE_TOGGLE" aria-label="Close">&times;</button>

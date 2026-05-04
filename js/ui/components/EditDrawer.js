@@ -285,7 +285,7 @@ export function EditDrawer(props = {}) {
   ).join('\n');
 
   const searchPayload = '{}';
-  return `<aside class="edit-drawer edit-drawer-open" role="dialog" aria-label="Swap activities">
+  return `<aside class="edit-drawer edit-drawer-open" role="dialog" aria-modal="true" aria-label="Swap activities">
   ${renderHeader(selectedActivityId, selectedSlot)}
   <div class="edit-drawer-body">
     <div class="edit-search-row">

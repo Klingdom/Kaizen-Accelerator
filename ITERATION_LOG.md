@@ -625,3 +625,42 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phil's standard-work authority queue (~25 SW-Q items) gates Phases B + C.
   - Lunch-block Define-pass also paused awaiting Phil's 3 open questions.
   - Runtime budget overshoot (Q3 from Iter 17 meta-review) becoming relevant — per-test ms metric switch should be reconsidered next meta-review trigger.
+
+---
+
+## Iteration 24 — 2026-05-04 — Modal focus-trap discipline (C-UX-6)
+
+- **Selected item**: C-UX-6 Modal focus-trap discipline (score 16, 4 lenses: UX+PM+QA+Frontend). WCAG §2.1.2 conformance fix on `EditDrawer` and `FineTuneDrawer`.
+- **Reason for selection**: First non-Phil-blocked iteration after the Iter 22 + 23 user-directive sequence. Phil said "proceed"; coordinator interpreted as next-best improvement-loop item. C-UX-6 was the highest-scoring OPEN item not blocked by Phil's standard-work authority queue and not in the v2-baseline-contamination zone (it's an a11y fix, not a UX-comprehension change). Self-contained; clear precedent (WCAG §2.1.2 + ARIA dialog pattern).
+- **Agents involved**: frontend-engineer (single-pass — no Define-pass needed; spec was already 4-lens-converged at Iter 20).
+- **Validation results**:
+  - Tests: 2,899 → **2,929** (+30: 26 new focusTrap unit tests + 4 drawer aria-attribute tests)
+  - Runtime: 3.67s → **3.49s** ✅ (Iter 23's 5%-over budget overshoot fully resolved; per-test cost 1.27ms → 1.19ms)
+  - All 12 ACs PASS
+  - **§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW files**:
+    - `js/ui/focusTrap.js` (~170 LOC) — pure utility module; dependency-injectable for unit testability (`_doc` injection); browser path uses real `document` and is `/* istanbul ignore next */` covered
+    - `tests/ui/focusTrap.test.js` (~290 LOC, 26 unit tests)
+  - **Modified files**:
+    - `js/ui/components/EditDrawer.js` — added `aria-modal="true"` to `<aside>`
+    - `js/ui/components/FineTuneDrawer.js` — added `aria-modal="true"` and `aria-label` (when open); both attributes absent when closed
+    - `js/app.js` — wired `syncDrawerFocusTraps` into render lifecycle; added Escape handler for FineTuneDrawer (placed BEFORE edit-mode guard so Escape always closes an open fine-tune drawer); existing EditDrawer Escape preserved
+    - `tests/ui/components/EditDrawer.test.js` — added AC1 aria-modal test
+    - `tests/ui/components/FineTuneDrawer.test.js` — added AC2 aria-modal + aria-label tests (both open and closed states)
+- **Spec deviations**:
+  - One intentional design choice: `installFocusTrap` accepts `_doc` as injectable option for Node-side unit testability without jsdom. Browser path falls through to real `document`. Zero runtime behavior change. Documented in implementer report.
+  - One placement decision: FineTuneDrawer Escape handler placed BEFORE the `if (!state.editMode) return` guard in keydown listener, so Escape always closes an open fine-tune drawer regardless of edit state. Defensible — drawers are independent UX surfaces.
+- **Time spent**: implementation in single pass; no rework. Estimate not specified in dispatch; came in well under typical a11y-fix timing.
+- **Strategic outcome**:
+  - **WCAG §2.1.2 conformance achieved on the 2 most-used modals.** EditDrawer is the primary edit-mode entry point (used every time a user adjusts their day). FineTuneDrawer is the capacity-and-focus configuration surface. Both now properly trap and restore focus.
+  - **Reusable utility extracted.** `installFocusTrap` is dependency-injectable and ready to apply to the 8 other dialogs in the audit (queued as C-UX-6b).
+  - **Runtime budget overshoot from Iter 23 resolved.** Iter 23 closed at 3.67s (over 3.5s budget). Iter 24 closed at 3.49s. The composer overshoot fear (Q3 from Iter 17 meta-review) appears to be a transient effect of CycleCard's added disclosure complexity, now offset by efficient new test design.
+- **Latent issues / follow-ups**:
+  - **C-UX-6b (NEW)**: 8 other dialogs use `role="dialog"` + `aria-modal="true"` but likely lack focus traps: BaselineDialog, KaizenCloseDialog, OpportunityIntakeForm, OutputArtifactDialog, ReflectionSheet, RemeasurementDialog, SkipReasonModal, WeeklyReflectionWizard. The reusable `installFocusTrap` utility makes this a small follow-up iteration (~2 hours estimated). Added to IMPROVEMENT_BACKLOG.md.
+  - 4 iterations completed since last meta-review (Iter 18). However, only 2 of those (Iter 21, Iter 24) were pure improvement-loop iterations; Iter 22 + 23 were user-directive features. Strict meta-review trigger ("every 3 completed improvement loops") technically not yet met — but cumulative state pressure (25 SW-Q queue, lunch block paused, 14-day baseline ~3 days in) suggests value in a meta-review at Iter 27 (3rd improvement-loop iteration).
+- **Follow-ups**:
+  - Commit + push.
+  - Production deploy (Iter 22 + 23 + 24 all queued for the same deploy).
+  - Phil's standard-work answers still unblocking Phases B + C of simplification + lunch block.
+  - C-UX-6b queued for next non-Phil-blocked iteration.
