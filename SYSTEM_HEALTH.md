@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,018 (+453 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,036 (+471 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 703 (+100 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.34 ms/test** | ⚠️ approaching ceiling |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (12% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.14ms (Iter 22) → 1.34ms (Iter 27) — **+63% since Iter 9** | ⚠️ upward trend |
+| Suite count | 705 (+102 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **0.94 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (37% headroom — recovered) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.39s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (32% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.34ms (Iter 27) → **0.94ms (Iter 28 hotfix recovery)** | ✅ recovered post-hotfix |
 | Fail rate | 0% | ✅ |
-| Last green commit | `77af231` (Iter 27 shipped, pushed) | ✅ |
-| **Production deploy queue** | **6 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27)** | 🚨 **OVER GATE (max 4 per META §7.7)** |
+| Last green commit | (pending Iter 28 commit) | (in progress) |
+| **Production deploy queue** | **7 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27 + 28-hotfix)** | 🚨 **OVER GATE — Iter 28 is hotfix; deploy IMMEDIATELY** |
 
 ---
 
@@ -105,7 +105,11 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-04 after Iteration 27 (Focus-trap rollout to 8 dialogs — C-UX-6b). Mechanical rollout of `installFocusTrap` (Iter 24) to all 8 remaining dialogs. WCAG §2.1.2 conformance now covers all 10 modal surfaces. Extended `syncDrawerFocusTraps` in `js/app.js` with `dialogConfigs[]` array; idempotent install/release on each rerender; reused `installFocusTrap.onEscape` callback for unified close handling. Zero dialog component file changes (all 8 already had proper aria-modal markup from prior work). Suite 2,986 → 3,018 (+32 dialog integration tests). All 12 ACs PASS. §6.5 boundary: zero hits._
+_Last updated: 2026-05-05 after Iteration 28 (P0 hotfix — Today page Accept-then-Update stuck state). Phil reported "today page is not functional, gets stuck after accepting." Mode 3 debugging. Root cause: Iter 25's per-row Update button rendered on PROPOSED rows; click Update→editMode→Commit transitioned composition→EDITED but kept activity states as PROPOSED, leaving renderAccepted path with no actionable buttons. 1-line fix in `ScheduledActivityBlock.js`: added `compositionState !== 'PROPOSED'` condition on Update button visibility. 17 regression tests added covering AUTO_PLAN→ACCEPT→render pipeline. Test suite missed it because isolated row tests didn't thread `compositionState='PROPOSED'` from full prop chain. Suite 3,018 → 3,036 (+18). Runtime 4.03s → 3.39s (✅ recovered). §6.5: zero hits. Two operating-model lessons surfaced (META §7.3 vindication on integration testing gaps; META §7.7 vindication on deploy gate)._
+
+_Iter 28 hotfix needs IMMEDIATE deploy. Production-deploy queue is now 7-deep (Iter 22+23+24+25+26+27+28). Coordinator will not dispatch Iter 29 until deploy resolves the queue per META §7.7 production-deploy gate._
+
+_Iteration 27 — 2026-05-04 — Focus-trap rollout to 8 dialogs (C-UX-6b). Mechanical rollout of `installFocusTrap` (Iter 24) to all 8 remaining dialogs. WCAG §2.1.2 conformance now covers all 10 modal surfaces. Extended `syncDrawerFocusTraps` in `js/app.js` with `dialogConfigs[]` array; idempotent install/release on each rerender; reused `installFocusTrap.onEscape` callback for unified close handling. Zero dialog component file changes (all 8 already had proper aria-modal markup from prior work). Suite 2,986 → 3,018 (+32 dialog integration tests). All 12 ACs PASS. §6.5 boundary: zero hits._
 
 _⚠️ **CRITICAL — Runtime budget overshoot is now a sustained upward trend, not oscillation**: Last 6 iterations: 3.15 → 3.67 → 3.49 → 3.80 → 3.53 → **4.03** (Iter 27, 15% over 3.5s budget). Per-test cost: 1.14ms → 1.34ms (17% regression vs Iter 22). Q3 from Iter 17 §4.2 meta-review (per-test ms metric switch) is critically overdue._
 

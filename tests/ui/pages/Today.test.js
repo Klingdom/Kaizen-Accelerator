@@ -229,9 +229,28 @@ describe('Today — Iter 25: column headers in activity list', () => {
     assert.match(html, /role="columnheader"/, 'Expected role="columnheader" for a11y');
   });
 
-  test('AC6: non-protected activity row has an Update button', () => {
+  test('AC6: non-protected activity row has an Update button in ACCEPTED state', () => {
+    // P0 fix (2026-04-30): Update button must appear in ACCEPTED state (activities
+    // are SCHEDULED and the user can legitimately adjust duration post-accept).
+    const acceptedState = {
+      composition: { ...ACTIVE_STATE.composition, state: 'ACCEPTED' },
+      activities: ACTIVE_STATE.activities.map((a) => ({ ...a, state: 'SCHEDULED' }))
+    };
+    const html = Today({ activeState: acceptedState });
+    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'Expected EDIT_QUICK_UPDATE action on Update button in ACCEPTED state');
+  });
+
+  test('AC6b: Update button is ABSENT in PROPOSED state (P0 fix guard)', () => {
+    // P0 fix (2026-04-30): Update button must NOT appear in PROPOSED state.
+    // Clicking Update→Commit on PROPOSED transitions the composition to EDITED
+    // with PROPOSED (not SCHEDULED) activities — no Accept/Start/Skip buttons
+    // are shown, leaving the user stuck. The PROPOSED triad (Accept/Edit/Reject)
+    // handles all plan decisions; Update is only meaningful post-accept.
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'Expected EDIT_QUICK_UPDATE action on Update button');
+    assert.ok(
+      !html.includes('data-action="EDIT_QUICK_UPDATE"'),
+      'Update button must NOT appear in PROPOSED state (stuck-state prevention)'
+    );
   });
 });
 

@@ -791,3 +791,35 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **Run meta-coordinator BEFORE Iter 28**. Mandatory per §6 trigger. Topics: runtime budget redefinition, per-test ms metric switch (Q3 from Iter 17 §4.2), test-design hygiene, §6.5 boundary effectiveness, backlog quality.
   - Commit + push.
   - Production deploy queue grows: Iter 22 + 23 + 24 + 25 + 26 + 27 all queued.
+
+---
+
+## Iteration 28 — 2026-05-05 — P0 hotfix: Today page Accept-then-Update stuck state
+
+- **Selected item**: P0 production bug. Phil report: "The today page is not functional. It gets stuck after accepting a schedule." Mode 3 (Debugging) per operating model.
+- **Reason for selection**: Production-blocking regression. All other backlog items deprioritized until this is fixed.
+- **Agents involved**: frontend-engineer (debug + fix + regression test).
+- **Validation results**:
+  - Tests: 3,018 → **3,036** (+18 net, all regression coverage)
+  - Runtime: 4.03s → **3.39s** (✅ recovered; per-test cost 1.34ms → 0.94ms — under 1.5ms ceiling per META §7.1)
+  - §6.5 boundary: **0 hits** (single UI condition guard)
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Root cause**: `js/ui/components/ScheduledActivityBlock.js` — Update button (Iter 25) rendered on every non-protected, non-edit-mode row regardless of composition state including PROPOSED. Click Update on PROPOSED row → editMode → Commit → composition transitions PROPOSED→EDITED with activity states preserved as PROPOSED → CycleCard.renderAccepted() routes EDITED there but `renderActions()` sees PROPOSED activity states and produces no Start/Skip buttons → **user stuck with no actionable UI**.
+  - **Fix**: added `compositionState !== 'PROPOSED'` to `showUpdateBtn` condition in `ScheduledActivityBlock.js`. Conservative — Update button suppressed during PROPOSED. Users edit PROPOSED via the existing Accept-Edit-Reject triad's Edit button, OR accept first then per-row update.
+  - **Regression tests**:
+    - NEW `tests/app.iter26_accept_regression.test.js` (17 tests) — full `AUTO_PLAN → ACCEPT → renderApp` pipeline including stuck-state guard, service state after ACCEPT, rerender behavior, error handling
+    - `tests/ui/pages/Today.test.js` — AC6 updated (Update in ACCEPTED state) + AC6b added (Update absent in PROPOSED state)
+  - **Why test suite missed it**: Today.test.js AC6 used activity.state='PROPOSED' but composition state was undefined in the test wrapper. The bug only manifests in the real Today→CycleCard→Block prop-chain where compositionState='PROPOSED' is threaded through. Integration gap exactly the kind META §7.3 flagged.
+- **Spec deviations**: None (debug iteration, no spec).
+- **Time spent**: ~30 minutes investigation + ~15 minutes fix + ~30 minutes regression tests = ~75 minutes total. Bug-fix-with-test-coverage is the right shape; this iteration cost is acceptable.
+- **Strategic outcome**:
+  - **P0 production bug closed.** Today page accept flow functional again.
+  - **META §7.3 vindicated.** The bug's slip-through pattern (passing isolated unit tests, failing in real prop chain) is exactly what META §7.3's parameterization-first guidance addresses. Going forward, end-to-end pipeline tests cover state-machine interactions; isolated tests cover unit logic. Both layers needed.
+  - **META §7.7 vindicated.** Accumulating 6 untested iterations was exactly the failure mode the deploy gate was designed to prevent. Bug surfaced ONLY because Phil deployed.
+  - **State-machine audit needed for new affordances.** Iter 25's EDIT_QUICK_UPDATE shipped without checking all 5 composition states. Adding "audit affordance compat with all valid composition states" to coordinator dispatch checklist for future UI work.
+- **Latent issue (not fixed)**: The lunch row from Iter 26 may render without expected output column because BROWSER_CATALOG doesn't include `recovery_lunch` yet. Pre-existing, not introduced by this fix. Flagged in CHANGELOG as follow-up.
+- **Follow-ups**:
+  - Commit + push.
+  - Phil already deployed (otherwise wouldn't have caught the bug). Re-deploy hotfix immediately.
+  - Add C-FE-1 backlog item: "BROWSER_CATALOG missing `recovery_lunch` entry — Iter 26 catalog added it but client-side catalog not synced."
+  - Consider adding "audit-affordance-vs-state-machine" to coordinator dispatch protocol for new UI features.

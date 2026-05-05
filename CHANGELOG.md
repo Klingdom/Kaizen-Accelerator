@@ -6,6 +6,48 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 28 — 2026-05-05 — P0 hotfix: Today page Accept-then-Update stuck state
+
+### What changed
+**P0 production bug fix.** Phil reported: *"The today page is not functional. It gets stuck after accepting a schedule."*
+
+**Root cause** (`js/ui/components/ScheduledActivityBlock.js`): The per-row Update button I added in Iter 25 was rendered on every non-protected, non-edit-mode activity row regardless of composition state — including PROPOSED. When a user clicked Update on a PROPOSED row:
+
+1. `EDIT_QUICK_UPDATE` handler fires, setting `state.editMode`
+2. User clicks Commit
+3. `EDIT_COMMIT` calls `commitEdit()` which sees `comp.state === 'PROPOSED'` and transitions to `'EDITED'` — but activity states stay as `'PROPOSED'`
+4. On rerender, CycleCard routes EDITED to `renderAccepted()` with `edit=false`
+5. `renderAccepted` produces no Accept/Edit/Reject triad (PROPOSED-only) and passes `showStart=true`
+6. `renderActions()` sees PROPOSED activity states, falls to `default` case, returns `''` — no Start/Skip buttons
+7. **User completely stuck — no actionable buttons visible**
+
+**Fix** (single-line condition guard): added `compositionState !== 'PROPOSED'` to the `showUpdateBtn` condition in `ScheduledActivityBlock.js`. Update button now suppressed during PROPOSED state. Users still can edit PROPOSED compositions via the Accept-Edit-Reject triad's Edit button (full-edit-mode path) or by accepting first then per-row updating.
+
+Why test suite missed it: the Today.test.js AC checking "non-protected rows have Update button" tested a fixture using activity.state='PROPOSED' but composition state defaulted to undefined (no `compositionState` prop on the test wrapper). The bug only manifests in the real Today→CycleCard→ScheduledActivityBlock prop-passing chain where compositionState='PROPOSED' is correctly threaded through.
+
+### Regression tests added
+- `tests/app.iter26_accept_regression.test.js` (NEW, 17 tests) — full `AUTO_PLAN → ACCEPT → renderApp` pipeline coverage including stuck-state guard, service state after ACCEPT, rerender behavior, error handling
+- `tests/ui/pages/Today.test.js` — AC6 updated (Update button in ACCEPTED state correctly tested) + AC6b added (Update button absent in PROPOSED state)
+
+### Recovery for affected users
+Any user with a stale EDITED-with-PROPOSED-activities composition in localStorage can recover by clicking AUTO_PLAN again — creates a fresh PROPOSED with later `proposedAt` that wins in `getActiveComposition`.
+
+### Impact
+- Test suite: 3,018 → **3,036** (+18 net, all regression coverage)
+- Runtime: 4.03s → **3.39s** (✅ recovered; per-test cost 1.34ms → 0.94ms — well under 1.5ms ceiling)
+- §6.5 hits: **0** (single-line UI condition guard)
+- All ACs PASS
+
+### Operating-model lessons
+1. **Test isolation can hide integration bugs.** The single-row test passed but the Today→CycleCard→Block prop-chain bug only manifests with full prop-threading. Per Iter 27 meta-review §7.3, this is exactly the kind of integration gap parameterized end-to-end tests catch better than isolated unit tests.
+2. **New affordances need state-machine review.** Iter 25's EDIT_QUICK_UPDATE shipped without auditing all 5 composition states (PROPOSED, ACCEPTED, EDITED, ACTIVE, CLOSED) for compatibility. The new affordance only made sense in ACCEPTED+ states.
+3. **Production-deploy gate validated.** Per Iter 27 meta-review §7.7, accumulating 6 unvalidated iterations is exactly the failure mode this gate is designed to prevent. This bug surfaced because Phil deployed; gate enforcement going forward should prevent re-occurrence.
+
+### Latent issue (not fixed)
+The `lunch` row from Iter 26 may render without expected output column content because BROWSER_CATALOG doesn't include the `recovery_lunch` entry yet. Pre-existing, not introduced by this fix. Worth follow-up — flagged in QA notes.
+
+---
+
 ## Iteration 27 — 2026-05-04 — Focus-trap rollout to 8 dialogs (C-UX-6b)
 
 ### What changed

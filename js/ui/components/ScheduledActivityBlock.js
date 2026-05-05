@@ -303,7 +303,14 @@ export function ScheduledActivityBlock(props = {}) {
   // edit mode and selects this slot in a single action. Protected blocks (e.g.
   // Daily Standup) never get an Update button — they cannot be changed.
   // In edit mode the button is suppressed (no-op would confuse the UX).
-  const updateButtonHtml = (!protectedBlock && !editMode)
+  //
+  // P0 fix (2026-04-30): suppress Update in PROPOSED state. Using Update→Commit
+  // on a PROPOSED composition transitions it to EDITED with PROPOSED (not
+  // SCHEDULED) activities, leaving no Accept/Start/Skip buttons — a stuck state.
+  // The PROPOSED state already provides the Accept/Edit/Reject triad for
+  // plan decisions; Update is only meaningful once the plan is ACCEPTED/EDITED.
+  const showUpdateBtn = !protectedBlock && !editMode && compositionState !== 'PROPOSED';
+  const updateButtonHtml = showUpdateBtn
     ? `<button type="button" class="sa-update-btn" data-action="EDIT_QUICK_UPDATE" data-payload='${activityIdPayload}' aria-label="Update duration for ${esc(name)}">Update</button>`
     : `<div class="sa-update-empty" aria-hidden="true"></div>`;
 
