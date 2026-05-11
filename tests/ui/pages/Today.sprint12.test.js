@@ -81,9 +81,9 @@ describe('Today — edit mode render', () => {
     assert.equal(html.includes('today-editing'), false);
   });
 
-  test('Iter 25: BucketStrip removed — editMode.activities shown in activity list, not strip', () => {
-    // BucketStrip was removed from CycleCard in Iter 25.
-    // Activity durations are still visible in .sa-duration columns.
+  test('Iter 29: BucketStrip removed — editMode.activities shown in calendar grid', () => {
+    // Iter 29: sa-duration column removed; durations encoded as block heights.
+    // Calendar blocks for the edited activities must appear.
     const edited = [
       mkActivity({ bucket: 'PROJECT', plannedDurationMinutes: 30 }),
       mkActivity({ id: 'sa_2', bucket: 'CI', plannedDurationMinutes: 90 })
@@ -107,9 +107,9 @@ describe('Today — edit mode render', () => {
     });
     // BucketStrip must be absent.
     assert.ok(!html.includes('bucket-strip'), 'BucketStrip must be absent (Iter 25)');
-    // Activity durations still render in sa-duration spans.
-    assert.match(html, /30m/, 'PROJECT 30m must appear in sa-duration');
-    assert.match(html, /90m/, 'CI 90m must appear in sa-duration');
+    // Calendar grid renders the edited activities as positioned blocks.
+    assert.ok(html.includes('cycle-calendar-grid'), 'calendar grid must render in edit mode');
+    assert.ok(html.includes('cycle-block-positioned'), 'calendar blocks must render the edited activities');
   });
 
   test('EditDrawer receives editMode.selectedActivityId', () => {

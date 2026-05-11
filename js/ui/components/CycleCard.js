@@ -44,6 +44,7 @@ import { AcceptEditRejectTriad } from './AcceptEditRejectTriad.js';
 import { AutoPlanButton } from './AutoPlanButton.js';
 import { WhyThisPlan } from './WhyThisPlan.js';
 import { MorningRecap } from './MorningRecap.js';
+import { TodayGrid } from './TodayGrid.js';
 
 /**
  * Edit-mode triad: Commit / Cancel / Undo. Rendered in place of
@@ -315,12 +316,17 @@ function renderActivityColumnHeaders() {
 
 /**
  * Render the PROPOSED variant — the hero path.
+ *
+ * Iter 29 (Phase 1): replaced the 6-column table header + activity list with
+ * TodayGrid (single-day calendar grid). The table (sa-col-headers + ul.cycle-activities)
+ * is removed. All existing header/triad/footer chrome is preserved unchanged.
+ *
+ * In edit mode the calendar grid is still rendered (read-only display of the
+ * draft activities); the EditDrawer rendered by Today.js provides the swap UI.
  */
 function renderProposed(composition, activities, extras = {}) {
   const compId = composition.id;
-  const explainById = buildExplainById(composition);
   const editMode = !!extras.editMode;
-  const selectedActivityId = extras.selectedActivityId ?? null;
   const undoCount = Number.isFinite(extras.undoCount) ? extras.undoCount : 0;
   const triad = editMode
     ? renderEditTriad({ undoCount })
@@ -337,6 +343,16 @@ function renderProposed(composition, activities, extras = {}) {
     : renderMorningRecapDisclosure(extras.priorDayRecap ?? null);
   const eodFooter = renderEodFooterCta(extras.eodRecap ?? null);
 
+  // Iter 29 Phase 1 — calendar grid replaces the table.
+  const calendarGrid = TodayGrid({
+    composition,
+    activities,
+    nowIso: extras.nowIso ?? null,
+    kaizenTitleById: extras.kaizenTitleById ?? {},
+    compositionState: 'PROPOSED',
+    // rowHeightPx / gridStartHour / gridEndHour use TodayGrid defaults.
+  });
+
   return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="PROPOSED">
   <header class="cycle-header">
     <h1 class="cycle-title">${esc(editMode ? 'Edit today' : CARD_COPY.PROPOSED_HEADER)}</h1>
@@ -344,32 +360,23 @@ function renderProposed(composition, activities, extras = {}) {
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>
-  ${renderActivityColumnHeaders()}
-  <ul class="cycle-activities" role="list">
-${renderActivityList(activities, {
-    showStart: false,
-    compositionState: 'PROPOSED',
-    explainById,
-    kaizenTitleById: extras.kaizenTitleById ?? {},
-    catalogById: extras.catalogById ?? {},
-    editMode,
-    selectedActivityId
-  })}
-  </ul>
+  <div class="cycle-calendar-grid-wrap">
+    ${calendarGrid}
+  </div>
   ${triad}
 ${eodFooter ? `  ${eodFooter}` : ''}
 </article>`;
 }
 
 /**
- * Render the ACCEPTED / ACTIVE variant.
+ * Render the ACCEPTED / ACTIVE / EDITED / CLOSED variant.
+ *
+ * Iter 29 (Phase 1): replaced the 6-column table + activity list with
+ * TodayGrid (single-day calendar grid). All header/triad/footer chrome
+ * is preserved unchanged.
  */
 function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount, priorDayRecap, eodRecap, whyPlanExpanded, morningRecapExpanded }) {
   const compId = composition.id;
-  // Pin: prefer IN_PROGRESS, else first SCHEDULED.
-  const inProgress = activities.find((a) => a.state === 'IN_PROGRESS');
-  const pinnedActivity =
-    inProgress ?? activities.find((a) => a.state === 'SCHEDULED');
   const edit = !!editMode;
   const undoN = Number.isFinite(undoCount) ? undoCount : 0;
   const triad = edit ? renderEditTriad({ undoCount: undoN }) : '';
@@ -387,25 +394,25 @@ function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitle
     : renderMorningRecapDisclosure(priorDayRecap ?? null);
   const eodFooter = renderEodFooterCta(eodRecap ?? null);
 
+  // Iter 29 Phase 1 — calendar grid replaces the table.
+  const compState = isActive ? 'ACTIVE' : (composition.state ?? 'ACCEPTED');
+  const calendarGrid = TodayGrid({
+    composition,
+    activities,
+    nowIso: nowIso ?? null,
+    kaizenTitleById: kaizenTitleById ?? {},
+    compositionState: compState,
+  });
+
   return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="${isActive ? 'ACTIVE' : 'ACCEPTED'}">
   <header class="cycle-header">
     <h1 class="cycle-title">${esc(edit ? 'Edit today' : (isActive ? CARD_COPY.ACTIVE_HEADER : CARD_COPY.ACCEPTED_HEADER))}</h1>
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>
-  ${renderActivityColumnHeaders()}
-  <ul class="cycle-activities" role="list">
-${renderActivityList(activities, {
-    showStart: !edit,
-    pinnedId: pinnedActivity?.id,
-    nowIso,
-    compositionState: isActive ? 'ACTIVE' : 'ACCEPTED',
-    kaizenTitleById: kaizenTitleById ?? {},
-    catalogById: catalogById ?? {},
-    editMode: edit,
-    selectedActivityId
-  })}
-  </ul>
+  <div class="cycle-calendar-grid-wrap">
+    ${calendarGrid}
+  </div>
   ${triad}
 ${eodFooter ? `  ${eodFooter}` : ''}
 </article>`;

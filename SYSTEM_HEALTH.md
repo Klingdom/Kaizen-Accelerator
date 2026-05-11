@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,036 (+471 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,078 (+513 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 705 (+102 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **0.94 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (37% headroom — recovered) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.39s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (32% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.34ms (Iter 27) → **0.94ms (Iter 28 hotfix recovery)** | ✅ recovered post-hotfix |
+| Suite count | 720 (+117 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.42 ms/test** | ⚠️ approaching ceiling |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (5% headroom only) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.37s** | ⚠️ approaching alarm |
+| **Runtime alarm (META §7.1)** | **5.0s** | (13% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.34ms (Iter 27) → 0.94ms (Iter 28) → **1.42ms (Iter 29)** | ⚠️ oscillating high |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 28 commit) | (in progress) |
-| **Production deploy queue** | **7 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27 + 28-hotfix)** | 🚨 **OVER GATE — Iter 28 is hotfix; deploy IMMEDIATELY** |
+| Last green commit | (pending Iter 29 commit) | (in progress) |
+| **Production deploy queue** | **8 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27 + 28 + 29)** | 🚨🚨 **DOUBLY OVER GATE — deploy CRITICAL-PATH before further work** |
 
 ---
 
@@ -105,7 +105,15 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-05 after Iteration 28 (P0 hotfix — Today page Accept-then-Update stuck state). Phil reported "today page is not functional, gets stuck after accepting." Mode 3 debugging. Root cause: Iter 25's per-row Update button rendered on PROPOSED rows; click Update→editMode→Commit transitioned composition→EDITED but kept activity states as PROPOSED, leaving renderAccepted path with no actionable buttons. 1-line fix in `ScheduledActivityBlock.js`: added `compositionState !== 'PROPOSED'` condition on Update button visibility. 17 regression tests added covering AUTO_PLAN→ACCEPT→render pipeline. Test suite missed it because isolated row tests didn't thread `compositionState='PROPOSED'` from full prop chain. Suite 3,018 → 3,036 (+18). Runtime 4.03s → 3.39s (✅ recovered). §6.5: zero hits. Two operating-model lessons surfaced (META §7.3 vindication on integration testing gaps; META §7.7 vindication on deploy gate)._
+_Last updated: 2026-05-07 after Iteration 29 (Today calendar Phase 1 — C-PM-CAL-P1). User-directive feature; 6-lens parallel Define-pass (UX+PM+Architect+FE+QA+Competitive) on calendar-style Today; 6/6 lens convergence on Phase 1 table-replacement. Score 15 = base 12 + ConvergenceBonus +3. Phil approved Path B (Phase 1 only; Phases 2 + 3 held pending SW-Q-CAL-01/03). New `js/ui/components/TodayGrid.js` (~251 LOC) reuses production-proven `weekGridMath.js` positioning helpers; hour-rail 07:00–19:00; red now-line; bucket-colored blocks; dashed outline for PROPOSED state (Reclaim.ai pattern — competitive whitespace); muted-gray lunch block; click-block emits `OPEN_BLOCK_DETAIL` action. WeekGrid untouched per FE option (c). Suite 3,036 → 3,078 (+42 net). All 10 ACs PASS. §6.5: zero hits. **8 Define artifacts produced** (6 lens + synthesis + PHIL_AUTHORITY_QUEUE.md Section E)._
+
+_⚠️ **Per-test cost crept up** (0.94ms → 1.42ms; 5% headroom only under META §7.1 1.5ms ceiling) — 45 new TodayGrid tests are the cost. Mostly necessary. Watch for next iteration. Runtime 4.37s (13% headroom under 5.0s alarm). Q3 from Iter 17 per-test ms metric is the right primary metric._
+
+_🚨 **DEPLOY GATE DOUBLY VIOLATED**: queue is now 8-deep (Iter 22-29). Coordinator will NOT dispatch Iter 30 implementation iterations until Phil deploys. The Iter 28 P0 hotfix has been waiting for production validation since 2026-05-05._
+
+_Phase 2 + 3 of calendar conversion held: Phase 2 (drag-and-drop) HIGH risk per QA, blocked on SW-Q-CAL-01 + 03. Phase 3 (click-empty-time) LOW risk, blocked on SW-Q-CAL-02. Critical gate per Iter 28 lesson: Phase 2 drag must require `composition.state !== 'PROPOSED'` AND block when `activity.state === 'IN_PROGRESS'`._
+
+_Iteration 28 — 2026-05-05 — P0 hotfix: Today page Accept-then-Update stuck state. Phil reported "today page is not functional, gets stuck after accepting." Mode 3 debugging. Root cause: Iter 25's per-row Update button rendered on PROPOSED rows; click Update→editMode→Commit transitioned composition→EDITED but kept activity states as PROPOSED, leaving renderAccepted path with no actionable buttons. 1-line fix in `ScheduledActivityBlock.js`: added `compositionState !== 'PROPOSED'` condition on Update button visibility. 17 regression tests added covering AUTO_PLAN→ACCEPT→render pipeline. Test suite missed it because isolated row tests didn't thread `compositionState='PROPOSED'` from full prop chain. Suite 3,018 → 3,036 (+18). Runtime 4.03s → 3.39s (✅ recovered). §6.5: zero hits. Two operating-model lessons surfaced (META §7.3 vindication on integration testing gaps; META §7.7 vindication on deploy gate)._
 
 _Iter 28 hotfix needs IMMEDIATE deploy. Production-deploy queue is now 7-deep (Iter 22+23+24+25+26+27+28). Coordinator will not dispatch Iter 29 until deploy resolves the queue per META §7.7 production-deploy gate._
 

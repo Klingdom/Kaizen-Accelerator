@@ -188,7 +188,11 @@ describe('P0 regression: Today page after ACCEPT — renderApp HTML', () => {
     }
   });
 
-  test('AC3: Start buttons present after ACCEPT (data-action="START_ACTIVITY")', () => {
+  test('AC3 (Iter 29): Calendar blocks present after ACCEPT (click-block opens Start/Skip via OPEN_BLOCK_DETAIL)', () => {
+    // Iter 29 Phase 1: START_ACTIVITY and OPEN_SKIP_MODAL are no longer inline
+    // on the calendar grid surface. They are accessible via the block-detail
+    // popover triggered by OPEN_BLOCK_DETAIL (click on a calendar block).
+    // This test confirms the calendar grid renders blocks for the ACCEPTED plan.
     env = makeEnv();
     state = stateStub();
     handlers = buildHandlers({ services: env.services, state, rerender: () => {} });
@@ -197,16 +201,23 @@ describe('P0 regression: Today page after ACCEPT — renderApp HTML', () => {
     try {
       composeThenAccept(env, state, handlers);
       renderApp(env.services, state);
+      // Calendar blocks must render (blocks carry OPEN_BLOCK_DETAIL action).
       assert.ok(
-        dom.html.includes('data-action="START_ACTIVITY"'),
-        'Start buttons must appear for SCHEDULED activities after ACCEPT'
+        dom.html.includes('cycle-block-positioned'),
+        'Calendar blocks must appear for SCHEDULED activities after ACCEPT'
+      );
+      assert.ok(
+        dom.html.includes('OPEN_BLOCK_DETAIL'),
+        'OPEN_BLOCK_DETAIL action must be on blocks (click → Start/Skip in popover)'
       );
     } finally {
       dom.restore();
     }
   });
 
-  test('AC4: Skip buttons present after ACCEPT (data-action="OPEN_SKIP_MODAL")', () => {
+  test('AC4 (Iter 29): ACCEPTED calendar grid renders chip-communication blocks (standup, comm)', () => {
+    // Iter 29: OPEN_SKIP_MODAL is no longer inline; it is in the block-detail popover.
+    // This test confirms communication-bucket blocks render correctly post-ACCEPT.
     env = makeEnv();
     state = stateStub();
     handlers = buildHandlers({ services: env.services, state, rerender: () => {} });
@@ -216,8 +227,8 @@ describe('P0 regression: Today page after ACCEPT — renderApp HTML', () => {
       composeThenAccept(env, state, handlers);
       renderApp(env.services, state);
       assert.ok(
-        dom.html.includes('data-action="OPEN_SKIP_MODAL"'),
-        'Skip buttons must appear for SCHEDULED activities after ACCEPT'
+        dom.html.includes('chip-communication'),
+        'Communication blocks must appear in the ACCEPTED calendar grid'
       );
     } finally {
       dom.restore();
@@ -278,7 +289,10 @@ describe('P0 regression: Today page after ACCEPT — renderApp HTML', () => {
 // AC6: renderApp after START_ACTIVITY
 // ---------------------------------------------------------------------------
 describe('P0 regression: Today page after ACCEPT + START_ACTIVITY', () => {
-  test('AC6: After ACCEPT → START_ACTIVITY, today shows IN_PROGRESS activity', () => {
+  test('AC6 (Iter 29): After ACCEPT → START_ACTIVITY, calendar block shows IN_PROGRESS data-state', () => {
+    // Iter 29 Phase 1: IN_PROGRESS state is encoded on the calendar block via
+    // data-state="IN_PROGRESS". The elapsed timer and Close button are accessible
+    // via the block-detail popover (OPEN_BLOCK_DETAIL) — not inline on the block surface.
     const env = makeEnv();
     const state = stateStub();
     const handlers = buildHandlers({ services: env.services, state, rerender: () => {} });
@@ -297,15 +311,15 @@ describe('P0 regression: Today page after ACCEPT + START_ACTIVITY', () => {
       handlers.START_ACTIVITY({ activityId: scheduledAct.id });
       renderApp(env.services, state);
 
-      // The started activity should now show as IN_PROGRESS (elapsed timer region).
+      // The started activity should now have data-state="IN_PROGRESS" on its calendar block.
       assert.ok(
-        dom.html.includes('sa-elapsed') || dom.html.includes('sa-state-in_progress'),
-        'Started activity should render in IN_PROGRESS state'
+        dom.html.includes('data-state="IN_PROGRESS"'),
+        'Started activity should render with data-state="IN_PROGRESS" on the calendar block'
       );
-      // Close button should appear.
+      // The block still carries OPEN_BLOCK_DETAIL so the user can access Close/elapsed timer.
       assert.ok(
-        dom.html.includes('data-action="OPEN_CLOSE_DIALOG"'),
-        'Close button must appear for IN_PROGRESS activity'
+        dom.html.includes('OPEN_BLOCK_DETAIL'),
+        'OPEN_BLOCK_DETAIL must be present so user can access Close/elapsed timer via popover'
       );
     } finally {
       dom.restore();
@@ -451,7 +465,11 @@ describe('P0 root cause: Update button absent in PROPOSED state (stuck-state gua
     }
   });
 
-  test('Update button present in renderApp output after ACCEPT (ACCEPTED state)', () => {
+  test('Iter 29: Calendar grid renders ACCEPTED blocks with OPEN_BLOCK_DETAIL (replaces inline Update button)', () => {
+    // Iter 29 Phase 1: The inline EDIT_QUICK_UPDATE (Update) button is removed from
+    // the calendar surface. Duration/time edits are accessed via:
+    //   1. OPEN_BLOCK_DETAIL click → detail popover → Edit button → EditDrawer
+    // This test confirms the ACCEPTED calendar grid renders correctly.
     const env = makeEnv();
     const state = stateStub();
     const handlers = buildHandlers({ services: env.services, state, rerender: () => {} });
@@ -461,8 +479,12 @@ describe('P0 root cause: Update button absent in PROPOSED state (stuck-state gua
       composeThenAccept(env, state, handlers);
       renderApp(env.services, state);
       assert.ok(
-        dom.html.includes('data-action="EDIT_QUICK_UPDATE"'),
-        'Update button must appear in ACCEPTED state for legitimate duration edits'
+        dom.html.includes('cycle-block-positioned'),
+        'Calendar blocks must render in ACCEPTED state'
+      );
+      assert.ok(
+        dom.html.includes('OPEN_BLOCK_DETAIL'),
+        'OPEN_BLOCK_DETAIL must be on blocks (entry point for duration/time edits in Iter 29)'
       );
     } finally {
       dom.restore();

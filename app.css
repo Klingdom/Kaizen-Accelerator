@@ -227,6 +227,173 @@ html, body {
   gap: 8px;
 }
 
+/* ---------- TodayGrid — Iter 29 Phase 1 single-day calendar ---------- */
+
+/* Outer wrapper added by CycleCard around the grid */
+.cycle-calendar-grid-wrap {
+  margin: 12px 0 0;
+}
+
+/*
+ * Single-day calendar grid: hour rail (fixed 56px) + day timeline column.
+ * Mirrors .wg-grid but with 1 day column instead of 5.
+ */
+.cycle-calendar-grid {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: stretch;
+  padding: 4px 0;
+  overflow-x: hidden;
+}
+
+.cycle-calendar-grid-empty {
+  min-height: 120px;
+  opacity: 0.3;
+}
+
+/* Hour rail — identical visual treatment to .wg-hour-rail */
+.cycle-hour-rail {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cycle-hour {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-right: 6px;
+  border-bottom: 1px dashed var(--border);
+  box-sizing: border-box;
+}
+
+/* Day timeline — position: relative container for absolutely-placed blocks */
+.cycle-timeline {
+  position: relative;
+  background: var(--bg);
+}
+
+/*
+ * Positioned activity block.
+ * Uses position: absolute with top/height set via inline style (from
+ * topOffsetPx / heightPx helpers in weekGridMath.js).
+ */
+.cycle-block-positioned {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  line-height: 1.3;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  transition: box-shadow 150ms ease, background-color 200ms ease;
+  box-sizing: border-box;
+}
+.cycle-block-positioned:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.cycle-block-positioned:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+/*
+ * PROPOSED state: dashed outline visually encodes unratified blocks.
+ * Matches Reclaim.ai "proposed" visual encoding per §3 locked decisions.
+ */
+.cycle-block-proposed {
+  outline: 2px dashed currentColor;
+  outline-offset: -2px;
+  opacity: 0.85;
+}
+
+/* Lunch block (bucket: null) — neutral/muted tone distinct from PROJECT/COMM/CI */
+.cycle-block-lunch {
+  font-style: italic;
+}
+
+/* Block sub-elements */
+.cycle-block-time { font-weight: 600; font-size: 11px; }
+.cycle-block-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cycle-block-kaizen {
+  align-self: flex-start;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.cycle-block-lock {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/*
+ * Bucket coloring via chipClass — reuses existing chip-project /
+ * chip-communication / chip-ci tokens already defined for WeekGrid.
+ * Unknown / lunch blocks use chip-unknown (muted gray).
+ */
+.cycle-block-positioned.chip-project { background: var(--project-bg); color: var(--project-fg); }
+.cycle-block-positioned.chip-communication { background: var(--communication-bg); color: var(--communication-fg); }
+.cycle-block-positioned.chip-ci { background: var(--ci-bg); color: var(--ci-fg); }
+.cycle-block-positioned.chip-unknown { background: var(--color-surface-muted); color: var(--color-text-muted); }
+
+/* Desaturated tone for composer-built blocks (matches .wg-block treatment) */
+.cycle-block-positioned[data-user-edited="false"] {
+  background-color: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.cycle-block-positioned.chip-project[data-user-edited="true"] {
+  background-color: var(--project-bg);
+  color: var(--project-fg);
+}
+.cycle-block-positioned.chip-communication[data-user-edited="true"] {
+  background-color: var(--communication-bg);
+  color: var(--communication-fg);
+}
+.cycle-block-positioned.chip-ci[data-user-edited="true"] {
+  background-color: var(--ci-bg);
+  color: var(--ci-fg);
+}
+
+/*
+ * Now-line — identical rules to .wg-now-line so both views have consistent
+ * visual treatment. The selector alias avoids duplicating the animation.
+ */
+.cycle-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--danger);
+  pointer-events: none;
+}
+.cycle-now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
+}
+
 /* ---------- BucketStrip ---------- */
 
 .bucket-strip {
@@ -2294,13 +2461,18 @@ html, body {
   .wg-block.chip-project,
   .wg-block.chip-communication,
   .wg-block.chip-ci,
-  .wg-block.chip-unknown {
+  .wg-block.chip-unknown,
+  .cycle-block-positioned.chip-project,
+  .cycle-block-positioned.chip-communication,
+  .cycle-block-positioned.chip-ci,
+  .cycle-block-positioned.chip-unknown {
     background-color: Canvas;
     color: CanvasText;
     border: 1px solid CanvasText;
     forced-color-adjust: none;
   }
-  .wg-block[data-user-edited="true"] {
+  .wg-block[data-user-edited="true"],
+  .cycle-block-positioned[data-user-edited="true"] {
     outline: 2px solid Mark;
     outline-offset: 1px;
   }

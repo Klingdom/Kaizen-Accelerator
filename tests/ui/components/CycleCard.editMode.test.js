@@ -86,7 +86,10 @@ describe('CycleCard — edit mode (PROPOSED)', () => {
     assert.match(html, /data-action="REJECT"/);
   });
 
-  test('passes selectedActivityId into activity blocks', () => {
+  test('Iter 29: calendar blocks carry data-activity-id for selection tracking', () => {
+    // Iter 29 Phase 1: edit-selected class moved from sa-block rows to the
+    // EditDrawer interaction layer. In the calendar grid, the selected block is
+    // identified by data-activity-id; the EditDrawer highlights the active slot.
     const acts = [
       mkActivity({ id: 'sa_a' }),
       mkActivity({ id: 'sa_b' })
@@ -97,10 +100,10 @@ describe('CycleCard — edit mode (PROPOSED)', () => {
       editMode: true,
       selectedActivityId: 'sa_b'
     });
-    // sa_b should have edit-selected class; sa_a should not.
-    const bIdx = html.indexOf('data-activity-id="sa_b"');
-    const preB = html.slice(Math.max(0, bIdx - 200), bIdx + 100);
-    assert.match(preB, /edit-selected/);
+    // Both blocks carry data-activity-id for QA and app.js targeting.
+    assert.ok(html.includes('data-activity-id="sa_a"'), 'sa_a block must carry data-activity-id');
+    assert.ok(html.includes('data-activity-id="sa_b"'), 'sa_b block must carry data-activity-id');
+    // Edit drawer is rendered by Today.js (not CycleCard) — verified in Today.sprint12.test.js.
   });
 });
 

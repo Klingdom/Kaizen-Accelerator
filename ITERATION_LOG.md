@@ -823,3 +823,52 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phil already deployed (otherwise wouldn't have caught the bug). Re-deploy hotfix immediately.
   - Add C-FE-1 backlog item: "BROWSER_CATALOG missing `recovery_lunch` entry — Iter 26 catalog added it but client-side catalog not synced."
   - Consider adding "audit-affordance-vs-state-machine" to coordinator dispatch protocol for new UI features.
+
+---
+
+## Iteration 29 — 2026-05-07 — Today calendar Phase 1: visual calendar grid (C-PM-CAL-P1)
+
+- **Selected item**: User-directive feature, Phase 1 of 3-phase calendar conversion. Phil: "make the today page functionality more like any standard calendar scheduling feature." Approved Path B (Phase 1 only).
+- **Reason for selection**: Direct user directive. 6-lens Define-pass produced strong convergence on Phase 1 visual replacement (6/6 agree); meaningful disagreement on Phase 2 drag-commit semantics deferred to Phil via SW-Q-CAL-01.
+- **Agents involved**: ux-designer, product-manager, system-architect, frontend-engineer (Define + Build), qa-engineer, competitive-researcher (read-only — coordinator wrote artifact). 6 Define artifacts + 1 synthesis delta + 1 build pass.
+- **Validation results**:
+  - Tests: 3,036 → **3,078** (+42 net: 45 new TodayGrid tests; ~17 table-assertion tests replaced/updated)
+  - Runtime: 3.39s → **4.37s** ⚠️ (per-test 0.94 → 1.42ms; under 1.5ms META §7.1 ceiling, headroom shrinking)
+  - All 10 Phase 1 ACs PASS
+  - **§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+  - CCC region count: 3 (unchanged)
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW files**:
+    - `js/ui/components/TodayGrid.js` (~251 LOC) — single-day calendar grid using `weekGridMath.js` positioning helpers
+    - `tests/ui/components/TodayGrid.test.js` (~530 LOC) — 45 tests covering hour-rail labels, block positioning, now-line, lunch-block distinction, dashed outline for PROPOSED, empty state, edge cases
+  - **Modified files**:
+    - `js/ui/components/CycleCard.js` — replaced table-style schedule render (both PROPOSED + ACCEPTED variants) with `${TodayGrid({...})}`
+    - `app.css` — new `.cycle-calendar-grid`, `.cycle-block-positioned`, `.cycle-block-proposed` (dashed), `.cycle-block-lunch` (muted gray), `.cycle-now-line` styles
+    - 6 test files updated for new render path
+  - **Component reuse strategy** (FE chose option (c)):
+    - WeekGrid.js completely untouched (zero regression risk to Week view)
+    - New TodayGrid imports shared math helpers from weekGridMath.js
+    - Architect's option (b) extraction to shared `TimeGridDay` primitive deferred until both views stable
+    - Saves ~16hr of refactor work; cleanly reversible
+  - **Click-block behavior** (FE chose dispatch-action approach):
+    - Each block has `data-action="OPEN_BLOCK_DETAIL"` + `data-payload='{"activityId":"..."}'`
+    - `role="button"`, `tabindex="0"`, `aria-label` for a11y
+    - Phase 1 ships dispatch path; Phase 2 wires popover content
+- **Spec deviations**: Zero. All locked decisions implemented as specified.
+- **Time spent**: ~6h actual (estimate was 4-6hr — at upper bound of estimate; large because tests were comprehensive).
+- **Strategic outcome**:
+  - **Phil's calendar-style Today directive achieved on the visual layer.** The Today page now renders as a familiar hour-grid calendar matching universal industry standard (Google Cal, Apple Cal, Outlook, Motion).
+  - **6/6 lens convergence** validated the table-replacement decision. Toggle was considered and rejected by all lenses.
+  - **Reuse of Sprint 15 WeekGrid math** = zero math risk. The positioning helpers are production-proven on Week view.
+  - **PROPOSED-state dashed outline** is a competitive whitespace adoption (Reclaim.ai pattern) that visually encodes BAM-X's deliberate-ratification model — no other calendar competitor does this.
+  - **Lunch block (Iter 26) gets distinct visual treatment** in calendar — muted gray instead of bucket coloring, completing the visual story.
+- **Latent issues**:
+  - **Dead code in CycleCard.js**: `renderActivityList` and `renderActivityColumnHeaders` functions are unused; `ScheduledActivityBlock` import unused. Safe dead code; no runtime impact. Cleanup deferred to Phase 2 when calendar surface confirmed stable.
+  - **Runtime crept up**: 3.39s → 4.37s (per-test 0.94 → 1.42ms). Still under META §7.1 ceiling (1.5ms) but headroom is now 5%. The 45 new TodayGrid tests are the cost; mostly necessary (positioning math + edge cases).
+  - **`ScheduledActivityBlock` source file kept**: 80+ existing tests still pass as regression guards. Will move to `_backup/` only after Phase 2 confirms calendar grid is stable.
+- **Follow-ups**:
+  - Commit + push.
+  - **CRITICAL: Deploy. Queue is now 8-deep (Iter 22-29).** META §7.7 gate doubly-violated. Phil must deploy before any further iteration ships.
+  - Phase 2 (drag-and-drop) blocked on SW-Q-CAL-01 (drag commit semantics) + SW-Q-CAL-03 (conflict policy)
+  - Phase 3 (click-empty-time) blocked on SW-Q-CAL-02 (insert behavior)
+  - Phase 2 design lesson: drag must be gated on `composition.state !== 'PROPOSED'` (Iter 28 hotfix lesson) AND blocked when `activity.state === 'IN_PROGRESS'` (QA critical edge case — plannedStartAt vs actualStartAt inconsistency).

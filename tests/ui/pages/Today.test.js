@@ -191,65 +191,63 @@ describe('Today — daysSinceSignup passthrough (Iter 25)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Iter 25 — column header labels + Update button guards
+// Iter 29 — calendar grid replaces the 6-column table
 // ---------------------------------------------------------------------------
-describe('Today — Iter 25: column headers in activity list', () => {
-  test('AC4: column header row renders "Time of Day"', () => {
+describe('Today — Iter 29: calendar grid in place of 6-column table', () => {
+  test('AC1: Today renders a calendar grid with hour rail (not a table)', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Time of Day'), 'Expected "Time of Day" column header');
+    assert.ok(html.includes('cycle-calendar-grid'), 'cycle-calendar-grid must be present (Iter 29)');
+    assert.ok(html.includes('cycle-hour-rail'), 'hour rail must be present');
+    assert.ok(!html.includes('sa-col-headers'), 'sa-col-headers must be absent (table replaced)');
   });
 
-  test('AC4: column header row renders "Focus Area"', () => {
+  test('AC2: hour rail labels render 07:00 through 19:00', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Focus Area'), 'Expected "Focus Area" column header');
+    // 13 hour labels: 07:00..19:00 inclusive.
+    assert.ok(html.includes('07:00'), 'hour rail must include 07:00');
+    assert.ok(html.includes('19:00'), 'hour rail must include 19:00');
+    assert.ok(html.includes('cycle-hour'), 'cycle-hour spans must be present');
   });
 
-  test('AC4: column header row renders "Standard Work Name"', () => {
+  test('AC3: activity blocks are absolutely positioned via inline style', () => {
     const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Standard Work Name'), 'Expected "Standard Work Name" column header');
+    // Blocks rendered with top/height inline styles for positioning.
+    assert.ok(html.includes('cycle-block-positioned'), 'cycle-block-positioned must be present');
+    assert.match(html, /style="top: \d+px; height: \d+px"/, 'blocks must have inline positioning');
   });
 
-  test('AC4: column header row renders "Planned Duration"', () => {
-    const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Planned Duration'), 'Expected "Planned Duration" column header');
-  });
-
-  test('AC4: column header row renders "Expected Output"', () => {
-    const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Expected Output'), 'Expected "Expected Output" column header');
-  });
-
-  test('AC4: column header row renders "Update" header', () => {
-    const html = Today({ activeState: ACTIVE_STATE });
-    assert.ok(html.includes('Update'), 'Expected "Update" column header');
-  });
-
-  test('AC5: column header row uses role="columnheader" semantics', () => {
-    const html = Today({ activeState: ACTIVE_STATE });
-    assert.match(html, /role="columnheader"/, 'Expected role="columnheader" for a11y');
-  });
-
-  test('AC6: non-protected activity row has an Update button in ACCEPTED state', () => {
-    // P0 fix (2026-04-30): Update button must appear in ACCEPTED state (activities
-    // are SCHEDULED and the user can legitimately adjust duration post-accept).
+  test('AC4: blocks are colored by bucket via chipClass', () => {
     const acceptedState = {
       composition: { ...ACTIVE_STATE.composition, state: 'ACCEPTED' },
       activities: ACTIVE_STATE.activities.map((a) => ({ ...a, state: 'SCHEDULED' }))
     };
     const html = Today({ activeState: acceptedState });
-    assert.match(html, /data-action="EDIT_QUICK_UPDATE"/, 'Expected EDIT_QUICK_UPDATE action on Update button in ACCEPTED state');
+    // Deep Work is PROJECT → chip-project; Daily Standup is COMMUNICATION → chip-communication.
+    assert.ok(html.includes('chip-project'), 'PROJECT block must use chip-project class');
+    assert.ok(html.includes('chip-communication'), 'COMMUNICATION block must use chip-communication class');
   });
 
-  test('AC6b: Update button is ABSENT in PROPOSED state (P0 fix guard)', () => {
+  test('AC6 (Iter 29): Update button replaced by OPEN_BLOCK_DETAIL click action on blocks', () => {
+    // Iter 29: inline Update button removed. Block click opens detail popover (OPEN_BLOCK_DETAIL).
+    // EDIT_QUICK_UPDATE is still available from the EditDrawer path.
+    const acceptedState = {
+      composition: { ...ACTIVE_STATE.composition, state: 'ACCEPTED' },
+      activities: ACTIVE_STATE.activities.map((a) => ({ ...a, state: 'SCHEDULED' }))
+    };
+    const html = Today({ activeState: acceptedState });
+    assert.ok(html.includes('OPEN_BLOCK_DETAIL'), 'OPEN_BLOCK_DETAIL action must be on calendar blocks');
+    assert.ok(!html.includes('sa-col-headers'), 'column headers must be absent');
+  });
+
+  test('AC6b (P0 guard preserved): no EDIT_QUICK_UPDATE inline in PROPOSED state', () => {
     // P0 fix (2026-04-30): Update button must NOT appear in PROPOSED state.
-    // Clicking Update→Commit on PROPOSED transitions the composition to EDITED
-    // with PROPOSED (not SCHEDULED) activities — no Accept/Start/Skip buttons
-    // are shown, leaving the user stuck. The PROPOSED triad (Accept/Edit/Reject)
-    // handles all plan decisions; Update is only meaningful post-accept.
+    // Iter 29: this guard is now trivially satisfied since the inline Update button
+    // was part of the table (removed). OPEN_BLOCK_DETAIL is used instead, and
+    // the popover can conditionally suppress Edit for PROPOSED blocks.
     const html = Today({ activeState: ACTIVE_STATE });
     assert.ok(
       !html.includes('data-action="EDIT_QUICK_UPDATE"'),
-      'Update button must NOT appear in PROPOSED state (stuck-state prevention)'
+      'EDIT_QUICK_UPDATE must not appear in PROPOSED state (stuck-state prevention preserved)'
     );
   });
 });

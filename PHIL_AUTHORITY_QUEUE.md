@@ -79,6 +79,21 @@
 
 ---
 
+## Section E — Today Calendar Conversion (PRODUCT_TODAY_CALENDAR.md)
+
+**Source**: `PRODUCT_TODAY_CALENDAR.md`
+**Blocks**: C-PM-CAL-01 through C-PM-CAL-08 (Phase 1 / Phase 2 / Phase 3)
+**Risk**: HIGH on SW-Q-CAL-01 (drag commit semantics conflicts with deliberate-ratification model)
+
+| ID | Status | Question | Default if no answer | Blocks |
+|---|---|---|---|---|
+| SW-Q-CAL-01 | OPEN | Drag commit semantics: Immediate on drop (Google Calendar pattern — writes Variance row on drag-end) OR Pending until explicit Save/Commit click (BAM-X deliberate-ratification pattern — preserves Commit/Cancel/Undo triad)? | Pending until Save | Phase 2 |
+| SW-Q-CAL-02 | OPEN | Click-empty-time slot (Phase 3): what gets inserted? (a) opens Catalog picker, (b) inserts a generic unnamed placeholder block, (c) not allowed — empty time stays empty until Auto-Plan or Edit mode | Opens Catalog picker | Phase 3 |
+| SW-Q-CAL-03 | OPEN | Conflict / overlap policy after drag: (a) auto-shift the colliding block forward, (b) show conflict warning and require manual resolution, (c) reject drop and snap block back to origin | Show warning, require manual resolution | Phase 2 |
+| SW-Q-CAL-04 | OPEN | Table toggle vs replace: retain six-column table as a secondary "List" view (toggle in CycleCard header) OR replace the table outright with the calendar grid? | Replace outright | Phase 1 |
+
+---
+
 ## Coordinator usage
 
 Before declaring work "Phil-blocked":

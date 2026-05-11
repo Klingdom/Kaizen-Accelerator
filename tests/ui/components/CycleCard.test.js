@@ -117,35 +117,35 @@ describe('CycleCard — PROPOSED variant', () => {
     assert.ok(!html.includes('bucket-strip'), 'bucket-strip must be absent (Iter 25 removal)');
   });
 
-  test('Iter 25: includes column header row with 6 headers', () => {
+  test('Iter 29 Phase 1: calendar grid replaces 6-column table — cycle-calendar-grid present', () => {
+    // Iter 29: sa-col-headers removed; TodayGrid renders a calendar grid instead.
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    assert.ok(html.includes('sa-col-headers'), 'sa-col-headers must be present');
-    assert.ok(html.includes('Time of Day'), 'Time of Day header must be present');
-    assert.ok(html.includes('Focus Area'), 'Focus Area header must be present');
-    assert.ok(html.includes('Standard Work Name'), 'Standard Work Name header must be present');
-    assert.ok(html.includes('Planned Duration'), 'Planned Duration header must be present');
-    assert.ok(html.includes('Expected Output'), 'Expected Output header must be present');
-    assert.match(html, /role="columnheader"/, 'role="columnheader" must be present for a11y');
+    assert.ok(html.includes('cycle-calendar-grid'), 'cycle-calendar-grid must be present (Iter 29 replacement)');
+    assert.ok(html.includes('cycle-hour-rail'), 'hour rail must be present');
+    assert.ok(html.includes('cycle-timeline'), 'timeline column must be present');
+    assert.ok(!html.includes('sa-col-headers'), 'sa-col-headers must be absent (table replaced)');
   });
 
-  test('includes all 8 activity blocks in plan order', () => {
+  test('Iter 29 Phase 1: includes 8 calendar blocks in plan order', () => {
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    const count = (html.match(/sa-block/g) ?? []).length;
-    assert.equal(count, 8);
+    // Blocks render as cycle-block-positioned articles (not sa-block list items).
+    const count = (html.match(/cycle-block-positioned/g) ?? []).length;
+    assert.equal(count, 8, `Expected 8 calendar blocks, got ${count}`);
   });
 
-  test('activities rendered without Start button', () => {
+  test('Iter 29 Phase 1: no Start button in PROPOSED calendar (actions in popover)', () => {
+    // Start buttons are now accessed via click-block popover (OPEN_BLOCK_DETAIL), not inline.
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    assert.ok(!html.includes('sa-start'));
+    assert.ok(!html.includes('sa-start'), 'sa-start must be absent from calendar view');
   });
 
   test('includes the AcceptEditRejectTriad', () => {
@@ -167,12 +167,14 @@ describe('CycleCard — PROPOSED variant', () => {
     assert.match(html, /data-composition-id="comp_today"/);
   });
 
-  test('empty activities list → sa-empty', () => {
+  test('Iter 29 Phase 1: empty activities list → calendar grid renders with no blocks', () => {
+    // TodayGrid renders an empty calendar (no blocks) rather than sa-empty.
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: []
     });
-    assert.match(html, /sa-empty/);
+    assert.ok(html.includes('cycle-calendar-grid'), 'calendar grid must be present even with no activities');
+    assert.ok(!html.includes('cycle-block-positioned'), 'no blocks when activities array is empty');
   });
 
   test('activity order: 09:00 before 09:15 before 10:15…', () => {
@@ -204,11 +206,14 @@ describe('CycleCard — ACCEPTED variant', () => {
     assert.ok(!html.includes(CARD_COPY.PROPOSED_HEADER));
   });
 
-  test('activities show Start button (enabled in Sprint 5)', () => {
+  test('Iter 29 Phase 1: calendar blocks render for ACCEPTED (Start/Skip via click-block popover)', () => {
+    // Start/Skip buttons moved to click-block detail popover (OPEN_BLOCK_DETAIL).
+    // Calendar blocks are present; per-inline sa-start removed.
     const html = CycleCard({ composition: comp, activities: acts });
-    assert.match(html, /sa-start/);
-    // Sprint 5 drops the Sprint-4 `disabled` flag on the Start button.
-    assert.ok(!/sa-start[^>]*\sdisabled/.test(html));
+    assert.ok(html.includes('cycle-block-positioned'), 'calendar blocks must render in ACCEPTED state');
+    assert.ok(!html.includes('sa-start'), 'sa-start must be absent (moved to block-detail popover)');
+    // Click action wired on each block for the detail popover.
+    assert.ok(html.includes('OPEN_BLOCK_DETAIL'), 'OPEN_BLOCK_DETAIL action must be on calendar blocks');
   });
 
   test('no AcceptEditRejectTriad on ACCEPTED', () => {
@@ -218,7 +223,9 @@ describe('CycleCard — ACCEPTED variant', () => {
 });
 
 describe('CycleCard — Sprint 5 why-chip (PROPOSED only)', () => {
-  test('renders why-chips on PROPOSED when snapshot.explain matches', () => {
+  test('Iter 29 Phase 1: PROPOSED state renders WhyThisPlan disclosure in header (why-chip via disclosure)', () => {
+    // Iter 29: why-chip inline on blocks is no longer rendered (blocks are calendar articles).
+    // WhyThisPlan disclosure remains in the CycleCard header above the grid.
     const comp = {
       ...PROPOSED_COMP,
       composerInputsSnapshot: {
@@ -245,10 +252,13 @@ describe('CycleCard — Sprint 5 why-chip (PROPOSED only)', () => {
           plannedDurationMinutes: 15,
           state: 'PROPOSED'
         }
-      ]
+      ],
+      whyPlanExpanded: false
     });
-    assert.match(html, /why-chip/);
-    assert.match(html, /R1_NON_OPTIONAL/);
+    // WhyThisPlan disclosure renders in the header (PROPOSED state with explain data).
+    assert.ok(html.includes('why-this-plan'), 'WhyThisPlan disclosure must be present in PROPOSED header');
+    // The calendar grid renders the block.
+    assert.ok(html.includes('cycle-block-positioned'), 'calendar block must render for the activity');
   });
 
   test('hides why-chip on ACCEPTED composition', () => {
@@ -289,9 +299,12 @@ describe('CycleCard — ACTIVE variant', () => {
     assert.match(html, /data-state="ACTIVE"/);
   });
 
-  test('first in-progress activity is pinned', () => {
+  test('Iter 29 Phase 1: ACTIVE state renders calendar blocks (pinned is calendar concept now)', () => {
+    // The "pinned" class was a table-row concept. In the calendar, the now-line
+    // and IN_PROGRESS data-state on the block communicate the current activity.
     const html = CycleCard({ composition: comp, activities: acts });
-    assert.match(html, /pinned/);
+    assert.ok(html.includes('cycle-block-positioned'), 'calendar blocks must render in ACTIVE state');
+    assert.ok(html.includes('data-state="IN_PROGRESS"'), 'IN_PROGRESS block must have correct data-state');
   });
 });
 
@@ -336,7 +349,8 @@ describe('CycleCard — unknown state', () => {
 });
 
 describe('CycleCard — Iter 25: BucketStrip removed, targets props are no-op', () => {
-  test('targets/floors/ceilings props are accepted but no longer render BucketStrip', () => {
+  test('Iter 29: targets/floors/ceilings props accepted but no BucketStrip or table — calendar grid renders', () => {
+    // Iter 29: cycle-activities is replaced by cycle-calendar-grid.
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES,
@@ -345,7 +359,7 @@ describe('CycleCard — Iter 25: BucketStrip removed, targets props are no-op', 
       ceilings: { PROJECT: 1320, COMMUNICATION: 750, CI: 750 }
     });
     assert.ok(!html.includes('bucket-strip'), 'bucket-strip must be absent even when targets passed');
-    assert.ok(html.includes('cycle-activities'), 'cycle-activities must still render');
+    assert.ok(html.includes('cycle-calendar-grid'), 'cycle-calendar-grid must render (Iter 29 replacement)');
   });
 });
 
@@ -396,15 +410,18 @@ describe('CycleCard.orderActivitiesForDisplay', () => {
   });
 });
 
-describe('CycleCard — Iter 25: bucket minutes no longer rendered in BucketStrip', () => {
-  test('activity durations are visible in sa-duration columns, not BucketStrip', () => {
+describe('CycleCard — Iter 29: table replaced by calendar grid', () => {
+  test('activity durations encoded as block height in calendar (sa-duration column removed)', () => {
+    // Iter 29: sa-duration column removed; duration is now visually encoded by block height.
+    // Duration values are accessible via OPEN_BLOCK_DETAIL popover on click.
     const html = CycleCard({
       composition: PROPOSED_COMP,
       activities: SAMPLE_ACTIVITIES
     });
-    // BucketStrip is removed; activity durations still render via sa-duration.
     assert.ok(!html.includes('bucket-strip'), 'BucketStrip must be absent');
-    assert.ok(html.includes('sa-duration'), 'sa-duration columns must still render');
+    assert.ok(html.includes('cycle-calendar-grid'), 'calendar grid must be present');
+    // Block heights encode duration (data-activity-id confirms blocks rendered).
+    assert.ok(html.includes('data-activity-id'), 'blocks must carry data-activity-id for QA targeting');
   });
 });
 

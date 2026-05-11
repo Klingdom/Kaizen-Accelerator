@@ -71,19 +71,23 @@ function extractProseText(html, cssClass) {
 // Iter 25 registry — 3 regions remain after removing adherence-dial +
 // bucket-strip. Bound updated to ≤ 4 (tight enough to catch regressions).
 //
+// Iter 29 update: cycle-activities replaced by cycle-calendar-grid (TodayGrid).
+// Registry updated; count remains 3 (header, cycle-card, cycle-calendar-grid).
+//
 // Region registry — each entry is a [name, pattern] pair. A region scores
 // +1 if its pattern is found anywhere in the HTML string.
 // ---------------------------------------------------------------------------
 const REGIONS = [
-  ['header',          /class="today-header"/],
-  ['cycle-card',      /class="cycle-card/],
-  ['cycle-activities',/class="cycle-activities"/],
+  ['header',              /class="today-header"/],
+  ['cycle-card',          /class="cycle-card/],
+  ['cycle-calendar-grid', /class="cycle-calendar-grid/],
 ];
 
-// Intentionally NOT in REGIONS (Phase A + Iter 25 removals — kept for reference):
+// Intentionally NOT in REGIONS (Phase A + Iter 25 + Iter 29 removals — kept for reference):
 //   morning-recap, rhythm-explainer, now-pane, up-next-mobile,
 //   why-this-plan (top-level), up-next-rail, eod-closure,
-//   adherence-dial, bucket-strip.
+//   adherence-dial, bucket-strip,
+//   cycle-activities (Iter 29: replaced by cycle-calendar-grid inside cycle-card).
 // WhyThisPlan and MorningRecap now render INSIDE CycleCard (counted under cycle-card).
 
 function computeCCC(html) {
@@ -160,9 +164,9 @@ function renderEmpty() {
 // ---------------------------------------------------------------------------
 
 describe('CCC — active-composition state (PROPOSED + activities)', () => {
-  test('AC-Q2: CCC ≤ 4 in active-composition state (Iter 25: 3 regions remain)', () => {
-    // Iter 25 baseline: 3 regions (header, cycle-card, cycle-activities).
-    // Bound ≤ 4 gives one slot of headroom for future additions.
+  test('AC-Q2: CCC ≤ 4 in active-composition state (Iter 29: 3 regions remain)', () => {
+    // Iter 29 baseline: 3 regions (header, cycle-card, cycle-calendar-grid).
+    // cycle-activities replaced by cycle-calendar-grid. Bound ≤ 4 preserved.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
@@ -174,7 +178,7 @@ describe('CCC — active-composition state (PROPOSED + activities)', () => {
   });
 
   test('CCC >= 3 in active-composition state (lower bound guards against silent empties)', () => {
-    // At minimum header + cycle-card + cycle-activities must be present.
+    // At minimum header + cycle-card + cycle-calendar-grid must be present.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
@@ -259,19 +263,29 @@ describe('CCC — regression guard: core regions always present in active state'
     );
   });
 
-  test('cycle-activities is a distinct CCC region (confirms activity list present)', () => {
+  test('Iter 29: cycle-calendar-grid is the CCC region replacing cycle-activities', () => {
+    // Iter 29: cycle-activities removed; calendar grid is the activity surface.
     const html = renderActiveComposition();
     assert.ok(
-      /class="cycle-activities"/.test(html),
-      'cycle-activities must be present in active-composition HTML'
+      /class="cycle-calendar-grid"/.test(html),
+      'cycle-calendar-grid must be present in active-composition HTML (Iter 29 replacement)'
+    );
+    assert.ok(
+      !/class="cycle-activities"/.test(html),
+      'cycle-activities must be absent (replaced by TodayGrid in Iter 29)'
     );
   });
 
-  test('column header row is present in active state (Iter 25 addition)', () => {
+  test('Iter 29: sa-col-headers absent (table replaced by calendar grid)', () => {
+    // Iter 29: column header row removed; calendar hour rail replaces it.
     const html = renderActiveComposition();
     assert.ok(
-      /sa-col-headers/.test(html),
-      'sa-col-headers must be present in active-composition HTML'
+      !/sa-col-headers/.test(html),
+      'sa-col-headers must be absent in active-composition HTML (Iter 29 removal)'
+    );
+    assert.ok(
+      /cycle-hour-rail/.test(html),
+      'cycle-hour-rail must be present (calendar hour labels)'
     );
   });
 });

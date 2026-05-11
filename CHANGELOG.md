@@ -6,6 +6,74 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 29 — 2026-05-07 — Today calendar Phase 1: visual calendar grid replaces table (C-PM-CAL-P1)
+
+### What changed
+User-directive feature, Phase 1 of 3-phase calendar conversion. Phil: *"have the subagents make the today page functionality more like any standard calendar scheduling feature."* Coordinator routed through 6-lens parallel Define-pass (UX + PM + Architect + FE + QA + Competitive); convergence on Phase 1 was 6/6. Synthesis at `UX_TODAY_CALENDAR_DELTA.md` scored bundle 15 (base 12 + ConvergenceBonus +3). Phil approved Path B (Phase 1 only; Phases 2 + 3 held pending SW-Q-CAL-01/03).
+
+**Replaced (table-style schedule):**
+- 6-column table-style schedule (Time of Day · Focus Area · Standard Work Name · Planned Duration · Expected Output · Update) gone from `CycleCard.js` (both PROPOSED + ACCEPTED variants)
+- Per-row `ScheduledActivityBlock` `<li>` rows no longer rendered on Today
+- Update button no longer needed in new layout (Phase 2 will reintroduce via drag affordances)
+
+**Added (calendar grid):**
+- New `js/ui/components/TodayGrid.js` (~251 LOC) — single-day calendar grid component
+- Reuses `js/ui/weekGridMath.js` positioning helpers as-is (zero changes)
+- Hour rail 07:00–19:00 (13 labels) at 60px/hour matching WeekGrid
+- Blocks absolutely positioned by `topOffsetPx` + `heightPx`
+- Bucket-colored fills via existing `bucketMeta(bucket).chipClass`
+- Red now-line via `.cycle-now-line` (matches WeekGrid `.wg-now-line` pattern)
+- Dashed outline (`cycle-block-proposed`) for PROPOSED state blocks per Reclaim.ai pattern (visually encodes ratification state)
+- Lunch block (`bucket: null` from Iter 26) renders with `cycle-block-lunch` + `chip-unknown` muted-gray treatment
+
+**Click-block behavior:**
+- Each block carries `data-action="OPEN_BLOCK_DETAIL"` + `data-payload='{"activityId":"..."}'`
+- Block has `role="button"`, `tabindex="0"`, `aria-label`
+- Dispatcher in `app.js` (existing data-action delegate) routes the click
+- Phase 2 will wire detail popover content; Phase 1 ships the dispatch path
+
+**Component reuse strategy (per FE option c):**
+- New component, WeekGrid untouched — smaller blast radius
+- Extraction to shared `TimeGridDay` primitive deferred until both views stable (architect's option (b) reserved for future)
+- Saves 16hr of refactor work; cleanly reversible
+
+### Why
+- 6/6 lens convergence: table-style schedule obscures time visually; calendar grid is universal in best-in-class scheduling tools (Google Cal, Apple Cal, Outlook, Motion, Notion Cal)
+- Reuse of weekGridMath = zero math risk
+- Phase 1 is read-only (no drag, no click-empty) → MEDIUM risk vs Phase 2's HIGH
+- §6.5 boundary preserved: zero composer/engine/types/events hits
+
+### Impact
+- Test suite: 3,036 → **3,078** (+42 net: 45 new TodayGrid tests; ~17 table-assertion tests replaced/updated)
+- Runtime: 3.39s → **4.37s** ⚠️ (per-test cost 0.94 → 1.42ms; under 1.5ms META §7.1 ceiling but headroom shrinking)
+- All 10 Phase 1 ACs PASS
+- §6.5 hits: **0**
+- CCC region count: 3 (unchanged; calendar grid is 1 region same as table was)
+
+### Dead code noted (Phase 2 cleanup)
+- `renderActivityList` and `renderActivityColumnHeaders` functions in `CycleCard.js` are now unused (never called from the PROPOSED/ACCEPTED variants)
+- `ScheduledActivityBlock` import in CycleCard.js retained for the dead functions
+- Cleanup deferred to Phase 2 when calendar surface confirmed stable and dead-code-removal is safe
+
+### Phases 2 + 3 held
+- **Phase 2** (drag-to-move + drag-to-resize) blocked on SW-Q-CAL-01 (drag commit semantics) + SW-Q-CAL-03 (conflict policy). HIGH risk per QA. **Per Iter 28 hotfix lesson, drag must be gated on `composition.state !== 'PROPOSED'` and blocked when activity.state === 'IN_PROGRESS' to prevent plannedStartAt/actualStartAt inconsistency.**
+- **Phase 3** (click-empty-time) blocked on SW-Q-CAL-02 (what gets inserted). LOW risk.
+
+### Define artifacts produced (6 lens + synthesis)
+- `UX_TODAY_CALENDAR_UX.md`
+- `PRODUCT_TODAY_CALENDAR.md` (18 ACs)
+- `ARCHITECTURE_DELTA_TODAY_CALENDAR.md` (~470 lines)
+- `UX_TODAY_CALENDAR_FRONTEND.md`
+- `UX_TODAY_CALENDAR_QA.md`
+- `UX_TODAY_CALENDAR_COMPETITIVE.md` (competitive-researcher returned content; coordinator wrote file)
+- `UX_TODAY_CALENDAR_DELTA.md` (synthesis)
+- `PHIL_AUTHORITY_QUEUE.md` Section E appended (SW-Q-CAL-01 through SW-Q-CAL-04)
+
+### Deploy gate status
+Production-deploy queue now **8-deep** (Iter 22 + 23 + 24 + 25 + 26 + 27 + 28 + 29). META §7.7 gate is doubly-violated. **Deploy is now critical-path before any further iteration ships.**
+
+---
+
 ## Iteration 28 — 2026-05-05 — P0 hotfix: Today page Accept-then-Update stuck state
 
 ### What changed
