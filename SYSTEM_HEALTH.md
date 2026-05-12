@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,078 (+513 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,106 (+541 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 720 (+117 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.42 ms/test** | ⚠️ approaching ceiling |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (5% headroom only) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.37s** | ⚠️ approaching alarm |
-| **Runtime alarm (META §7.1)** | **5.0s** | (13% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.34ms (Iter 27) → 0.94ms (Iter 28) → **1.42ms (Iter 29)** | ⚠️ oscillating high |
+| Suite count | 730 (+127 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.30 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (14% headroom — recovered) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.42ms (Iter 29) → **1.30ms (Iter 30 recovery)** | ✅ recovered |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 29 commit) | (in progress) |
-| **Production deploy queue** | **8 iterations stacked (Iter 22 + 23 + 24 + 25 + 26 + 27 + 28 + 29)** | 🚨🚨 **DOUBLY OVER GATE — deploy CRITICAL-PATH before further work** |
+| Last green commit | (pending Iter 30 commit) | (in progress) |
+| **Production deploy queue** | **9 iterations stacked (Iter 22-30)** | 🚨🚨🚨 **TRIPLY OVER GATE — deploy is now critical-path-blocker** |
 
 ---
 
@@ -105,7 +105,15 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-07 after Iteration 29 (Today calendar Phase 1 — C-PM-CAL-P1). User-directive feature; 6-lens parallel Define-pass (UX+PM+Architect+FE+QA+Competitive) on calendar-style Today; 6/6 lens convergence on Phase 1 table-replacement. Score 15 = base 12 + ConvergenceBonus +3. Phil approved Path B (Phase 1 only; Phases 2 + 3 held pending SW-Q-CAL-01/03). New `js/ui/components/TodayGrid.js` (~251 LOC) reuses production-proven `weekGridMath.js` positioning helpers; hour-rail 07:00–19:00; red now-line; bucket-colored blocks; dashed outline for PROPOSED state (Reclaim.ai pattern — competitive whitespace); muted-gray lunch block; click-block emits `OPEN_BLOCK_DETAIL` action. WeekGrid untouched per FE option (c). Suite 3,036 → 3,078 (+42 net). All 10 ACs PASS. §6.5: zero hits. **8 Define artifacts produced** (6 lens + synthesis + PHIL_AUTHORITY_QUEUE.md Section E)._
+_Last updated: 2026-05-07 after Iteration 30 (Phase 1 calendar completion — C-PM-CAL-P1b). Small completion iteration closing the click-block functionality gap left by Iter 29 (which shipped dispatch path but no handler — clicks fired silently). New `BlockDetailDialog.js` (~115 LOC) wires `OPEN_BLOCK_DETAIL` action to a lightweight focus-trapped dialog with activity name + bucket + time + duration + expected output + linked kaizen + Edit/Close affordances. 3 new action handlers (atomic `BLOCK_DETAIL_EDIT`). Reuses Iter 24 `installFocusTrap` + Iter 27 `onEscape` patterns. 10th modal surface now properly focus-trapped. Protected blocks render Edit disabled with explanatory aria-label. Suite 3,078 → 3,106 (+28). All 12 ACs PASS. §6.5: zero hits. Phase 1 calendar now functionally complete — Phil can click any block and see useful detail with Edit affordance._
+
+_✅ **Per-test cost recovered**: 1.42ms → 1.30ms (14% headroom under META §7.1 1.5ms ceiling). Runtime 4.03s (19% headroom under 5.0s alarm)._
+
+_🚨🚨🚨 **DEPLOY GATE TRIPLY VIOLATED**: queue is now 9-deep (Iter 22-30). Iter 28 P0 hotfix has been awaiting production validation since 2026-05-05 (2+ days). META §7.7 gate is now an absolute critical-path blocker — coordinator will not dispatch Iter 31 implementation until Phil deploys current queue._
+
+_Phase 2 + 3 of calendar conversion still held: Phase 2 (drag-and-drop) HIGH risk per QA, blocked on SW-Q-CAL-01 + 03. Phase 3 (click-empty-time) LOW risk, blocked on SW-Q-CAL-02. Other non-Phil-blocked items remaining: C-FE-1 BROWSER_CATALOG sync (~30 min, trivial); state.fineTune cleanup (small refactor with possible §6.5 touch)._
+
+_Iteration 29 — 2026-05-07 — Today calendar Phase 1 — C-PM-CAL-P1. User-directive feature; 6-lens parallel Define-pass (UX+PM+Architect+FE+QA+Competitive) on calendar-style Today; 6/6 lens convergence on Phase 1 table-replacement. Score 15 = base 12 + ConvergenceBonus +3. Phil approved Path B (Phase 1 only; Phases 2 + 3 held pending SW-Q-CAL-01/03). New `js/ui/components/TodayGrid.js` (~251 LOC) reuses production-proven `weekGridMath.js` positioning helpers; hour-rail 07:00–19:00; red now-line; bucket-colored blocks; dashed outline for PROPOSED state (Reclaim.ai pattern — competitive whitespace); muted-gray lunch block; click-block emits `OPEN_BLOCK_DETAIL` action. WeekGrid untouched per FE option (c). Suite 3,036 → 3,078 (+42 net). All 10 ACs PASS. §6.5: zero hits. **8 Define artifacts produced** (6 lens + synthesis + PHIL_AUTHORITY_QUEUE.md Section E)._
 
 _⚠️ **Per-test cost crept up** (0.94ms → 1.42ms; 5% headroom only under META §7.1 1.5ms ceiling) — 45 new TodayGrid tests are the cost. Mostly necessary. Watch for next iteration. Runtime 4.37s (13% headroom under 5.0s alarm). Q3 from Iter 17 per-test ms metric is the right primary metric._
 

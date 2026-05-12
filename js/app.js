@@ -78,6 +78,7 @@ import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
 import { InsightsPortfolio } from './ui/pages/InsightsPortfolio.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
+import { BlockDetailDialog } from './ui/components/BlockDetailDialog.js';
 import {
   BaselineDialog,
   extractBaselineFields
@@ -359,6 +360,8 @@ function createState() {
     //     expandedBuckets: ['PROJECT', 'COMMUNICATION', 'CI']
     //   }
     editMode: null,
+    // Iter 30 — block detail popover. null = closed; {activityId} = open.
+    blockDetail: null,
     // C-UX-12 (Iteration 14) — "Why this plan?" disclosure chip state.
     // Collapses on each new page load (plan changes daily).
     whyPlanExpanded: false,
@@ -376,7 +379,9 @@ function createState() {
       reflectionSheet: null,
       remeasurementDialog: null,
       skipReasonModal: null,
-      weeklyReflectionWizard: null
+      weeklyReflectionWizard: null,
+      // Iter 30 — block detail popover.
+      blockDetailDialog: null
     }
   };
 }
@@ -631,6 +636,13 @@ function syncDrawerFocusTraps(state, handlers = {}) {
       key: 'weeklyReflectionWizard',
       selector: '.wrw-modal',
       onEscapeAction: 'WRW_CLOSE'
+    },
+    // Iter 30 — block detail popover.
+    {
+      open: !!state.blockDetail,
+      key: 'blockDetailDialog',
+      selector: '.bdd-modal',
+      onEscapeAction: 'CLOSE_BLOCK_DETAIL'
     }
   ];
 
@@ -723,7 +735,9 @@ export function renderApp(services, state, handlers = {}) {
       catalog: catalogForEdit,
       priorDayRecap,
       eodRecap,
-      whyPlanExpanded: !!state.whyPlanExpanded
+      whyPlanExpanded: !!state.whyPlanExpanded,
+      // Iter 30: block detail popover state.
+      blockDetail: state.blockDetail ?? null
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -1275,6 +1289,70 @@ export function buildHandlers(scope) {
       }
 
       // Now select the target slot (protected slots are rejected by EDIT_SELECT_SLOT logic).
+      const target = state.editMode.activities.find((a) => a.id === activityId);
+      if (!target) { rerender(); return; }
+      if (isProtectedBlock(target)) {
+        showToast(
+          state,
+          ToastKind.INFO,
+          "This block can't be changed — it's required for your daily rhythm.",
+          rerender
+        );
+        rerender();
+        return;
+      }
+      state.editMode.selectedActivityId = activityId;
+      rerender();
+    },
+
+    // ---- Iter 30: Block detail popover ------------------------------------
+
+    OPEN_BLOCK_DETAIL(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+      state.blockDetail = { activityId: payload.activityId };
+      rerender();
+    },
+
+    CLOSE_BLOCK_DETAIL(_payload) {
+      state.blockDetail = null;
+      rerender();
+    },
+
+    // Closes the popover, enters edit mode for the owning composition, and
+    // selects the activity — reuses the EDIT_QUICK_UPDATE pattern.
+    BLOCK_DETAIL_EDIT(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+      const activityId = payload.activityId;
+
+      // Close the popover first.
+      state.blockDetail = null;
+
+      // Enter edit mode (or stay in it) using the same logic as EDIT_QUICK_UPDATE.
+      if (!state.editMode) {
+        const activeState = services.composerService.getActiveComposition(DEFAULT_USER.id);
+        if (!activeState) { rerender(); return; }
+        const compositionId = activeState.composition.id;
+        const active = services.composerService.getComposition(compositionId);
+        if (!active) { rerender(); return; }
+        const snapshot = active.activities.map((a) => ({ ...a }));
+        state.editMode = {
+          compositionId,
+          snapshotActivities: snapshot,
+          activities: snapshot.map((a) => ({ ...a })),
+          selectedActivityId: null,
+          undoStack: [],
+          searchQuery: '',
+          projectTypeFilter: 'all',
+          expandedBuckets: ['PROJECT']
+        };
+        services.bus.publish(EditDrawerOpened, {
+          userId: DEFAULT_USER.id,
+          compositionId,
+          openedAt: services.clock.now()
+        });
+      }
+
+      // Select the slot (protected slots are silently rejected per EDIT_SELECT_SLOT logic).
       const target = state.editMode.activities.find((a) => a.id === activityId);
       if (!target) { rerender(); return; }
       if (isProtectedBlock(target)) {

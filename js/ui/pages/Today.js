@@ -32,6 +32,7 @@ import { InfeasibleBanner } from '../components/InfeasibleBanner.js';
 import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
 import { EditDrawer } from '../components/EditDrawer.js';
+import { BlockDetailDialog } from '../components/BlockDetailDialog.js';
 import { validateEditState } from '../editMode.js';
 
 /**
@@ -94,7 +95,10 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *   },
  *   priorDayRecap?: {closedCount: number, totalCount: number, skippedCount: number, dateIso: string} | null,
  *   eodRecap?: {closedCount: number, totalCount: number, skippedCount: number, pendingReflectionCount: number} | null,
- *   whyPlanExpanded?: boolean
+ *   whyPlanExpanded?: boolean,
+ *   blockDetail?: {activityId: string} | null,
+ *   kaizenTitleById?: Record<string, string>,
+ *   catalog?: object[]
  * }} props
  */
 export function Today(props = {}) {
@@ -110,6 +114,8 @@ export function Today(props = {}) {
   const nowIso = props.nowIso ?? null;
   const openDialog = props.openDialog ?? null;
   const editMode = props.editMode ?? null; // null when closed; object when open
+  // Iter 30 — block detail popover.
+  const blockDetail = props.blockDetail ?? null;
   // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
   const priorDayRecap = props.priorDayRecap ?? null;
   const eodRecap = props.eodRecap ?? null;
@@ -193,6 +199,15 @@ export function Today(props = {}) {
         violations
       })
     : '';
+
+  // Iter 30 — render block detail popover when blockDetail is set.
+  const blockDetailHtml = renderBlockDetailDialog(
+    blockDetail,
+    activeState,
+    props.kaizenTitleById ?? {},
+    props.catalog ?? []
+  );
+
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
   return `<main class="${mainClass}" data-route="today">
@@ -216,7 +231,43 @@ export function Today(props = {}) {
   </div>
   ${editDrawerHtml}
   ${modal}
+  ${blockDetailHtml}
 </main>`;
+}
+
+/**
+ * Iter 30 — render the BlockDetailDialog when blockDetail is non-null.
+ *
+ * Looks up the activity from activeState.activities by id, resolves the
+ * kaizen title and catalog outputArtifact, then delegates to the pure
+ * BlockDetailDialog render function. Returns '' when the dialog is closed
+ * or the activity cannot be found.
+ *
+ * @param {{activityId: string} | null} blockDetail
+ * @param {{composition: object, activities: object[]} | null} activeState
+ * @param {Record<string, string>} kaizenTitleById
+ * @param {object[]} catalog
+ * @returns {string}
+ */
+function renderBlockDetailDialog(blockDetail, activeState, kaizenTitleById, catalog) {
+  if (!blockDetail || typeof blockDetail.activityId !== 'string') return '';
+  if (!activeState || !Array.isArray(activeState.activities)) return '';
+
+  const activity = activeState.activities.find((a) => a && a.id === blockDetail.activityId);
+  if (!activity) return '';
+
+  // Resolve kaizen title from the lookup map.
+  const kaizenTitle = activity.linkedKaizenId && kaizenTitleById[activity.linkedKaizenId]
+    ? kaizenTitleById[activity.linkedKaizenId]
+    : null;
+
+  // Resolve outputArtifact from catalog entry.
+  const catalogEntry = Array.isArray(catalog)
+    ? catalog.find((c) => c && c.id === activity.catalogEntryId) ?? null
+    : null;
+  const outputArtifact = catalogEntry?.outputArtifact ?? null;
+
+  return BlockDetailDialog({ activity, kaizenTitle, outputArtifact });
 }
 
 /**

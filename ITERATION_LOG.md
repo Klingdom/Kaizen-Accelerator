@@ -872,3 +872,41 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phase 2 (drag-and-drop) blocked on SW-Q-CAL-01 (drag commit semantics) + SW-Q-CAL-03 (conflict policy)
   - Phase 3 (click-empty-time) blocked on SW-Q-CAL-02 (insert behavior)
   - Phase 2 design lesson: drag must be gated on `composition.state !== 'PROPOSED'` (Iter 28 hotfix lesson) AND blocked when `activity.state === 'IN_PROGRESS'` (QA critical edge case — plannedStartAt vs actualStartAt inconsistency).
+
+---
+
+## Iteration 30 — 2026-05-07 — Phase 1 calendar completion: click-block detail dialog (C-PM-CAL-P1b)
+
+- **Selected item**: Small completion iteration closing Phase 1's click-block functionality gap. Iter 29 shipped the dispatch path (`OPEN_BLOCK_DETAIL`) but no handler — clicks fired but produced no visible result.
+- **Reason for selection**: User said "proceed" after Iter 29 with deploy gate-violation surfaced. Coordinator interpreted as "continue calendar work." This functional-completion gap is the most obvious next step; it makes Phase 1 actually demo-ready before deploy.
+- **Agents involved**: frontend-engineer (single-pass; no Define-pass — clear scope reusing existing patterns).
+- **Validation results**:
+  - Tests: 3,078 → **3,106** (+28 net)
+  - Runtime: 4.37s → **4.03s** ✅ (per-test 1.42 → 1.30ms; 14% headroom recovered under META §7.1 ceiling)
+  - All 12 ACs PASS
+  - **§6.5 boundary**: zero hits.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW files**:
+    - `js/ui/components/BlockDetailDialog.js` (~115 LOC) — pure render, props: `activity` + `kaizenTitle?` + `outputArtifact?`
+    - `tests/ui/components/BlockDetailDialog.test.js` (~250 LOC, 25 tests across 10 describe blocks)
+  - **Modified files**:
+    - `js/app.js` — added `blockDetail: null` state slice; `blockDetailDialog: null` focus-trap slot; `dialogConfigs[]` entry; 3 new handlers (`OPEN_BLOCK_DETAIL`, `CLOSE_BLOCK_DETAIL`, `BLOCK_DETAIL_EDIT`); blockDetail prop passed to Today
+    - `js/ui/pages/Today.js` — imports BlockDetailDialog; reads blockDetail prop; renders conditionally on active state
+    - `app.css` — ~110 lines of `.bdd-*` styles
+    - `tests/ui/pages/Today.test.js` — 3 new tests for dialog render conditional
+- **Spec deviations** (minor, both improvements):
+  - `BLOCK_DETAIL_EDIT` as single atomic handler (1 rerender) vs chained dispatches (2-3 rerenders) — same observable end-state, cleaner path
+  - Backdrop click also dispatches CLOSE — standard UX complement to Close button + Escape
+- **Time spent**: ~2h within estimate. Reuse of Iter 24/27 focus-trap patterns + Iter 25 EDIT_QUICK_UPDATE pattern = no implementation surprises.
+- **Strategic outcome**:
+  - **Phase 1 calendar functionally complete.** Click-block now opens a usable detail dialog with Edit affordance.
+  - **10 modal surfaces protected** by focus trap (joins Iter 24's EditDrawer/FineTuneDrawer + Iter 27's 8 dialogs)
+  - **Iter 24's reusable utility validated again** — `installFocusTrap` mechanically applied to the new dialog with zero modification
+  - **Phase 1 ready to demo** to users; Phase 2 (drag) becomes a meaningful upgrade not a "first time clicks work" baseline
+- **Latent issues**: None new. Iter 29's dead code in CycleCard.js still pending Phase 2 cleanup.
+- **Follow-ups**:
+  - Commit + push.
+  - **CRITICAL: Deploy. Queue is now 9-deep (Iter 22-30).** Coordinator will NOT dispatch Iter 31 implementation until Phil deploys.
+  - Phase 2 (drag-and-drop) still blocked on SW-Q-CAL-01 + SW-Q-CAL-03.
+  - Phase 3 (click-empty-time) still blocked on SW-Q-CAL-02.
+  - Other non-Phil-blocked items remaining: C-FE-1 (BROWSER_CATALOG sync — trivial); state.fineTune cleanup (small refactor).

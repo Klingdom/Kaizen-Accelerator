@@ -6,6 +6,60 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 30 — 2026-05-07 — Phase 1 calendar completion: click-block detail dialog (C-PM-CAL-P1b)
+
+### What changed
+Small completion iteration closing Phase 1's click-block functionality gap. Iter 29 shipped TodayGrid with each block emitting `data-action="OPEN_BLOCK_DETAIL"` + `data-payload='{"activityId":"..."}'` but no handler existed — clicks fired but did nothing visible. Iter 30 wires the action through to a lightweight dialog.
+
+**New component:**
+- `js/ui/components/BlockDetailDialog.js` (~115 LOC) — pure render, zero DOM access. Displays: activity name (large heading) · bucket chip · time range · planned duration · expected output (or graceful `—` when null) · linked kaizen chip if present · Edit button · Close button.
+- `tests/ui/components/BlockDetailDialog.test.js` — 25 tests across 10 describe blocks
+
+**Action handlers wired in `js/app.js`:**
+- `OPEN_BLOCK_DETAIL({activityId})` — looks up activity in active composition, sets `state.blockDetail = {activityId}`, triggers rerender
+- `CLOSE_BLOCK_DETAIL()` — clears state.blockDetail
+- `BLOCK_DETAIL_EDIT()` — atomic transition: closes dialog + enters edit mode + selects slot (single rerender vs chained dispatch — cleaner path; same observable end-state)
+
+**Accessibility (reuses Iter 24 + 27 patterns):**
+- `role="dialog"` + `aria-modal="true"` + `aria-labelledby="bdd-title"`
+- Focus trap installed via `installFocusTrap` (added to `dialogConfigs[]` in `syncDrawerFocusTraps`)
+- Escape closes via `onEscape` callback option (per Iter 27 unified focus-trap close handling)
+- Backdrop click also dispatches `CLOSE_BLOCK_DETAIL` (standard UX complement)
+- Protected blocks (Daily Standup, AM/Post-lunch Comm, Reflection) render Edit button with `aria-disabled="true"` + explanatory `aria-label="This block is required for your daily rhythm"`
+
+**CSS additions** (`app.css`):
+- `.bdd-modal`, `.bdd-backdrop`, `.bdd-panel`, `.bdd-header`, `.bdd-title`, `.bdd-btn-close`, `.bdd-body`, `.bdd-row`, `.bdd-label`, `.bdd-value`, `.bdd-chip`, `.bdd-kaizen-chip`, `.bdd-footer`, `.bdd-btn`, `.bdd-btn-edit` (~110 lines)
+
+### Why
+- Iter 29 shipped the click DISPATCH path but no HANDLER — Phil would deploy, see the calendar, click a block, and nothing visible would happen
+- This is a functional gap, not a stylistic preference; needed to close before Phase 1 felt "done"
+- Pattern is borrowed directly from existing dialogs (focus trap, action dispatch, popover styling)
+
+### Impact
+- Test suite: 3,078 → **3,106** (+28 net)
+- Runtime: 4.37s → **4.03s** ✅ (per-test 1.42 → 1.30ms; 14% headroom recovered under META §7.1 1.5ms ceiling)
+- All 12 Phase 1b ACs PASS
+- §6.5 hits: **0**
+- 10th modal surface now properly focus-trapped (joins the 9 from Iter 24-27)
+
+### Deviations from brief (minor)
+- `BLOCK_DETAIL_EDIT` action implemented as a single dedicated handler rather than chained `CLOSE_BLOCK_DETAIL` + `EDIT` + `EDIT_SELECT_SLOT` dispatches. Avoids 2 unnecessary rerenders; same observable end-state.
+- Backdrop click added as second close affordance (in addition to Close button + Escape key).
+
+### Phase 1 complete state
+Today calendar is now functionally complete on the visual + click-detail layer:
+- Visual: hour rail + bucket-colored blocks + dashed PROPOSED outlines + lunch-muted + red now-line
+- Interaction: click any block → detail dialog opens → Edit button enters edit mode OR Close/Escape/backdrop dismisses
+- Accessibility: 10 modal surfaces protected by focus trap; semantic aria throughout
+- §6.5 boundary: preserved across 4 calendar iterations (29 → 30 + paused 26 + hotfix 28)
+
+Phase 2 (drag-to-move + drag-to-resize) still blocked on SW-Q-CAL-01 + SW-Q-CAL-03. Phase 3 (click-empty-time) still blocked on SW-Q-CAL-02.
+
+### Deploy gate status (CRITICAL)
+Production-deploy queue is now **9-deep** (Iter 22-30). META §7.7 gate is now triply violated. Iter 28 P0 hotfix has been awaiting production validation since 2026-05-05. **Coordinator will not dispatch Iter 31 implementation until Phil deploys.**
+
+---
+
 ## Iteration 29 — 2026-05-07 — Today calendar Phase 1: visual calendar grid replaces table (C-PM-CAL-P1)
 
 ### What changed

@@ -323,3 +323,63 @@ describe('Today — Phase A: removed components absent from Today output (AC1–
     assert.match(html, /aria-live="polite"/, 'CycleCard header must include aria-live="polite" for current-activity announcement');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter 30 — BlockDetailDialog rendering via blockDetail prop
+// ---------------------------------------------------------------------------
+describe('Today — Iter 30: BlockDetailDialog rendered when blockDetail set', () => {
+  const ACTIVE_STATE_WITH_IDS = {
+    composition: {
+      id: 'comp_today',
+      userId: 'user_phil_mvp',
+      state: 'ACCEPTED',
+      cycleType: 'DAILY'
+    },
+    activities: [
+      {
+        id: 'sa_focus_block',
+        name: 'Deep Work Session',
+        bucket: 'PROJECT',
+        plannedDurationMinutes: 120,
+        plannedStartAt: '09:00',
+        state: 'SCHEDULED',
+        catalogEntryId: 'cat_deep_work'
+      },
+      {
+        id: 'sa_standup',
+        name: 'Daily Standup',
+        bucket: 'COMMUNICATION',
+        plannedDurationMinutes: 15,
+        plannedStartAt: '11:00',
+        state: 'SCHEDULED',
+        catalogEntryId: 'cer_daily_standup'
+      }
+    ]
+  };
+
+  test('AC3: BlockDetailDialog renders when blockDetail is non-null', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_WITH_IDS,
+      blockDetail: { activityId: 'sa_focus_block' }
+    });
+    assert.ok(html.includes('bdd-modal'), 'bdd-modal must be present when blockDetail is set');
+    assert.ok(html.includes('Deep Work Session'), 'activity name must appear in detail dialog');
+  });
+
+  test('AC3: BlockDetailDialog NOT rendered when blockDetail is null', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_WITH_IDS,
+      blockDetail: null
+    });
+    assert.ok(!html.includes('bdd-modal'), 'bdd-modal must be absent when blockDetail is null');
+  });
+
+  test('AC8: dialog has role="dialog" + aria-modal="true"', () => {
+    const html = Today({
+      activeState: ACTIVE_STATE_WITH_IDS,
+      blockDetail: { activityId: 'sa_focus_block' }
+    });
+    assert.match(html, /role="dialog"/);
+    assert.match(html, /aria-modal="true"/);
+  });
+});
