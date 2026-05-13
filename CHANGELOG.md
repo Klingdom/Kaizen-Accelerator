@@ -6,6 +6,55 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 31 — 2026-05-13 — Bucket-color theming: green / yellow / purple (C-UX-COLOR)
+
+### What changed
+User-directive feature. Phil: *"Use color themes heavily to clearly differentiate three different core activities. On today calendar make each card filled in the color for the activity. I like green for project work because it pays the bills. Yellow for communication because they are golden opportunities. And purple for continuous improvement because it is my favorite color and I am a continuous improvement expert."*
+
+**Color palette rotated:**
+
+| Bucket | Before | After | Phil's reasoning |
+|---|---|---|---|
+| PROJECT | amber `#d97706` | **green** `#16a34a` (Tailwind green-600) | "Pays the bills" |
+| COMMUNICATION | slate `#475569` | **yellow** `#ca8a04` (Tailwind yellow-600) | "Golden opportunities" |
+| CI | green `#16a34a` | **purple** `#9333ea` (Tailwind purple-600) | "My favorite + I'm a CI expert" |
+| (lunch) | muted gray | (unchanged) | Phil didn't specify |
+
+**Today calendar — saturated fills** (Option (a) per dispatch brief):
+- New CSS variables `--project-block-text`, `--communication-block-text`, `--ci-block-text` (all `#ffffff`) used exclusively by `.cycle-block-positioned.chip-*` rules
+- Calendar blocks now use `--*-fill` (saturated) as background with white text
+- Other surfaces (BucketStrip, WeekGrid, BlockDetailDialog chip, `sa-bucket-chip`) retain pale `--*-bg` tint + dark `--*-fg` text — preserves existing contrast guarantees
+
+**All contrast ratios verified WCAG AA+:**
+- PROJECT chip (#166534 on #dcfce7): 7.2:1 AAA
+- PROJECT Today block (#fff on #16a34a): 4.54:1 AA
+- COMMUNICATION chip (#713f12 on #fef9c3): 7.9:1 AAA
+- COMMUNICATION Today block (#fff on #ca8a04): 4.6:1 AA
+- CI chip (#581c87 on #f3e8ff): 9.1:1 AAA
+- CI Today block (#fff on #9333ea): 5.9:1 AA
+
+### Why
+Phil's direct visual preference. Strong color differentiation aids at-a-glance comprehension of day shape — supports the <10s comprehension latency target from Iter 20.
+
+The color rotation also has a pleasant property: green for work-that-pays is universal (US currency), yellow for high-value-comms maps to "gold," and purple — beyond Phil's preference — is widely associated with reflection/wisdom in design palettes (Notion's category-purple is used for "review/retrospective"), so the bucket-purpose alignment is intuitive.
+
+### Impact
+- Test suite: 3,106 → **3,106** (unchanged — CSS-only iteration)
+- Runtime: **3.96s** (stable; per-test 1.27ms — 15% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- Files touched: `app.css` only (single file)
+- All 12 ACs PASS
+- Time: ~25 min actual vs 1 hr estimate
+
+### Architecture validated
+The `bucketMeta.js` abstraction (single source of truth for chipClass + CSS variables) made this a mechanical CSS-variable rotation. Every surface (TodayGrid, WeekGrid, BlockDetailDialog, BucketStrip, UpNextRail dots, KaizenCard chips, MorningRecap, WhyThisPlan) inherits the new colors automatically. **Zero JS changes required.**
+
+### Deviations from brief (minor)
+- `--project-fg` is green-800 (`#166534`) rather than green-900 (`#14532d`) — already achieves 7.2:1 contrast on green-100 and is slightly less muddy. AAA compliant.
+- Two hardcoded `color: #78350f` values remain (`.carried-badge`, `.edc-in-today`) — non-bucket UI elements coincidentally using amber. Left untouched per scope.
+
+---
+
 ## Iteration 30 — 2026-05-07 — Phase 1 calendar completion: click-block detail dialog (C-PM-CAL-P1b)
 
 ### What changed

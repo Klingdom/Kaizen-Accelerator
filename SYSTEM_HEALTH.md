@@ -41,14 +41,14 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 | Tests passing | 3,106 (+541 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
 | Suite count | 730 (+127 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.30 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (14% headroom — recovered) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.42ms (Iter 29) → **1.30ms (Iter 30 recovery)** | ✅ recovered |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.96s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (21% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.42ms (Iter 29) → 1.30ms (Iter 30) → **1.27ms (Iter 31)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 30 commit) | (in progress) |
-| **Production deploy queue** | **9 iterations stacked (Iter 22-30)** | 🚨🚨🚨 **TRIPLY OVER GATE — deploy is now critical-path-blocker** |
+| Last green commit | (pending Iter 31 commit) | (in progress) |
+| **Production deploy queue** | **1 iteration (Iter 31 only — Iter 22-30 deployed 2026-05-13)** | ✅ under gate (max 4 per META §7.7) |
 
 ---
 
@@ -105,7 +105,13 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-07 after Iteration 30 (Phase 1 calendar completion — C-PM-CAL-P1b). Small completion iteration closing the click-block functionality gap left by Iter 29 (which shipped dispatch path but no handler — clicks fired silently). New `BlockDetailDialog.js` (~115 LOC) wires `OPEN_BLOCK_DETAIL` action to a lightweight focus-trapped dialog with activity name + bucket + time + duration + expected output + linked kaizen + Edit/Close affordances. 3 new action handlers (atomic `BLOCK_DETAIL_EDIT`). Reuses Iter 24 `installFocusTrap` + Iter 27 `onEscape` patterns. 10th modal surface now properly focus-trapped. Protected blocks render Edit disabled with explanatory aria-label. Suite 3,078 → 3,106 (+28). All 12 ACs PASS. §6.5: zero hits. Phase 1 calendar now functionally complete — Phil can click any block and see useful detail with Edit affordance._
+_Last updated: 2026-05-13 after Iteration 31 (Bucket-color theming — C-UX-COLOR). Phil deployed the previous 9-iteration queue (Iter 22-30) earlier today; deploy gate reset to 1. First post-deploy iteration: Phil's directive for green-PROJECT / yellow-COMMUNICATION / purple-CI color theming with saturated fills on Today calendar cards. Pure CSS rotation in `:root` block via `bucketMeta.js` abstraction — every surface (TodayGrid, WeekGrid, BucketStrip, BlockDetailDialog chip, sa-bucket-chip, UpNextRail dots, KaizenCard, MorningRecap, WhyThisPlan) inherits automatically. Today calendar blocks use saturated `--*-fill` with white text (Option a per dispatch); other surfaces retain pale tint preserving WCAG AA+ contrast. All 6 fg/bg pairs verified. Lunch chip-unknown muted-gray unchanged. Suite 3,106 (unchanged — CSS-only). All 12 ACs PASS. §6.5: zero hits. **Architecture validation**: bucketMeta abstraction made this a single-file, 25-minute, zero-JS iteration._
+
+_✅ **Deploy queue back under META §7.7 gate**: Phil deployed Iter 22-30 on 2026-05-13; only Iter 31 pending. Per-test cost stable at 1.27ms (15% headroom under 1.5ms ceiling)._
+
+_Phase 2 + 3 of calendar conversion still held: Phase 2 (drag-and-drop) HIGH risk per QA, blocked on SW-Q-CAL-01 + 03. Phase 3 (click-empty-time) LOW risk, blocked on SW-Q-CAL-02. Other non-Phil-blocked items remaining: C-FE-1 BROWSER_CATALOG sync (~30 min, trivial); state.fineTune cleanup (small refactor with possible §6.5 touch); CycleCard dead code removal (renderActivityList/renderActivityColumnHeaders/ScheduledActivityBlock import unused after Iter 29 — safe to remove now that calendar is deployed)._
+
+_Iteration 30 — 2026-05-07 — Phase 1 calendar completion: click-block detail dialog (C-PM-CAL-P1b). Small completion iteration closing the click-block functionality gap left by Iter 29 (which shipped dispatch path but no handler — clicks fired silently). New `BlockDetailDialog.js` (~115 LOC) wires `OPEN_BLOCK_DETAIL` action to a lightweight focus-trapped dialog with activity name + bucket + time + duration + expected output + linked kaizen + Edit/Close affordances. 3 new action handlers (atomic `BLOCK_DETAIL_EDIT`). Reuses Iter 24 `installFocusTrap` + Iter 27 `onEscape` patterns. 10th modal surface now properly focus-trapped. Protected blocks render Edit disabled with explanatory aria-label. Suite 3,078 → 3,106 (+28). All 12 ACs PASS. §6.5: zero hits. Phase 1 calendar now functionally complete — Phil can click any block and see useful detail with Edit affordance._
 
 _✅ **Per-test cost recovered**: 1.42ms → 1.30ms (14% headroom under META §7.1 1.5ms ceiling). Runtime 4.03s (19% headroom under 5.0s alarm)._
 

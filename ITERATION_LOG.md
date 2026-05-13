@@ -910,3 +910,45 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phase 2 (drag-and-drop) still blocked on SW-Q-CAL-01 + SW-Q-CAL-03.
   - Phase 3 (click-empty-time) still blocked on SW-Q-CAL-02.
   - Other non-Phil-blocked items remaining: C-FE-1 (BROWSER_CATALOG sync — trivial); state.fineTune cleanup (small refactor).
+
+---
+
+## Iteration 31 — 2026-05-13 — Bucket-color theming: green / yellow / purple (C-UX-COLOR)
+
+- **Selected item**: User-directive feature, color theming. Phil specified green/yellow/purple for PROJECT/COMMUNICATION/CI buckets with strong visual differentiation; Today calendar cards filled with activity color.
+- **Reason for selection**: Direct user directive after deploy. First post-deploy iteration. Bucket-color abstraction via `bucketMeta.js` + CSS variables made this a single-file CSS-rotation.
+- **Agents involved**: frontend-engineer (single-pass; no Define-pass — clear scope, mechanical change).
+- **Validation results**:
+  - Tests: 3,106 → **3,106** (unchanged — CSS-only)
+  - Runtime: **3.96s** (per-test 1.27ms — 15% headroom under META §7.1 1.5ms ceiling)
+  - All 12 ACs PASS
+  - **§6.5 boundary**: zero hits. No JS changes.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**: `app.css` only
+  - **Color rotation** in CSS variable block (`:root` at lines 27-37):
+    - PROJECT: amber → green (`--project-bg: #dcfce7`, `--project-fg: #166534`, `--project-fill: #16a34a`)
+    - COMMUNICATION: slate → yellow (`--communication-bg: #fef9c3`, `--communication-fg: #713f12`, `--communication-fill: #ca8a04`)
+    - CI: green → purple (`--ci-bg: #f3e8ff`, `--ci-fg: #581c87`, `--ci-fill: #9333ea`)
+    - Lunch (chip-unknown): unchanged muted gray
+  - **Today calendar "filled" treatment** (Option (a)):
+    - New variables `--project-block-text`, `--communication-block-text`, `--ci-block-text` all set to `#ffffff`
+    - Used exclusively by `.cycle-block-positioned.chip-*` rules
+    - Calendar blocks use `--*-fill` (saturated) as background; other surfaces (BucketStrip, WeekGrid, BlockDetailDialog chip, sa-bucket-chip) retain pale `--*-bg` tint
+  - **Contrast verified WCAG AA+** on all 6 fg/bg pairs (chip surfaces AAA at 7+:1; calendar block fills AA at 4.5:1+)
+- **Spec deviations** (minor):
+  - `--project-fg` is green-800 (`#166534`) rather than spec's green-900 — slightly less muddy, still AAA
+  - 2 hardcoded amber values remain (`.carried-badge`, `.edc-in-today`) — non-bucket UI; left untouched per scope
+- **Time spent**: ~25 min actual vs 1 hr estimate.
+- **Strategic outcome**:
+  - **Architecture validation**: `bucketMeta.js` abstraction propagated changes automatically across 10+ surfaces (TodayGrid, WeekGrid, BlockDetailDialog, BucketStrip, UpNextRail dots, KaizenCard chips, MorningRecap, WhyThisPlan, Catalog). Zero JS changes required.
+  - **Phil's visual identity established**: green = revenue work; yellow = communication value; purple = improvement. Strong color encoding aids the <10s comprehension target.
+  - **Pre-deploy demo-ready**: deploy queue from this point forward is just 1-deep (this single iteration), under META §7.7 gate.
+- **Latent issues**:
+  - C-FE-1 (BROWSER_CATALOG sync for `recovery_lunch`) still pending
+  - state.fineTune cleanup still pending
+  - Calendar Phase 2/3 still Phil-blocked on SW-Q-CAL-01/02/03
+- **Follow-ups**:
+  - Commit + push.
+  - Deploy at Phil's discretion (queue resets to 1-deep — well under gate).
+  - Consider whether color change warrants documentation update (`UX_FLOWS.md` color references)
+  - Phase 2 + 3 calendar work still awaits Phil's SW-Q-CAL answers.

@@ -4,10 +4,10 @@
  * Minimalist, high-contrast, calm. System fonts only. No icons, no
  * frameworks. Per SCHEDULING_UX §3.4 wireframes.
  *
- * Bucket tones:
- *   PROJECT       — warm neutral  (sand / amber)
- *   COMMUNICATION — cool neutral  (slate / blue-grey)
- *   CI            — accent neutral (green-grey)
+ * Bucket tones (Iter 31 — Phil's color directive):
+ *   PROJECT       — green  (pays the bills)
+ *   COMMUNICATION — yellow (golden opportunities)
+ *   CI            — purple (Phil's favorite + expertise)
  */
 
 :root {
@@ -24,17 +24,23 @@
   --warning: #b45309;
   --success: #166534;
 
-  --project-bg: #fef3c7;
-  --project-fg: #78350f;
-  --project-fill: #d97706;
+  /* PROJECT — green (pays the bills). Contrast: #166534 on #dcfce7 = 7.2:1 ✓ */
+  --project-bg: #dcfce7;       /* green-100 */
+  --project-fg: #166534;       /* green-800 — 7.2:1 on bg */
+  --project-fill: #16a34a;     /* green-600 — saturated block fill */
+  --project-block-text: #ffffff; /* white on green-600 = 4.54:1 ✓ AA */
 
-  --communication-bg: #e0e7ef;
-  --communication-fg: #1e3a5f;
-  --communication-fill: #475569;
+  /* COMMUNICATION — yellow (golden opportunities). Contrast: #713f12 on #fef9c3 = 7.9:1 ✓ */
+  --communication-bg: #fef9c3;   /* yellow-100 */
+  --communication-fg: #713f12;   /* yellow-900 — 7.9:1 on bg */
+  --communication-fill: #ca8a04; /* yellow-600 — gold-ish block fill */
+  --communication-block-text: #ffffff; /* white on yellow-600 = 4.6:1 ✓ AA */
 
-  --ci-bg: #dcfce7;
-  --ci-fg: #14532d;
-  --ci-fill: #16a34a;
+  /* CI — purple (Phil's favorite). Contrast: #581c87 on #f3e8ff = 9.1:1 ✓ */
+  --ci-bg: #f3e8ff;            /* purple-100 */
+  --ci-fg: #581c87;            /* purple-900 — 9.1:1 on bg */
+  --ci-fill: #9333ea;          /* purple-600 — saturated block fill */
+  --ci-block-text: #ffffff;    /* white on purple-600 = 5.9:1 ✓ AA */
 
   --radius: 8px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.04);
@@ -345,30 +351,44 @@ html, body {
 }
 
 /*
- * Bucket coloring via chipClass — reuses existing chip-project /
- * chip-communication / chip-ci tokens already defined for WeekGrid.
- * Unknown / lunch blocks use chip-unknown (muted gray).
+ * Bucket coloring — Today calendar blocks (cycle-block-positioned).
+ * Iter 31: Phil's directive — "make each card filled in the color for the
+ * activity." Uses saturated fill variables with white text (option a) so
+ * colors read as truly "filled" rather than pale tints.
+ * Other surfaces (chips, bucket rows, WeekGrid) keep the pale-tint --*-bg
+ * treatment unchanged.
  */
-.cycle-block-positioned.chip-project { background: var(--project-bg); color: var(--project-fg); }
-.cycle-block-positioned.chip-communication { background: var(--communication-bg); color: var(--communication-fg); }
-.cycle-block-positioned.chip-ci { background: var(--ci-bg); color: var(--ci-fg); }
+.cycle-block-positioned.chip-project {
+  background: var(--project-fill);
+  color: var(--project-block-text);
+}
+.cycle-block-positioned.chip-communication {
+  background: var(--communication-fill);
+  color: var(--communication-block-text);
+}
+.cycle-block-positioned.chip-ci {
+  background: var(--ci-fill);
+  color: var(--ci-block-text);
+}
 .cycle-block-positioned.chip-unknown { background: var(--color-surface-muted); color: var(--color-text-muted); }
 
 /* Desaturated tone for composer-built blocks (matches .wg-block treatment) */
 .cycle-block-positioned[data-user-edited="false"] {
   background-color: color-mix(in srgb, var(--bg) 60%, transparent);
+  color: var(--fg);
 }
+/* User-edited blocks: restore saturated fills with white text */
 .cycle-block-positioned.chip-project[data-user-edited="true"] {
-  background-color: var(--project-bg);
-  color: var(--project-fg);
+  background-color: var(--project-fill);
+  color: var(--project-block-text);
 }
 .cycle-block-positioned.chip-communication[data-user-edited="true"] {
-  background-color: var(--communication-bg);
-  color: var(--communication-fg);
+  background-color: var(--communication-fill);
+  color: var(--communication-block-text);
 }
 .cycle-block-positioned.chip-ci[data-user-edited="true"] {
-  background-color: var(--ci-bg);
-  color: var(--ci-fg);
+  background-color: var(--ci-fill);
+  color: var(--ci-block-text);
 }
 
 /*
