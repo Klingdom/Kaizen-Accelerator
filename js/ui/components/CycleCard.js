@@ -20,7 +20,7 @@
  *   - aria-live="polite" summary: current activity name in header
  *
  * Pure function. Takes a plain props object and returns an HTML string.
- * No DOM access. Children (BucketStrip, ScheduledActivityBlock,
+ * No DOM access. Children (BucketStrip, TodayGrid,
  * AcceptEditRejectTriad, AutoPlanButton) are composed by string
  * concatenation.
  *
@@ -39,7 +39,6 @@
 
 import { esc } from '../mount.js';
 import { parseMinutesOfDay } from '../weekGridMath.js';
-import { ScheduledActivityBlock } from './ScheduledActivityBlock.js';
 import { AcceptEditRejectTriad } from './AcceptEditRejectTriad.js';
 import { AutoPlanButton } from './AutoPlanButton.js';
 import { WhyThisPlan } from './WhyThisPlan.js';
@@ -224,55 +223,6 @@ export function orderActivitiesForDisplay(activities) {
 }
 
 /**
- * Sort the activities, then render them as a list of ScheduledActivityBlock
- * items. For ACCEPTED/ACTIVE states we pass showStart=true so the Start /
- * Skip / Close buttons render. For PROPOSED we do not — the decision
- * hasn't been made yet.
- *
- * @param {Array<object>} activities
- * @param {{
- *   showStart: boolean,
- *   pinnedId?: string,
- *   nowIso?: string,
- *   compositionState?: string,
- *   explainById?: Record<string, {ref: string, rule: string, detail: string}>,
- *   catalogById?: Record<string, object>
- * }} opts
- */
-function renderActivityList(activities, opts) {
-  const ordered = orderActivitiesForDisplay(activities);
-  if (ordered.length === 0) {
-    return '<li class="sa-empty">No activities.</li>';
-  }
-  const explainById = opts.explainById ?? {};
-  const kaizenTitleById = opts.kaizenTitleById ?? {};
-  const catalogById = opts.catalogById ?? {};
-  const editMode = !!opts.editMode;
-  const selectedActivityId = opts.selectedActivityId ?? null;
-  return ordered
-    .map((a) => {
-      // C-UX-COL: resolve outputArtifact from catalog at the caller layer.
-      // ScheduledActivityBlock is a pure render function — it does not
-      // access the catalog. We pass the pre-resolved scalar here.
-      const catalogEntry = a.catalogEntryId ? (catalogById[a.catalogEntryId] ?? null) : null;
-      const outputArtifact = catalogEntry?.outputArtifact ?? null;
-      return ScheduledActivityBlock({
-        activity: a,
-        showStart: opts.showStart,
-        pinned: opts.pinnedId === a.id,
-        nowIso: opts.nowIso,
-        compositionState: opts.compositionState,
-        explainEntry: explainById[a.catalogEntryId] ?? null,
-        kaizenTitle: a.linkedKaizenId ? (kaizenTitleById[a.linkedKaizenId] ?? null) : null,
-        editMode,
-        editSelected: editMode && selectedActivityId === a.id,
-        outputArtifact
-      });
-    })
-    .join('\n');
-}
-
-/**
  * Build a lookup {catalogEntryId → why-entry} from the composition's
  * explain snapshot. Missing snapshot → empty object.
  *
@@ -291,27 +241,6 @@ function buildExplainById(composition) {
     if (!(ref in out)) out[ref] = e;
   }
   return out;
-}
-
-/**
- * Render the schedule column header row above the activity list.
- * Uses role="row" + role="columnheader" so screen readers can navigate
- * the grid semantically without a full <table> element.
- *
- * 6 columns matching .sa-block grid-template-columns:
- *   Time of Day | Focus Area | Standard Work Name | Planned Duration | Expected Output | Update
- *
- * @returns {string}
- */
-function renderActivityColumnHeaders() {
-  return `<div class="sa-col-headers" role="row" aria-label="Schedule column headers">
-  <div class="sa-col-hdr sa-col-hdr-when" role="columnheader" aria-sort="none">Time of Day</div>
-  <div class="sa-col-hdr sa-col-hdr-bucket" role="columnheader">Focus Area</div>
-  <div class="sa-col-hdr sa-col-hdr-name" role="columnheader">Standard Work Name</div>
-  <div class="sa-col-hdr sa-col-hdr-duration" role="columnheader">Planned Duration</div>
-  <div class="sa-col-hdr sa-col-hdr-artifact" role="columnheader">Expected Output</div>
-  <div class="sa-col-hdr sa-col-hdr-update" role="columnheader">Update</div>
-</div>`;
 }
 
 /**
@@ -467,10 +396,10 @@ export function CycleCard(props = {}) {
   const whyPlanExpanded = !!props.whyPlanExpanded;
   const morningRecapExpanded = !!props.morningRecapExpanded;
 
-  // C-UX-COL: build catalogById map once here (O(n)) so renderActivityList
+  // C-UX-COL: build catalogById map once here (O(n)) so TodayGrid
   // can resolve outputArtifact per-activity without passing the full array
-  // down to the pure-render leaf (ScheduledActivityBlock). Pattern matches
-  // the existing explainById and kaizenTitleById lookups.
+  // down to each leaf. Pattern matches the existing explainById and
+  // kaizenTitleById lookups.
   const catalogById = {};
   if (Array.isArray(props.catalog)) {
     for (const entry of props.catalog) {

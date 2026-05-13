@@ -6,6 +6,38 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 32 — 2026-05-13 — Calendar transition cleanup (C-FE-1 + C-FE-2)
+
+### What changed
+Two deferred-cleanup items from the calendar transition. Both small, both bundled.
+
+**C-FE-1 — BROWSER_CATALOG sync for `recovery_lunch`** (deferred from Iter 26):
+- Added `recovery_lunch` entry to `js/catalog/browserSeed.js` (9 → 10 entries)
+- Matches the seed entry's shape: `bucket: null`, `defaultDurationMinutes: 30`, `focusArea: 'CONTINUOUS_IMPROVEMENT'`
+- Eliminates the brief window before async full-catalog hydration where lunch row would render without metadata
+- The test assertion at line 176 (`<= 10`) accommodates the new size; description string was stale but didn't need code change
+
+**C-FE-2 — CycleCard.js dead code removal** (deferred from Iter 29):
+- Removed `renderActivityList(activities, opts)` function (~40 lines)
+- Removed `renderActivityColumnHeaders()` function (~15 lines)
+- Removed `import { ScheduledActivityBlock } from './ScheduledActivityBlock.js'`
+- Removed stale comments referencing the deleted symbols (file-header JSDoc, inline catalogById comment)
+- `ScheduledActivityBlock.js` source file STAYS — preserved as regression guard for its 80+ existing tests
+
+### Why
+- Iter 29 deferred dead code removal until "calendar surface confirmed stable" — calendar in production since 2026-05-13 deploy
+- Iter 26's catalog seed entry was applied at one layer; BROWSER_CATALOG fallback was the missing layer
+- Net code reduction; zero behavior change
+
+### Impact
+- Test suite: 3,106 → **3,106** (unchanged)
+- Runtime: **3.88s** (per-test 1.25ms — 17% headroom under META §7.1 1.5ms ceiling)
+- LOC delta: **-62 in CycleCard.js + +26 in browserSeed.js = net ~-36 LOC**
+- §6.5 hits: **0** (browserSeed.js is catalog data, not in protected paths)
+- All 8 ACs PASS
+
+---
+
 ## Iteration 31 — 2026-05-13 — Bucket-color theming: green / yellow / purple (C-UX-COLOR)
 
 ### What changed

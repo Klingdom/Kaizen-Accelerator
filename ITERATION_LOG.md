@@ -952,3 +952,34 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Deploy at Phil's discretion (queue resets to 1-deep — well under gate).
   - Consider whether color change warrants documentation update (`UX_FLOWS.md` color references)
   - Phase 2 + 3 calendar work still awaits Phil's SW-Q-CAL answers.
+
+---
+
+## Iteration 32 — 2026-05-13 — Calendar transition cleanup (C-FE-1 + C-FE-2)
+
+- **Selected item**: Bundled cleanup. C-FE-1 (BROWSER_CATALOG sync for `recovery_lunch` — deferred from Iter 26) + C-FE-2 (CycleCard.js dead code removal — deferred from Iter 29). Both small (~30 min each); both natural completion of the calendar transition.
+- **Reason for selection**: Phil said "Proceed with next items" (plural). After Iter 31 color theming, these were the two highest-leverage non-Phil-blocked cleanup items. Bundle is allowed per META §6.1 (≤3 items with shared scope or sequential dependency — both items share "calendar-transition deferred cleanup" theme).
+- **Agents involved**: frontend-engineer (single-pass; clear deferred-work spec).
+- **Validation results**:
+  - Tests: 3,106 → **3,106** (unchanged)
+  - Runtime: **3.88s** (per-test 1.25ms; 17% headroom under META §7.1 1.5ms ceiling)
+  - All 8 ACs PASS
+  - **§6.5 boundary**: zero hits.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files**:
+    - `js/ui/components/CycleCard.js` — removed `renderActivityList`, `renderActivityColumnHeaders`, `ScheduledActivityBlock` import, stale comments. **-62 LOC**
+    - `js/catalog/browserSeed.js` — added `recovery_lunch` entry (10th). +26 LOC (entry + comment + header list update + "60" → "61" reference fix)
+  - **Net LOC delta**: ~-36
+  - **Component file dispositions**: `ScheduledActivityBlock.js` retained as regression guard for its 80+ existing tests (used by no current render path but preserved per FE recommendation)
+- **Spec deviations**: None.
+- **Time spent**: well under ~1 hr estimate.
+- **Strategic outcome**:
+  - **Calendar transition fully complete**. Phase 1 visual layer (Iter 29) + click-detail (Iter 30) + color theming (Iter 31) + cleanup (Iter 32) = end-to-end visual feature done.
+  - **Two latent issues closed without spec work**: clean follow-up pattern. Deferred-work bundle approach validated.
+- **Latent issues**:
+  - state.fineTune cleanup (engine-side compose-input refactor) still pending; not bundled here because it has possible §6.5 touch
+  - Phase 2 + 3 calendar still Phil-blocked
+- **Follow-ups**:
+  - Commit + push.
+  - Phase 2 + 3 still await Phil's SW-Q-CAL-01/02/03 answers
+  - state.fineTune cleanup queued as next non-Phil-blocked item

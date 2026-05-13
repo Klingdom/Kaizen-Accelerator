@@ -1,7 +1,7 @@
 /**
  * Browser-friendly catalog seed.
  *
- * The full 60-entry seed (`js/catalog/seed/index.js`) reads from a Node
+ * The full 61-entry seed (`js/catalog/seed/index.js`) reads from a Node
  * file via `node:fs`, so it can't be imported in the browser. This
  * module exports a minimal but functional set that keeps the daily
  * composer happy:
@@ -13,6 +13,7 @@
  *   - gen_deep_work_project (generic PROJECT top-up)
  *   - gen_value_added_communication (COMMUNICATION non-optional slots)
  *   - gen_end_of_activity_reflection (CI non-optional)
+ *   - recovery_lunch (capacity-neutral lunch block; Iter 32 sync)
  *
  * All entries mirror the fixture set `GOLDEN_FULL_CATALOG` in
  * `tests/fixtures/goldenDay.js`. When the full-seed pipeline becomes
@@ -197,6 +198,32 @@ export const BROWSER_CATALOG = Object.freeze([
     enabledByUser: true,
     version: 1,
     sourceRef: 'browserSeed'
+  },
+  // Iter 32: sync with full seed (ceremoniesAndGenerics.js). Capacity-neutral
+  // (bucket: null intentional — same sentinel as the full-catalog entry).
+  {
+    id: 'recovery_lunch',
+    activityNumber: null,
+    name: 'Lunch',
+    focusArea: 'CONTINUOUS_IMPROVEMENT',
+    defaultDurationMinutes: 30,
+    cadence: 'DAILY',
+    trigger: 'Default lunch window 12:00 local',
+    inputs: [],
+    outputArtifact: { name: 'Lunch (no artifact)', schema: 'TEXT', required: false },
+    participants: ['Self'],
+    procedure: [],
+    bucket: null,
+    isNonOptional: false,
+    dependsOn: [],
+    projectTypeBinding: null,
+    phaseBinding: null,
+    appliesToRoles: ['PRACTITIONER'],
+    enabledByUser: true,
+    version: 1,
+    sourceRef: 'browserSeed',
+    defaultStart: '12:00',
+    slotKind: 'LUNCH'
   },
   // Ceremonies (referenced by DAILY_NON_OPTIONAL_SET in the composer).
   {
