@@ -62,9 +62,10 @@ describe('EVENT_NAMES — includes new events', () => {
     );
   });
 
-  test('EVENT_NAMES has 39 entries (36 prior + 2 Iter-21 + 1 C-UX-COL)', () => {
+  test('EVENT_NAMES has 40 entries (36 prior + 2 Iter-21 + 1 C-UX-COL + 1 Iter-38)', () => {
     // Prior count was 36 (CycleReflowed was last). +2 Iter-21 = 38. +1 C-UX-COL = 39.
-    assert.equal(EVENT_NAMES.length, 39);
+    // Iter 38 Phase B adds CISkipConfirmed → 40.
+    assert.equal(EVENT_NAMES.length, 40);
   });
 
   test('TodayPageViewed appears after CycleReflowed in EVENT_NAMES', () => {

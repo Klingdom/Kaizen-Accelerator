@@ -466,6 +466,33 @@ function buildDay(ctx) {
 
   // --- COMMUNICATION --------------------------------------------------------
 
+  // Iter 38 Phase B: inject the POST_DEEP_COMM fixed anchor (15:30 / 15 min)
+  // before the general COMM fill so it always appears on every weekday.
+  // Uses the gen_value_added_communication catalog entry (same as AM_COMM and
+  // POST_LUNCH_COMM) with slotKind=POST_DEEP_COMM to distinguish it.
+  // Consumes 15 min from the COMMUNICATION budget first.
+  const POST_DEEP_COMM_MINUTES = 15;
+  const POST_DEEP_COMM_ANCHOR = '15:30';
+  if (remaining.COMMUNICATION >= POST_DEEP_COMM_MINUTES) {
+    const postDeepEntry = {
+      id: 'gen_value_added_communication',
+      name: 'End-of-Deep-Cycles Communication'
+    };
+    placed.push({
+      id: `sa_gen_value_added_communication_POST_DEEP_COMM_d${dayIdx}`,
+      catalogEntryId: postDeepEntry.id,
+      name: postDeepEntry.name,
+      bucket: 'COMMUNICATION',
+      plannedDurationMinutes: POST_DEEP_COMM_MINUTES,
+      plannedStartAt: POST_DEEP_COMM_ANCHOR,
+      anchor: POST_DEEP_COMM_ANCHOR,
+      slotKind: 'POST_DEEP_COMM',
+      state: 'PROPOSED',
+      sourceOfSchedule: 'COMPOSER_AUTO'
+    });
+    remaining.COMMUNICATION -= POST_DEEP_COMM_MINUTES;
+  }
+
   // Eligibility rules:
   //   DAILY cadence → always eligible.
   //   WEEKLY/SPRINT/ANCHOR → only when weeklyAnchorDay(entry) === dayIdx.

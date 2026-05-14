@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,229 (+664 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,259 (+694 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 761+ (+158 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.61-2.16 ms/test** | ⚠️ over ceiling (3-sample variance) |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | ⚠️ OVER (-7% to -44% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **5.20-6.97s** | 🚨 over alarm (variance) |
-| **Runtime alarm (META §7.1)** | **5.0s** | 🚨 OVER (-4% to -39% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.31ms (Iter 36) → **1.61-2.16ms (Iter 37, 3 samples — likely environmental)** | ⚠️ variance high; re-sample required |
+| Suite count | 770+ (+167 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom — Iter 37 variance confirmed environmental) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.15s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (17% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.31ms (Iter 36) → 1.61-2.16ms (Iter 37 environmental) → **1.27ms (Iter 38 normal)** | ✅ stable; Iter 37 variance was environmental |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 37 commit) | (in progress) |
-| **Production deploy queue** | **1 (Iter 37 only)** | ✅ under gate (max 4 per META §7.7) |
+| Last green commit | (pending Iter 38 commit) | (in progress) |
+| **Production deploy queue** | **2 (Iter 37 + 38)** | ✅ under gate (max 4 per META §7.7) |
 
 ---
 
@@ -105,7 +105,19 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-14 after Iteration 37 (Bucket strip target drift fix — C-FE-5). User-stated target loads (4h Deep Work / 2h Communication / 2h Continuous Improvement) revealed regression in Iter 33's renderBucketStrip — hardcoded PROJECT 270 / CI 240 instead of canonical BucketStrip.DEFAULT_TARGETS (240/120/120). Single-line fix: imported and used DEFAULT_TARGETS as fallback. JSDoc updated. 4 regression-locking tests added. Suite 3,225 → 3,229 (+4). All 8 ACs PASS. §6.5: zero hits._
+_Last updated: 2026-05-14 after Iteration 38 (Phase B composer rebalance — C-PM-SIMPLIFY-B). The HIGH-risk iteration meta-coordinator flagged most carefully. Phil approved SW-Q6–Q10 batch (Path A). Composer now PRODUCES 4-2-2 actual: PROJECT 240 ✓ / COMMUNICATION 120 ✓ (was 105 — Phil's 2h target hit) / CI 120 ✓ + sacredness mechanism on skip. New POST_DEEP_COMM anchor at 15:30/15 min in DAILY_NON_OPTIONAL_SET. composeWeekly mirrors. validateComposition requires + relaxConfigurable preserves + orderDay packs around. CI sacredness via SkipReasonModal CISacredConfirmBanner + new CISkipConfirmed event (39→40 events). §6.5 hits: exactly 6 as architect predicted (composeDaily, composeWeekly, validateComposition, relaxConfigurable, orderDay, events.js). capacity.js + types.js NOT touched (verified no-op). 30 new + ~8 updated tests. Suite 3,229 → 3,259. Runtime 4.15s (per-test 1.27ms — Iter 37 variance confirmed environmental). All 16 ACs PASS._
+
+_**Iter 37 runtime variance confirmed environmental**: Iter 38 baseline returned to 4.15s / 1.27ms per-test. Iter 37's 5.20-6.97s range was system-load noise, not a real regression. META §7.1 ceiling has 15% headroom restored._
+
+_Known issue — REVIEW_DAY slot conflict (LOW severity): On Fri Wk2, Sprint Retrospective (15:30/30 min CI) and new POST_DEEP_COMM (15:30/15 min COMM) both anchor at 15:30. Visual co-placement possible; validator OK; user can re-order manually. Flagged for QA; not blocking._
+
+_**Strategic milestone**: First sustained Phil-authority batch resolution. SW-Q-CAL-01/02/03/04 + SW-Q6–Q10 = 9 SW-Q items resolved within 24 hours via batch-approve workflow. META §7.5 batch-consolidation pattern vindicated._
+
+_Remaining work (all Phil-blocked):_
+_- **Phase C simplify** (SW-Q1–Q5) — no-projects discovery; requires Phil-authored content (project discovery activities, governance, approval, assignment standard work)_
+_- **META operating-model deltas** (Iter 27 §7 — 7 unapproved recommendations) — batch-approvable_
+
+_Iteration 37 — 2026-05-14 — Bucket strip target drift fix — C-FE-5. User-stated target loads (4h Deep Work / 2h Communication / 2h Continuous Improvement) revealed regression in Iter 33's renderBucketStrip — hardcoded PROJECT 270 / CI 240 instead of canonical BucketStrip.DEFAULT_TARGETS (240/120/120). Single-line fix: imported and used DEFAULT_TARGETS as fallback. JSDoc updated. 4 regression-locking tests added. Suite 3,225 → 3,229 (+4). All 8 ACs PASS. §6.5: zero hits._
 
 _⚠️ **Runtime variance flagged**: 3 samples post-Iter-37 ranged 5.20-6.97s (Iter 36 was 4.23s). 4 light new tests cannot account for 1-2s jump → likely environmental (system load, disk cache, fan throttling). Per-test 1.61-2.16ms — over META §7.1 1.5ms ceiling on all 3 samples. Recommend re-sample in next iteration; if sustained at >1.5ms, root-cause investigation needed (META §7.1)._
 

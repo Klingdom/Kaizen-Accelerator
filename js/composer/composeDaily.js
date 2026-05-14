@@ -61,6 +61,18 @@ export const DAILY_NON_OPTIONAL_SET = Object.freeze([
     name: 'Post-lunch High-value Communication',
     slotKind: 'POST_LUNCH_COMM'
   },
+  // Iter 38 Phase B (SW-Q6 / SW-Q7): End-of-deep-cycles comm anchor.
+  // Fixed at 15:30, 15 min, COMMUNICATION bucket. Brings COMM total to
+  // 15+60+30+15 = 120 min, satisfying the 4-2-2 COMMUNICATION target.
+  // slotKind POST_DEEP_COMM distinguishes this from AM_COMM / POST_LUNCH_COMM.
+  {
+    id: 'gen_value_added_communication',
+    anchor: '15:30',
+    defaultMinutes: 15,
+    bucket: 'COMMUNICATION',
+    name: 'End-of-Deep-Cycles Communication',
+    slotKind: 'POST_DEEP_COMM'
+  },
   {
     id: 'gen_end_of_activity_reflection',
     anchor: '17:00',
@@ -272,18 +284,25 @@ export function composeDaily(input) {
   const standupMinutes = standupSpec?.defaultMinutes ?? 15;
   const amSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === 'AM_COMM');
   const postSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === 'POST_LUNCH_COMM');
+  const postDeepSpec = DAILY_NON_OPTIONAL_SET.find((s) => s.slotKind === 'POST_DEEP_COMM');
   const amDefault = amSpec?.defaultMinutes ?? 60;
   const postDefault = postSpec?.defaultMinutes ?? 30;
+  const postDeepDefault = postDeepSpec?.defaultMinutes ?? 15;
 
   const commBudget = targets.COMMUNICATION;
-  const commNeeded = standupMinutes + amDefault + postDefault;
+  // Iter 38: commNeeded now includes the POST_DEEP_COMM anchor (15 min).
+  // On full-day (cap=480) budget=120: 15+60+30+15=120 exactly, no shrink needed.
+  const commNeeded = standupMinutes + amDefault + postDefault + postDeepDefault;
 
   let amMinutes = amDefault;
   let postMinutes = postDefault;
+  let postDeepMinutes = postDeepDefault;
 
   if (commNeeded > commBudget) {
+    // Shrink AM and Post-lunch proportionally; keep Standup and POST_DEEP_COMM
+    // at their defaults (POST_DEEP_COMM at 15 min is already minimal).
     const shrinkable = amDefault + postDefault;
-    const available = Math.max(0, commBudget - standupMinutes);
+    const available = Math.max(0, commBudget - standupMinutes - postDeepDefault);
     if (available <= 0) {
       amMinutes = 1;
       postMinutes = 1;
@@ -297,6 +316,7 @@ export function composeDaily(input) {
     let minutes = spec.defaultMinutes;
     if (spec.slotKind === 'AM_COMM') minutes = amMinutes;
     else if (spec.slotKind === 'POST_LUNCH_COMM') minutes = postMinutes;
+    else if (spec.slotKind === 'POST_DEEP_COMM') minutes = postDeepMinutes;
 
     const draft = materialize({
       catalogEntryId: spec.id,

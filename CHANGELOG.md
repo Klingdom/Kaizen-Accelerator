@@ -6,6 +6,68 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 38 — 2026-05-14 — Phase B composer rebalance: 4-2-2 actual + CI sacredness (C-PM-SIMPLIFY-B)
+
+### What changed
+User-directive feature. Phil approved SW-Q6–Q10 batch (Phase B). The HIGH-risk iteration meta-coordinator flagged most carefully. Composer now PRODUCES the 4-2-2 split Phil stated as target, plus introduces CI sacredness mechanism.
+
+**Composer changes — composer now hits 120 min comm (Phil's 2h target):**
+- Added `POST_DEEP_COMM` anchor to `DAILY_NON_OPTIONAL_SET` at 15:30, 15 min, COMMUNICATION bucket
+- Previous comm total: 15 (standup) + 60 (AM) + 30 (post-lunch) = 105 min ❌
+- New comm total: 15 + 60 + 30 + **15 (NEW)** = **120 min ✓**
+- `composeWeekly` mirrors the anchor on each Mon–Fri weekday
+- `orderDay` extended `CEREMONY_ANCHORS` + `ceremonyAnchorFor` + afternoon-cap guard to recognize the new anchor
+- `validateComposition` requires POST_DEEP_COMM in valid compositions
+- `relaxConfigurable` PROTECTED set extended — anchor preserved under composer relaxation
+- `capacity.js` no-op — verified the new anchor fits within existing 120-min COMM target
+
+**CI sacredness — SW-Q10 default (Option c — confirm-on-skip):**
+- New `CISkipConfirmed` event constant in `js/events/events.js` (count 39 → 40)
+- `SkipReasonModal` extended with `isCIActivity` prop + `CISacredConfirmBanner` exported pure-render function
+- When user attempts to skip a CI activity, sacred-confirm banner appears explaining the commitment
+- On confirmed skip: `CISkipConfirmed` event emitted (`{userId, activityId, reasonCode, confirmedAt}`) — telemetry only, no consumer yet (matches Iter 21 instrument-first-analyze-later pattern)
+- No-op subscriber registered in app.js init
+- ARCHITECTURE.md §6.1 documents new event payload shape
+
+**Skip handler update** (coordinator-added during validation pass, not in FE dispatch):
+- `SUBMIT_SKIP_MODAL` action handler in `app.js:2257` now checks `payload.isCIActivity` and emits `CISkipConfirmed` before showing success toast
+- Closes the AC8 wire-up gap the FE flagged in their deviations note
+
+### Why
+- Phil's stated target loads (4h/2h/2h) — composer needed to actually PRODUCE 2h comm (was 105 min)
+- CI sacredness was part of Phil's Iter 31 directive: *"Continuous improvement should be sacred for users to be thoughtful and improve their work and make their lives easier."* Phase B is the implementation.
+- Confirm-on-skip mechanism is the lowest-blast-radius option (Architect's Option c recommendation): UI-only confirmation; no engine-side hard-block; reversible later if data warrants
+
+### Impact
+- Test suite: 3,229 → **3,259** (+30 net: 30 new Iter 38 tests; ~8 assertion updates across composer/engine/event tests)
+- Runtime: **4.15s** ✅ (per-test 1.27ms — back under META §7.1 1.5ms ceiling; confirms Iter 37 5-7s readings were environmental noise)
+- §6.5 hits: **6 files** — exactly as architect predicted (composeDaily, composeWeekly, validateComposition, relaxConfigurable, orderDay, events)
+- §6.5 NOT touched: `capacity.js` (verified no-op), `types.js` (no new enum needed)
+- All 16 ACs PASS
+- New tests files (5): composeDaily.iter38, composeWeekly.iter38, validateComposition.iter38, relaxConfigurable.iter38, SkipReasonModal.iter38
+
+### Spec deviations (2 minor, both documented)
+1. **orderDay.js touched** — my dispatch brief said "Do NOT touch" but the architecture delta §7 explicitly listed it as a §6.5 hit. Per the brief's own conflict rule ("delta wins"), this was the correct call. FE made the right decision.
+2. **SW-Q6 anchor placement** — architect's delta recommended option (c) dynamic placement after last Deep block. Phil approved option (a) fixed at 15:30 (SW-Q6 default). Phil's authority overrides architect's preference.
+
+### Known issue — REVIEW_DAY slot conflict (LOW severity, flagged for QA)
+On Fri Wk2 (Sprint Review day), the existing Sprint Retrospective (15:30 / 30 min / CI bucket) and the new POST_DEEP_COMM (15:30 / 15 min / COMM bucket) both anchor at 15:30. They'll co-place visually in TodayGrid. Both are protected anchors. Functionally acceptable for MVP (validator checks bucket totals, not time conflicts). User can re-order via edit mode. Future fix: shift POST_DEEP_COMM later on REVIEW_DAY or coordinate the ceremony anchors.
+
+### INFEASIBLE rate
+No regressions observed. The new 15-min anchor fits exactly within the existing 120-min COMM target. Compositions that were FEASIBLE pre-Iter-38 remain FEASIBLE.
+
+### Backward compatibility
+Existing localStorage compositions without POST_DEEP_COMM load and render correctly. The validator runs at compose time, not load time. No migration needed.
+
+### Strategic outcome — composer now produces the stated 4-2-2 split
+- **PROJECT**: 240 min (4h) ✓
+- **COMMUNICATION**: 120 min (2h) ✓ (was 105 — NOW HITS TARGET)
+- **CI**: 120 min (2h with CI rotation blocks) ✓ + sacredness mechanism on skip
+
+Plus first sustained adoption of META §7.5 Phil-authority queue workflow (SW-Q-CAL batch + SW-Q6–Q10 batch both resolved within 24 hours).
+
+---
+
 ## Iteration 37 — 2026-05-14 — Bucket strip target drift fix (C-FE-5)
 
 ### What changed

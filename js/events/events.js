@@ -119,6 +119,25 @@ export const EditDrawerOpened = 'EditDrawerOpened';
 // Added in the Today row column refactor iteration (C-UX-COL).
 export const RowOutputClicked = 'RowOutputClicked';
 
+// --- Iter 38 Phase B: CI sacredness telemetry (SW-Q10) ----------------------
+// Fired by SkipReasonModal / app.js SUBMIT_SKIP_MODAL handler when the user
+// confirms skipping a CI-bucket activity after the sacred-confirm step.
+// Option (c) from ARCHITECTURE_DELTA_TODAY_SIMPLIFY.md §6.3 (lowest blast
+// radius — UI confirm-on-skip, no engine change).
+//
+// Payload shape:
+//   CISkipConfirmed — {
+//     userId: string,          // the acting user
+//     activityId: string,      // scheduledActivity.id being skipped
+//     catalogEntryId: string,  // catalogEntry.id (e.g. gen_end_of_activity_reflection)
+//     reasonCode: string,      // the ReasonCode chosen in SkipReasonModal
+//     confirmedAt: string      // ISO timestamp via services.clock.now()
+//   }
+//
+// No immediate consumer. Events-log instrumentation only — future
+// MetricsService will consume to detect compose-time vs skip-time CI leak.
+export const CISkipConfirmed = 'CISkipConfirmed';
+
 /**
  * Full list of MVP event names in the §6.1 declaration order. Exported so
  * tests + introspection surfaces can enumerate.
@@ -162,7 +181,8 @@ export const EVENT_NAMES = Object.freeze([
   CycleReflowed,
   TodayPageViewed,
   EditDrawerOpened,
-  RowOutputClicked
+  RowOutputClicked,
+  CISkipConfirmed
 ]);
 
 /**
@@ -208,5 +228,6 @@ export default Object.freeze({
   TodayPageViewed,
   EditDrawerOpened,
   RowOutputClicked,
+  CISkipConfirmed,
   EVENT_NAMES
 });

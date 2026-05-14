@@ -64,7 +64,8 @@ import {
   CycleReflowed,
   TodayPageViewed,
   EditDrawerOpened,
-  RowOutputClicked
+  RowOutputClicked,
+  CISkipConfirmed
 } from './events/events.js';
 import { BROWSER_CATALOG } from './catalog/browserSeed.js';
 import { getFullCatalog } from './catalog/fullCatalog.js';
@@ -2261,6 +2262,16 @@ export function buildHandlers(scope) {
       const note = fields.note ?? null;
       try {
         services.activityService.skip(payload.activityId, { reasonCode, note });
+        // Iter 38 (SW-Q10 CI sacredness): emit CISkipConfirmed when user
+        // confirms skip on a CI activity. Telemetry-only — no consumer yet.
+        if (payload.isCIActivity === true) {
+          services.bus.publish(CISkipConfirmed, {
+            userId: DEFAULT_USER.id,
+            activityId: payload.activityId,
+            reasonCode,
+            confirmedAt: services.clock.now()
+          });
+        }
         state.openDialog = null;
         showToast(state, ToastKind.SUCCESS, 'Activity skipped.', rerender);
       } catch (err) {
@@ -3145,6 +3156,7 @@ export function start() {
   // Iteration 21 (C-AN-1) — no-op subscribers; future MetricsService will consume.
   services.bus.subscribe(TodayPageViewed, () => {});
   services.bus.subscribe(EditDrawerOpened, () => {});
+  services.bus.subscribe(CISkipConfirmed, () => {}); // Iter 38 telemetry no-op subscriber
   // C-UX-COL (Q2): no-op subscriber for RowOutputClicked; future MetricsService
   // will consume for proactive artifact engagement rate metric.
   services.bus.subscribe(RowOutputClicked, () => {});

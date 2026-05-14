@@ -27,6 +27,8 @@ const PROTECTED_NAMES = Object.freeze(new Set([
   'Daily Standup',
   'AM High-value Communication',
   'Post-lunch High-value Communication',
+  // Iter 38 Phase B: POST_DEEP_COMM anchor protected by name.
+  'End-of-Deep-Cycles Communication',
   'End-of-Activity Reflection',
   'Sprint Planning',
   'Mid-Sprint Review',
@@ -53,7 +55,7 @@ function isProtected(a) {
   if (!a) return false;
   if (PROTECTED_IDS.has(a.catalogEntryId)) return true;
   if (PROTECTED_NAMES.has(a.name)) return true;
-  if (a.slotKind === 'AM_COMM' || a.slotKind === 'POST_LUNCH_COMM') return true;
+  if (a.slotKind === 'AM_COMM' || a.slotKind === 'POST_LUNCH_COMM' || a.slotKind === 'POST_DEEP_COMM') return true;
   if (a.carriedOver === true) return true; // R2 rescues survive relaxation
   // Strategic-flagged Deep payload survives.
   if (a.bucket === 'PROJECT' && a.strategic === true) return true;

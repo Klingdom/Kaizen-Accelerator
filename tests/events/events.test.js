@@ -28,6 +28,8 @@ import { EVENT_NAMES } from '../../js/events/events.js';
 // top-of-funnel latency baseline (36 + 2 = 38 total).
 // C-UX-COL column refactor adds RowOutputClicked for .sa-artifact click
 // analytics (38 + 1 = 39 total).
+// Iter 38 Phase B (SW-Q10): CISkipConfirmed for CI sacredness telemetry
+// (39 + 1 = 40 total).
 const EXPECTED = [
   'CycleProposed',
   'CycleAccepted',
@@ -67,7 +69,8 @@ const EXPECTED = [
   'CycleReflowed',
   'TodayPageViewed',
   'EditDrawerOpened',
-  'RowOutputClicked'
+  'RowOutputClicked',
+  'CISkipConfirmed'
 ];
 
 describe('events.js — every §6.1 event has a named export', () => {

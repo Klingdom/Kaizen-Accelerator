@@ -9,6 +9,12 @@
  *
  * Submit action: `SUBMIT_SKIP_MODAL` with payload {activityId} — the
  * serialized form fields are collected at dispatch time.
+ *
+ * Iter 38 Phase B (SW-Q10): CI-bucket activities render an additional
+ * sacred-confirm banner above the reason radios. When the user submits,
+ * the CI-confirm is already visible — the single submit still triggers
+ * SUBMIT_SKIP_MODAL; app.js emits CISkipConfirmed before VarianceLogged.
+ * No second modal is added (single-click confirm = lightest blast radius).
  */
 
 import { esc } from '../mount.js';
@@ -24,16 +30,40 @@ export const SKIP_REASONS = Object.freeze([
 ]);
 
 /**
+ * CI sacred-confirm banner. Rendered above the reason picker for CI-bucket
+ * activities. The user must still pick a reason and click Log skip — this
+ * banner is informational and mindfulness-prompting, not a second blocker.
+ *
+ * @returns {string}
+ */
+export function CISacredConfirmBanner() {
+  return `<aside class="srm-ci-sacred" role="note" aria-label="Continuous Improvement reminder">
+    <span class="srm-ci-sacred-icon" aria-hidden="true">⚠</span>
+    <p class="srm-ci-sacred-copy">
+      Continuous Improvement is how you make tomorrow easier than today.
+      Skipping this will be logged for reflection.
+    </p>
+  </aside>`;
+}
+
+/**
  * SkipReasonModal component.
  *
- * @param {{activityId: string, activityName?: string, selectedReason?: string}} props
+ * @param {{
+ *   activityId: string,
+ *   activityName?: string,
+ *   selectedReason?: string,
+ *   isCIActivity?: boolean
+ * }} props
  * @returns {string}
  */
 export function SkipReasonModal(props = {}) {
   const activityId = props.activityId ?? '';
   const activityName = props.activityName ?? '';
   const selected = props.selectedReason ?? '';
-  const payload = esc(JSON.stringify({ activityId }));
+  // Iter 38 Phase B: isCIActivity drives the sacred-confirm banner (SW-Q10).
+  const isCIActivity = Boolean(props.isCIActivity);
+  const payload = esc(JSON.stringify({ activityId, isCIActivity }));
 
   const radios = SKIP_REASONS
     .map((r) => {
@@ -45,12 +75,16 @@ export function SkipReasonModal(props = {}) {
     })
     .join('\n');
 
-  return `<section class="srm-modal" role="dialog" aria-modal="true" data-dialog="skip-reason" data-activity-id="${esc(activityId)}">
+  // Inject the CI sacred banner when this is a CI-bucket activity.
+  const ciSacredBanner = isCIActivity ? CISacredConfirmBanner() : '';
+
+  return `<section class="srm-modal" role="dialog" aria-modal="true" data-dialog="skip-reason" data-activity-id="${esc(activityId)}" data-is-ci="${isCIActivity}">
   <form class="srm-form" data-action="SUBMIT_SKIP_MODAL" data-payload='${payload}'>
     <header class="srm-header">
       <h2 class="srm-title">Skip: ${esc(activityName || activityId)}</h2>
       <p class="srm-intro">Pick a reason. This goes into your variance log.</p>
     </header>
+${ciSacredBanner}
     <fieldset class="srm-reasons">
 ${radios}
     </fieldset>

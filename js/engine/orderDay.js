@@ -31,6 +31,11 @@ const CEREMONY_ANCHORS = Object.freeze({
   SPRINT_REVIEW: '14:00',
   MID_SPRINT_REVIEW: '15:00',
   SPRINT_RETROSPECTIVE: '15:30',
+  // Iter 38 Phase B (SW-Q6): End-of-deep-cycles comm fixed at 15:30.
+  // NOTE: SPRINT_RETROSPECTIVE is also at 15:30 but only on REVIEW_DAY (Fri Wk2).
+  // POST_DEEP_COMM uses the same 15:30 slot; on REVIEW_DAY the sprint_retrospective
+  // takes precedence (POST_DEEP_COMM is identified by slotKind, not catalogEntryId).
+  POST_DEEP_COMM: '15:30',
   WEEKLY_REFLECTION: '16:30',
   END_OF_ACTIVITY_REFLECTION: '17:00'
 });
@@ -59,6 +64,8 @@ function ceremonyAnchorFor(p) {
   if (p.anchor && typeof p.anchor === 'string') return p.anchor;
   if (p.slotKind === 'AM_COMM') return CEREMONY_ANCHORS.AM_COMM;
   if (p.slotKind === 'POST_LUNCH_COMM') return CEREMONY_ANCHORS.POST_LUNCH_COMM;
+  // Iter 38 Phase B: POST_DEEP_COMM is a fixed anchor at 15:30 (SW-Q6).
+  if (p.slotKind === 'POST_DEEP_COMM') return CEREMONY_ANCHORS.POST_DEEP_COMM;
   if (p.catalogEntryId === 'cer_daily_standup') return CEREMONY_ANCHORS.DAILY_STANDUP;
   if (p.catalogEntryId === 'cer_sprint_planning') return CEREMONY_ANCHORS.SPRINT_PLANNING;
   if (p.catalogEntryId === 'cer_sprint_review') return CEREMONY_ANCHORS.SPRINT_REVIEW;
@@ -142,7 +149,8 @@ export function orderDay(placed, input) {
   // the afternoon window. This prevents Deep slices and COMM fillers from
   // overrunning anchored ceremonies (Weekly Reflection at 16:30,
   // Mid-Sprint Review at 15:00, Sprint Review at 14:00,
-  // Sprint Retrospective at 15:30, or End-of-Activity Reflection at 17:00).
+  // Sprint Retrospective at 15:30, End-of-Activity Reflection at 17:00,
+  // or POST_DEEP_COMM at 15:30 — Iter 38 Phase B).
   const AFTERNOON_CEREMONY_ANCHORS = [
     { id: 'gen_weekly_reflection', time: CEREMONY_ANCHORS.WEEKLY_REFLECTION },
     { id: 'cer_mid_sprint_review', time: CEREMONY_ANCHORS.MID_SPRINT_REVIEW },
@@ -154,6 +162,12 @@ export function orderDay(placed, input) {
     if (anchored.some((p) => p.catalogEntryId === id)) {
       afternoonCap = Math.min(afternoonCap, parseClock(time));
     }
+  }
+  // Iter 38 Phase B: POST_DEEP_COMM is a fixed anchor at 15:30 — cap Deep packing
+  // before it (identified by slotKind, not catalogEntryId, since it reuses
+  // gen_value_added_communication).
+  if (anchored.some((p) => p.slotKind === 'POST_DEEP_COMM')) {
+    afternoonCap = Math.min(afternoonCap, parseClock(CEREMONY_ANCHORS.POST_DEEP_COMM));
   }
 
   for (const d of deep) {

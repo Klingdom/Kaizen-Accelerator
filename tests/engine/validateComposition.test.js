@@ -29,12 +29,16 @@ function act({ name = 'a', bucket = 'PROJECT', minutes = 60 } = {}) {
 /**
  * Build a fully valid daily composition for a full-day user (cap=480, ext=0).
  * Targets: PROJECT=240, COMMUNICATION=120, CI=120.
+ *
+ * Iter 38 Phase B: added End-of-Deep-Cycles Communication (15 min, POST_DEEP_COMM)
+ * so validDay() includes all 5 DAILY_NON_OPTIONAL_NAMES. COMM = 15+60+30+15 = 120.
  */
 function validDay() {
   return [
     act({ name: 'Daily Standup', bucket: 'COMMUNICATION', minutes: 15 }),
     act({ name: 'AM High-value Communication', bucket: 'COMMUNICATION', minutes: 60 }),
     act({ name: 'Post-lunch High-value Communication', bucket: 'COMMUNICATION', minutes: 30 }),
+    act({ name: 'End-of-Deep-Cycles Communication', bucket: 'COMMUNICATION', minutes: 15 }),
     act({ name: 'Deep Work slice 1', bucket: 'PROJECT', minutes: 120 }),
     act({ name: 'Deep Work slice 2', bucket: 'PROJECT', minutes: 120 }),
     act({ name: 'CI rotation A', bucket: 'CI', minutes: 60 }),
@@ -55,7 +59,8 @@ describe('validateComposition — OK path', () => {
     assert.equal(out.failureCode, null);
     assert.equal(out.detail.shape_4_2_2.ok, true);
     assert.equal(out.detail.shape_4_2_2.projectMin, 240);
-    assert.equal(out.detail.shape_4_2_2.commMin, 105);
+    // Iter 38 Phase B: COMM now includes POST_DEEP_COMM (15 min) → 15+60+30+15=120.
+    assert.equal(out.detail.shape_4_2_2.commMin, 120);
     assert.equal(out.detail.shape_4_2_2.ciMin, 120);
   });
 });
@@ -291,9 +296,11 @@ describe('validateComposition — requiredNonOptionals helper', () => {
     assert.ok(missing.includes('Deep Work'));
   });
 
-  test('DAILY_NON_OPTIONAL_NAMES lists the 4 canonical names', () => {
-    assert.equal(DAILY_NON_OPTIONAL_NAMES.length, 4);
+  test('DAILY_NON_OPTIONAL_NAMES lists the 5 canonical names (Iter 38 Phase B: +POST_DEEP_COMM)', () => {
+    // Iter 38 Phase B: added 'End-of-Deep-Cycles Communication' → 5 total.
+    assert.equal(DAILY_NON_OPTIONAL_NAMES.length, 5);
     assert.ok(DAILY_NON_OPTIONAL_NAMES.includes('Daily Standup'));
+    assert.ok(DAILY_NON_OPTIONAL_NAMES.includes('End-of-Deep-Cycles Communication'));
     assert.ok(DAILY_NON_OPTIONAL_NAMES.includes('End-of-Activity Reflection'));
   });
 

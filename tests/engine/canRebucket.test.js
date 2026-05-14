@@ -27,6 +27,9 @@ function block(overrides = {}) {
 /**
  * Build a balanced daily composition that just passes validation.
  * Targets (full-day, ext=0): PROJECT=240, COMMUNICATION=120, CI=120.
+ *
+ * Iter 38 Phase B: added POST_DEEP_COMM (15 min COMMUNICATION) to satisfy
+ * the new DAILY_NON_OPTIONAL_NAMES requirement. COMM = 15+60+30+15 = 120.
  */
 function balancedComposition() {
   return {
@@ -38,6 +41,7 @@ function balancedComposition() {
       block({ id: 'sa_standup', catalogEntryId: 'cer_daily_standup', name: 'Daily Standup', bucket: 'COMMUNICATION', plannedDurationMinutes: 15 }),
       block({ id: 'sa_am', catalogEntryId: 'gen_value_added_communication', slotKind: 'AM_COMM', name: 'AM High-value Communication', bucket: 'COMMUNICATION', plannedDurationMinutes: 60 }),
       block({ id: 'sa_post', catalogEntryId: 'gen_value_added_communication', slotKind: 'POST_LUNCH_COMM', name: 'Post-lunch High-value Communication', bucket: 'COMMUNICATION', plannedDurationMinutes: 30 }),
+      block({ id: 'sa_post_deep', catalogEntryId: 'gen_value_added_communication', slotKind: 'POST_DEEP_COMM', name: 'End-of-Deep-Cycles Communication', bucket: 'COMMUNICATION', plannedDurationMinutes: 15 }),
       block({ id: 'sa_deep_1', name: 'Deep 1', bucket: 'PROJECT', plannedDurationMinutes: 120 }),
       block({ id: 'sa_deep_2', name: 'Deep 2', bucket: 'PROJECT', plannedDurationMinutes: 120 }),
       block({ id: 'sa_ci_extra', name: 'L&D', bucket: 'CI', plannedDurationMinutes: 60 }),

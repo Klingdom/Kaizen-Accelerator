@@ -42,6 +42,8 @@ export const DAILY_NON_OPTIONAL_NAMES = Object.freeze([
   'Daily Standup',
   'AM High-value Communication',
   'Post-lunch High-value Communication',
+  // Iter 38 Phase B: new POST_DEEP_COMM anchor required in every valid daily composition.
+  'End-of-Deep-Cycles Communication',
   'End-of-Activity Reflection'
 ]);
 

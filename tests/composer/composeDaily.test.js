@@ -130,12 +130,17 @@ describe('composeDaily — STEP 2: non-optional placement', () => {
     const out = composeDaily(input);
     const am = out.placed.find((p) => p.slotKind === 'AM_COMM');
     const post = out.placed.find((p) => p.slotKind === 'POST_LUNCH_COMM');
+    const postDeep = out.placed.find((p) => p.slotKind === 'POST_DEEP_COMM');
     assert.ok(am);
     assert.ok(post);
-    // Standup 15 + AM + Post = COMM target 60; AM+Post = 45 total.
-    assert.equal(am.plannedDurationMinutes + post.plannedDurationMinutes, 45);
+    assert.ok(postDeep);
+    // Iter 38 Phase B: commNeeded = 15(standup) + 60(am) + 30(post) + 15(postDeep) = 120 > budget 60.
+    // Shrink available = 60 - 15(standup) - 15(postDeep) = 30. AM+Post sum = 30.
+    assert.equal(am.plannedDurationMinutes + post.plannedDurationMinutes, 30);
     assert.ok(am.plannedDurationMinutes >= 1);
     assert.ok(post.plannedDurationMinutes >= 1);
+    // POST_DEEP_COMM stays at its 15-min default (not shrunk).
+    assert.equal(postDeep.plannedDurationMinutes, 15);
   });
 
   test('full-budget day keeps AM=60, Post=30', () => {
@@ -241,16 +246,18 @@ describe('composeDaily — input validation', () => {
 });
 
 describe('composeDaily — DAILY_NON_OPTIONAL_SET shape', () => {
-  test('exports 4 entries (Standup, AM Comm, Post Comm, End-of-Activity Reflection)', () => {
-    assert.equal(DAILY_NON_OPTIONAL_SET.length, 4);
+  test('exports 5 entries (Standup, AM Comm, Post Comm, POST_DEEP_COMM, End-of-Activity Reflection)', () => {
+    // Iter 38 Phase B: added POST_DEEP_COMM anchor → 5 total.
+    assert.equal(DAILY_NON_OPTIONAL_SET.length, 5);
   });
 
-  test('2 Communication + 1 CI + 1 Communication Standup → 3 COMM + 1 CI', () => {
+  test('4 COMMUNICATION + 1 CI (Iter 38 Phase B: +POST_DEEP_COMM)', () => {
     const byBucket = {};
     for (const s of DAILY_NON_OPTIONAL_SET) {
       byBucket[s.bucket] = (byBucket[s.bucket] ?? 0) + 1;
     }
-    assert.equal(byBucket.COMMUNICATION, 3);
+    // Iter 38 Phase B: Standup + AM_COMM + POST_LUNCH_COMM + POST_DEEP_COMM = 4 COMM; 1 CI.
+    assert.equal(byBucket.COMMUNICATION, 4);
     assert.equal(byBucket.CI, 1);
   });
 });
