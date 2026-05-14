@@ -210,9 +210,32 @@ export function Today(props = {}) {
 
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
-  return `<main class="${mainClass}" data-route="today">
-  ${header}
-  <div class="today-body">
+  // Iter 33: bucket strip in right margin (AC9). Only shown when not editing.
+  const bucketStripHtml = !isEditing
+    ? renderBucketStrip(activitiesForRender, compositionForRender)
+    : '';
+
+  // Iter 33: use flex layout with bucket strip alongside grid (AC9).
+  const bodyWrapper = bucketStripHtml
+    ? `<div class="today-body-with-strip">
+    <div class="today-grid-col">
+      ${CycleCard({
+        composition: compositionForRender,
+        activities: activitiesForRender,
+        nowIso,
+        kaizenTitleById: props.kaizenTitleById ?? {},
+        catalog: props.catalog ?? [],
+        editMode: isEditing,
+        selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
+        undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
+        priorDayRecap,
+        eodRecap,
+        whyPlanExpanded
+      })}
+    </div>
+    ${bucketStripHtml}
+  </div>`
+    : `<div class="today-body">
     <div class="today-card-col">
       ${CycleCard({
         composition: compositionForRender,
@@ -228,11 +251,77 @@ export function Today(props = {}) {
         whyPlanExpanded
       })}
     </div>
-  </div>
+  </div>`;
+
+  return `<main class="${mainClass}" data-route="today">
+  ${header}
+  ${bodyWrapper}
   ${editDrawerHtml}
   ${modal}
   ${blockDetailHtml}
 </main>`;
+}
+
+/**
+ * Iter 33 — render right-margin bucket summary strip (AC9).
+ * Computes minutes-per-bucket from the activities array. Target values are
+ * looked up from the composition's targets snapshot when available, otherwise
+ * sensible defaults (PROJECT 270m, COMMUNICATION 120m, CI 240m) are used.
+ *
+ * @param {object[]} activities
+ * @param {object} composition
+ * @returns {string}
+ */
+function renderBucketStrip(activities, composition) {
+  if (!Array.isArray(activities) || activities.length === 0) return '';
+
+  // Compute actual minutes per bucket.
+  const totals = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
+  for (const a of activities) {
+    const b = a.bucket;
+    if (b && b in totals) {
+      totals[b] += Number(a.plannedDurationMinutes ?? 0);
+    }
+  }
+
+  // Target minutes — from composition targets if present, else defaults.
+  const targetMins = {
+    PROJECT:       composition?.targets?.PROJECT       ?? 270,
+    COMMUNICATION: composition?.targets?.COMMUNICATION ?? 120,
+    CI:            composition?.targets?.CI            ?? 240,
+  };
+
+  function fmtMins(mins) {
+    if (mins === 0) return '0m';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  }
+
+  function bucketRow(bucketKey, displayName, cssNameClass, fillClass) {
+    const actual = totals[bucketKey] ?? 0;
+    const target = targetMins[bucketKey] ?? 1;
+    const pct = Math.min(Math.round((actual / target) * 100), 100);
+    return `<div class="cycle-bucket-row">
+      <div class="cycle-bucket-row-label">
+        <span class="cycle-bucket-name ${esc(cssNameClass)}">${esc(displayName)}</span>
+        <span class="cycle-bucket-value">${esc(fmtMins(actual))}</span>
+      </div>
+      <div class="cycle-bucket-track">
+        <div class="cycle-bucket-fill ${esc(fillClass)}" style="width: ${pct}%" aria-hidden="true"></div>
+      </div>
+      <p class="cycle-bucket-sub">target ${esc(fmtMins(target))}</p>
+    </div>`;
+  }
+
+  return `<aside class="cycle-bucket-strip" aria-label="Bucket capacity summary">
+  <p class="cycle-bucket-strip-heading">Today's Load</p>
+  ${bucketRow('PROJECT', 'Deep Work', 'cycle-bucket-name-project', 'cycle-bucket-fill-project')}
+  ${bucketRow('COMMUNICATION', 'Comms', 'cycle-bucket-name-communication', 'cycle-bucket-fill-communication')}
+  ${bucketRow('CI', 'CI', 'cycle-bucket-name-ci', 'cycle-bucket-fill-ci')}
+</aside>`;
 }
 
 /**

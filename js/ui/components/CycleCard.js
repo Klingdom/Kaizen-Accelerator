@@ -46,6 +46,30 @@ import { MorningRecap } from './MorningRecap.js';
 import { TodayGrid } from './TodayGrid.js';
 
 /**
+ * Iter 33: Format a YYYY-MM-DD string as "Thursday, 30 April 2026" for
+ * the DM Serif Display date heading (AC4).
+ *
+ * @param {string} dateIso — "YYYY-MM-DD"
+ * @returns {string}
+ */
+function formatDateDisplay(dateIso) {
+  if (!dateIso || typeof dateIso !== 'string') return '';
+  // Parse without timezone offset by treating as local midnight.
+  const parts = dateIso.split('-');
+  if (parts.length !== 3) return dateIso;
+  const [y, m, d] = parts.map(Number);
+  // Build a local date. Use a specific known date to prevent DST shifts.
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return dateIso;
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+/**
  * Edit-mode triad: Commit / Cancel / Undo. Rendered in place of
  * AcceptEditRejectTriad while `editMode === true`.
  *
@@ -250,6 +274,9 @@ function buildExplainById(composition) {
  * TodayGrid (single-day calendar grid). The table (sa-col-headers + ul.cycle-activities)
  * is removed. All existing header/triad/footer chrome is preserved unchanged.
  *
+ * Iter 33: date heading wrapped in h1.cycle-date-display for DM Serif Display (AC4).
+ * PROPOSED state banner added above grid (AC19).
+ *
  * In edit mode the calendar grid is still rendered (read-only display of the
  * draft activities); the EditDrawer rendered by Today.js provides the swap UI.
  */
@@ -272,6 +299,19 @@ function renderProposed(composition, activities, extras = {}) {
     : renderMorningRecapDisclosure(extras.priorDayRecap ?? null);
   const eodFooter = renderEodFooterCta(extras.eodRecap ?? null);
 
+  // Iter 33: date heading in DM Serif Display (AC4).
+  const dateDisplay = composition.date
+    ? `<h1 class="cycle-date-display">${esc(formatDateDisplay(composition.date))}</h1>
+    <p class="cycle-date-sub">PROPOSED</p>`
+    : `<h1 class="cycle-title">${esc(editMode ? 'Edit today' : CARD_COPY.PROPOSED_HEADER)}</h1>
+    <p class="cycle-intro">${esc(editMode ? 'Tap a slot on the left, then pick a swap on the right.' : CARD_COPY.PROPOSED_INTRO)}</p>`;
+
+  // Iter 33: PROPOSED state banner (AC19).
+  const proposedBanner = !editMode ? `<div class="cycle-proposed-banner" role="note" aria-label="Plan status: proposed">
+    <span class="cycle-proposed-banner-icon">PROPOSED</span>
+    Your day plan is ready for review. Dashed-border blocks are proposals — accept to commit.
+  </div>` : '';
+
   // Iter 29 Phase 1 — calendar grid replaces the table.
   const calendarGrid = TodayGrid({
     composition,
@@ -284,11 +324,11 @@ function renderProposed(composition, activities, extras = {}) {
 
   return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="PROPOSED">
   <header class="cycle-header">
-    <h1 class="cycle-title">${esc(editMode ? 'Edit today' : CARD_COPY.PROPOSED_HEADER)}</h1>
-    <p class="cycle-intro">${esc(editMode ? 'Tap a slot on the left, then pick a swap on the right.' : CARD_COPY.PROPOSED_INTRO)}</p>
+    ${dateDisplay}
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>
+  ${proposedBanner}
   <div class="cycle-calendar-grid-wrap">
     ${calendarGrid}
   </div>
@@ -333,9 +373,14 @@ function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitle
     compositionState: compState,
   });
 
+  // Iter 33: date heading in DM Serif Display (AC4).
+  const dateDisplay = composition.date && !edit
+    ? `<h1 class="cycle-date-display">${esc(formatDateDisplay(composition.date))}</h1>`
+    : `<h1 class="cycle-title">${esc(edit ? 'Edit today' : (isActive ? CARD_COPY.ACTIVE_HEADER : CARD_COPY.ACCEPTED_HEADER))}</h1>`;
+
   return `<article class="${cardClass}" data-composition-id="${esc(compId)}" data-state="${isActive ? 'ACTIVE' : 'ACCEPTED'}">
   <header class="cycle-header">
-    <h1 class="cycle-title">${esc(edit ? 'Edit today' : (isActive ? CARD_COPY.ACTIVE_HEADER : CARD_COPY.ACCEPTED_HEADER))}</h1>
+    ${dateDisplay}
     <span class="cycle-now-summary" aria-live="polite" aria-atomic="true">${esc(nowActivitySummary)}</span>
 ${morningDisclosure ? `    ${morningDisclosure}` : ''}${whyDisclosure ? `\n    ${whyDisclosure}` : ''}
   </header>

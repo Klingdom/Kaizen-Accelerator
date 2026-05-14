@@ -90,6 +90,10 @@ export function BlockDetailDialog(props = {}) {
     ? `<span class="bdd-kaizen-chip chip-ci" aria-label="part of Kaizen ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
     : '';
 
+  // Iter 33: bucket color accent bar at top of dialog (AC13).
+  const colorBarClass = bucket ? `bdd-color-bar bdd-color-bar-${bucketChipClass.replace('chip-', '')}` : '';
+  const colorBar = colorBarClass ? `<div class="${esc(colorBarClass)}" aria-hidden="true"></div>` : '';
+
   return `<section
   class="bdd-modal"
   role="dialog"
@@ -99,6 +103,7 @@ export function BlockDetailDialog(props = {}) {
 >
   <div class="bdd-backdrop" data-action="CLOSE_BLOCK_DETAIL" data-payload='${closePayload}' aria-hidden="true"></div>
   <div class="bdd-panel">
+    ${colorBar}
     <header class="bdd-header">
       <h2 class="bdd-title" id="bdd-title">${esc(name)}</h2>
       <button

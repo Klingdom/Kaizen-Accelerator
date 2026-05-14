@@ -77,12 +77,13 @@ function formatHHMM(value) {
  *   gridStartHour:     number,
  *   rowHeightPx:       number,
  *   kaizenTitleById:   Record<string, string>,
- *   isProposed:        boolean
+ *   isProposed:        boolean,
+ *   blockIndex:        number
  * }} ctx
  * @returns {string}
  */
 function renderTodayBlock(ctx) {
-  const { activity, gridStartHour, rowHeightPx, kaizenTitleById, isProposed } = ctx;
+  const { activity, gridStartHour, rowHeightPx, kaizenTitleById, isProposed, blockIndex } = ctx;
 
   const startValue = activity.plannedStartAt ?? activity.anchor ?? null;
   const top = topOffsetPx(startValue, gridStartHour, rowHeightPx);
@@ -123,13 +124,14 @@ function renderTodayBlock(ctx) {
   const activityId = activity.id ?? '';
   const activityState = activity.state ?? '';
 
-  // Kaizen chip.
+  // Kaizen chip — Iter 33: glow-ring class on blocks with kaizen links (AC10).
   const kaizenId = activity.linkedKaizenId ?? null;
   const kaizenTitle = kaizenId && kaizenTitleById && kaizenTitleById[kaizenId]
     ? kaizenTitleById[kaizenId]
     : null;
+  const kaizenLinkedAttr = kaizenId ? ' data-kaizen-linked="true"' : '';
   const kaizenChip = kaizenTitle
-    ? `<span class="cycle-block-kaizen" aria-label="part of Kaizen ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
+    ? `<span class="cycle-block-kaizen cycle-block-kaizen-linked" aria-label="part of Kaizen ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
     : '';
 
   // Accessible aria-label matching AC18.
@@ -145,13 +147,17 @@ function renderTodayBlock(ctx) {
   // Click action — emits OPEN_BLOCK_DETAIL so app.js can open the detail popover.
   const payload = JSON.stringify({ activityId });
 
+  // Iter 33: staggered animation-delay per block index (AC11). Cap at 6 blocks.
+  const staggerMs = Math.min(blockIndex, 6) * 60 + 120;
+
   return `<article
     class="cycle-block-positioned ${esc(bucketChipClass)}${proposedClass}${lunchClass}"
-    style="top: ${top}px; height: ${h}px"
+    style="top: ${top}px; height: ${h}px; animation-delay: ${staggerMs}ms"
     data-activity-id="${esc(activityId)}"
     data-bucket="${esc(bucket ?? '')}"
     data-state="${esc(activityState)}"
     data-user-edited="${userEdited ? 'true' : 'false'}"
+    data-block-index="${blockIndex}"${kaizenLinkedAttr}
     role="button"
     tabindex="0"
     aria-label="${esc(ariaLabel)}"
@@ -166,18 +172,43 @@ function renderTodayBlock(ctx) {
 
 /**
  * Render the hour rail (left column).
+ * Iter 33: supports current-hour highlighting via data-block-index (AC14).
+ *
+ * @param {number} gridStartHour
+ * @param {number} gridEndHour
+ * @param {number} rowHeightPx
+ * @param {number|null} nowMinutesOfDay — for current-hour highlight
+ * @returns {string}
+ */
+function renderTodayHourRail(gridStartHour, gridEndHour, rowHeightPx, nowMinutesOfDay = null) {
+  const labels = hourRailLabels(gridStartHour, gridEndHour);
+  const hours = labels
+    .map((label, i) => {
+      const hour = gridStartHour + i;
+      const isCurrent = nowMinutesOfDay !== null && hour === Math.floor(nowMinutesOfDay / 60);
+      const cls = isCurrent ? 'cycle-hour cycle-hour-current' : 'cycle-hour';
+      return `<span class="${cls}" style="height: ${rowHeightPx}px">${esc(label)}</span>`;
+    })
+    .join('');
+  return `<div class="cycle-hour-rail" aria-hidden="true">${hours}</div>`;
+}
+
+/**
+ * Render horizontal hour-line dividers inside the timeline (AC15).
+ * Subtle 1px hairlines at each hour boundary.
  *
  * @param {number} gridStartHour
  * @param {number} gridEndHour
  * @param {number} rowHeightPx
  * @returns {string}
  */
-function renderTodayHourRail(gridStartHour, gridEndHour, rowHeightPx) {
-  const labels = hourRailLabels(gridStartHour, gridEndHour);
-  const hours = labels
-    .map((label) => `<span class="cycle-hour" style="height: ${rowHeightPx}px">${esc(label)}</span>`)
-    .join('');
-  return `<div class="cycle-hour-rail" aria-hidden="true">${hours}</div>`;
+function renderHourLines(gridStartHour, gridEndHour, rowHeightPx) {
+  const lines = [];
+  for (let h = gridStartHour; h <= gridEndHour; h++) {
+    const top = (h - gridStartHour) * rowHeightPx;
+    lines.push(`<div class="cycle-hour-line" style="top: ${top}px" aria-hidden="true"></div>`);
+  }
+  return lines.join('\n');
 }
 
 /**
@@ -217,9 +248,9 @@ export function TodayGrid(props = {}) {
   // Sort activities by plannedStartAt for display (CycleCard pattern).
   const ordered = orderActivitiesForDisplay(activities);
 
-  // Build blocks.
+  // Build blocks — Iter 33: pass blockIndex for staggered reveal (AC11).
   const blocks = ordered
-    .map((a) => renderTodayBlock({ activity: a, gridStartHour, rowHeightPx, kaizenTitleById, isProposed }))
+    .map((a, i) => renderTodayBlock({ activity: a, gridStartHour, rowHeightPx, kaizenTitleById, isProposed, blockIndex: i }))
     .filter(Boolean)
     .join('\n');
 
@@ -229,12 +260,28 @@ export function TodayGrid(props = {}) {
   const nowOffset = nowIso && compDate
     ? nowLineOffsetPx(nowIso, compDate, gridStartHour, gridEndHour, rowHeightPx)
     : null;
+
+  // Iter 33: always-visible HH:MM timestamp label on now-line (AC7).
+  let nowTimeLabel = '';
+  if (nowIso && typeof nowIso === 'string') {
+    const nowMin = parseMinutesOfDay(nowIso);
+    if (nowMin !== null) {
+      const hh = String(Math.floor(nowMin / 60)).padStart(2, '0');
+      const mm = String(nowMin % 60).padStart(2, '0');
+      nowTimeLabel = `${hh}:${mm}`;
+    }
+  }
+
   const nowLine = nowOffset !== null
-    ? `<div class="cycle-now-line" style="top: ${nowOffset}px" aria-hidden="true" aria-label="Current time"></div>`
+    ? `<div class="cycle-now-line" style="top: ${nowOffset}px" aria-hidden="true" aria-label="Current time">${nowTimeLabel ? `<span class="cycle-now-label">${esc(nowTimeLabel)}</span>` : ''}</div>`
     : '';
 
-  // Hour rail.
-  const rail = renderTodayHourRail(gridStartHour, gridEndHour, rowHeightPx);
+  // Hour rail — Iter 33: pass nowMinutes for current-hour highlight (AC14).
+  const nowMinutesOfDay = nowIso ? parseMinutesOfDay(nowIso) : null;
+  const rail = renderTodayHourRail(gridStartHour, gridEndHour, rowHeightPx, nowMinutesOfDay);
+
+  // Hour lines — Iter 33: subtle hairlines in timeline (AC15).
+  const hourLines = renderHourLines(gridStartHour, gridEndHour, rowHeightPx);
 
   // Timeline height.
   const timelineHeight = (gridEndHour - gridStartHour) * rowHeightPx;
@@ -242,6 +289,7 @@ export function TodayGrid(props = {}) {
   return `<div class="cycle-calendar-grid" data-composition-state="${esc(compState)}">
   ${rail}
   <div class="cycle-timeline" style="height: ${timelineHeight}px">
+    ${hourLines}
     ${blocks}
     ${nowLine}
   </div>

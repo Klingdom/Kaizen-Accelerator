@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BAM-X Today — Redesign Preview (Chartered Minimalism)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    /* =====================================================================
+       BAM-X Today — Redesign Preview
+       Aesthetic: Chartered Minimalism
+       Proposal-only. Not production code. See UX_TODAY_REDESIGN.md.
+       ===================================================================== */
+
+    /* ---------- CSS Variables ---------- */
+    :root {
+      /* Typography */
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-body:    'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+      --font-mono:    'DM Mono', 'Fira Code', 'Courier New', monospace;
+
+      /* Surface palette */
+      --surface-0: #f7f6f4;   /* page bg — warm off-white */
+      --surface-1: #ffffff;   /* card / panel bg */
+      --surface-2: #f0ede9;   /* hour rail bg, recessed areas */
+      --surface-3: #e8e4df;   /* active hover surface */
+
+      /* Ink palette */
+      --ink-900: #111009;     /* primary text — near-black warm */
+      --ink-700: #3d3a35;     /* strong secondary */
+      --ink-600: #57534e;     /* muted/secondary */
+      --ink-400: #a8a29e;     /* placeholder / disabled */
+      --ink-200: #e7e5e2;     /* hairline borders */
+      --ink-100: #f5f4f2;     /* hover bg */
+
+      /* Action */
+      --action: #0f172a;
+      --action-contrast: #f8fafc;
+
+      /* PROJECT — green */
+      --project-fill-top:  #22c55e;
+      --project-fill-base: #16a34a;
+      --project-text:      #ffffff;
+      --project-proposed-top:  #bbf7d0;
+      --project-proposed-base: #dcfce7;
+      --project-proposed-text: #166534;
+      --project-proposed-stroke: #16a34a;
+
+      /* COMMUNICATION — yellow/amber */
+      --comm-fill-top:  #d97706;
+      --comm-fill-base: #ca8a04;
+      --comm-text:      #ffffff;
+      --comm-proposed-top:  #fde68a;
+      --comm-proposed-base: #fef9c3;
+      --comm-proposed-text: #713f12;
+      --comm-proposed-stroke: #ca8a04;
+
+      /* CI — purple */
+      --ci-fill-top:  #a855f7;
+      --ci-fill-base: #9333ea;
+      --ci-text:      #ffffff;
+      --ci-proposed-top:  #e9d5ff;
+      --ci-proposed-base: #f3e8ff;
+      --ci-proposed-text: #581c87;
+      --ci-proposed-stroke: #9333ea;
+
+      /* Lunch */
+      --lunch-top:  #f5f4f2;
+      --lunch-base: #e7e5e2;
+      --lunch-text: #57534e;
+      --lunch-border: #d6d3d1;
+
+      /* Now-line */
+      --now-red: #dc2626;
+
+      /* Layout */
+      --rail-width: 48px;
+      --row-height: 60px;
+      --grid-start: 7;
+      --block-radius: 5px;
+    }
+
+    /* ---------- Reset & Base ---------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--surface-0);
+      color: var(--ink-900);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- App Shell ---------- */
+    .app-shell {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ---------- Nav ---------- */
+    .app-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 14px 0 13px;
+      border-bottom: 1px solid var(--ink-200);
+      margin-bottom: 0;
+    }
+
+    .nav-brand {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+      margin-right: 20px;
+    }
+
+    .nav-item {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--ink-600);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.01em;
+    }
+    .nav-item:hover { color: var(--ink-900); background: var(--ink-100); }
+    .nav-item.active {
+      color: var(--ink-900);
+      font-weight: 500;
+      background: var(--ink-100);
+    }
+
+    .nav-day-badge {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-600);
+      background: var(--surface-2);
+      border: 1px solid var(--ink-200);
+      padding: 3px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ---------- Today Page Header ---------- */
+    .today-header {
+      padding: 28px 0 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .today-date {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--ink-900);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .today-date-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-400);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .today-header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-accept {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 18px;
+      border-radius: 5px;
+      border: 1px solid var(--action);
+      background: var(--action);
+      color: var(--action-contrast);
+      cursor: pointer;
+      letter-spacing: 0.01em;
+    }
+    .btn-accept:hover { background: #1e293b; }
+
+    .btn-edit {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 400;
+      padding: 7px 18px;
+      border-radius: 5px;
+      border: 1px solid var(--ink-200);
+      background: var(--surface-1);
+      color: var(--ink-700);
+      cursor: pointer;
+    }
+    .btn-edit:hover { background: var(--ink-100); }
+
+    /* ---------- Header Divider ---------- */
+    .today-divider {
+      height: 1px;
+      background: var(--ink-200);
+      margin-bottom: 24px;
+    }
+
+    /* ---------- Main Layout: Grid + Bucket Strip ---------- */
+    .today-body {
+      display: grid;
+      grid-template-columns: 1fr 164px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ---------- Calendar Grid ---------- */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: var(--rail-width) 1fr;
+      background: var(--surface-1);
+      border: 1px solid var(--ink-200);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* ---------- Hour Rail ---------- */
+    .hour-rail {
+      background: var(--surface-2);
+      border-right: 1px solid var(--ink-200);
+      display: flex;
+      flex-direction: column;
+      padding-top: 0;
+    }
+
+    .hour-label {
+      height: var(--row-height);
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 6px 8px 0 0;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-400);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      position: relative;
+    }
+
+    .hour-label.current-hour {
+      color: var(--ink-900);
+      font-weight: 500;
+    }
+
+    /* ---------- Timeline ---------- */
+    .timeline {
+      position: relative;
+      height: calc(var(--row-height) * 12); /* 7:00 - 19:00 */
+      background: var(--surface-1);
+    }
+
+    /* Horizontal hour lines */
+    .hour-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: var(--ink-200);
+      opacity: 0.5;
+    }
+
+    /* ---------- Activity Blocks ---------- */
+    .activity-block {
+      position: absolute;
+      left: 5px;
+      right: 5px;
+      border-radius: var(--block-radius);
+      padding: 5px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 160ms ease-out, box-shadow 160ms ease-out;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
+      /* Left accent bar */
+    }
+
+    .activity-block:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.13), 0 2px 6px rgba(0,0,0,0.07);
+      z-index: 2;
+    }
+
+    .activity-block:focus-visible {
+      outline: 2px solid var(--action);
+      outline-offset: 2px;
+    }
+
+    /* Block time label */
+    .block-time {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.85;
+      letter-spacing: 0.01em;
+    }
+
+    /* Block name */
+    .block-name {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    /* Block kaizen chip */
+    .block-kaizen {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      background: rgba(0,0,0,0.12);
+      padding: 1px 5px;
+      border-radius: 3px;
+      align-self: flex-start;
+      letter-spacing: 0.02em;
+    }
+
+    /* ---------- Bucket fills — ACCEPTED ---------- */
+    .block-project {
+      background: linear-gradient(135deg, var(--project-fill-top) 0%, var(--project-fill-base) 100%);
+      color: var(--project-text);
+      border-left: 3px solid #15803d;
+    }
+
+    .block-comm {
+      background: linear-gradient(135deg, var(--comm-fill-top) 0%, var(--comm-fill-base) 100%);
+      color: var(--comm-text);
+      border-left: 3px solid #a16207;
+    }
+
+    .block-ci {
+      background: linear-gradient(135deg, var(--ci-fill-top) 0%, var(--ci-fill-base) 100%);
+      color: var(--ci-text);
+      border-left: 3px solid #7e22ce;
+    }
+
+    .block-lunch {
+      background: linear-gradient(135deg, var(--lunch-top) 0%, var(--lunch-base) 100%);
+      color: var(--lunch-text);
+      border: 1px dashed var(--lunch-border);
+      font-style: italic;
+      box-shadow: none;
+    }
+    .block-lunch:hover {
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* ---------- PROPOSED state — pale tint fills + dashed border ---------- */
+    .block-proposed {
+      opacity: 0.92;
+    }
+
+    .block-project.block-proposed {
+      background: linear-gradient(135deg, var(--project-proposed-top) 0%, var(--project-proposed-base) 100%);
+      color: var(--project-proposed-text);
+      border: 2px dashed var(--project-proposed-stroke);
+      border-left: 2px dashed var(--project-proposed-stroke); /* override accent bar */
+      box-shadow: none;
+    }
+
+    .block-comm.block-proposed {
+      background: linear-gradient(135deg, var(--comm-proposed-top) 0%, var(--comm-proposed-base) 100%);
+      color: var(--comm-proposed-text);
+      border: 2px dashed var(--comm-proposed-stroke);
+      border-left: 2px dashed var(--comm-proposed-stroke);
+      box-shadow: none;
+    }
+
+    .block-ci.block-proposed {
+      background: linear-gradient(135deg, var(--ci-proposed-top) 0%, var(--ci-proposed-base) 100%);
+      color: var(--ci-proposed-text);
+      border: 2px dashed var(--ci-proposed-stroke);
+      border-left: 2px dashed var(--ci-proposed-stroke);
+      box-shadow: none;
+    }
+
+    /* ---------- IN_PROGRESS state ---------- */
+    .block-in-progress {
+      position: relative;
+    }
+
+    .block-in-progress::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 4px;
+      background: rgba(255,255,255,0.45);
+      /* height set inline via style for elapsed ratio */
+      border-radius: 0 0 2px 0;
+      animation: progressBreathe 2s ease-in-out infinite;
+    }
+
+    @keyframes progressBreathe {
+      0%, 100% { opacity: 0.45; }
+      50%       { opacity: 0.7; }
+    }
+
+    .block-elapsed {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      opacity: 0.75;
+    }
+
+    /* ---------- SKIPPED state ---------- */
+    .block-skipped {
+      opacity: 0.35;
+      background: linear-gradient(135deg, #f5f4f2, #e7e5e2) !important;
+      color: var(--ink-600) !important;
+      border-left-color: var(--ink-400) !important;
+    }
+
+    .block-skipped .block-name {
+      text-decoration: line-through;
+      text-decoration-color: var(--ink-400);
+    }
+
+    /* CLOSED state */
+    .block-closed {
+      opacity: 0.5;
+    }
+
+    .block-closed .block-time {
+      opacity: 0.6;
+    }
+
+    /* ---------- Now Line ---------- */
+    .now-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1.5px;
+      background: var(--now-red);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .now-line::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      top: -2.5px;
+      height: 6px;
+      background: linear-gradient(to right, rgba(220,38,38,0.35) 0%, rgba(220,38,38,0) 55%);
+      animation: nowGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes nowGlow {
+      0%, 100% { opacity: 0.15; }
+      50%       { opacity: 1; }
+    }
+
+    .now-dot {
+      position: absolute;
+      left: -5px;
+      top: -4.5px;
+      width: 10px;
+      height: 10px;
+      background: var(--now-red);
+      border-radius: 50%;
+      border: 2px solid var(--surface-1);
+      animation: dotBreathe 3s ease-in-out infinite;
+    }
+
+    @keyframes dotBreathe {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.3); }
+    }
+
+    .now-label {
+      position: absolute;
+      left: 8px;
+      top: -8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--now-red);
+      background: rgba(255,255,255,0.9);
+      padding: 1px 4px;
+      border-radius: 2px;
+      line-height: 1.4;
+      pointer-events: none;
+      font-weight: 500;
+    }
+
+    /* ---------- Block Load Reveal Animation ---------- */
+    @keyframes blockReveal {
+      from { opacity: 0; transform: translateX(-5px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .activity-block {
+      animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Kaizen chip ping — fires once on load */
+    @keyframes kaizenPing {
+      0%   { box-shadow: 0 0 0 0px rgba(147,51,234,0.3); }
+      50%  { box-shadow: 0 0 0 5px rgba(147,51,234,0.12); }
+      100% { box-shadow: 0 0 0 0px rgba(147,51,234,0); }
+    }
+
+    .block-kaizen-linked {
+      animation: kaizenPing 1200ms ease-in-out 800ms 1 both;
+    }
+
+    /* ---------- Bucket Summary Strip (right rail) ---------- */
+    .bucket-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .bucket-summary-heading {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--ink-200);
+    }
+
+    .bucket-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .bucket-row-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .bucket-name {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    .bucket-name-project  { color: #15803d; }
+    .bucket-name-comm     { color: #a16207; }
+    .bucket-name-ci       { color: #7e22ce; }
+
+    .bucket-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-600);
+    }
+
+    .bucket-track {
+      height: 3px;
+      background: var(--ink-200);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .bucket-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 600ms ease;
+    }
+
+    .bucket-fill-project  { background: linear-gradient(to right, var(--project-fill-top), var(--project-fill-base)); }
+    .bucket-fill-comm     { background: linear-gradient(to right, var(--comm-fill-top), var(--comm-fill-base)); }
+    .bucket-fill-ci       { background: linear-gradient(to right, var(--ci-fill-top), var(--ci-fill-base)); }
+
+    .bucket-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-400);
+    }
+
+    /* ---------- BlockDetailDialog ---------- */
+    .bdd-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bdd-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(17, 16, 9, 0.42);
+      cursor: pointer;
+      animation: backdropFade 200ms ease both;
+    }
+
+    @keyframes backdropFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .bdd-panel {
+      position: relative;
+      z-index: 1;
+      background: var(--surface-1);
+      border: 1px solid var(--ink-200);
+      border-radius: 10px;
+      width: 360px;
+      max-width: calc(100vw - 48px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+      animation: dialogEnter 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      overflow: hidden;
+    }
+
+    @keyframes dialogEnter {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Dialog color bar at top based on bucket */
+    .bdd-color-bar {
+      height: 4px;
+      width: 100%;
+    }
+    .bdd-color-bar-project { background: linear-gradient(to right, var(--project-fill-top), var(--project-fill-base)); }
+    .bdd-color-bar-ci      { background: linear-gradient(to right, var(--ci-fill-top), var(--ci-fill-base)); }
+    .bdd-color-bar-comm    { background: linear-gradient(to right, var(--comm-fill-top), var(--comm-fill-base)); }
+
+    .bdd-header {
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--ink-200);
+      gap: 12px;
+    }
+
+    .bdd-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      flex: 1;
+    }
+
+    .bdd-close {
+      background: none;
+      border: none;
+      color: var(--ink-400);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin-top: -2px;
+      flex-shrink: 0;
+    }
+    .bdd-close:hover { color: var(--ink-900); background: var(--ink-100); }
+
+    .bdd-body {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .bdd-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--ink-200);
+      align-items: baseline;
+    }
+    .bdd-row:last-child { border-bottom: none; }
+
+    .bdd-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 400;
+    }
+
+    .bdd-value {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--ink-700);
+    }
+
+    .bdd-time-value {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bdd-bucket-chip {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .chip-project { background: #dcfce7; color: #166534; }
+    .chip-ci      { background: #f3e8ff; color: #581c87; }
+    .chip-comm    { background: #fef9c3; color: #713f12; }
+
+    .bdd-kaizen-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #7e22ce;
+      background: #f3e8ff;
+      padding: 3px 8px;
+      border-radius: 3px;
+      animation: kaizenPing 1200ms ease-in-out 400ms 1 both;
+    }
+
+    .bdd-footer {
+      padding: 14px 20px 18px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--ink-200);
+    }
+
+    .bdd-btn-edit {
+      flex: 1;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: 1px solid var(--action);
+      background: var(--action);
+      color: var(--action-contrast);
+      cursor: pointer;
+    }
+    .bdd-btn-edit:hover { background: #1e293b; }
+
+    .bdd-btn-skip {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 400;
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: 1px solid var(--ink-200);
+      background: var(--surface-1);
+      color: var(--ink-700);
+      cursor: pointer;
+    }
+    .bdd-btn-skip:hover { background: var(--ink-100); }
+
+    /* State badge in dialog */
+    .bdd-state-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .bdd-state-accepted { background: #dcfce7; color: #166534; }
+    .bdd-state-proposed { background: #fef9c3; color: #713f12; border: 1px dashed #ca8a04; }
+    .bdd-state-in-progress { background: #dbeafe; color: #1e40af; }
+
+    /* ---------- Comparison Notes Strip ---------- */
+    .design-notes {
+      margin-top: 40px;
+      border-top: 2px solid var(--ink-200);
+      padding-top: 28px;
+    }
+
+    .design-notes-heading {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--ink-900);
+      margin-bottom: 20px;
+    }
+
+    .design-notes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .design-notes-grid { grid-template-columns: 1fr; }
+    }
+
+    .note-card {
+      background: var(--surface-1);
+      border: 1px solid var(--ink-200);
+      border-radius: 6px;
+      padding: 16px 18px;
+    }
+
+    .note-card-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .note-card-body {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--ink-700);
+      line-height: 1.6;
+    }
+
+    .note-card-body strong {
+      color: var(--ink-900);
+      font-weight: 500;
+    }
+
+    .note-card-body code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--ink-700);
+    }
+
+    /* ---------- PROPOSED state indicator label ---------- */
+    .proposed-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: linear-gradient(to right, #fef9c3, transparent);
+      border: 1px dashed #ca8a04;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: #713f12;
+    }
+
+    .proposed-banner-icon {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #ca8a04;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ---------- Mobile adjustments ---------- */
+    @media (max-width: 860px) {
+      .today-body {
+        grid-template-columns: 1fr;
+      }
+      .bucket-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .bucket-summary-heading {
+        display: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .today-date { font-size: 22px; }
+      .bdd-panel { width: calc(100vw - 32px); }
+      .bucket-summary { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<div class="app-shell">
+  <nav class="app-nav" aria-label="Application navigation">
+    <span class="nav-brand">BAM-X</span>
+    <a href="#" class="nav-item active" aria-current="page">Today</a>
+    <a href="#" class="nav-item">Week</a>
+    <a href="#" class="nav-item">Kaizen</a>
+    <a href="#" class="nav-item">Catalog</a>
+    <span class="nav-day-badge">DAY 4</span>
+  </nav>
+
+  <!-- ===== TODAY HEADER ===== -->
+  <header class="today-header" aria-label="Today page header">
+    <div>
+      <h1 class="today-date">Thursday, 30 April 2026</h1>
+      <p class="today-date-sub">PROPOSED — tap Accept to ratify this plan</p>
+    </div>
+    <div class="today-header-actions">
+      <button class="btn-accept" data-action="ACCEPT_COMPOSITION">Accept Plan</button>
+      <button class="btn-edit" data-action="OPEN_EDIT">Edit</button>
+    </div>
+  </header>
+
+  <!-- PROPOSED state banner -->
+  <div class="proposed-banner" role="note" aria-label="Plan status: proposed">
+    <span class="proposed-banner-icon">PROPOSED</span>
+    Your day plan is ready for review. Dashed-border blocks are proposals — accept to commit.
+  </div>
+
+  <div class="today-divider" role="separator"></div>
+
+  <!-- ===== MAIN BODY: CALENDAR + BUCKET STRIP ===== -->
+  <div class="today-body">
+
+    <!-- Calendar Grid -->
+    <div class="calendar-grid" role="region" aria-label="Today's schedule">
+
+      <!-- Hour Rail -->
+      <div class="hour-rail" aria-hidden="true">
+        <!-- 7:00 - 18:00 -->
+        <div class="hour-label">07</div>
+        <div class="hour-label">08</div>
+        <div class="hour-label current-hour">09</div>
+        <div class="hour-label">10</div>
+        <div class="hour-label">11</div>
+        <div class="hour-label">12</div>
+        <div class="hour-label">13</div>
+        <div class="hour-label">14</div>
+        <div class="hour-label">15</div>
+        <div class="hour-label">16</div>
+        <div class="hour-label">17</div>
+        <div class="hour-label">18</div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline" id="timeline">
+
+        <!-- Horizontal hour hairlines -->
+        <div class="hour-line" style="top: 0px"></div>
+        <div class="hour-line" style="top: 60px"></div>
+        <div class="hour-line" style="top: 120px"></div>
+        <div class="hour-line" style="top: 180px"></div>
+        <div class="hour-line" style="top: 240px"></div>
+        <div class="hour-line" style="top: 300px"></div>
+        <div class="hour-line" style="top: 360px"></div>
+        <div class="hour-line" style="top: 420px"></div>
+        <div class="hour-line" style="top: 480px"></div>
+        <div class="hour-line" style="top: 540px"></div>
+        <div class="hour-line" style="top: 600px"></div>
+        <div class="hour-line" style="top: 660px"></div>
+
+        <!--
+          MOCK DATA — 8 activity blocks
+          Grid starts at 7:00. Each hour = 60px.
+          top = (startHour - 7) * 60 + startMinutes
+          height = durationMinutes
+        -->
+
+        <!-- 1. CLOSED: Morning Review — 07:00-07:30 (PROJECT, CLOSED) -->
+        <article
+          class="activity-block block-project block-closed"
+          style="top: 0px; height: 30px; animation-delay: 0ms;"
+          role="button" tabindex="0"
+          aria-label="Morning Review, CLOSED, 07:00 to 07:30, Project"
+          data-state="CLOSED"
+          data-bucket="PROJECT"
+        >
+          <span class="block-time">07:00–07:30</span>
+          <span class="block-name">✓ Morning Review</span>
+        </article>
+
+        <!-- 2. IN_PROGRESS: API Integration Refactor — 07:30-09:30 (PROJECT, IN_PROGRESS) -->
+        <!-- 37.5% elapsed (45 of 120 min) -->
+        <article
+          class="activity-block block-project block-in-progress"
+          style="top: 30px; height: 120px; animation-delay: 60ms;"
+          role="button" tabindex="0"
+          aria-label="API Integration Refactor, IN PROGRESS, 07:30 to 09:30, Project, 45 of 120 minutes elapsed"
+          data-state="IN_PROGRESS"
+          data-bucket="PROJECT"
+        >
+          <div class="activity-block__progress" style="position:absolute;left:0;top:0;width:3px;height:37.5%;background:rgba(255,255,255,0.5);border-radius:0 0 2px 0;"></div>
+          <span class="block-time">07:30–09:30</span>
+          <span class="block-name">API Integration Refactor</span>
+          <span class="block-elapsed">00:45 of 2:00h</span>
+        </article>
+
+        <!-- 3. PROPOSED: Stand-up — 09:30-10:00 (COMM, PROPOSED) -->
+        <article
+          class="activity-block block-comm block-proposed"
+          style="top: 150px; height: 30px; animation-delay: 120ms;"
+          role="button" tabindex="0"
+          aria-label="Team Stand-up, PROPOSED, 09:30 to 10:00, Communication"
+          data-state="PROPOSED"
+          data-bucket="COMMUNICATION"
+        >
+          <span class="block-time">09:30–10:00</span>
+          <span class="block-name">Team Stand-up</span>
+        </article>
+
+        <!-- 4. ACCEPTED: Feature Specification — 10:00-12:00 (CI, ACCEPTED) with kaizen -->
+        <article
+          class="activity-block block-ci block-kaizen-linked"
+          style="top: 180px; height: 120px; animation-delay: 180ms;"
+          role="button" tabindex="0"
+          aria-label="Feature Specification, ACCEPTED, 10:00 to 12:00, Continuous Improvement, part of Kaizen: Reduce Deploy Time"
+          data-state="ACCEPTED"
+          data-bucket="CI"
+        >
+          <span class="block-time">10:00–12:00</span>
+          <span class="block-name">Feature Specification</span>
+          <span class="block-kaizen">K/ Reduce Deploy Time</span>
+        </article>
+
+        <!-- 5. LUNCH — 12:00-12:30 -->
+        <article
+          class="activity-block block-lunch"
+          style="top: 300px; height: 30px; animation-delay: 240ms;"
+          role="note" tabindex="0"
+          aria-label="Lunch, 12:00 to 12:30, capacity-neutral"
+          data-state="ACCEPTED"
+          data-bucket="LUNCH"
+        >
+          <span class="block-time" style="font-style:normal;">12:00–12:30</span>
+          <span class="block-name">~ Lunch</span>
+        </article>
+
+        <!-- 6. PROPOSED: Async Email Triage — 12:30-13:30 (COMM, PROPOSED) -->
+        <article
+          class="activity-block block-comm block-proposed"
+          style="top: 330px; height: 60px; animation-delay: 300ms;"
+          role="button" tabindex="0"
+          aria-label="Async Email Triage, PROPOSED, 12:30 to 13:30, Communication"
+          data-state="PROPOSED"
+          data-bucket="COMMUNICATION"
+        >
+          <span class="block-time">12:30–13:30</span>
+          <span class="block-name">Async Email Triage</span>
+        </article>
+
+        <!-- 7. SKIPPED: 1:1 with Lead — 13:30-14:00 (COMM, SKIPPED) -->
+        <article
+          class="activity-block block-comm block-skipped"
+          style="top: 390px; height: 30px; animation-delay: 360ms;"
+          role="button" tabindex="0"
+          aria-label="1:1 with Lead, SKIPPED, 13:30 to 14:00, Communication"
+          data-state="SKIPPED"
+          data-bucket="COMMUNICATION"
+        >
+          <span class="block-time">13:30–14:00</span>
+          <span class="block-name">1:1 with Lead</span>
+        </article>
+
+        <!-- 8. ACCEPTED: Kaizen Retrospective — 14:00-15:30 (CI, ACCEPTED) with kaizen -->
+        <article
+          class="activity-block block-ci"
+          style="top: 420px; height: 90px; animation-delay: 420ms;"
+          role="button" tabindex="0"
+          aria-label="Kaizen Retrospective, ACCEPTED, 14:00 to 15:30, Continuous Improvement, part of Kaizen: Reduce Deploy Time"
+          data-state="ACCEPTED"
+          data-bucket="CI"
+        >
+          <span class="block-time">14:00–15:30</span>
+          <span class="block-name">Kaizen Retrospective</span>
+          <span class="block-kaizen">K/ Reduce Deploy Time</span>
+        </article>
+
+        <!-- Now-line — positioned at 09:47 = (9-7)*60 + 47 = 167px from top -->
+        <div class="now-line" style="top: 167px;" aria-hidden="true">
+          <div class="now-dot"></div>
+          <span class="now-label">09:47</span>
+        </div>
+
+      </div><!-- /.timeline -->
+    </div><!-- /.calendar-grid -->
+
+    <!-- Bucket Summary Strip (right margin) -->
+    <aside class="bucket-summary" aria-label="Bucket capacity summary">
+      <div class="bucket-summary-heading">Today's Load</div>
+
+      <!-- PROJECT -->
+      <div class="bucket-row">
+        <div class="bucket-row-label">
+          <span class="bucket-name bucket-name-project">Deep Work</span>
+          <span class="bucket-value">2.5h</span>
+        </div>
+        <div class="bucket-track">
+          <div class="bucket-fill bucket-fill-project" style="width: 56%;"></div>
+        </div>
+        <div class="bucket-sub">target 4h 30m</div>
+      </div>
+
+      <!-- COMMUNICATION -->
+      <div class="bucket-row">
+        <div class="bucket-row-label">
+          <span class="bucket-name bucket-name-comm">Comms</span>
+          <span class="bucket-value">1h</span>
+        </div>
+        <div class="bucket-track">
+          <div class="bucket-fill bucket-fill-comm" style="width: 50%;"></div>
+        </div>
+        <div class="bucket-sub">target 2h</div>
+      </div>
+
+      <!-- CI -->
+      <div class="bucket-row">
+        <div class="bucket-row-label">
+          <span class="bucket-name bucket-name-ci">CI</span>
+          <span class="bucket-value">3.5h</span>
+        </div>
+        <div class="bucket-track">
+          <div class="bucket-fill bucket-fill-ci" style="width: 87%;"></div>
+        </div>
+        <div class="bucket-sub">target 4h</div>
+      </div>
+    </aside>
+
+  </div><!-- /.today-body -->
+
+
+  <!-- ===== BLOCK DETAIL DIALOG — open on "Feature Specification" (CI, kaizen-linked) ===== -->
+  <!-- In production this is rendered conditionally; here it shows always for Phil's review -->
+  <section
+    class="bdd-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bdd-title"
+    data-activity-id="activity-feature-spec"
+  >
+    <div class="bdd-backdrop" aria-hidden="true"></div>
+    <div class="bdd-panel">
+      <!-- CI color bar at top -->
+      <div class="bdd-color-bar bdd-color-bar-ci"></div>
+
+      <header class="bdd-header">
+        <h2 class="bdd-title" id="bdd-title">Feature Specification</h2>
+        <button class="bdd-close" aria-label="Close activity detail">&times;</button>
+      </header>
+
+      <dl class="bdd-body">
+        <div class="bdd-row">
+          <dt class="bdd-label">Bucket</dt>
+          <dd class="bdd-value">
+            <span class="bdd-bucket-chip chip-ci">CI</span>
+          </dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-label">State</dt>
+          <dd class="bdd-value">
+            <span class="bdd-state-badge bdd-state-accepted">Accepted</span>
+          </dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-label">Time</dt>
+          <dd class="bdd-value bdd-time-value">10:00–12:00</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-label">Duration</dt>
+          <dd class="bdd-value bdd-time-value">120 min</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-label">Output</dt>
+          <dd class="bdd-value">Technical specification doc</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-label">Kaizen</dt>
+          <dd class="bdd-value">
+            <span class="bdd-kaizen-value">K/ Reduce Deploy Time</span>
+          </dd>
+        </div>
+      </dl>
+
+      <footer class="bdd-footer">
+        <button class="bdd-btn-edit" data-action="BLOCK_DETAIL_EDIT">Edit block</button>
+        <button class="bdd-btn-skip" data-action="SKIP_ACTIVITY">Skip</button>
+      </footer>
+    </div>
+  </section>
+
+
+  <!-- ===== DESIGN NOTES (comparison strip) ===== -->
+  <div class="design-notes">
+    <h2 class="design-notes-heading">Design Rationale — Chartered Minimalism</h2>
+    <div class="design-notes-grid">
+
+      <div class="note-card">
+        <div class="note-card-title">Typography Delta</div>
+        <div class="note-card-body">
+          <strong>DM Serif Display</strong> on the date heading ("Thursday, 30 April") replaces the system-font h1. The editorial weight anchors the page in a specific, real day — it says <em>plan</em>, not <em>dashboard</em>. <strong>DM Mono</strong> replaces system fonts for all numeric/time display (<code>09:47</code>, <code>10:00–12:00</code>, bucket values). Current production uses generic system fonts for both. The monospace choice makes tabular numerals guaranteed — no layout shift as time changes.
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-card-title">Block Fill Delta</div>
+        <div class="note-card-body">
+          Current: flat <code>#16a34a</code>, <code>#ca8a04</code>, <code>#9333ea</code>. Proposed: <strong>135deg linear gradients</strong> (lighter-top to base-bottom) that simulate directional light. The effect is subtle — Phil's color identity is preserved — but the blocks feel material rather than painted. PROPOSED blocks use the pale tint gradient (already in use as <code>--*-bg</code> variables) with a dashed border. The dashed encoding is preserved per Iter 29.
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-card-title">Spatial Delta</div>
+        <div class="note-card-body">
+          The bucket summary moves from <strong>below the grid</strong> to a <strong>right-margin annotation strip</strong> (164px column). This is the most significant layout change — it treats the three bucket bars as margin glosses alongside the schedule, similar to editorial annotations. On mobile, the strip collapses to a 3-column row below the grid. The hour rail narrows from 56px to 48px; its background shifts to <code>--surface-2</code> (warm light gray) to create a recessed channel effect without a heavy border.
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-card-title">Now-Line Delta</div>
+        <div class="note-card-body">
+          Current: 2px red line + 8px dot. Proposed: 1.5px line + <strong>breathing glow trail</strong> (fades right) + <strong>timestamp label</strong> (<code>09:47</code> in DM Mono, red). The glow pulses at 3s intervals via CSS-only keyframes affecting <code>opacity</code> only (compositor-thread safe). The dot scales 1→1.3→1 on the same cycle. Together: the now-line becomes the page's heartbeat — present but not loud.
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-card-title">Dialog Delta</div>
+        <div class="note-card-body">
+          The BlockDetailDialog gains a <strong>bucket color bar</strong> at the top (4px gradient stripe matching the block's bucket fill). The title uses <strong>DM Serif Display</strong>, giving the dialog a moment of editorial emphasis. All labels use DM Mono in uppercase — treating the data fields as structured record entries. The panel has a spring-physics entrance animation (<code>cubic-bezier(0.34, 1.56, 0.64, 1)</code>) that settles rather than slides — it feels purposeful.
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-card-title">Motion Signature</div>
+        <div class="note-card-body">
+          On page load, blocks <strong>cascade in from left</strong> with 60ms stagger per block (8px translateX + opacity). The kaizen chip on any linked block receives a single <strong>purple glow ring ping</strong> (800ms delay, fires once). This marks "this work is connected to improvement" without a tooltip or label. It is BAM-X's most distinctive motion moment — understated for continuous-improvement professionals who recognize kaizen linkage.
+        </div>
+      </div>
+
+    </div><!-- /.design-notes-grid -->
+  </div><!-- /.design-notes -->
+
+</div><!-- /.app-shell -->
+
+<!-- ====================================================================
+  PROPOSAL STATUS:
+  - DO NOT ship these styles to app.css.
+  - This file is a visual proposal for Phil's review.
+  - Production implementation would touch: index.html (font link),
+    app.css (~200 lines new/modified), TodayGrid.js (block stagger delays
+    + now-label), Today.js (date heading + right column layout),
+    BlockDetailDialog.js (color bar + DM Serif title).
+  - Estimated effort: 6-8 hours.
+  - See UX_TODAY_REDESIGN.md for full rationale.
+  ==================================================================== -->
+
+</body>
+</html>

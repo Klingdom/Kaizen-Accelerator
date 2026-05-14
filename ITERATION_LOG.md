@@ -983,3 +983,50 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit + push.
   - Phase 2 + 3 still await Phil's SW-Q-CAL-01/02/03 answers
   - state.fineTune cleanup queued as next non-Phil-blocked item
+
+---
+
+## Iteration 33 — 2026-05-13 — Chartered Minimalism redesign — Today page (C-UX-AESTHETIC)
+
+- **Selected item**: User-directive feature. Phil installed `everything-claude-code` marketplace + 3 plugins (superpowers, ralph-loop, frontend-design); ran the `frontend-design` skill as an assessment lens on the Today page. Coordinator first produced a proposal pass (Iter 33-pre artifacts: `UX_TODAY_REDESIGN.md` + `assets/today-redesign-preview.html`); Phil approved Path A — full ship with all 3 likely-pushback items intact.
+- **Reason for selection**: Direct user directive. `frontend-design` skill identified system-font stack as #1 anti-pattern; current Today page scored ~2.5/10 on distinctiveness. Phil chose refined intentional minimalism upgrade that respects workflow-tool positioning.
+- **Agents involved**: frontend-engineer (proposal pass — produced 2 artifacts), frontend-engineer (implementation pass — production ship of all 20 ACs).
+- **Validation results**:
+  - Tests: 3,106 → **3,106** (unchanged — additive CSS + selectors preserved)
+  - Runtime: 3.88s → **3.65s** ✅ (per-test 1.25 → 1.18ms; 21% headroom under META §7.1 1.5ms ceiling)
+  - All 20 ACs PASS
+  - **§6.5 boundary**: zero hits. No composer/engine/types/events touches.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW artifacts (proposal-only)**:
+    - `UX_TODAY_REDESIGN.md` (379 lines) — full design rationale, 12 sections, WCAG verification
+    - `assets/today-redesign-preview.html` (1,276 lines) — self-contained browser-runnable preview with 8 mock blocks across all states
+  - **Modified production files (7)**:
+    - `index.html` — Google Fonts `<link>` for DM Serif Display + DM Sans + DM Mono (single combined URL, `display=swap`)
+    - `app.css` — +241 net LOC (+536 diff): new `--font-display`, `--font-body`, `--font-mono` variables; `--font-stack` aliased to body for safe bridge; bucket-color gradients (2-stop linear); 4 new keyframe animations; hour-rail typography; now-line label; right-margin bucket strip styles; hairline grid backgrounds; dialog refinements
+    - `js/ui/components/TodayGrid.js` — now-label, block-index stagger, kaizen-linked attr, hour lines, current-hour rail
+    - `js/ui/components/CycleCard.js` — `formatDateDisplay()` helper, `<h1 class="cycle-date-display">` element, PROPOSED-state banner
+    - `js/ui/components/BlockDetailDialog.js` — bucket-color accent bar at panel top
+    - `js/ui/pages/Today.js` — `renderBucketStrip()` helper, `today-body-with-strip` wrapper
+    - `tests/ui/pages/Today.test.js` — 1 regex relaxed for animation-delay in inline style
+- **Spec deviations** (5 minor, all justified):
+  1. `--font-stack` kept as alias for `--font-body` (safe bridge avoiding 30+ CSS rule rewrites)
+  2. `.cycle-bucket-strip` namespace avoids collision with existing `.bucket-strip`/`.bucket-row`
+  3. `formatDateDisplay` uses `en-GB` locale matching preview output ("Thursday, 30 April 2026")
+  4. PROPOSED banner placed in CycleCard not Today.js (tighter state coupling)
+  5. New bucket-strip region not added to CCC test (existing ≤4 bound still holds)
+- **Time spent**: proposal pass ~3.5h + implementation ~3-4h = ~7h total vs proposal estimate of 6-8h. Within estimate.
+- **Strategic outcome**:
+  - **Aesthetic positioning established**: BAM-X moves from "default minimalism" to "intentional refined minimalism with editorial character"
+  - **Iter 31 color identity preserved**: green/yellow/purple now expressed with gradient depth, not flat Tailwind
+  - **Signature detail shipped** (kaizen chip glow-ring): invisible to non-CI users; unmistakable to CI experts. Phil-specific brand cue no generic calendar carries.
+  - **System-font stack retired**: the `frontend-design` skill's #1 anti-pattern eliminated
+  - **`frontend-design` skill validated**: produced a complete proposal + implementation in 2 dispatches with zero failed validations
+- **Latent issues**:
+  - Visual diff cannot be confirmed from CLI; Phil must visually verify post-deploy at `/today`
+  - Mobile breakpoint replicates preview's `@media` queries but real-device validation pending
+  - `formatDateDisplay` locale hardcoded to `en-GB`; may need locale-configurable in future
+- **Follow-ups**:
+  - Commit + push (deploy queue now 3-deep: Iter 31 + 32 + 33, under META §7.7 gate)
+  - Phil visually verifies post-deploy
+  - Phase 2 + 3 calendar drag still Phil-blocked on SW-Q-CAL-01/02/03
+  - state.fineTune cleanup still queued as next non-Phil-blocked item

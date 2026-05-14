@@ -212,8 +212,9 @@ describe('Today — Iter 29: calendar grid in place of 6-column table', () => {
   test('AC3: activity blocks are absolutely positioned via inline style', () => {
     const html = Today({ activeState: ACTIVE_STATE });
     // Blocks rendered with top/height inline styles for positioning.
+    // Iter 33: animation-delay is now also included in the style attribute.
     assert.ok(html.includes('cycle-block-positioned'), 'cycle-block-positioned must be present');
-    assert.match(html, /style="top: \d+px; height: \d+px"/, 'blocks must have inline positioning');
+    assert.match(html, /style="top: \d+px; height: \d+px/, 'blocks must have inline positioning');
   });
 
   test('AC4: blocks are colored by bucket via chipClass', () => {

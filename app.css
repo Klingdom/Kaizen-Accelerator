@@ -1,8 +1,9 @@
 /**
  * CadencePlan MVP — single stylesheet.
  *
- * Minimalist, high-contrast, calm. System fonts only. No icons, no
- * frameworks. Per SCHEDULING_UX §3.4 wireframes.
+ * Iter 33 — Chartered Minimalism redesign (Phil approved Path A).
+ * Typography: DM Serif Display (display) + DM Sans (body) + DM Mono (mono/numerals).
+ * Gradients, motion, bucket strip, now-line timestamp all shipped.
  *
  * Bucket tones (Iter 31 — Phil's color directive):
  *   PROJECT       — green  (pays the bills)
@@ -11,10 +12,42 @@
  */
 
 :root {
-  --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-  --bg: #fafaf9;
-  --fg: #1c1917;
+  /* ---- Iter 33: Chartered Minimalism font trio ---- */
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body:    'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'DM Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Legacy alias — body font; used throughout existing rules */
+  --font-stack: var(--font-body);
+
+  /* ---- Iter 33: Surface palette (warm off-white hierarchy) ---- */
+  --surface-0: #f7f6f4;   /* page bg — warm off-white */
+  --surface-1: #ffffff;   /* card / panel bg */
+  --surface-2: #f0ede9;   /* hour rail bg, recessed areas */
+  --surface-3: #e8e4df;   /* hover surface */
+
+  /* ---- Iter 33: Ink palette ---- */
+  --ink-900: #111009;     /* primary text — near-black warm */
+  --ink-700: #3d3a35;     /* strong secondary */
+  --ink-600: #57534e;     /* muted/secondary */
+  --ink-400: #a8a29e;     /* placeholder / disabled */
+  --ink-200: #e7e5e2;     /* hairline borders */
+  --ink-100: #f5f4f2;     /* hover bg */
+
+  /* ---- Iter 33: Gradient fill variables for bucket blocks ---- */
+  --project-fill-top:  #22c55e;
+  --project-fill-base: #16a34a;
+  --comm-fill-top:     #d97706;
+  --comm-fill-base:    #ca8a04;
+  --ci-fill-top:       #a855f7;
+  --ci-fill-base:      #9333ea;
+
+  /* ---- Iter 33: Now-line ---- */
+  --now-red: #dc2626;
+
+  /* Legacy tokens preserved — used extensively below */
+  --bg: #f7f6f4;   /* maps to --surface-0 */
+  --fg: #111009;   /* maps to --ink-900 */
   --muted: #57534e;
   --border: #d6d3d1;
   --border-strong: #78716c;
@@ -53,9 +86,10 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-stack);
-  font-size: 15px;
+  font-family: var(--font-body);
+  font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ---------- App shell + nav ---------- */
@@ -241,15 +275,19 @@ html, body {
 }
 
 /*
- * Single-day calendar grid: hour rail (fixed 56px) + day timeline column.
- * Mirrors .wg-grid but with 1 day column instead of 5.
+ * Single-day calendar grid: hour rail (48px per Iter 33) + day timeline.
+ * Iter 33: rail width reduced 56px → 48px; rail gets --surface-2 bg (AC14).
  */
 .cycle-calendar-grid {
   display: grid;
-  grid-template-columns: 56px 1fr;
+  grid-template-columns: 48px 1fr;
   align-items: stretch;
   padding: 4px 0;
   overflow-x: hidden;
+  background: var(--surface-1);
+  border: 1px solid var(--ink-200);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .cycle-calendar-grid-empty {
@@ -257,28 +295,37 @@ html, body {
   opacity: 0.3;
 }
 
-/* Hour rail — identical visual treatment to .wg-hour-rail */
+/* Hour rail — Iter 33: DM Mono, 11px, --ink-400, --surface-2 bg (AC14). */
 .cycle-hour-rail {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--muted);
+  border-right: 1px solid var(--ink-200);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  letter-spacing: -0.01em;
 }
 
 .cycle-hour {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding-right: 6px;
-  border-bottom: 1px dashed var(--border);
+  padding: 6px 8px 0 0;
   box-sizing: border-box;
 }
 
+/* Current-hour label gets ink-900 + weight 500 (AC14). */
+.cycle-hour-current {
+  color: var(--ink-900);
+  font-weight: 500;
+}
+
 /* Day timeline — position: relative container for absolutely-placed blocks */
+/* Iter 33: uses --surface-1 (white) so blocks pop against the background (AC15). */
 .cycle-timeline {
   position: relative;
-  background: var(--bg);
+  background: var(--surface-1);
 }
 
 /*
@@ -286,61 +333,113 @@ html, body {
  * Uses position: absolute with top/height set via inline style (from
  * topOffsetPx / heightPx helpers in weekGridMath.js).
  */
+/* Iter 33: block-reveal stagger animation, hover-lift, refined shadow (AC11, AC12). */
 .cycle-block-positioned {
   position: absolute;
-  left: 4px;
-  right: 4px;
-  border-radius: 6px;
-  padding: 4px 6px;
+  left: 5px;
+  right: 5px;
+  border-radius: 5px;
+  padding: 5px 8px;
   font-size: 12px;
   line-height: 1.3;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06);
   cursor: pointer;
   user-select: none;
   touch-action: none;
-  transition: box-shadow 150ms ease, background-color 200ms ease;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out;
   box-sizing: border-box;
+  /* Page-load reveal — delay set per-block via data-block-index inline style */
+  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .cycle-block-positioned:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
+/* Hover-lift (AC12). */
 .cycle-block-positioned:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.13), 0 2px 6px rgba(0,0,0,0.07);
+  z-index: 2;
 }
 
 /*
- * PROPOSED state: dashed outline visually encodes unratified blocks.
- * Matches Reclaim.ai "proposed" visual encoding per §3 locked decisions.
+ * PROPOSED state — Iter 33: pale tint gradient fills + dashed border (AC6).
+ * Dashed encoding preserved per Iter 29 locked decision.
  */
 .cycle-block-proposed {
   outline: 2px dashed currentColor;
   outline-offset: -2px;
-  opacity: 0.85;
+  opacity: 0.92;
 }
 
-/* Lunch block (bucket: null) — neutral/muted tone distinct from PROJECT/COMM/CI */
+/* PROPOSED bucket-specific pale tint gradients. */
+.cycle-block-positioned.chip-project.cycle-block-proposed {
+  background: linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%);
+  color: #166534;
+  border: 2px dashed #16a34a;
+  border-left: 2px dashed #16a34a;
+  box-shadow: none;
+}
+.cycle-block-positioned.chip-communication.cycle-block-proposed {
+  background: linear-gradient(135deg, #fde68a 0%, #fef9c3 100%);
+  color: #713f12;
+  border: 2px dashed #ca8a04;
+  border-left: 2px dashed #ca8a04;
+  box-shadow: none;
+}
+.cycle-block-positioned.chip-ci.cycle-block-proposed {
+  background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%);
+  color: #581c87;
+  border: 2px dashed #9333ea;
+  border-left: 2px dashed #9333ea;
+  box-shadow: none;
+}
+
+/* Lunch block — Iter 33: warm near-white gradient, italic, dashed border (AC6, AC16). */
 .cycle-block-lunch {
+  background: linear-gradient(135deg, #f5f4f2 0%, #e7e5e2 100%) !important;
+  color: var(--ink-600) !important;
+  border: 1px dashed #d6d3d1 !important;
+  border-left: 1px dashed #d6d3d1 !important;
   font-style: italic;
+  box-shadow: none !important;
+}
+.cycle-block-lunch:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-/* Block sub-elements */
-.cycle-block-time { font-weight: 600; font-size: 11px; }
+/* Block sub-elements — Iter 33: DM Mono for time display (AC5). */
+.cycle-block-time {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10px;
+  opacity: 0.85;
+  letter-spacing: 0.01em;
+}
 .cycle-block-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Iter 33: kaizen chip — DM Mono, styled. Glow-ring ping fires via data-kaizen-linked (AC10). */
 .cycle-block-kaizen {
   align-self: flex-start;
-  font-size: 10px;
-  background: rgba(0, 0, 0, 0.06);
-  padding: 1px 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.12);
+  padding: 1px 5px;
   border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+
+/* Kaizen glow-ring ping — fires once 800ms after load on linked blocks (AC10). */
+.cycle-block-kaizen-linked {
+  animation: kaizenPing 1200ms ease-in-out 800ms 1 both;
 }
 .cycle-block-lock {
   position: absolute;
@@ -358,17 +457,21 @@ html, body {
  * Other surfaces (chips, bucket rows, WeekGrid) keep the pale-tint --*-bg
  * treatment unchanged.
  */
+/* Iter 33: 2-stop linear gradients replace flat fills (AC6). Border-left accent bar added. */
 .cycle-block-positioned.chip-project {
-  background: var(--project-fill);
+  background: linear-gradient(135deg, var(--project-fill-top) 0%, var(--project-fill-base) 100%);
   color: var(--project-block-text);
+  border-left: 3px solid #15803d;
 }
 .cycle-block-positioned.chip-communication {
-  background: var(--communication-fill);
+  background: linear-gradient(135deg, var(--comm-fill-top) 0%, var(--comm-fill-base) 100%);
   color: var(--communication-block-text);
+  border-left: 3px solid #a16207;
 }
 .cycle-block-positioned.chip-ci {
-  background: var(--ci-fill);
+  background: linear-gradient(135deg, var(--ci-fill-top) 0%, var(--ci-fill-base) 100%);
   color: var(--ci-block-text);
+  border-left: 3px solid #7e22ce;
 }
 .cycle-block-positioned.chip-unknown { background: var(--color-surface-muted); color: var(--color-text-muted); }
 
@@ -377,41 +480,75 @@ html, body {
   background-color: color-mix(in srgb, var(--bg) 60%, transparent);
   color: var(--fg);
 }
-/* User-edited blocks: restore saturated fills with white text */
+/* Iter 33: User-edited blocks restore gradient fills (not flat colors). */
 .cycle-block-positioned.chip-project[data-user-edited="true"] {
-  background-color: var(--project-fill);
+  background: linear-gradient(135deg, var(--project-fill-top) 0%, var(--project-fill-base) 100%);
   color: var(--project-block-text);
 }
 .cycle-block-positioned.chip-communication[data-user-edited="true"] {
-  background-color: var(--communication-fill);
+  background: linear-gradient(135deg, var(--comm-fill-top) 0%, var(--comm-fill-base) 100%);
   color: var(--communication-block-text);
 }
 .cycle-block-positioned.chip-ci[data-user-edited="true"] {
-  background-color: var(--ci-fill);
+  background: linear-gradient(135deg, var(--ci-fill-top) 0%, var(--ci-fill-base) 100%);
   color: var(--ci-block-text);
 }
 
 /*
- * Now-line — identical rules to .wg-now-line so both views have consistent
- * visual treatment. The selector alias avoids duplicating the animation.
+ * Now-line — Iter 33 Chartered Minimalism treatment (AC7, AC8).
+ * Three layers: 1.5px line + breathing glow trail (::after) + timestamp label.
+ * The dot is rendered as ::before, breathing via dotBreathe animation.
  */
 .cycle-now-line {
   position: absolute;
   left: 0;
   right: 0;
-  height: 2px;
-  background: var(--danger);
+  height: 1.5px;
+  background: var(--now-red);
   pointer-events: none;
+  z-index: 10;
 }
+
+/* Dot — left edge, breathes in sync with glow (AC8). */
 .cycle-now-line::before {
   content: '';
   position: absolute;
-  left: -4px;
-  top: -3px;
-  width: 8px;
-  height: 8px;
-  background: var(--danger);
+  left: -5px;
+  top: -4.5px;
+  width: 10px;
+  height: 10px;
+  background: var(--now-red);
   border-radius: 50%;
+  border: 2px solid var(--surface-1);
+  animation: dotBreathe 3s ease-in-out infinite;
+}
+
+/* Glow trail — fades right, breathing opacity (AC8). */
+.cycle-now-line::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: -2.5px;
+  height: 6px;
+  background: linear-gradient(to right, rgba(220,38,38,0.35) 0%, rgba(220,38,38,0) 55%);
+  animation: nowGlow 3s ease-in-out infinite;
+}
+
+/* Timestamp label — always visible, DM Mono, red (AC7). */
+.cycle-now-label {
+  position: absolute;
+  left: 8px;
+  top: -8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--now-red);
+  background: rgba(255,255,255,0.9);
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1.4;
+  pointer-events: none;
+  letter-spacing: 0.01em;
 }
 
 /* ---------- BucketStrip ---------- */
@@ -2506,6 +2643,20 @@ html, body {
   .bucket-row .bucket-fill {
     background: CanvasText;
   }
+  /* Iter 33 additions: bucket strip fills + proposed gradient blocks */
+  .cycle-bucket-fill-project,
+  .cycle-bucket-fill-communication,
+  .cycle-bucket-fill-ci {
+    background: CanvasText;
+  }
+  .cycle-block-positioned.chip-project.cycle-block-proposed,
+  .cycle-block-positioned.chip-communication.cycle-block-proposed,
+  .cycle-block-positioned.chip-ci.cycle-block-proposed {
+    background: Canvas;
+    color: CanvasText;
+    border: 2px dashed CanvasText;
+    forced-color-adjust: none;
+  }
 }
 
 /* .morning-recap rules removed — Phase A (MorningRecap now inside CycleCard; styles inherited via .cycle-header) */
@@ -2655,27 +2806,44 @@ html, body {
   justify-content: center;
 }
 
-/* Semi-transparent backdrop — clicking closes the dialog. */
+/* Iter 33: warm-dark scrim matching --ink-900 (AC13). */
 .bdd-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(17, 16, 9, 0.42);
   cursor: pointer;
+  animation: backdropFade 200ms ease both;
 }
 
-/* Floating panel — centered above the backdrop. */
+/* Iter 33: scale-fade entrance, refined proportions (AC13). */
 .bdd-panel {
   position: relative;
   z-index: 1;
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background: var(--surface-1);
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
   min-width: 280px;
-  max-width: 420px;
-  width: calc(100% - 32px);
+  max-width: 360px;
+  width: calc(100% - 48px);
   padding: 0;
   overflow: hidden;
+  animation: dialogEnter 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Dialog color accent bar at top — added per bucket in BlockDetailDialog.js (AC13). */
+.bdd-color-bar {
+  height: 4px;
+  width: 100%;
+}
+.bdd-color-bar-project {
+  background: linear-gradient(to right, var(--project-fill-top), var(--project-fill-base));
+}
+.bdd-color-bar-communication {
+  background: linear-gradient(to right, var(--comm-fill-top), var(--comm-fill-base));
+}
+.bdd-color-bar-ci {
+  background: linear-gradient(to right, var(--ci-fill-top), var(--ci-fill-base));
 }
 
 /* Header row: title + close button. */
@@ -2687,13 +2855,16 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
+/* Iter 33: DM Serif Display on dialog title (AC13). */
 .bdd-title {
   flex: 1;
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--fg);
-  line-height: 1.3;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;  /* DM Serif Display is elegant at regular weight */
+  color: var(--ink-900);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 /* Close ×  button (top-right). */
@@ -2732,14 +2903,16 @@ html, body {
   gap: 8px;
 }
 
+/* Iter 33: DM Mono on dialog labels (AC5). */
 .bdd-label {
   flex-shrink: 0;
   width: 110px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-400);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .bdd-value {
@@ -2804,4 +2977,231 @@ html, body {
   border-color: var(--border);
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+/* ==========================================================================
+ * Iter 33 — Chartered Minimalism: keyframe animations + new components
+ * ========================================================================== */
+
+/* ---- Keyframe: page-load block reveal (AC11) ---- */
+@keyframes blockReveal {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ---- Keyframe: now-line glow breathing (AC8) ---- */
+@keyframes nowGlow {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 1; }
+}
+
+/* ---- Keyframe: now-line dot breathing (AC8) ---- */
+@keyframes dotBreathe {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.3); }
+}
+
+/* ---- Keyframe: dialog scale-fade entrance (AC13) ---- */
+@keyframes dialogEnter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---- Keyframe: backdrop fade (AC13) ---- */
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Keyframe: kaizen chip glow-ring ping (AC10) ---- */
+@keyframes kaizenPing {
+  0%   { box-shadow: 0 0 0 0px rgba(147,51,234,0.3); }
+  50%  { box-shadow: 0 0 0 5px rgba(147,51,234,0.12); }
+  100% { box-shadow: 0 0 0 0px rgba(147,51,234,0); }
+}
+
+/* ---- Date heading — DM Serif Display (AC4) ---- */
+.cycle-date-display {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 4px;
+}
+
+/* Sub-line under date (composition state) */
+.cycle-date-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-400);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* ---- Proposed plan banner (AC19) ---- */
+.cycle-proposed-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(to right, #fef9c3, transparent);
+  border: 1px dashed #ca8a04;
+  border-radius: 5px;
+  margin-bottom: 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #713f12;
+}
+
+.cycle-proposed-banner-icon {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #ca8a04;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ---- Hour lines in timeline (AC15) ---- */
+.cycle-hour-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: var(--ink-200);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ---- Right-margin bucket summary strip (AC9) ---- */
+/* This is a new layout mode for Today.js. The .today-body grid needs
+   adjustment when the strip is present — handled in Today.js render. */
+.cycle-bucket-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+  width: 164px;
+  flex-shrink: 0;
+}
+
+.cycle-bucket-strip-heading {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ink-200);
+  margin: 0;
+}
+
+.cycle-bucket-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cycle-bucket-row-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cycle-bucket-name {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.cycle-bucket-name-project      { color: #15803d; }
+.cycle-bucket-name-communication { color: #a16207; }
+.cycle-bucket-name-ci           { color: #7e22ce; }
+
+.cycle-bucket-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-600);
+}
+
+.cycle-bucket-track {
+  height: 3px;
+  background: var(--ink-200);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cycle-bucket-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 600ms ease;
+}
+
+.cycle-bucket-fill-project {
+  background: linear-gradient(to right, var(--project-fill-top), var(--project-fill-base));
+}
+.cycle-bucket-fill-communication {
+  background: linear-gradient(to right, var(--comm-fill-top), var(--comm-fill-base));
+}
+.cycle-bucket-fill-ci {
+  background: linear-gradient(to right, var(--ci-fill-top), var(--ci-fill-base));
+}
+
+.cycle-bucket-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-400);
+  margin: 0;
+}
+
+/* ---- Today page layout with bucket strip (AC9) ---- */
+/* The .today-body-with-strip overrides the existing flex layout to add
+   the right-margin bucket column. Coexists with existing .today-body. */
+.today-body-with-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.today-grid-col {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Iter 33 forced-colors additions are folded into the main @media block above. */
+
+/* ---- Mobile breakpoints for new Iter 33 components (AC20) ---- */
+@media (max-width: 860px) {
+  .today-body-with-strip {
+    flex-direction: column;
+  }
+  .cycle-bucket-strip {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .cycle-bucket-strip-heading {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .cycle-date-display {
+    font-size: 22px;
+  }
+  .cycle-bucket-strip {
+    grid-template-columns: 1fr;
+  }
+  .bdd-panel {
+    width: calc(100vw - 32px);
+    max-width: none;
+  }
 }

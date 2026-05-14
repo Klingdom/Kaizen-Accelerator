@@ -6,6 +6,72 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 33 — 2026-05-13 — Chartered Minimalism redesign — Today page (C-UX-AESTHETIC)
+
+### What changed
+User-directive feature. Phil ran `frontend-design` skill (newly installed marketplace plugin) on the Today page as an assessment lens; coordinator dispatched proposal pass (Iter 33-pre) producing `UX_TODAY_REDESIGN.md` (379 lines) + `assets/today-redesign-preview.html` (1,276 lines self-contained preview). Phil approved Path A — full ship of "Chartered Minimalism" aesthetic with all 3 likely-pushback items intact.
+
+**Aesthetic direction: Chartered Minimalism**
+> "A well-edited financial journalist's working planner — quiet authority of a Bloomberg terminal print-edition, structural rhythm of a typeset editorial column, spatial discipline of an architect's working document."
+
+**Typography overhaul** (replaces system-font stack — `frontend-design` skill's #1 anti-pattern):
+- **Display**: DM Serif Display (Google Fonts, SIL OFL) — date heading + dialog titles
+- **Body**: DM Sans (Google Fonts) — all UI text
+- **Mono**: DM Mono (Google Fonts) — all time displays + tabular numerals
+- Same foundry (Colophon) — designed to work together
+- Single `<link>` import in `index.html`; `display=swap` prevents FOIT
+
+**Color depth**:
+- Block fills now use 2-stop `linear-gradient(135deg, ...)` instead of flat Tailwind tones
+- Iter 31 base colors preserved (green PROJECT, yellow COMMUNICATION, purple CI, muted lunch) — gradient adds depth without losing identity
+- WCAG AA contrast preserved: text positioned in base-color zone (bottom-right of gradient); padding moves it out of the lightest top-left
+
+**Motion** (controlled, high-impact moments):
+- `blockReveal` — page-load staggered animation (60ms × index, capped at 6, 120ms offset)
+- `nowGlow` + `dotBreathe` — now-line breathing pulse (3s loop)
+- `kaizenPing` — **signature detail**: one-time purple halo ring on kaizen-linked blocks at 800ms after page load (invisible to non-CI users; unmistakable signal to CI experts)
+- Block hover-lift `transform: translateY(-2px)` at 160ms
+- `dialogEnter` — BlockDetailDialog scale-fade with spring-physics easing `cubic-bezier(0.34, 1.56, 0.64, 1)`
+
+**Spatial composition**:
+- New right-margin bucket summary strip (`.cycle-bucket-strip` — 164px column) — moves bucket totals from below grid to structural side rail
+- Hour rail upgraded: DM Mono labels, hairline separators, `--surface-2` background, current-hour highlight
+- Vertical hairlines aligned to hour boundaries (`.cycle-hour-line`) — adds atmospheric structure to the calendar background
+- PROPOSED state banner: "PROPOSED — tap Accept to ratify this plan." renders above grid when composition state warrants
+
+**Now-line refinement**:
+- Always-visible `HH:MM` timestamp label in DM Mono (red, 10px)
+- Subtle breathing pulse animation on both line + dot
+
+**Dialog refinement**:
+- Bucket-color accent bar at dialog top (matches activity's bucket)
+- Spring-physics scale-fade entrance
+- DM Serif Display on title
+
+### Why
+Phil ran the `frontend-design` skill's anti-AI-slop assessment. Current state scored ~2.5/10 on the skill's distinctiveness metric — system-font stack named as direct violation of the skill's #1 anti-pattern. Phil approved a refined intentional minimalism upgrade that respects BAM-X's workflow-tool positioning while replacing generic execution with editorial polish.
+
+### Impact
+- Test suite: 3,106 → **3,106** (unchanged — additive CSS + render-string changes; selectors preserved)
+- Runtime: 3.88s → **3.65s** ✅ (per-test 1.25 → 1.18ms; 21% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- Files touched: 7 (`index.html`, `app.css`, `TodayGrid.js`, `CycleCard.js`, `BlockDetailDialog.js`, `Today.js`, `Today.test.js`)
+- CSS LOC delta: **+241 net** (+536 diff)
+- AC1–AC20: all PASS
+- All Iter 28-32 prior work preserved (hotfix + simplification + lunch + calendar + color identity + cleanup)
+
+### Spec deviations (minor)
+1. `--font-stack` kept as alias for `--font-body` to avoid touching ~30 existing CSS rules (safe bridge)
+2. `.cycle-bucket-strip` selector chosen to avoid namespace collision with existing `.bucket-strip`/`.bucket-row` classes
+3. `formatDateDisplay` uses `en-GB` locale matching preview output ("Thursday, 30 April 2026")
+4. PROPOSED banner placed in CycleCard (not Today.js) — tighter state coupling
+5. CCC bucket-strip region not added to CCC test — existing bound `≤ 4` still holds; additive region is new selector class
+
+### Signature detail
+**Kaizen chip glow-ring ping**: a single 800ms-delayed purple halo pulse on blocks linked to active Kaizens. Fires once per page load. Invisible to non-CI-fluent users; unmistakable signal to continuous-improvement practitioners. The skill-mandated "one thing that would be remembered" — Phil-specific in a way no generic calendar app would carry.
+
+---
+
 ## Iteration 32 — 2026-05-13 — Calendar transition cleanup (C-FE-1 + C-FE-2)
 
 ### What changed
