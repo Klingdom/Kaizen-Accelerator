@@ -79,6 +79,7 @@ import { InsightsPortfolio } from './ui/pages/InsightsPortfolio.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
 import { BlockDetailDialog } from './ui/components/BlockDetailDialog.js';
+import { CatalogPickerDialog } from './ui/components/CatalogPickerDialog.js';
 import {
   BaselineDialog,
   extractBaselineFields
@@ -362,6 +363,8 @@ function createState() {
     editMode: null,
     // Iter 30 — block detail popover. null = closed; {activityId} = open.
     blockDetail: null,
+    // Iter 36 — catalog picker dialog. null = closed; {startMinutes, search, bucketFilter} = open.
+    catalogPickerDialog: null,
     // Iter 35 — drag-and-drop state (Phase 2).
     // dragSession: null when idle; set during PROPOSED pending-confirm flow.
     //   Shape: { activityId, activityName, newStart, newDuration, originalStart,
@@ -390,7 +393,9 @@ function createState() {
       skipReasonModal: null,
       weeklyReflectionWizard: null,
       // Iter 30 — block detail popover.
-      blockDetailDialog: null
+      blockDetailDialog: null,
+      // Iter 36 — catalog picker dialog.
+      catalogPickerDialog: null
     }
   };
 }
@@ -671,6 +676,13 @@ function syncDrawerFocusTraps(state, handlers = {}) {
       key: 'blockDetailDialog',
       selector: '.bdd-modal',
       onEscapeAction: 'CLOSE_BLOCK_DETAIL'
+    },
+    // Iter 36 — catalog picker dialog.
+    {
+      open: !!state.catalogPickerDialog,
+      key: 'catalogPickerDialog',
+      selector: '.cpd-modal',
+      onEscapeAction: 'CLOSE_CATALOG_PICKER'
     }
   ];
 
@@ -768,7 +780,9 @@ export function renderApp(services, state, handlers = {}) {
       blockDetail: state.blockDetail ?? null,
       // Iter 35 Phase 2: drag state slices.
       dragSession:    state.dragSession    ?? null,
-      conflictBanner: state.conflictBanner ?? null
+      conflictBanner: state.conflictBanner ?? null,
+      // Iter 36: catalog picker dialog state.
+      catalogPickerDialog: state.catalogPickerDialog ?? null
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -1348,6 +1362,169 @@ export function buildHandlers(scope) {
       state.blockDetail = null;
       rerender();
     },
+
+    // ---- Iter 36: Catalog picker dialog (click-empty-time insertion) --------
+
+    // CLICK_EMPTY_TIME — fired by the transparent overlay in TodayGrid when
+    // the user clicks on an empty time slot. Computes the clicked minute from
+    // the click event's clientY + the timeline element's bounding rect,
+    // snaps to 15-min increments, and opens the CatalogPickerDialog.
+    CLICK_EMPTY_TIME(_payload, ctx) {
+      // Ensure no block was clicked (block clicks absorb via OPEN_BLOCK_DETAIL
+      // before bubbling to the overlay — AC11 satisfied by event delegation order).
+      // Guard: must have a live event to read clientY from.
+      if (!ctx || !ctx.event) return;
+
+      // Find the timeline element to get its bounding rect.
+      /* istanbul ignore next — browser only */
+      const timelineEl = typeof document !== 'undefined'
+        ? document.querySelector('.cycle-timeline')
+        : null;
+      if (!timelineEl || typeof timelineEl.getBoundingClientRect !== 'function') return;
+
+      const rect = timelineEl.getBoundingClientRect();
+      const relativeY = ctx.event.clientY - rect.top;
+
+      // Read grid constants from the overlay element's data attributes
+      // (rendered by TodayGrid so the handler never needs to import them).
+      const overlayEl = typeof document !== 'undefined'
+        ? document.querySelector('.cycle-empty-overlay')
+        : null;
+      const gridStartHour = overlayEl
+        ? Number(overlayEl.getAttribute('data-grid-start-hour') ?? 7)
+        : 7;
+      const rowHeightPx = overlayEl
+        ? Number(overlayEl.getAttribute('data-row-height-px') ?? 60)
+        : 60;
+      const snapMinutes = overlayEl
+        ? Number(overlayEl.getAttribute('data-snap-minutes') ?? 15)
+        : 15;
+
+      // Convert Y position to minutes of day.
+      const rawMinutes = gridStartHour * 60 + (relativeY / rowHeightPx) * 60;
+      const snappedMinutes = Math.round(rawMinutes / snapMinutes) * snapMinutes;
+      const clampedMinutes = Math.max(gridStartHour * 60, Math.min(19 * 60, snappedMinutes));
+
+      state.catalogPickerDialog = {
+        startMinutes: clampedMinutes,
+        search: '',
+        bucketFilter: 'ALL'
+      };
+      rerender();
+    },
+
+    CLOSE_CATALOG_PICKER(_payload) {
+      state.catalogPickerDialog = null;
+      rerender();
+    },
+
+    // CPD_SEARCH — fired by the search input's input event (not click).
+    // Value is read from ctx.element.value in the input listener wired in start().
+    CPD_SEARCH(_payload, ctx) {
+      if (!state.catalogPickerDialog) return;
+      const value = ctx?.element?.value ?? '';
+      state.catalogPickerDialog = {
+        ...state.catalogPickerDialog,
+        search: value
+      };
+      rerender();
+    },
+
+    CPD_BUCKET_FILTER(payload) {
+      if (!state.catalogPickerDialog) return;
+      if (!payload || typeof payload.bucket !== 'string') return;
+      state.catalogPickerDialog = {
+        ...state.catalogPickerDialog,
+        bucketFilter: payload.bucket
+      };
+      rerender();
+    },
+
+    // INSERT_ACTIVITY_AT_TIME — user selected a catalog entry from the picker.
+    // Constructs a new ScheduledActivity from the entry + clicked start time,
+    // pushes to the composition (via edit-mode infrastructure), then closes
+    // the picker.
+    //
+    // Composition state transitions (AC9):
+    //   PROPOSED → composition stays PROPOSED (insertion is part of the draft)
+    //   ACCEPTED / EDITED → composition transitions to EDITED
+    //
+    // Overlap detection (AC10): reuses detectOverlap from dragController.js.
+    INSERT_ACTIVITY_AT_TIME(payload) {
+      if (!payload || typeof payload.catalogEntryId !== 'string') return;
+      if (!Number.isFinite(payload.startMinutes)) return;
+
+      const catalog = services.catalogService.list(DEFAULT_USER.id) ?? [];
+      const entry = catalog.find((e) => e && e.id === payload.catalogEntryId);
+      if (!entry) {
+        showToast(state, ToastKind.ERROR, 'Catalog entry not found.', rerender);
+        return;
+      }
+
+      // Ensure edit mode is open — auto-enter if needed (mirrors _ensureEditMode).
+      const opened = this._ensureEditMode();
+      if (!opened) {
+        showToast(state, ToastKind.ERROR, 'No active plan to insert into.', rerender);
+        return;
+      }
+
+      // Convert startMinutes to HH:MM.
+      const h = Math.floor(payload.startMinutes / 60);
+      const m = payload.startMinutes % 60;
+      const startHHMM = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+      const now = services.clock.now();
+      const idGen = (p) => services.idGenerator.generate(p);
+
+      // Snapshot for undo.
+      state.editMode.undoStack = pushUndo(
+        state.editMode.undoStack,
+        state.editMode.activities.map((a) => ({ ...a }))
+      );
+
+      // Build a new ScheduledActivity from the catalog entry + clicked start.
+      // Reuses activityFromCatalogEntry so ID prefix and shape are consistent.
+      const newActivity = {
+        id: idGen('sa_insert'),
+        catalogEntryId: entry.id,
+        name: entry.name ?? entry.id,
+        bucket: entry.bucket,
+        plannedDurationMinutes: entry.defaultDurationMinutes ?? 30,
+        plannedStartAt: startHHMM,
+        state: 'PROPOSED',
+        sourceOfSchedule: 'USER_INSERT',
+        userEdited: true,
+        updatedAt: now
+      };
+
+      state.editMode.activities = [...state.editMode.activities, newActivity];
+
+      // Overlap detection (AC10): reuse detectOverlap from dragController.js.
+      const overlap = detectOverlap(
+        state.editMode.activities,
+        newActivity.id,
+        payload.startMinutes,
+        newActivity.plannedDurationMinutes
+      );
+      if (overlap) {
+        state.conflictBanner = {
+          activityId:       newActivity.id,
+          activityName:     newActivity.name,
+          againstName:      overlap.againstName,
+          againstStartHHMM: overlap.againstStartHHMM,
+          originalStart:    startHHMM,
+          originalDuration: newActivity.plannedDurationMinutes,
+          mode:             'insert'
+        };
+      }
+
+      // Close the picker.
+      state.catalogPickerDialog = null;
+      showToast(state, ToastKind.SUCCESS, `Added ${entry.name} at ${startHHMM}.`, rerender);
+      rerender();
+    },
+
+    // ---- End Iter 36 ----------------------------------------------------------
 
     // Closes the popover, enters edit mode for the owning composition, and
     // selects the activity — reuses the EDIT_QUICK_UPDATE pattern.
@@ -3071,8 +3248,13 @@ export function start() {
     root.addEventListener('input', (ev) => {
       const el = ev.target;
       if (!el || typeof el.getAttribute !== 'function') return;
-      if (el.getAttribute('data-action') !== 'EDIT_SEARCH') return;
-      handlers.EDIT_SEARCH({ value: el.value ?? '' });
+      const action = el.getAttribute('data-action');
+      if (action === 'EDIT_SEARCH') {
+        handlers.EDIT_SEARCH({ value: el.value ?? '' });
+      } else if (action === 'CPD_SEARCH') {
+        // Iter 36: catalog picker search input.
+        handlers.CPD_SEARCH({}, { element: el, event: ev });
+      }
     });
     root.addEventListener('change', (ev) => {
       const el = ev.target;

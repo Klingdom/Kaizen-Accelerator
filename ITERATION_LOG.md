@@ -1124,3 +1124,38 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Manual visual QA: drag a non-protected ACCEPTED block → verify immediate commit; drag a PROPOSED block → verify Confirm banner; resize via bottom edge; drag overlapping → verify conflict banner
   - **Phase 3 (click-empty-time) still unblocked but separate iteration**
   - **META operating-model deltas still unapproved** (Iter 27 §7)
+
+---
+
+## Iteration 36 — 2026-05-14 — Calendar Phase 3: click-empty-time insert (C-PM-CAL-P3)
+
+- **Selected item**: Phase 3 click-empty-time. Last unblocked SW-Q-CAL batch item. Score 13.
+- **Reason for selection**: Phil's "proceed" after Iter 35; SW-Q-CAL-02 already answered (Catalog picker). Completes the calendar interaction story end-to-end.
+- **Agents involved**: frontend-engineer (single-pass implementation).
+- **Validation results**:
+  - Tests: 3,153 → **3,225** (+72 net)
+  - Runtime: 4.03s → **4.23s** ✅ (per-test 1.28 → 1.31ms; 13% headroom under META §7.1 1.5ms ceiling)
+  - All 18 ACs PASS
+  - **§6.5 boundary**: zero hits.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW files (2)**:
+    - `js/ui/components/CatalogPickerDialog.js` (249 LOC) — focus-trapped picker with search + bucket filter
+    - `tests/app.iter36.test.js` (895 LOC, 72 tests)
+  - **Modified files (3)**: `js/app.js` (+190 LOC: state slice, handlers, dialogConfig, input listener), `js/ui/components/TodayGrid.js` (+41 LOC: transparent overlay layer), `js/ui/pages/Today.js` (+19 LOC: import + render conditional)
+- **Click detection**: transparent overlay behind blocks; pointer events route click on empty → `CLICK_EMPTY_TIME` action; click on block still hits block (higher z-index) and opens BlockDetailDialog from Iter 30
+- **Picker filtering**: excludes `recovery_lunch` + all `PROTECTED_CATALOG_IDS`; shows search input + bucket filter pills (PROJECT/COMM/CI)
+- **Insertion**: `INSERT_ACTIVITY_AT_TIME({catalogEntryId, startMinutes})` constructs new ScheduledActivity via `services.idGenerator.generate('sa_insert')`; duration from catalog default; auto-enters edit mode via `_ensureEditMode()` (reused from Iter 35); pushes onto undo stack; reuses Iter 35 `detectOverlap` for conflict detection
+- **A11y**: role="dialog" + aria-modal="true" + aria-labelledby + focus trap (11th protected modal surface) + Escape + backdrop click + Close button
+- **Spec deviations**: Zero. One implementation note: insertion handler constructs ScheduledActivity directly rather than calling `editMode.js applyAdd` — kept id prefix distinct (`sa_insert` vs `sa_edit`) for traceability.
+- **Time spent**: ~2.5-3 h actual vs 3-5 h estimate.
+- **Strategic outcome**:
+  - **Calendar interaction story end-to-end complete**: visual (29) + click-detail (30) + color identity (31) + aesthetic (33) + drag (35) + **insert (36)**
+  - **Matches universal industry calendar pattern** (Google Cal, Apple Cal, Outlook, Motion)
+  - **Plus BAM-X-unique additions**: dashed-PROPOSED outlines (Iter 29), kaizen-chip glow-ring ping (Iter 33), scoped commit semantics (Iter 35), conflict-banner non-blocking warning (Iter 35 + 36 shared pattern)
+  - **All 6 SW-Q-CAL questions resolved** (4 from batch + Iter 29 implicit confirmation)
+- **Latent issues**: None new. Overlay accessibility is pointer-event-only (consistent with dragController's pattern); keyboard-only users cannot trigger empty-time insert via Tab. Acceptable for the interaction model.
+- **Follow-ups**:
+  - Commit + push (deploy queue now **6-deep** — META §7.7 gate violated)
+  - **CRITICAL deploy needed**: 6 iterations stacked since last Phil deploy
+  - Remaining work: Phase B (composer rebalance, SW-Q6–Q10 OPEN) + Phase C (no-projects discovery, SW-Q1–Q5 OPEN) + META operating-model deltas (unapproved)
+  - **The full unblocked backlog is now genuinely exhausted.** Continuing further without Phil's content authority would be inventing scope (violates §6.1).

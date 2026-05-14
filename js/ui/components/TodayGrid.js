@@ -1,6 +1,20 @@
 /**
  * TodayGrid — single-day calendar grid for the Today page (Iter 29 / Phase 1).
  *
+ * Iter 36 / Phase 3 additions:
+ *   - Transparent click-empty-time overlay: a zero-pointer-events layer that
+ *     sits BEHIND blocks (z-index lower) and handles clicks on empty space.
+ *   - Overlay emits data-action="CLICK_EMPTY_TIME" + data-payload with the
+ *     clicked time snapped to 15-min increments.
+ *   - 5px move threshold lives in dragController.js (CLICK_THRESHOLD_PX).
+ *     The overlay uses pointer-events:none and only receives clicks forwarded
+ *     from the timeline's pointerup when hasMoved is false (blocks absorb their
+ *     own clicks via data-action=OPEN_BLOCK_DETAIL; the overlay only fires
+ *     when the target is NOT a block — AC11).
+ *   - The click detection is handled via a data-action on the timeline wrapper
+ *     itself (data-action="CLICK_EMPTY_TIME") with pointer-events only for
+ *     empty zones, controlled by CSS z-index stacking.
+ *
  * Iter 35 / Phase 2 additions:
  *   - Resize handle (.cycle-block-resize-handle) on non-protected, non-lunch blocks
  *   - data-activity-start / data-activity-duration attributes for drag math
@@ -56,6 +70,9 @@ import { orderActivitiesForDisplay } from './CycleCard.js';
 
 /** Minimum rendered block height in px — keeps short blocks clickable. */
 const MIN_BLOCK_HEIGHT_PX = 24;
+
+/** Snap interval for clicked time (minutes). Matches dragController.js. */
+const CLICK_SNAP_MINUTES = 15;
 
 /**
  * Minimum height (px) below which the end time is dropped from the
@@ -335,9 +352,31 @@ export function TodayGrid(props = {}) {
   // Timeline height.
   const timelineHeight = (gridEndHour - gridStartHour) * rowHeightPx;
 
+  // Iter 36 Phase 3: transparent click-empty-time overlay (AC1, AC11, AC12).
+  // Sits BEHIND blocks (z-index via CSS: .cycle-empty-overlay { z-index:0 },
+  // .cycle-block-positioned { z-index:1 }). Clicks on blocks are absorbed by
+  // the block's data-action=OPEN_BLOCK_DETAIL first (bubbling order in the
+  // delegate means the BLOCK click fires, not the overlay). The overlay fires
+  // only when the raw click target is NOT inside a .cycle-block-positioned.
+  // app.js CLICK_EMPTY_TIME handler reads ctx.event.clientY + the timeline
+  // element's getBoundingClientRect() to compute the snapped minute value.
+  // data-grid-start and data-row-height are emitted so app.js can compute
+  // the minute without accessing internal constants.
+  const emptyOverlay = `<div
+    class="cycle-empty-overlay"
+    data-action="CLICK_EMPTY_TIME"
+    data-payload='{}'
+    data-grid-start-hour="${gridStartHour}"
+    data-row-height-px="${rowHeightPx}"
+    data-snap-minutes="${CLICK_SNAP_MINUTES}"
+    aria-hidden="true"
+    style="position:absolute;inset:0;z-index:0"
+  ></div>`;
+
   return `<div class="cycle-calendar-grid" data-composition-state="${esc(compState)}">
   ${rail}
   <div class="cycle-timeline" style="height: ${timelineHeight}px">
+    ${emptyOverlay}
     ${hourLines}
     ${blocks}
     ${ghostBlockHtml}

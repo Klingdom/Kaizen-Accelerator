@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,153 (+588 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,225 (+660 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 750 (+147 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.28 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.20ms (Iter 34) → **1.28ms (Iter 35)** | ✅ stable |
+| Suite count | 760+ (+157 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.31 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (13% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.23s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (15% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.28ms (Iter 35) → **1.31ms (Iter 36)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 35 commit) | (in progress) |
-| **Production deploy queue** | **5 iterations (Iter 31 + 32 + 33 + 34 + 35)** | 🚨 OVER GATE (max 4 per META §7.7) — deploy required |
+| Last green commit | (pending Iter 36 commit) | (in progress) |
+| **Production deploy queue** | **6 iterations (Iter 31 + 32 + 33 + 34 + 35 + 36)** | 🚨🚨 OVER GATE (max 4 per META §7.7) — deploy critical |
 
 ---
 
@@ -105,7 +105,18 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-14 after Iteration 35 (Calendar Phase 2 drag — C-PM-CAL-P2). Phil batch-approved SW-Q-CAL defaults (Path A); unblocked Phase 2 drag-to-move + drag-to-resize. New `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable. 15-min snap; bottom-edge resize handle; ghost block during drag; 5px click-threshold; touch-action: none on resize handle for iOS. Scoped commit semantics (synthesis option c): PROPOSED → pending Confirm/Cancel banner; ACCEPTED/EDITED+ → immediate commit via reused EDIT_CHANGE_START_TIME + EDIT_CHANGE_DURATION. Non-blocking overlap conflict banner with Revert/Keep. Safety gates: protected blocks have no drag handles (IN_PROGRESS blocked at pointerdown — QA-flagged critical edge case). 7 new orchestration handlers; 2 new state slices (dragSession, conflictBanner). Suite 3,107 → 3,153 (+46 dragController unit tests using `_doc` injection per META §7.3 parameterization). All 18 ACs PASS. §6.5: zero hits (architect's prediction held — drag reuses existing edit actions). Iter 28 stuck-state bug class prevented via PROPOSED pending flow._
+_Last updated: 2026-05-14 after Iteration 36 (Calendar Phase 3 click-empty-time insert — C-PM-CAL-P3). Final calendar interaction layer. Phil's SW-Q-CAL-02 batch answer (Catalog picker) implemented. New `CatalogPickerDialog.js` (249 LOC) — focus-trapped picker with search + bucket filter; 11th protected modal surface. Transparent overlay layer in TodayGrid routes click-empty → CLICK_EMPTY_TIME action. Picker filters exclude `recovery_lunch` + all PROTECTED_CATALOG_IDS. `INSERT_ACTIVITY_AT_TIME` orchestration handler constructs ScheduledActivity via deterministic IdGeneratorService; reuses Iter 35 detectOverlap for conflict detection. Suite 3,153 → 3,225 (+72 net). All 18 ACs PASS. §6.5: zero hits._
+
+_**Calendar end-to-end COMPLETE**: visual hour-grid (Iter 29) + click-detail dialog (Iter 30) + Phil's color identity (Iter 31) + Chartered Minimalism aesthetic (Iter 33) + drag-to-move/resize (Iter 35) + click-empty-time insert (Iter 36). Matches universal industry pattern plus BAM-X-unique additions (dashed-PROPOSED, kaizen ping, scoped commit semantics, conflict banner)._
+
+_🚨🚨 **DEPLOY GATE 50% OVER LIMIT**: queue 6-deep (Iter 31-36). META §7.7 max is 4. Phil must deploy before any further iteration. Coordinator will not dispatch Iter 37 implementation without deploy._
+
+_**The full unblocked backlog is now genuinely exhausted.** All remaining items require Phil's content authority:_
+_- Phase B simplify composer rebalance (SW-Q6–Q10 OPEN)_
+_- Phase C simplify no-projects discovery (SW-Q1–Q5 OPEN)_
+_- META operating-model deltas (Iter 27 §7 — 7 unapproved recommendations)_
+
+_Iteration 35 — 2026-05-14 — Calendar Phase 2 drag — C-PM-CAL-P2. Phil batch-approved SW-Q-CAL defaults (Path A); unblocked Phase 2 drag-to-move + drag-to-resize. New `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable. 15-min snap; bottom-edge resize handle; ghost block during drag; 5px click-threshold; touch-action: none on resize handle for iOS. Scoped commit semantics (synthesis option c): PROPOSED → pending Confirm/Cancel banner; ACCEPTED/EDITED+ → immediate commit via reused EDIT_CHANGE_START_TIME + EDIT_CHANGE_DURATION. Non-blocking overlap conflict banner with Revert/Keep. Safety gates: protected blocks have no drag handles (IN_PROGRESS blocked at pointerdown — QA-flagged critical edge case). 7 new orchestration handlers; 2 new state slices (dragSession, conflictBanner). Suite 3,107 → 3,153 (+46 dragController unit tests using `_doc` injection per META §7.3 parameterization). All 18 ACs PASS. §6.5: zero hits (architect's prediction held — drag reuses existing edit actions). Iter 28 stuck-state bug class prevented via PROPOSED pending flow._
 
 _⚠️ **DEPLOY GATE OVER LIMIT**: queue now 5-deep (Iter 31 + 32 + 33 + 34 + 35). META §7.7 max is 4. **Phil must deploy before Iter 36** OR Iter 36 must include deploy step._
 

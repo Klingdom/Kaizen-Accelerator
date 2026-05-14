@@ -33,6 +33,7 @@ import { OutputArtifactDialog } from '../components/OutputArtifactDialog.js';
 import { SkipReasonModal } from '../components/SkipReasonModal.js';
 import { EditDrawer } from '../components/EditDrawer.js';
 import { BlockDetailDialog } from '../components/BlockDetailDialog.js';
+import { CatalogPickerDialog } from '../components/CatalogPickerDialog.js';
 import { validateEditState } from '../editMode.js';
 
 /**
@@ -99,8 +100,9 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *   blockDetail?: {activityId: string} | null,
  *   kaizenTitleById?: Record<string, string>,
  *   catalog?: object[],
- *   dragSession?: object | null,      — Iter 35: PROPOSED pending-confirm state
- *   conflictBanner?: object | null,   — Iter 35: post-commit overlap warning
+ *   dragSession?: object | null,        — Iter 35: PROPOSED pending-confirm state
+ *   conflictBanner?: object | null,     — Iter 35: post-commit overlap warning
+ *   catalogPickerDialog?: object | null — Iter 36: catalog picker state {startMinutes, search, bucketFilter}
  * }} props
  */
 export function Today(props = {}) {
@@ -121,6 +123,8 @@ export function Today(props = {}) {
   // Iter 35 — drag state slices.
   const dragSession    = props.dragSession    ?? null;
   const conflictBanner = props.conflictBanner ?? null;
+  // Iter 36 — catalog picker dialog.
+  const catalogPickerDialog = props.catalogPickerDialog ?? null;
   // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
   const priorDayRecap = props.priorDayRecap ?? null;
   const eodRecap = props.eodRecap ?? null;
@@ -213,6 +217,16 @@ export function Today(props = {}) {
     props.catalog ?? []
   );
 
+  // Iter 36 — render catalog picker dialog when catalogPickerDialog is set.
+  const catalogPickerHtml = catalogPickerDialog
+    ? CatalogPickerDialog({
+        catalog: props.catalog ?? [],
+        startMinutes: catalogPickerDialog.startMinutes ?? 0,
+        search: catalogPickerDialog.search ?? '',
+        bucketFilter: catalogPickerDialog.bucketFilter ?? 'ALL'
+      })
+    : '';
+
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
   // Iter 35 Phase 2: drag-confirm banner for PROPOSED pending-commit flow (AC8).
@@ -278,6 +292,7 @@ export function Today(props = {}) {
   ${editDrawerHtml}
   ${modal}
   ${blockDetailHtml}
+  ${catalogPickerHtml}
 </main>`;
 }
 

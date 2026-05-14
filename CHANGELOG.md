@@ -6,6 +6,71 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 36 — 2026-05-14 — Calendar Phase 3: click-empty-time insert (C-PM-CAL-P3)
+
+### What changed
+Phase 3 of the calendar conversion — final interaction layer. Phil batch-approved SW-Q-CAL-02 default (Catalog picker). Click an empty time slot in the calendar → picker opens → select activity → block inserts at clicked time.
+
+**New components:**
+- `js/ui/components/CatalogPickerDialog.js` (249 LOC) — focus-trapped picker with search + bucket filter
+- `tests/app.iter36.test.js` (895 LOC, 72 tests)
+
+**Click detection:**
+- TodayGrid renders a transparent overlay layer behind blocks (`z-index: 0`)
+- Click on empty space hits overlay → dispatches `CLICK_EMPTY_TIME` with `clickedMinutes`
+- Click on a block hits the block (higher z-index) → opens BlockDetailDialog (Iter 30 preserved)
+- 5px move threshold from Iter 35 dragController prevents accidental empty-clicks during drag (implicit)
+
+**Picker filtering:**
+- Excludes `recovery_lunch` (composer-managed, capacity-neutral)
+- Excludes all PROTECTED_CATALOG_IDS (Daily Standup, AM Comm, Post-lunch Comm, Reflection)
+- Shows non-PROJECT/COMM/CI entries hidden
+- Search input + bucket filter pills (PROJECT / COMMUNICATION / CI)
+
+**Insertion mechanics:**
+- `INSERT_ACTIVITY_AT_TIME({catalogEntryId, startMinutes})` orchestration handler in app.js
+- Constructs new ScheduledActivity using deterministic `services.idGenerator.generate('sa_insert')`
+- Duration = `entry.defaultDurationMinutes`; bucket = `entry.bucket`
+- Auto-enters edit mode (`_ensureEditMode()` reused from Iter 35 dragController integration)
+- Pushes onto undo stack before insert
+- Reuses Iter 35 `detectOverlap` for conflict detection; on overlap surfaces conflict banner with Revert/Keep (same pattern as drag)
+
+**Accessibility:**
+- `role="dialog"` + `aria-modal="true"` + `aria-labelledby="cpd-title"`
+- Focus trap installed via `dialogConfigs[]` (Iter 24/27 pattern) — `catalogPickerDialog` becomes the 11th protected modal surface
+- Escape closes via `onEscapeAction: 'CLOSE_CATALOG_PICKER'`
+- Backdrop click + Close button also dispatch close
+
+### Why
+- Last unblocked SW-Q-CAL item from the batch approval
+- Completes the calendar interaction story: visual (29) + click-detail (30) + color (31) + aesthetic (33) + drag (35) + **insert (36)**
+- Calendar now fully matches the "standard scheduling feature" intent from Phil's original directive
+
+### Impact
+- Test suite: 3,153 → **3,225** (+72 net)
+- Runtime: 4.03s → **4.23s** ✅ (per-test 1.28 → 1.31ms; 13% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0** — pure orchestration; no composer/engine/types/events touches
+- Files: 2 new + 3 modified
+- All 18 ACs PASS
+
+### Spec deviations
+None. SW-Q-CAL-02 implemented exactly as specified.
+
+One implementation note: insertion handler constructs ScheduledActivity directly rather than calling existing `applyAdd`/`activityFromCatalogEntry` helpers from `editMode.js` — kept id prefix distinct (`sa_insert` vs `sa_edit`) for traceability.
+
+### Calendar end-to-end complete
+Full interaction layer now shipped:
+- **Iter 29** — Visual hour-grid
+- **Iter 30** — Click-block detail dialog
+- **Iter 31** — Phil's color identity (green/yellow/purple)
+- **Iter 33** — Chartered Minimalism aesthetic
+- **Iter 35** — Drag-to-move + drag-to-resize
+- **Iter 36** — Click-empty-time insert
+
+Calendar matches universal industry pattern (Google Cal, Apple Cal, Outlook, Motion). Plus BAM-X-unique additions: dashed-PROPOSED outlines, kaizen-chip glow-ring ping, scoped commit semantics (deliberate-ratification at plan level + immediate at execution level).
+
+---
+
 ## Iteration 35 — 2026-05-14 — Calendar Phase 2: drag-to-move + drag-to-resize (C-PM-CAL-P2)
 
 ### What changed
