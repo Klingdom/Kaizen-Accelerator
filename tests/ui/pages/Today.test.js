@@ -17,6 +17,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { Today, TODAY_COPY } from '../../../js/ui/pages/Today.js';
+import { DEFAULT_TARGETS } from '../../../js/ui/components/BucketStrip.js';
 
 const ACTIVE_STATE = {
   composition: {
@@ -382,5 +383,102 @@ describe('Today — Iter 30: BlockDetailDialog rendered when blockDetail set', (
     });
     assert.match(html, /role="dialog"/);
     assert.match(html, /aria-modal="true"/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter 37 — renderBucketStrip() canonical default targets (bug fix)
+// Verifies that the right-margin cycle-bucket-strip uses BucketStrip.DEFAULT_TARGETS
+// as fallback (240/120/120) not the old Iter 33 invented values (270/120/240).
+// ---------------------------------------------------------------------------
+describe('Today — Iter 37: renderBucketStrip uses canonical DEFAULT_TARGETS', () => {
+  const ACTIVITIES_ALL_BUCKETS = [
+    {
+      id: 'sa_deep',
+      name: 'Deep Work',
+      bucket: 'PROJECT',
+      plannedDurationMinutes: 120,
+      plannedStartAt: '09:00',
+      state: 'SCHEDULED'
+    },
+    {
+      id: 'sa_standup',
+      name: 'Daily Standup',
+      bucket: 'COMMUNICATION',
+      plannedDurationMinutes: 30,
+      plannedStartAt: '11:00',
+      state: 'SCHEDULED'
+    },
+    {
+      id: 'sa_retro',
+      name: 'Retrospective',
+      bucket: 'CI',
+      plannedDurationMinutes: 60,
+      plannedStartAt: '14:00',
+      state: 'SCHEDULED'
+    }
+  ];
+
+  const STATE_NO_TARGETS = {
+    composition: {
+      id: 'comp_iter37',
+      userId: 'user_phil_mvp',
+      state: 'ACCEPTED',
+      cycleType: 'DAILY'
+      // intentionally NO targets field — forces fallback to DEFAULT_TARGETS
+    },
+    activities: ACTIVITIES_ALL_BUCKETS
+  };
+
+  test('AC2: PROJECT target display is 4h (240m), not 4h 30m (270m)', () => {
+    const html = Today({ activeState: STATE_NO_TARGETS });
+    // The bucket strip formats 240m as "4h" and shows "target 4h".
+    assert.ok(html.includes('cycle-bucket-strip'), 'cycle-bucket-strip must be present');
+    assert.ok(
+      html.includes('target 4h'),
+      'PROJECT target must show 4h (240m from DEFAULT_TARGETS), not 4h 30m (old buggy 270)'
+    );
+    assert.ok(
+      !html.includes('target 4h 30m'),
+      'old buggy PROJECT target 270m (4h 30m) must not appear'
+    );
+  });
+
+  test('AC4: CI target display is 2h (120m), not 4h (240m)', () => {
+    const html = Today({ activeState: STATE_NO_TARGETS });
+    // CI planned=60m, target=120m → "target 2h"
+    // Old bug: target=240m → "target 4h" which would collide with PROJECT target in a wrong way;
+    // now the only "target 4h" is for PROJECT, and CI must show "target 2h".
+    const matches = [...html.matchAll(/target 2h/g)];
+    assert.ok(
+      matches.length >= 2,
+      'Both COMMUNICATION (2h) and CI (2h) must show "target 2h" — CI target must be 120m not 240m'
+    );
+  });
+
+  test('AC8: composition.targets values override DEFAULT_TARGETS when present', () => {
+    const stateWithTargets = {
+      composition: {
+        id: 'comp_iter37_override',
+        userId: 'user_phil_mvp',
+        state: 'ACCEPTED',
+        cycleType: 'DAILY',
+        targets: { PROJECT: 300, COMMUNICATION: 90, CI: 90 }
+      },
+      activities: ACTIVITIES_ALL_BUCKETS
+    };
+    const html = Today({ activeState: stateWithTargets });
+    // 300m = 5h, 90m = 1h 30m
+    assert.ok(html.includes('target 5h'), 'explicit PROJECT target 300m must render as "target 5h"');
+    assert.ok(
+      !html.includes('target 4h'),
+      'DEFAULT_TARGETS PROJECT (4h) must not appear when composition provides explicit targets'
+    );
+  });
+
+  test('DEFAULT_TARGETS export is 240/120/120 (contract check)', () => {
+    assert.equal(DEFAULT_TARGETS.PROJECT, 240);
+    assert.equal(DEFAULT_TARGETS.COMMUNICATION, 120);
+    assert.equal(DEFAULT_TARGETS.CI, 120);
   });
 });

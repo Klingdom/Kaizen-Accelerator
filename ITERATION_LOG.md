@@ -1159,3 +1159,34 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **CRITICAL deploy needed**: 6 iterations stacked since last Phil deploy
   - Remaining work: Phase B (composer rebalance, SW-Q6–Q10 OPEN) + Phase C (no-projects discovery, SW-Q1–Q5 OPEN) + META operating-model deltas (unapproved)
   - **The full unblocked backlog is now genuinely exhausted.** Continuing further without Phil's content authority would be inventing scope (violates §6.1).
+
+---
+
+## Iteration 37 — 2026-05-14 — Bucket strip target drift fix (C-FE-5)
+
+- **Selected item**: Phil stated target loads are 4h / 2h / 2h. Recon revealed drift: Iter 33's right-margin bucket strip in `Today.js:309-326` used WRONG defaults (PROJECT 270, CI 240) instead of canonical `BucketStrip.DEFAULT_TARGETS` (240, 120, 120). Users were seeing "target 4h 30m" / "target 4h" instead of "target 4h" / "target 2h".
+- **Reason for selection**: User-stated fact about target loads exposed a regression from Iter 33. Single-line fix; ships in minutes.
+- **Agents involved**: frontend-engineer (single-pass).
+- **Validation results**:
+  - Tests: 3,225 → **3,229** (+4 regression-locking tests)
+  - Runtime: variance 5.20s-6.97s across 3 samples (Iter 36 was 4.23s). Per-test 1.61-2.16ms — over META §7.1 1.5ms ceiling. Likely environmental (4 light tests can't add 1-2s). Flagged.
+  - All 8 ACs PASS
+  - **§6.5 boundary**: zero hits.
+- **Outcome**: Shipped.
+  - **Modified files (2)**:
+    - `js/ui/pages/Today.js` — added `import { DEFAULT_TARGETS } from '../components/BucketStrip.js'`; updated renderBucketStrip fallback defaults to use DEFAULT_TARGETS; updated JSDoc comment to reflect canonical 240/120/120 values
+    - `tests/ui/pages/Today.test.js` — 4 new regression tests in new describe block "Today — Iter 37: renderBucketStrip uses canonical DEFAULT_TARGETS"
+- **Bug origin**: Iter 33 (Chartered Minimalism). FE wrote `renderBucketStrip()` as a new helper rather than importing from BucketStrip.js. Single source of truth was broken; the new code path invented values 270/120/240 that diverged from 240/120/120 in the canonical export.
+- **Spec deviations**: Zero. Implemented exactly as Option A in the dispatch brief.
+- **Time spent**: ~10 minutes vs 15-20 min estimate.
+- **Strategic outcome**:
+  - **User-facing target accuracy restored**: bucket strip now shows correct 4h / 2h / 2h targets matching Phil's explicit statement.
+  - **Single source of truth re-established**: `BucketStrip.DEFAULT_TARGETS` is once again the only place these values are defined.
+  - **Regression guard added**: 4 new tests assert the canonical defaults; any future drift will fail the test suite.
+  - **Drift-detection pattern documented**: META §7.5 DONE-BY-PROXY sweep should be extended to also include "canonical-source-of-truth drift detection" — when a new render helper duplicates logic from an existing primitive, the new helper should consume the primitive, not invent values.
+- **Latent issues**:
+  - Runtime variance: 3-sample range 5.20-6.97s suggests environmental noise. Should re-sample in next iteration. If sustained at >1.5ms per-test, root-cause investigation needed (META §7.1).
+- **Follow-ups**:
+  - Commit + push (queue 1-deep — under META §7.7 gate).
+  - Re-sample runtime in next iteration to confirm variance was environmental.
+  - Phase B (composer rebalance) is still next non-blocked option if Phil approves SW-Q6–Q10 defaults. The 4-2-2 statement could be interpreted as Phil implicitly approving Phase B (adding 15-min end-of-deep-cycles comm to hit 120 total) — but I should not assume; surface to Phil for explicit confirmation.

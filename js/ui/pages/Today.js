@@ -35,6 +35,7 @@ import { EditDrawer } from '../components/EditDrawer.js';
 import { BlockDetailDialog } from '../components/BlockDetailDialog.js';
 import { CatalogPickerDialog } from '../components/CatalogPickerDialog.js';
 import { validateEditState } from '../editMode.js';
+import { DEFAULT_TARGETS } from '../components/BucketStrip.js';
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
@@ -300,7 +301,8 @@ export function Today(props = {}) {
  * Iter 33 — render right-margin bucket summary strip (AC9).
  * Computes minutes-per-bucket from the activities array. Target values are
  * looked up from the composition's targets snapshot when available, otherwise
- * sensible defaults (PROJECT 270m, COMMUNICATION 120m, CI 240m) are used.
+ * canonical defaults from BucketStrip.DEFAULT_TARGETS are used
+ * (PROJECT 240m, COMMUNICATION 120m, CI 120m per BucketStrip.DEFAULT_TARGETS).
  *
  * @param {object[]} activities
  * @param {object} composition
@@ -318,11 +320,12 @@ function renderBucketStrip(activities, composition) {
     }
   }
 
-  // Target minutes — from composition targets if present, else defaults.
+  // Target minutes — from composition targets if present, else canonical
+  // 4-2-2 defaults from BucketStrip.DEFAULT_TARGETS (single source of truth).
   const targetMins = {
-    PROJECT:       composition?.targets?.PROJECT       ?? 270,
-    COMMUNICATION: composition?.targets?.COMMUNICATION ?? 120,
-    CI:            composition?.targets?.CI            ?? 240,
+    PROJECT:       composition?.targets?.PROJECT       ?? DEFAULT_TARGETS.PROJECT,
+    COMMUNICATION: composition?.targets?.COMMUNICATION ?? DEFAULT_TARGETS.COMMUNICATION,
+    CI:            composition?.targets?.CI            ?? DEFAULT_TARGETS.CI,
   };
 
   function fmtMins(mins) {

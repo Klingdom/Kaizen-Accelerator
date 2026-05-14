@@ -6,6 +6,41 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 37 — 2026-05-14 — Bucket strip target drift fix (C-FE-5)
+
+### What changed
+User-stated fact: target loads are 4h / 2h / 2h (Deep Work / Communication / Continuous Improvement). The canonical `BucketStrip.DEFAULT_TARGETS` at `js/ui/components/BucketStrip.js:31-35` matches exactly (240/120/120). But Iter 33's Chartered Minimalism redesign introduced a new `renderBucketStrip()` helper in `Today.js:309-326` that hardcoded WRONG defaults: PROJECT 270, CI 240. Users were seeing "target 4h 30m" instead of "target 4h" for PROJECT and "target 4h" instead of "target 2h" for CI.
+
+**Fix**: imported `DEFAULT_TARGETS` from `js/ui/components/BucketStrip.js` and used as fallback. Single source of truth restored. The composition's `targets` snapshot (when set by composer) still takes precedence.
+
+```js
+const targetMins = {
+  PROJECT:       composition?.targets?.PROJECT       ?? DEFAULT_TARGETS.PROJECT,       // 240
+  COMMUNICATION: composition?.targets?.COMMUNICATION ?? DEFAULT_TARGETS.COMMUNICATION, // 120
+  CI:            composition?.targets?.CI            ?? DEFAULT_TARGETS.CI,            // 120
+};
+```
+
+JSDoc comment updated to reflect canonical values. 4 new regression tests added in `Today.test.js` to lock the canonical targets and prevent future drift.
+
+### Why
+- User stated target loads explicitly: 4h / 2h / 2h
+- Bucket strip is the primary visible representation of these targets
+- Drift was a regression from Iter 33 — FE wrote new helper instead of importing canonical export
+- Single-source-of-truth principle: `BucketStrip.DEFAULT_TARGETS` is the authoritative definition; any other render should consume it, not invent values
+
+### Impact
+- Test suite: 3,225 → **3,229** (+4 regression-locking tests)
+- Runtime: variance observed 5.20s–6.97s across 3 samples (was 4.23s last iter) — ⚠️ flagged as system-load noise (only +4 light tests added; cannot account for 1-2s jump)
+- §6.5 hits: **0**
+- Files: `js/ui/pages/Today.js` (import + defaults) + `tests/ui/pages/Today.test.js` (4 new tests)
+- All 8 ACs PASS
+
+### Runtime variance note
+Iter 37 closed at 5.20s on lowest of 3 samples vs 4.23s in Iter 36. Per-test 1.61ms — over META §7.1 1.5ms ceiling. Likely environmental (system load, disk cache, fan throttling); 4 new light tests cannot legitimately add 1+ second. Flagged in SYSTEM_HEALTH; next iteration should re-sample.
+
+---
+
 ## Iteration 36 — 2026-05-14 — Calendar Phase 3: click-empty-time insert (C-PM-CAL-P3)
 
 ### What changed

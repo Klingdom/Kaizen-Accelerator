@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,225 (+660 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,229 (+664 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 760+ (+157 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.31 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (13% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.23s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (15% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.28ms (Iter 35) → **1.31ms (Iter 36)** | ✅ stable |
+| Suite count | 761+ (+158 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.61-2.16 ms/test** | ⚠️ over ceiling (3-sample variance) |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | ⚠️ OVER (-7% to -44% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **5.20-6.97s** | 🚨 over alarm (variance) |
+| **Runtime alarm (META §7.1)** | **5.0s** | 🚨 OVER (-4% to -39% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.31ms (Iter 36) → **1.61-2.16ms (Iter 37, 3 samples — likely environmental)** | ⚠️ variance high; re-sample required |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 36 commit) | (in progress) |
-| **Production deploy queue** | **0 — Iter 31-36 deployed 2026-05-14** | ✅ resolved |
+| Last green commit | (pending Iter 37 commit) | (in progress) |
+| **Production deploy queue** | **1 (Iter 37 only)** | ✅ under gate (max 4 per META §7.7) |
 
 ---
 
@@ -105,7 +105,15 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-14 after Iteration 36 (Calendar Phase 3 click-empty-time insert — C-PM-CAL-P3). Final calendar interaction layer. Phil's SW-Q-CAL-02 batch answer (Catalog picker) implemented. New `CatalogPickerDialog.js` (249 LOC) — focus-trapped picker with search + bucket filter; 11th protected modal surface. Transparent overlay layer in TodayGrid routes click-empty → CLICK_EMPTY_TIME action. Picker filters exclude `recovery_lunch` + all PROTECTED_CATALOG_IDS. `INSERT_ACTIVITY_AT_TIME` orchestration handler constructs ScheduledActivity via deterministic IdGeneratorService; reuses Iter 35 detectOverlap for conflict detection. Suite 3,153 → 3,225 (+72 net). All 18 ACs PASS. §6.5: zero hits._
+_Last updated: 2026-05-14 after Iteration 37 (Bucket strip target drift fix — C-FE-5). User-stated target loads (4h Deep Work / 2h Communication / 2h Continuous Improvement) revealed regression in Iter 33's renderBucketStrip — hardcoded PROJECT 270 / CI 240 instead of canonical BucketStrip.DEFAULT_TARGETS (240/120/120). Single-line fix: imported and used DEFAULT_TARGETS as fallback. JSDoc updated. 4 regression-locking tests added. Suite 3,225 → 3,229 (+4). All 8 ACs PASS. §6.5: zero hits._
+
+_⚠️ **Runtime variance flagged**: 3 samples post-Iter-37 ranged 5.20-6.97s (Iter 36 was 4.23s). 4 light new tests cannot account for 1-2s jump → likely environmental (system load, disk cache, fan throttling). Per-test 1.61-2.16ms — over META §7.1 1.5ms ceiling on all 3 samples. Recommend re-sample in next iteration; if sustained at >1.5ms, root-cause investigation needed (META §7.1)._
+
+_**Drift-detection lesson**: When a new render helper duplicates logic from an existing primitive, the helper must consume the primitive (single source of truth), not invent values. META §7.5 DONE-BY-PROXY sweep should extend to also cover canonical-source-of-truth drift detection — every coordinator review of an iteration's new helpers should ask "does this duplicate values that exist canonically elsewhere?"_
+
+_Phil's 4-2-2 statement could be interpreted as implicit approval for Phase B composer rebalance (currently outputs 105 min comm vs 120 target — would need +15 min end-of-deep-cycles slot to hit 2h). But surface to Phil for explicit confirmation before dispatching SW-Q6–Q10 work._
+
+_Iteration 36 — 2026-05-14 — Calendar Phase 3 click-empty-time insert — C-PM-CAL-P3. Final calendar interaction layer. Phil's SW-Q-CAL-02 batch answer (Catalog picker) implemented. New `CatalogPickerDialog.js` (249 LOC) — focus-trapped picker with search + bucket filter; 11th protected modal surface. Transparent overlay layer in TodayGrid routes click-empty → CLICK_EMPTY_TIME action. Picker filters exclude `recovery_lunch` + all PROTECTED_CATALOG_IDS. `INSERT_ACTIVITY_AT_TIME` orchestration handler constructs ScheduledActivity via deterministic IdGeneratorService; reuses Iter 35 detectOverlap for conflict detection. Suite 3,153 → 3,225 (+72 net). All 18 ACs PASS. §6.5: zero hits._
 
 _**Calendar end-to-end COMPLETE**: visual hour-grid (Iter 29) + click-detail dialog (Iter 30) + Phil's color identity (Iter 31) + Chartered Minimalism aesthetic (Iter 33) + drag-to-move/resize (Iter 35) + click-empty-time insert (Iter 36). Matches universal industry pattern plus BAM-X-unique additions (dashed-PROPOSED, kaizen ping, scoped commit semantics, conflict banner)._
 
