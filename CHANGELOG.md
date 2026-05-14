@@ -6,6 +6,73 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 35 — 2026-05-14 — Calendar Phase 2: drag-to-move + drag-to-resize (C-PM-CAL-P2)
+
+### What changed
+User-directive feature, Phase 2 of the calendar conversion. Phil batch-approved the SW-Q-CAL defaults; calendar blocks are now interactive with drag-and-drop.
+
+**Drag-to-move + drag-to-resize implementation:**
+- New `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable for testability (matches Iter 24 `installFocusTrap` precedent)
+- 15-min snap (universal industry standard per Competitive analysis §6)
+- Bottom-edge resize handle on non-protected, non-lunch blocks
+- Pointer events unify mouse + touch; `touch-action: none` on resize handle prevents iOS scroll interception
+- Ghost block during drag (dashed outline + pulse animation) — original block stays at 50% opacity until commit
+- 5px move threshold to distinguish click from drag
+
+**Drag commit semantics (scoped per SW-Q-CAL-01 synthesis answer):**
+- **PROPOSED state**: drag enters PENDING flow — `state.dragSession` set; "Confirm change?" banner with Confirm/Cancel actions; no underlying composition mutation until Confirm
+- **ACCEPTED / EDITED+ state**: drag commits IMMEDIATELY via existing `EDIT_CHANGE_START_TIME` + `EDIT_CHANGE_DURATION` actions; 30-second undo affordance pending Phase 3
+- This scoped approach honors plan-level deliberate ratification (the brand promise) while adopting execution-phase industry standard (the user expectation)
+
+**Safety gates (locked per QA critical edge cases):**
+- **Protected blocks** (Daily Standup, AM Comm, Post-lunch Comm, Reflection, lunch) have NO drag/resize handles (`isProtected` check at pointerdown)
+- **IN_PROGRESS activities** cannot be dragged (`isInProgress` check at pointerdown) — prevents `plannedStartAt` vs `actualStartAt` data inconsistency
+- **Resize minimum**: 15 min floor enforced in pointermove
+- **PROPOSED-state stuck-bug prevention**: pending flow ensures no Iter 28 hotfix class regression
+
+**Conflict / overlap policy (per SW-Q-CAL-03 default):**
+- After commit, `detectOverlap` runs against other non-protected blocks
+- On overlap: non-blocking warning banner above grid: *"⚠ This change overlaps {Other} at {time}. [Revert] [Keep]"*
+- Revert → dispatches `UNDO_DRAG_COMMIT` restoring originalStart/Duration
+- Keep → dismisses banner; user manually fixes overlap
+- Drop fires regardless; banner is post-commit feedback (Akiflow-style)
+
+**New state slices:**
+- `state.dragSession` — pending PROPOSED drag context (activityId, name, newStart, newDuration, originalStart, originalDuration, mode, proposedStart, proposedDuration)
+- `state.conflictBanner` — overlap warning context (activityId, names, time, original values)
+
+**New action handlers** (orchestration only — no new domain actions):
+- `DRAG_START_PROPOSED` — populates dragSession
+- `DRAG_COMMIT` — immediate commit for ACCEPTED+; runs overlap check
+- `DRAG_CONFIRM` — commits pending PROPOSED drag
+- `DRAG_CANCEL` — clears dragSession
+- `CONFLICT_REVERT` — dispatches UNDO_DRAG_COMMIT
+- `CONFLICT_KEEP` — clears conflictBanner
+- `UNDO_DRAG_COMMIT` — restores originalStart + originalDuration via existing edit actions
+
+### Why
+- Phase 2 was the highest-value remaining backlog item (score 12, 6-lens convergence)
+- Phil deferred drag-commit semantics 3 weeks ago; meta-coordinator + competitive research converged on scoped resolution
+- Calendar without drag is a half-promise — Iter 29 visual + Iter 30 click-detail + Iter 35 drag = end-to-end calendar UX
+
+### Impact
+- Test suite: 3,107 → **3,153** (+46 net: 46 new dragController unit tests using `_doc` injection per META §7.3 parameterization)
+- Runtime: 3.71s → **4.03s** ✅ (per-test 1.20 → 1.28ms; 15% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0** — actions reused from existing edit-mode infrastructure (architect's prediction held)
+- All 18 ACs PASS
+- 8 files modified (2 new: dragController.js + tests; 6 modified)
+
+### Latent issues flagged (QA-style)
+1. **Ghost block z-index on overlap**: if two blocks visually overlap pre-drag, ghost may render beneath. Cosmetic only.
+2. **MutationObserver re-attach timing**: current full innerHTML replacement triggers childList mutation reliably; future incremental-patch optimization could break this. Flagged.
+3. **PROPOSED → IN_PROGRESS race**: if activity transitions mid-drag, commit fires. Acceptable at 15-min snap granularity; flag if sub-minute transitions ever needed.
+4. **Conflict banner persistence**: cleared only by Revert/Keep. Page navigation clears via state reset. Acceptable.
+
+### Phase 3 (Click-empty-time) status
+SW-Q-CAL-02 answered (Catalog picker). Phase 3 still UNBLOCKED but not yet dispatched — separate iteration when wanted.
+
+---
+
 ## Iteration 34 — 2026-05-14 — Polish pass: state.fineTune cleanup + locale fix (C-FE-3 + C-FE-4)
 
 ### What changed

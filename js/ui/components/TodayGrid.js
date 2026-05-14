@@ -1,6 +1,13 @@
 /**
  * TodayGrid — single-day calendar grid for the Today page (Iter 29 / Phase 1).
  *
+ * Iter 35 / Phase 2 additions:
+ *   - Resize handle (.cycle-block-resize-handle) on non-protected, non-lunch blocks
+ *   - data-activity-start / data-activity-duration attributes for drag math
+ *   - Ghost block render when dragSession is non-null (state slice from app.js)
+ *   - Dragging class applied via installDragController (DOM-side; no rerender needed)
+ *   - Protected blocks / lunch: no resize handle rendered
+ *
  * Pure render. Returns an HTML string. No DOM access. Imports positioning
  * helpers from weekGridMath.js as-is (zero changes to that module).
  *
@@ -24,6 +31,7 @@
  *   gridStartHour:      number — default 7
  *   gridEndHour:        number — default 19
  *   rowHeightPx:        number — default 60
+ *   dragSession:        object | null — from app.js state.dragSession (Phase 2)
  *
  * §6.5 boundary: this file lives in js/ui/components/ — frontend only.
  * Zero touches to js/composer/, js/engine/, js/domain/types.js, js/events/.
@@ -71,6 +79,10 @@ function formatHHMM(value) {
 
 /**
  * Render a single calendar block absolutely positioned on the timeline.
+ *
+ * Iter 35 Phase 2: adds resize handle, data-activity-start/duration attrs,
+ * and drag-handle aria-label. Protected blocks and lunch blocks receive no
+ * resize handle (safety gate AC6).
  *
  * @param {{
  *   activity:          object,
@@ -150,6 +162,24 @@ function renderTodayBlock(ctx) {
   // Iter 33: staggered animation-delay per block index (AC11). Cap at 6 blocks.
   const staggerMs = Math.min(blockIndex, 6) * 60 + 120;
 
+  // Iter 35 Phase 2: minutes-of-day for drag math.
+  // Store start in minutes and duration so dragController can read them.
+  const startMinutesOfDay = parseMinutesOfDay(startValue);
+  const startAttr = startMinutesOfDay !== null ? ` data-activity-start="${startMinutesOfDay}"` : '';
+  const durationAttr = ` data-activity-duration="${Math.round(dur)}"`;
+
+  // Iter 35 Phase 2: resize handle — only on non-protected, non-lunch blocks.
+  // Protected/lunch blocks MUST NOT have drag/resize handles (AC6).
+  const canDrag = !protected_ && !isLunch;
+  const resizeHandle = canDrag
+    ? `<div class="cycle-block-resize-handle" aria-label="Drag to resize ${esc(name)}" aria-hidden="true" title="Drag to resize"></div>`
+    : '';
+
+  // Iter 35 Phase 2: draggable role hint (AC14) — only on non-protected, non-lunch.
+  const dragHandleAttr = canDrag
+    ? ` aria-roledescription="draggable calendar block"`
+    : '';
+
   return `<article
     class="cycle-block-positioned ${esc(bucketChipClass)}${proposedClass}${lunchClass}"
     style="top: ${top}px; height: ${h}px; animation-delay: ${staggerMs}ms"
@@ -157,16 +187,16 @@ function renderTodayBlock(ctx) {
     data-bucket="${esc(bucket ?? '')}"
     data-state="${esc(activityState)}"
     data-user-edited="${userEdited ? 'true' : 'false'}"
-    data-block-index="${blockIndex}"${kaizenLinkedAttr}
+    data-block-index="${blockIndex}"${kaizenLinkedAttr}${startAttr}${durationAttr}
     role="button"
     tabindex="0"
-    aria-label="${esc(ariaLabel)}"
+    aria-label="${esc(ariaLabel)}"${dragHandleAttr}
     data-action="OPEN_BLOCK_DETAIL"
     data-payload='${esc(payload)}'
   >
     ${lockChip}<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${kaizenChip}
+    ${kaizenChip}${resizeHandle}
   </article>`;
 }
 
@@ -214,6 +244,8 @@ function renderHourLines(gridStartHour, gridEndHour, rowHeightPx) {
 /**
  * TodayGrid main entry — single-day calendar grid.
  *
+ * Iter 35 Phase 2: accepts dragSession for ghost block rendering.
+ *
  * @param {{
  *   composition:       object | null,
  *   activities:        object[],
@@ -222,7 +254,8 @@ function renderHourLines(gridStartHour, gridEndHour, rowHeightPx) {
  *   compositionState?: string,
  *   gridStartHour?:    number,
  *   gridEndHour?:      number,
- *   rowHeightPx?:      number
+ *   rowHeightPx?:      number,
+ *   dragSession?:      object | null  — from app.js state.dragSession (Phase 2 pending flow)
  * }} props
  * @returns {string}
  */
@@ -240,6 +273,8 @@ export function TodayGrid(props = {}) {
   const gridStartHour = Number.isFinite(props.gridStartHour) ? props.gridStartHour : DEFAULT_GRID_START_HOUR;
   const gridEndHour = Number.isFinite(props.gridEndHour) ? props.gridEndHour : DEFAULT_GRID_END_HOUR;
   const rowHeightPx = Number.isFinite(props.rowHeightPx) ? props.rowHeightPx : DEFAULT_ROW_HEIGHT_PX;
+  // Iter 35 Phase 2: dragSession for PROPOSED pending-confirm ghost block.
+  const dragSession = props.dragSession ?? null;
 
   // Derive state: explicit prop wins, then composition.state, then 'PROPOSED'.
   const compState = props.compositionState ?? composition.state ?? 'PROPOSED';
@@ -253,6 +288,20 @@ export function TodayGrid(props = {}) {
     .map((a, i) => renderTodayBlock({ activity: a, gridStartHour, rowHeightPx, kaizenTitleById, isProposed, blockIndex: i }))
     .filter(Boolean)
     .join('\n');
+
+  // Iter 35 Phase 2: ghost block for PROPOSED pending-confirm flow.
+  // Shown as a dashed overlay at the proposed position while Confirm/Cancel is visible.
+  let ghostBlockHtml = '';
+  if (dragSession && dragSession.activityId && dragSession.proposedStart !== undefined && dragSession.proposedDuration !== undefined) {
+    const ghostTop = (dragSession.proposedStart - gridStartHour * 60) * (rowHeightPx / 60);
+    const ghostH   = Math.max(dragSession.proposedDuration * (rowHeightPx / 60), MIN_BLOCK_HEIGHT_PX);
+    ghostBlockHtml = `<div
+      class="cycle-block-ghost"
+      style="top: ${ghostTop}px; height: ${ghostH}px"
+      aria-hidden="true"
+      aria-label="Proposed new position"
+    ></div>`;
+  }
 
   // Now-line — derive the composition date from the first activity or now.
   // Fall back to the date portion of nowIso when composition has no explicit date.
@@ -291,6 +340,7 @@ export function TodayGrid(props = {}) {
   <div class="cycle-timeline" style="height: ${timelineHeight}px">
     ${hourLines}
     ${blocks}
+    ${ghostBlockHtml}
     ${nowLine}
   </div>
 </div>`;

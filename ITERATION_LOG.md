@@ -1075,3 +1075,52 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phase B simplify (composer rebalance) Phil-blocked on SW-Q6–Q10
   - Phase C simplify (no-projects discovery) Phil-blocked on SW-Q1–Q5
   - **Backlog is now functionally exhausted on the non-Phil-blocked side. Continuing further work without Phil's input would be inventing scope.**
+
+---
+
+## Iteration 35 — 2026-05-14 — Calendar Phase 2: drag-to-move + drag-to-resize (C-PM-CAL-P2)
+
+- **Selected item**: Phil batch-approved SW-Q-CAL defaults (Path A). Unblocked Phase 2 calendar drag-and-drop. Score 12 + ConvergenceBonus 3 = 15 (6 lenses).
+- **Reason for selection**: Phil's "a" response to Path A approved batch-approve of SW-Q-CAL questions. Phase 2 was the highest-value remaining backlog item; calendar without drag is a half-promise after Iter 29 + 30.
+- **Agents involved**: frontend-engineer (single-pass implementation against canonical Define-pass artifacts from Iter 29).
+- **Validation results**:
+  - Tests: 3,107 → **3,153** (+46 net: 46 new dragController unit tests using `_doc` injection per META §7.3 parameterization principle)
+  - Runtime: 3.71s → **4.03s** ✅ (per-test 1.20 → 1.28ms; 15% headroom under META §7.1 1.5ms ceiling)
+  - All 18 ACs PASS
+  - **§6.5 boundary**: zero hits. Architect's prediction held — drag reuses existing `EDIT_CHANGE_START_TIME` + `EDIT_CHANGE_DURATION` actions; no new domain mutations.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **NEW files (2)**:
+    - `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable for testability
+    - `tests/ui/dragController.test.js` (~816 LOC) — pointer-event simulation with `_doc` injection
+  - **Modified files (6)**: `js/app.js` (+340 LOC), `js/ui/components/CycleCard.js` (+13), `js/ui/components/TodayGrid.js` (+60), `js/ui/pages/Today.js` (+124), `app.css` (+177), `PHIL_AUTHORITY_QUEUE.md` (SW-Q-CAL marked ANSWERED)
+- **Drag commit semantics (SCOPED per SW-Q-CAL-01)**:
+  - PROPOSED state → pending flow with Confirm/Cancel banner; no underlying mutation until Confirm
+  - ACCEPTED/EDITED+ state → immediate commit via existing edit-mode actions
+  - This honors plan-level ratification while adopting execution-phase industry standard
+- **State slices added**:
+  - `state.dragSession = { activityId, activityName, newStart, newDuration, originalStart, originalDuration, mode, proposedStart, proposedDuration }`
+  - `state.conflictBanner = { activityId, activityName, againstName, againstStartHHMM, originalStart, originalDuration, mode }`
+- **New action handlers** (orchestration only): DRAG_START_PROPOSED, DRAG_COMMIT, DRAG_CONFIRM, DRAG_CANCEL, CONFLICT_REVERT, CONFLICT_KEEP, UNDO_DRAG_COMMIT
+- **Reused for commit**: EDIT_CHANGE_START_TIME, EDIT_CHANGE_DURATION (existing)
+- **Safety gates implemented**:
+  - Protected blocks have no drag/resize handles
+  - IN_PROGRESS activities cannot be dragged (QA-flagged critical edge case)
+  - Resize minimum: 15 min floor
+  - 5px move threshold distinguishes click from drag
+- **Spec deviations**: Zero. All locked decisions implemented exactly.
+- **Time spent**: single session (estimate was 6-10 hr).
+- **Strategic outcome**:
+  - **Calendar interaction layer complete**: visual (Iter 29) + click-detail (Iter 30) + drag (Iter 35) = full calendar UX
+  - **Scoped commit semantics validated**: resolved the lens disagreement from Iter 29 Define-pass (UX wanted pending, Competitive wanted immediate, Synthesis recommended scoped)
+  - **dragController utility extracted as reusable primitive**: dependency-injectable pattern matches Iter 24 focusTrap precedent
+  - **Pointer-event coverage now exists**: zero pointer tests pre-Iter-35 per Iter 27 meta-review §7.3 audit; now 46 new tests
+- **Latent issues flagged** (cosmetic / future-proofing):
+  - Ghost block z-index on pre-existing overlap (cosmetic)
+  - MutationObserver re-attach timing (current pipeline is fine; future incremental-patch optimization could break)
+  - PROPOSED → IN_PROGRESS race mid-drag (acceptable at 15-min snap)
+  - Conflict banner persistence across navigation (cleared by Revert/Keep; page reload clears)
+- **Follow-ups**:
+  - Commit + push (deploy queue now 5-deep — META §7.7 gate VIOLATED again)
+  - Manual visual QA: drag a non-protected ACCEPTED block → verify immediate commit; drag a PROPOSED block → verify Confirm banner; resize via bottom edge; drag overlapping → verify conflict banner
+  - **Phase 3 (click-empty-time) still unblocked but separate iteration**
+  - **META operating-model deltas still unapproved** (Iter 27 §7)

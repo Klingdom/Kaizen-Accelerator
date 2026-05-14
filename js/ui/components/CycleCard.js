@@ -319,12 +319,14 @@ function renderProposed(composition, activities, extras = {}) {
   </div>` : '';
 
   // Iter 29 Phase 1 — calendar grid replaces the table.
+  // Iter 35 Phase 2: pass dragSession for ghost block rendering.
   const calendarGrid = TodayGrid({
     composition,
     activities,
     nowIso: extras.nowIso ?? null,
     kaizenTitleById: extras.kaizenTitleById ?? {},
     compositionState: 'PROPOSED',
+    dragSession: extras.dragSession ?? null,
     // rowHeightPx / gridStartHour / gridEndHour use TodayGrid defaults.
   });
 
@@ -350,7 +352,7 @@ ${eodFooter ? `  ${eodFooter}` : ''}
  * TodayGrid (single-day calendar grid). All header/triad/footer chrome
  * is preserved unchanged.
  */
-function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount, priorDayRecap, eodRecap, whyPlanExpanded, morningRecapExpanded }) {
+function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitleById, catalogById, editMode, selectedActivityId, undoCount, priorDayRecap, eodRecap, whyPlanExpanded, morningRecapExpanded, dragSession }) {
   const compId = composition.id;
   const edit = !!editMode;
   const undoN = Number.isFinite(undoCount) ? undoCount : 0;
@@ -370,6 +372,8 @@ function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitle
   const eodFooter = renderEodFooterCta(eodRecap ?? null);
 
   // Iter 29 Phase 1 — calendar grid replaces the table.
+  // Iter 35 Phase 2: pass dragSession for ghost block rendering (ACCEPTED+ not needed
+  // since dragSession is only populated in PROPOSED flow; pass through for correctness).
   const compState = isActive ? 'ACTIVE' : (composition.state ?? 'ACCEPTED');
   const calendarGrid = TodayGrid({
     composition,
@@ -377,6 +381,7 @@ function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitle
     nowIso: nowIso ?? null,
     kaizenTitleById: kaizenTitleById ?? {},
     compositionState: compState,
+    dragSession: dragSession ?? null,
   });
 
   // Iter 33: date heading in DM Serif Display (AC4).
@@ -460,6 +465,9 @@ export function CycleCard(props = {}) {
     }
   }
 
+  // Iter 35 Phase 2: dragSession for PROPOSED pending-confirm ghost block.
+  const dragSession = props.dragSession ?? null;
+
   const extras = {
     kaizenTitleById,
     catalogById,
@@ -470,7 +478,8 @@ export function CycleCard(props = {}) {
     priorDayRecap,
     eodRecap,
     whyPlanExpanded,
-    morningRecapExpanded
+    morningRecapExpanded,
+    dragSession
   };
 
   switch (composition.state) {

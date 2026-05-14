@@ -87,10 +87,10 @@
 
 | ID | Status | Question | Default if no answer | Blocks |
 |---|---|---|---|---|
-| SW-Q-CAL-01 | OPEN | Drag commit semantics: Immediate on drop (Google Calendar pattern — writes Variance row on drag-end) OR Pending until explicit Save/Commit click (BAM-X deliberate-ratification pattern — preserves Commit/Cancel/Undo triad)? | Pending until Save | Phase 2 |
-| SW-Q-CAL-02 | OPEN | Click-empty-time slot (Phase 3): what gets inserted? (a) opens Catalog picker, (b) inserts a generic unnamed placeholder block, (c) not allowed — empty time stays empty until Auto-Plan or Edit mode | Opens Catalog picker | Phase 3 |
-| SW-Q-CAL-03 | OPEN | Conflict / overlap policy after drag: (a) auto-shift the colliding block forward, (b) show conflict warning and require manual resolution, (c) reject drop and snap block back to origin | Show warning, require manual resolution | Phase 2 |
-| SW-Q-CAL-04 | OPEN | Table toggle vs replace: retain six-column table as a secondary "List" view (toggle in CycleCard header) OR replace the table outright with the calendar grid? | Replace outright | Phase 1 |
+| SW-Q-CAL-01 | **ANSWERED** (Iter 35 batch) | Drag commit semantics: Immediate on drop (Google Calendar pattern) OR Pending until explicit Save/Commit click (BAM-X deliberate-ratification)? | **Scoped (synthesis option c): pending while PROPOSED, immediate when ACCEPTED/EDITED+.** Matches Iter 28 hotfix line. Honors plan-level ratification + execution-level industry-standard UX. | Phase 2 |
+| SW-Q-CAL-02 | **ANSWERED** (Iter 35 batch) | Click-empty-time slot (Phase 3): what gets inserted? | **Opens Catalog picker** (PM default). | Phase 3 |
+| SW-Q-CAL-03 | **ANSWERED** (Iter 35 batch) | Conflict / overlap policy after drag: auto-shift / warning / reject? | **Show warning, require manual resolution** (PM default). Drop fires; if it overlaps another non-protected block, surface a non-blocking conflict banner with "Revert" or "Keep (manual fix)" actions. | Phase 2 |
+| SW-Q-CAL-04 | **ANSWERED** (Iter 29 already, confirmed batch) | Table toggle vs replace? | **Replaced outright** in Iter 29. Confirmed by batch. | Phase 1 (DONE) |
 
 ---
 

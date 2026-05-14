@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,107 (+542 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,153 (+588 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 731 (+128 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.20 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (20% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.71s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (26% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 31) → 1.25ms (Iter 32) → 1.18ms (Iter 33) → **1.20ms (Iter 34)** | ✅ stable |
+| Suite count | 750 (+147 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.28 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.03s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (19% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.20ms (Iter 34) → **1.28ms (Iter 35)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 34 commit) | (in progress) |
-| **Production deploy queue** | **4 iterations (Iter 31 + 32 + 33 + 34)** | ⚠️ AT GATE LIMIT (max 4 per META §7.7) — deploy before Iter 35 |
+| Last green commit | (pending Iter 35 commit) | (in progress) |
+| **Production deploy queue** | **5 iterations (Iter 31 + 32 + 33 + 34 + 35)** | 🚨 OVER GATE (max 4 per META §7.7) — deploy required |
 
 ---
 
@@ -105,7 +105,19 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-14 after Iteration 34 (Polish pass — C-FE-3 + C-FE-4). Last non-Phil-blocked items bundled into single iteration. C-FE-3: renamed `state.fineTune` → `state.composerConfig` (13 occurrences across `js/app.js` + 12 test files); dropped dead fields (`open`, `_snapshotBeforeChange`); deleted handlers FINE_TUNE_TOGGLE + FINE_TUNE_CANCEL (drawer-management for drawer that doesn't exist); renamed FINE_TUNE_APPLY → COMPOSER_CONFIG_APPLY. C-FE-4: `formatDateDisplay` locale changed from hardcoded `en-GB` to browser-native via `navigator.language || 'en-US'`. AUTO_PLAN compose-input shape preserved (engine untouched). Suite 3,106 → 3,107 (+1 positive-assertion test). All 9 ACs PASS. §6.5: zero hits._
+_Last updated: 2026-05-14 after Iteration 35 (Calendar Phase 2 drag — C-PM-CAL-P2). Phil batch-approved SW-Q-CAL defaults (Path A); unblocked Phase 2 drag-to-move + drag-to-resize. New `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable. 15-min snap; bottom-edge resize handle; ghost block during drag; 5px click-threshold; touch-action: none on resize handle for iOS. Scoped commit semantics (synthesis option c): PROPOSED → pending Confirm/Cancel banner; ACCEPTED/EDITED+ → immediate commit via reused EDIT_CHANGE_START_TIME + EDIT_CHANGE_DURATION. Non-blocking overlap conflict banner with Revert/Keep. Safety gates: protected blocks have no drag handles (IN_PROGRESS blocked at pointerdown — QA-flagged critical edge case). 7 new orchestration handlers; 2 new state slices (dragSession, conflictBanner). Suite 3,107 → 3,153 (+46 dragController unit tests using `_doc` injection per META §7.3 parameterization). All 18 ACs PASS. §6.5: zero hits (architect's prediction held — drag reuses existing edit actions). Iter 28 stuck-state bug class prevented via PROPOSED pending flow._
+
+_⚠️ **DEPLOY GATE OVER LIMIT**: queue now 5-deep (Iter 31 + 32 + 33 + 34 + 35). META §7.7 max is 4. **Phil must deploy before Iter 36** OR Iter 36 must include deploy step._
+
+_Calendar end-to-end now visually + interactively complete: Iter 29 visual + Iter 30 click-detail + Iter 31 color identity + Iter 33 Chartered Minimalism aesthetic + Iter 35 drag. Phase 3 (click-empty-time) unblocked but separate iteration._
+
+_Remaining work:_
+_- Phase 3 click-empty-time (SW-Q-CAL-02 ANSWERED — Catalog picker) — ~3-5 hr, LOW risk_
+_- Phase B simplify composer rebalance (SW-Q6–Q10 STILL OPEN) — HIGH risk_
+_- Phase C simplify no-projects discovery (SW-Q1–Q5 STILL OPEN)_
+_- META operating-model deltas (Iter 27 §7 — 7 unapproved recommendations)_
+
+_Iteration 34 — 2026-05-14 — Polish pass: state.fineTune cleanup + locale fix. Last non-Phil-blocked items bundled into single iteration. C-FE-3: renamed `state.fineTune` → `state.composerConfig` (13 occurrences across `js/app.js` + 12 test files); dropped dead fields (`open`, `_snapshotBeforeChange`); deleted handlers FINE_TUNE_TOGGLE + FINE_TUNE_CANCEL (drawer-management for drawer that doesn't exist); renamed FINE_TUNE_APPLY → COMPOSER_CONFIG_APPLY. C-FE-4: `formatDateDisplay` locale changed from hardcoded `en-GB` to browser-native via `navigator.language || 'en-US'`. AUTO_PLAN compose-input shape preserved (engine untouched). Suite 3,106 → 3,107 (+1 positive-assertion test). All 9 ACs PASS. §6.5: zero hits._
 
 _⚠️ **Deploy queue AT META §7.7 gate limit**: 4 iterations stacked (Iter 31 + 32 + 33 + 34). Iter 35 cannot dispatch until Phil deploys OR Iter 35 must include deploy step._
 

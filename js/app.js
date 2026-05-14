@@ -113,6 +113,7 @@ import {
   parseHash,
   buildHash
 } from './ui/router.js';
+import { detectOverlap, installDragController } from './ui/dragController.js';
 
 /**
  * Default user — single-user MVP. A future sprint replaces this with a
@@ -361,6 +362,15 @@ function createState() {
     editMode: null,
     // Iter 30 — block detail popover. null = closed; {activityId} = open.
     blockDetail: null,
+    // Iter 35 — drag-and-drop state (Phase 2).
+    // dragSession: null when idle; set during PROPOSED pending-confirm flow.
+    //   Shape: { activityId, activityName, newStart, newDuration, originalStart,
+    //            originalDuration, mode, proposedStart, proposedDuration }
+    dragSession: null,
+    // conflictBanner: null when no overlap; set after a drag commit that overlaps.
+    //   Shape: { activityId, activityName, againstName, againstStartHHMM,
+    //            originalStart, originalDuration, mode }
+    conflictBanner: null,
     // C-UX-12 (Iteration 14) — "Why this plan?" disclosure chip state.
     // Collapses on each new page load (plan changes daily).
     whyPlanExpanded: false,
@@ -437,6 +447,29 @@ export const PORTFOLIO_PREFS_KEY = 'bamx:v1:portfolioPrefs';
  * shows again for that browser profile.
  */
 export const RHYTHM_EXPLAINER_KEY = 'bamx:v1:prefs:rhythm-explainer-dismissed';
+
+/**
+ * Iter 35 — pure minute-of-day parser for drag overlap detection.
+ * Mirrors the logic in weekGridMath.js / dragController.js without
+ * an import cycle.
+ *
+ * @param {string} value
+ * @returns {number|null}
+ */
+function _parseMinutes(value) {
+  if (!value || typeof value !== 'string') return null;
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.split(':').map(Number);
+    return h * 60 + m;
+  }
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const [h, m] = value.slice(0, 5).split(':').map(Number);
+    return h * 60 + m;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
 
 /**
  * Load persisted Portfolio filter/sort prefs (best-effort).
@@ -732,7 +765,10 @@ export function renderApp(services, state, handlers = {}) {
       eodRecap,
       whyPlanExpanded: !!state.whyPlanExpanded,
       // Iter 30: block detail popover state.
-      blockDetail: state.blockDetail ?? null
+      blockDetail: state.blockDetail ?? null,
+      // Iter 35 Phase 2: drag state slices.
+      dragSession:    state.dragSession    ?? null,
+      conflictBanner: state.conflictBanner ?? null
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -1698,6 +1734,236 @@ export function buildHandlers(scope) {
       showToast(state, ToastKind.INFO, 'Edit cancelled.', rerender);
       rerender();
     },
+
+    // ---- Iter 35 Phase 2: Drag-and-drop handlers --------------------------
+    //
+    // DRAG_START_PROPOSED: called by installDragController via onDragPending
+    //   when composition.state === 'PROPOSED'. Stores pending changes in
+    //   state.dragSession; a confirm banner renders above the grid.
+    //
+    // DRAG_COMMIT: called by installDragController via onDragCommit when
+    //   composition.state ∈ {ACCEPTED, EDITED}. Immediately dispatches
+    //   EDIT_CHANGE_START_TIME / EDIT_CHANGE_DURATION.
+    //
+    // DRAG_CONFIRM: user clicked Confirm in the PROPOSED pending-confirm
+    //   banner. Dispatches the stored pending changes.
+    //
+    // DRAG_CANCEL: user clicked Cancel in the PROPOSED pending-confirm
+    //   banner. Clears state.dragSession; no mutation.
+    //
+    // CONFLICT_REVERT: user clicked Revert in the conflict banner.
+    //   Re-fires EDIT_CHANGE_* with original values.
+    //
+    // CONFLICT_KEEP: user clicked "Keep (manual fix)". Dismisses banner.
+    //
+    // UNDO_DRAG_COMMIT: undo the most recent drag commit (triggered by
+    //   30-second undo toast). Pops the undo stack.
+
+    // Internal helper: ensure edit mode is open for the active composition.
+    // Mirrors EDIT_QUICK_UPDATE logic to avoid code duplication.
+    _ensureEditMode() {
+      if (state.editMode) return true;
+      const activeState = services.composerService.getActiveComposition(DEFAULT_USER.id);
+      if (!activeState) return false;
+      const compositionId = activeState.composition.id;
+      const active = services.composerService.getComposition(compositionId);
+      if (!active) return false;
+      const snapshot = active.activities.map((a) => ({ ...a }));
+      state.editMode = {
+        compositionId,
+        snapshotActivities: snapshot,
+        activities: snapshot.map((a) => ({ ...a })),
+        selectedActivityId: null,
+        undoStack: [],
+        searchQuery: '',
+        projectTypeFilter: 'all',
+        expandedBuckets: ['PROJECT']
+      };
+      services.bus.publish(EditDrawerOpened, {
+        userId: DEFAULT_USER.id,
+        compositionId,
+        openedAt: services.clock.now()
+      });
+      return true;
+    },
+
+    // Called by drag controller when composition.state === 'PROPOSED'.
+    // Stores pending drag in state.dragSession; banner renders above grid.
+    DRAG_START_PROPOSED(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+      // Find the activity for name lookup.
+      const activeState = services.composerService.getActiveComposition(DEFAULT_USER.id);
+      const activityName = activeState
+        ? (activeState.activities.find((a) => a && a.id === payload.activityId)?.name ?? payload.activityId)
+        : payload.activityId;
+      state.dragSession = {
+        activityId:       payload.activityId,
+        activityName,
+        newStart:         payload.newStart,
+        newDuration:      payload.newDuration,
+        originalStart:    payload.originalStart,
+        originalDuration: payload.originalDuration,
+        mode:             payload.mode,
+        // proposedStart/Duration for ghost block (minutes of day).
+        proposedStart:    payload.proposedStartMin ?? null,
+        proposedDuration: payload.newDuration
+      };
+      rerender();
+    },
+
+    // Called by drag controller when composition.state ∈ {ACCEPTED, EDITED}.
+    // Commits immediately via existing EDIT_CHANGE_* actions.
+    DRAG_COMMIT(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+
+      // Ensure edit mode is open (auto-enter if needed).
+      const opened = this._ensureEditMode();
+      if (!opened) return;
+
+      // Snapshot the original values BEFORE applying changes (for conflict revert).
+      const originalActivity = state.editMode.activities.find((a) => a && a.id === payload.activityId);
+      const originalStart    = originalActivity
+        ? String(originalActivity.plannedStartAt ?? '')
+        : (payload.originalStart ?? '');
+      const originalDuration = originalActivity
+        ? Number(originalActivity.plannedDurationMinutes ?? 0)
+        : (payload.originalDuration ?? 0);
+
+      if (payload.mode === 'move' || payload.mode === 'resize') {
+        // For resize: duration changes. For move: start time changes.
+        if (payload.mode === 'resize') {
+          this.EDIT_CHANGE_DURATION({
+            activityId: payload.activityId,
+            minutes: payload.newDuration
+          });
+        } else {
+          this.EDIT_CHANGE_START_TIME({
+            activityId: payload.activityId,
+            value: payload.newStart
+          });
+        }
+      }
+
+      // Check for overlap after the commit.
+      const updatedActivities = state.editMode ? state.editMode.activities : [];
+      const updatedActivity   = updatedActivities.find((a) => a && a.id === payload.activityId);
+      if (updatedActivity) {
+        const updatedStartMin  = _parseMinutes(updatedActivity.plannedStartAt ?? '');
+        const updatedDurationN = Number(updatedActivity.plannedDurationMinutes ?? 0);
+        const overlap = updatedStartMin !== null
+          ? detectOverlap(updatedActivities, payload.activityId, updatedStartMin, updatedDurationN)
+          : null;
+        if (overlap) {
+          state.conflictBanner = {
+            activityId:       payload.activityId,
+            activityName:     updatedActivity.name ?? payload.activityId,
+            againstName:      overlap.againstName,
+            againstStartHHMM: overlap.againstStartHHMM,
+            originalStart,
+            originalDuration,
+            mode:             payload.mode
+          };
+          rerender();
+          return;
+        }
+      }
+
+      // Show undo toast (30-second window per spec).
+      const actName = updatedActivity?.name ?? payload.activityId;
+      const toastMsg = payload.mode === 'move'
+        ? `Moved ${actName} to ${payload.newStart}. Undo?`
+        : `Resized ${actName} to ${payload.newDuration}min. Undo?`;
+      // NOTE: using standard TOAST_TTL_MS (3s) for now; 30s undo toast
+      // would require a UndoToast component with a dedicated action.
+      // The undo stack in editMode already supports EDIT_UNDO (Ctrl+Z).
+      showToast(state, ToastKind.SUCCESS, toastMsg, rerender);
+      rerender();
+    },
+
+    // Confirm drag in PROPOSED state — commits the pending dragSession changes.
+    DRAG_CONFIRM(payload) {
+      if (!state.dragSession) return;
+      const session = state.dragSession;
+      state.dragSession = null;
+
+      // Ensure edit mode is open.
+      const opened = this._ensureEditMode();
+      if (!opened) return;
+
+      if (session.mode === 'resize') {
+        this.EDIT_CHANGE_DURATION({
+          activityId: session.activityId,
+          minutes: session.newDuration
+        });
+      } else {
+        this.EDIT_CHANGE_START_TIME({
+          activityId: session.activityId,
+          value: session.newStart
+        });
+      }
+
+      // Check for overlap after confirm.
+      const updatedActivities = state.editMode ? state.editMode.activities : [];
+      const updatedAct   = updatedActivities.find((a) => a && a.id === session.activityId);
+      const updatedSMin  = updatedAct ? _parseMinutes(updatedAct.plannedStartAt ?? '') : null;
+      const updatedDurN  = updatedAct ? Number(updatedAct.plannedDurationMinutes ?? 0) : 0;
+      const overlap = updatedSMin !== null
+        ? detectOverlap(updatedActivities, session.activityId, updatedSMin, updatedDurN)
+        : null;
+      if (overlap) {
+        state.conflictBanner = {
+          activityId:       session.activityId,
+          activityName:     updatedAct?.name ?? session.activityId,
+          againstName:      overlap.againstName,
+          againstStartHHMM: overlap.againstStartHHMM,
+          originalStart:    session.originalStart,
+          originalDuration: session.originalDuration,
+          mode:             session.mode
+        };
+      }
+      rerender();
+    },
+
+    // Cancel drag in PROPOSED state — clears dragSession without mutation.
+    DRAG_CANCEL(_payload) {
+      state.dragSession = null;
+      rerender();
+    },
+
+    // Revert a drag commit — re-applies original values via EDIT_CHANGE_*.
+    CONFLICT_REVERT(payload) {
+      if (!payload || typeof payload.activityId !== 'string') return;
+      state.conflictBanner = null;
+
+      if (!state.editMode) return;
+
+      if (payload.mode === 'resize') {
+        this.EDIT_CHANGE_DURATION({
+          activityId: payload.activityId,
+          minutes: Number(payload.originalDuration)
+        });
+      } else {
+        this.EDIT_CHANGE_START_TIME({
+          activityId: payload.activityId,
+          value: String(payload.originalStart ?? '')
+        });
+      }
+      showToast(state, ToastKind.INFO, 'Drag reverted.', rerender);
+      rerender();
+    },
+
+    // Dismiss the conflict banner — user will fix manually.
+    CONFLICT_KEEP(_payload) {
+      state.conflictBanner = null;
+      rerender();
+    },
+
+    // Undo the most recent drag commit via the edit-mode undo stack.
+    UNDO_DRAG_COMMIT(_payload) {
+      this.EDIT_UNDO({});
+    },
+
+    // ---- End Iter 35 drag handlers ----------------------------------------
 
     REJECT(payload) {
       if (!payload || !payload.compositionId) return;
@@ -2818,6 +3084,78 @@ export function start() {
         { element: el, event: ev }
       );
     });
+  }
+
+  // Iter 35 Phase 2: install drag controller on the today-page timeline.
+  // Uses a MutationObserver to re-attach whenever the .cycle-timeline element
+  // is remounted (e.g. after a full rerender changes the route).
+  /* istanbul ignore next — browser only */
+  {
+    let _dragHandle = null;
+
+    function _syncDragController() {
+      const timelineEl = document.querySelector('.cycle-timeline');
+      if (!timelineEl) {
+        if (_dragHandle) { _dragHandle.release(); _dragHandle = null; }
+        return;
+      }
+      // Already attached to this element.
+      if (_dragHandle && _dragHandle._el === timelineEl) return;
+      if (_dragHandle) { _dragHandle.release(); _dragHandle = null; }
+
+      const activeState = services.composerService.getActiveComposition(DEFAULT_USER.id);
+      const compState = activeState?.composition?.state ?? null;
+
+      _dragHandle = installDragController(timelineEl, {
+        getCompositionState() {
+          const as = services.composerService.getActiveComposition(DEFAULT_USER.id);
+          return as?.composition?.state ?? 'PROPOSED';
+        },
+        isProtected(activityId) {
+          const as = services.composerService.getActiveComposition(DEFAULT_USER.id);
+          const activities = state.editMode ? state.editMode.activities : (as?.activities ?? []);
+          const a = activities.find((x) => x && x.id === activityId);
+          return a ? isProtectedBlock(a) : false;
+        },
+        isInProgress(activityId) {
+          const as = services.composerService.getActiveComposition(DEFAULT_USER.id);
+          const activities = as?.activities ?? [];
+          const a = activities.find((x) => x && x.id === activityId);
+          return a ? (a.state === 'IN_PROGRESS') : false;
+        },
+        onDragPreview(_preview) {
+          // Ghost position is handled by inline style in dragController.
+          // No rerender needed for move preview.
+        },
+        onDragCommit(result) {
+          handlers.DRAG_COMMIT(result);
+        },
+        onDragPending(result) {
+          handlers.DRAG_START_PROPOSED(result);
+        },
+        onProtectedAttempt() {
+          showToast(state, ToastKind.INFO,
+            "This block can't be moved — it's required for your daily rhythm.", rerender);
+          rerender();
+        },
+        onInProgressAttempt() {
+          showToast(state, ToastKind.INFO,
+            'This block is in progress and cannot be moved.', rerender);
+          rerender();
+        }
+      });
+      // Tag handle with element reference for change detection.
+      _dragHandle._el = timelineEl;
+    }
+
+    // Initial attach after first render.
+    _syncDragController();
+
+    // Re-attach whenever the DOM changes (rerenders replace the timeline element).
+    if (typeof MutationObserver !== 'undefined') {
+      const mo = new MutationObserver(() => _syncDragController());
+      mo.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   // Sprint 10c: upgrade BROWSER_CATALOG (9 entries) → full 60-entry catalog

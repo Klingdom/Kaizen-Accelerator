@@ -98,7 +98,9 @@ export function daysSinceSignupHint(daysSinceSignup) {
  *   whyPlanExpanded?: boolean,
  *   blockDetail?: {activityId: string} | null,
  *   kaizenTitleById?: Record<string, string>,
- *   catalog?: object[]
+ *   catalog?: object[],
+ *   dragSession?: object | null,      — Iter 35: PROPOSED pending-confirm state
+ *   conflictBanner?: object | null,   — Iter 35: post-commit overlap warning
  * }} props
  */
 export function Today(props = {}) {
@@ -116,6 +118,9 @@ export function Today(props = {}) {
   const editMode = props.editMode ?? null; // null when closed; object when open
   // Iter 30 — block detail popover.
   const blockDetail = props.blockDetail ?? null;
+  // Iter 35 — drag state slices.
+  const dragSession    = props.dragSession    ?? null;
+  const conflictBanner = props.conflictBanner ?? null;
   // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
   const priorDayRecap = props.priorDayRecap ?? null;
   const eodRecap = props.eodRecap ?? null;
@@ -210,6 +215,16 @@ export function Today(props = {}) {
 
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
+  // Iter 35 Phase 2: drag-confirm banner for PROPOSED pending-commit flow (AC8).
+  const dragConfirmBannerHtml = dragSession
+    ? renderDragConfirmBanner(dragSession)
+    : '';
+
+  // Iter 35 Phase 2: conflict/overlap warning banner (AC10–AC13).
+  const conflictBannerHtml = conflictBanner
+    ? renderConflictBanner(conflictBanner)
+    : '';
+
   // Iter 33: bucket strip in right margin (AC9). Only shown when not editing.
   const bucketStripHtml = !isEditing
     ? renderBucketStrip(activitiesForRender, compositionForRender)
@@ -230,7 +245,8 @@ export function Today(props = {}) {
         undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
         priorDayRecap,
         eodRecap,
-        whyPlanExpanded
+        whyPlanExpanded,
+        dragSession
       })}
     </div>
     ${bucketStripHtml}
@@ -248,13 +264,16 @@ export function Today(props = {}) {
         undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
         priorDayRecap,
         eodRecap,
-        whyPlanExpanded
+        whyPlanExpanded,
+        dragSession
       })}
     </div>
   </div>`;
 
   return `<main class="${mainClass}" data-route="today">
   ${header}
+  ${dragConfirmBannerHtml}
+  ${conflictBannerHtml}
   ${bodyWrapper}
   ${editDrawerHtml}
   ${modal}
@@ -322,6 +341,105 @@ function renderBucketStrip(activities, composition) {
   ${bucketRow('COMMUNICATION', 'Comms', 'cycle-bucket-name-communication', 'cycle-bucket-fill-communication')}
   ${bucketRow('CI', 'CI', 'cycle-bucket-name-ci', 'cycle-bucket-fill-ci')}
 </aside>`;
+}
+
+/**
+ * Iter 35 Phase 2 — render the drag-confirm banner for PROPOSED compositions.
+ *
+ * When a drag completes on a PROPOSED composition, the change is queued as
+ * pending (not committed). This banner prompts the user to Confirm or Cancel.
+ *
+ * Actions dispatched:
+ *   DRAG_CONFIRM — commits the pending drag via existing EDIT_CHANGE_* actions
+ *   DRAG_CANCEL  — clears state.dragSession; no underlying mutation
+ *
+ * @param {{
+ *   activityId: string,
+ *   activityName?: string,
+ *   newStart: string,
+ *   newDuration: number,
+ *   originalStart: string,
+ *   originalDuration: number,
+ *   mode: string
+ * }} session
+ * @returns {string}
+ */
+function renderDragConfirmBanner(session) {
+  if (!session || typeof session.activityId !== 'string') return '';
+
+  const name = session.activityName ? esc(session.activityName) : 'block';
+  const newStart = session.newStart ? esc(session.newStart) : '';
+  const mode = session.mode === 'resize' ? 'resize' : 'move';
+  const actionVerb = mode === 'resize' ? `Resize ${name} to ${session.newDuration}min?` : `Move ${name} to ${newStart}?`;
+
+  const payloadConfirm = JSON.stringify({ activityId: session.activityId });
+  const payloadCancel  = JSON.stringify({});
+
+  return `<div class="today-drag-confirm-banner" role="alert" aria-live="assertive">
+  <span class="today-drag-confirm-message">${actionVerb}</span>
+  <div class="today-drag-confirm-actions">
+    <button class="today-drag-confirm-btn today-drag-confirm-btn--confirm"
+      data-action="DRAG_CONFIRM"
+      data-payload='${esc(payloadConfirm)}'>Confirm</button>
+    <button class="today-drag-confirm-btn today-drag-confirm-btn--cancel"
+      data-action="DRAG_CANCEL"
+      data-payload='${esc(payloadCancel)}'>Cancel</button>
+  </div>
+</div>`;
+}
+
+/**
+ * Iter 35 Phase 2 — render the conflict/overlap warning banner (SW-Q-CAL-03).
+ *
+ * Shown after a drag commit that results in time-range overlap with another
+ * non-protected activity. Non-blocking: the drop has already fired; the user
+ * can Revert or Keep (manual fix).
+ *
+ * Actions dispatched:
+ *   CONFLICT_REVERT — re-fires EDIT_CHANGE_* with original values
+ *   CONFLICT_KEEP   — dismisses banner; user manually fixes
+ *
+ * @param {{
+ *   activityId: string,
+ *   activityName?: string,
+ *   againstName: string,
+ *   againstStartHHMM: string,
+ *   originalStart: string,
+ *   originalDuration: number,
+ *   mode: string
+ * }} banner
+ * @returns {string}
+ */
+function renderConflictBanner(banner) {
+  if (!banner || typeof banner.activityId !== 'string') return '';
+
+  const againstName  = banner.againstName     ? esc(banner.againstName)     : 'another block';
+  const againstStart = banner.againstStartHHMM ? esc(banner.againstStartHHMM) : '';
+
+  const warningText = againstStart
+    ? `This change overlaps ${againstName} at ${againstStart}.`
+    : `This change overlaps ${againstName}.`;
+
+  const payloadRevert = JSON.stringify({
+    activityId:       banner.activityId,
+    originalStart:    banner.originalStart,
+    originalDuration: banner.originalDuration,
+    mode:             banner.mode
+  });
+  const payloadKeep = JSON.stringify({});
+
+  return `<div class="today-conflict-banner" role="alert" aria-live="assertive">
+  <span class="today-conflict-icon" aria-hidden="true">&#x26A0;</span>
+  <span class="today-conflict-message">${warningText}</span>
+  <div class="today-conflict-actions">
+    <button class="today-conflict-btn today-conflict-btn--revert"
+      data-action="CONFLICT_REVERT"
+      data-payload='${esc(payloadRevert)}'>Revert</button>
+    <button class="today-conflict-btn today-conflict-btn--keep"
+      data-action="CONFLICT_KEEP"
+      data-payload='${esc(payloadKeep)}'>Keep (manual fix)</button>
+  </div>
+</div>`;
 }
 
 /**
