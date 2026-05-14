@@ -48,7 +48,7 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 | Per-test cost trend | 0.82ms (Iter 9) → 1.28ms (Iter 35) → **1.31ms (Iter 36)** | ✅ stable |
 | Fail rate | 0% | ✅ |
 | Last green commit | (pending Iter 36 commit) | (in progress) |
-| **Production deploy queue** | **6 iterations (Iter 31 + 32 + 33 + 34 + 35 + 36)** | 🚨🚨 OVER GATE (max 4 per META §7.7) — deploy critical |
+| **Production deploy queue** | **0 — Iter 31-36 deployed 2026-05-14** | ✅ resolved |
 
 ---
 
@@ -109,12 +109,12 @@ _Last updated: 2026-05-14 after Iteration 36 (Calendar Phase 3 click-empty-time 
 
 _**Calendar end-to-end COMPLETE**: visual hour-grid (Iter 29) + click-detail dialog (Iter 30) + Phil's color identity (Iter 31) + Chartered Minimalism aesthetic (Iter 33) + drag-to-move/resize (Iter 35) + click-empty-time insert (Iter 36). Matches universal industry pattern plus BAM-X-unique additions (dashed-PROPOSED, kaizen ping, scoped commit semantics, conflict banner)._
 
-_🚨🚨 **DEPLOY GATE 50% OVER LIMIT**: queue 6-deep (Iter 31-36). META §7.7 max is 4. Phil must deploy before any further iteration. Coordinator will not dispatch Iter 37 implementation without deploy._
+_✅ **Deploy resolved 2026-05-14**: Iter 31-36 (6 iterations) all in production. Deploy queue reset to 0; META §7.7 gate cleared._
 
-_**The full unblocked backlog is now genuinely exhausted.** All remaining items require Phil's content authority:_
-_- Phase B simplify composer rebalance (SW-Q6–Q10 OPEN)_
-_- Phase C simplify no-projects discovery (SW-Q1–Q5 OPEN)_
-_- META operating-model deltas (Iter 27 §7 — 7 unapproved recommendations)_
+_**The full unblocked backlog remains genuinely exhausted.** Three options for next move, all requiring Phil's input:_
+_- **Phase B simplify composer rebalance** (SW-Q6–Q10 OPEN) — defaults proposed, batch-approvable_
+_- **Phase C simplify no-projects discovery** (SW-Q1–Q5 OPEN) — requires Phil-authored content (project discovery activities, governance, assignment standard work), NOT batch-approvable_
+_- **META operating-model deltas** (Iter 27 §7 — 7 unapproved recommendations) — batch-approvable, governance-only_
 
 _Iteration 35 — 2026-05-14 — Calendar Phase 2 drag — C-PM-CAL-P2. Phil batch-approved SW-Q-CAL defaults (Path A); unblocked Phase 2 drag-to-move + drag-to-resize. New `js/ui/dragController.js` (~441 LOC) — pure pointer-event controller, dependency-injectable. 15-min snap; bottom-edge resize handle; ghost block during drag; 5px click-threshold; touch-action: none on resize handle for iOS. Scoped commit semantics (synthesis option c): PROPOSED → pending Confirm/Cancel banner; ACCEPTED/EDITED+ → immediate commit via reused EDIT_CHANGE_START_TIME + EDIT_CHANGE_DURATION. Non-blocking overlap conflict banner with Revert/Keep. Safety gates: protected blocks have no drag handles (IN_PROGRESS blocked at pointerdown — QA-flagged critical edge case). 7 new orchestration handlers; 2 new state slices (dragSession, conflictBanner). Suite 3,107 → 3,153 (+46 dragController unit tests using `_doc` injection per META §7.3 parameterization). All 18 ACs PASS. §6.5: zero hits (architect's prediction held — drag reuses existing edit actions). Iter 28 stuck-state bug class prevented via PROPOSED pending flow._
 
