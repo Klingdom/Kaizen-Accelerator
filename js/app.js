@@ -307,15 +307,14 @@ function createState() {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    // Sprint 5: Fine-tune drawer state.
-    fineTune: {
-      open: false,
+    // Iter 34: renamed from fineTune (drawer removed in Iter 25).
+    // Holds user-customizable composer inputs. Dead fields (open,
+    // _snapshotBeforeChange) dropped; only load-bearing fields kept.
+    composerConfig: {
       capacityMinutes: DEFAULT_USER.dailyCapacityMinutes,
       externalMinutesToday: 0,
       activeKaizenId: 'k_cadenceplan_mvp',
-      availableKaizens: [],
-      // Pre-fine-tune snapshot for Cancel to restore.
-      _snapshotBeforeChange: null
+      availableKaizens: []
     },
     // Sprint 5: open dialog state (CLOSE artifact modal OR SKIP reason modal).
     openDialog: null,
@@ -572,12 +571,8 @@ function syncDrawerFocusTraps(state, handlers = {}) {
     state._focusTrap.editDrawer = null;
   }
 
-  // --- FineTuneDrawer ---
-  const ftOpen = !!(state.fineTune && state.fineTune.open);
-  if (ftOpen && !state._focusTrap.fineTuneDrawer) {
-    const el = document.querySelector('.ftd-drawer');
-    state._focusTrap.fineTuneDrawer = installFocusTrap(el ?? null);
-  } else if (!ftOpen && state._focusTrap.fineTuneDrawer) {
+  // --- FineTuneDrawer (Iter 34: drawer removed in Iter 25; always release) ---
+  if (state._focusTrap.fineTuneDrawer) {
     releaseFocusTrap(state._focusTrap.fineTuneDrawer);
     state._focusTrap.fineTuneDrawer = null;
   }
@@ -1169,16 +1164,16 @@ export function buildHandlers(scope) {
 
   return {
     AUTO_PLAN(_payload) {
-      const ft = state.fineTune ?? null;
+      const cfg = state.composerConfig ?? null;
       const override =
-        ft && typeof ft.capacityMinutes === 'number' &&
-        ft.capacityMinutes !== DEFAULT_USER.dailyCapacityMinutes
-          ? ft.capacityMinutes
+        cfg && typeof cfg.capacityMinutes === 'number' &&
+        cfg.capacityMinutes !== DEFAULT_USER.dailyCapacityMinutes
+          ? cfg.capacityMinutes
           : undefined;
       runCompose({
         capacityMinutesOverride: override,
-        externalMinutesToday: ft?.externalMinutesToday ?? 0,
-        activeKaizenId: ft?.activeKaizenId ?? undefined
+        externalMinutesToday: cfg?.externalMinutesToday ?? 0,
+        activeKaizenId: cfg?.activeKaizenId ?? undefined
       });
     },
 
@@ -1837,75 +1832,46 @@ export function buildHandlers(scope) {
       rerender();
     },
 
-    // ---- Sprint 5: Fine-tune drawer ----------------------------------------
-
-    FINE_TUNE_TOGGLE(_payload) {
-      if (!state.fineTune) return;
-      if (!state.fineTune.open) {
-        // Snapshot current settings before open, so Cancel can restore.
-        state.fineTune._snapshotBeforeChange = {
-          capacityMinutes: state.fineTune.capacityMinutes,
-          externalMinutesToday: state.fineTune.externalMinutesToday,
-          activeKaizenId: state.fineTune.activeKaizenId
-        };
-      }
-      state.fineTune.open = !state.fineTune.open;
-      rerender();
-    },
+    // ---- Iter 34: Composer config (renamed from Sprint 5 Fine-tune drawer) --
+    // FINE_TUNE_TOGGLE and FINE_TUNE_CANCEL deleted (drawer no longer exists).
+    // FINE_TUNE_APPLY renamed to COMPOSER_CONFIG_APPLY.
 
     CAPACITY_CHANGE(payload) {
-      if (!state.fineTune) return;
+      if (!state.composerConfig) return;
       if (!payload || typeof payload.minutes !== 'number') return;
-      state.fineTune.capacityMinutes = payload.minutes;
+      state.composerConfig.capacityMinutes = payload.minutes;
       rerender();
     },
 
     EXTERNAL_MEETINGS_CHANGE(payload) {
-      if (!state.fineTune) return;
+      if (!state.composerConfig) return;
       if (!payload || typeof payload.minutes !== 'number') return;
-      state.fineTune.externalMinutesToday = payload.minutes;
+      state.composerConfig.externalMinutesToday = payload.minutes;
       rerender();
     },
 
     PROJECT_FOCUS_CHANGE(payload, ctx) {
-      if (!state.fineTune) return;
+      if (!state.composerConfig) return;
       let kaizenId = payload?.kaizenId ?? null;
       if (!kaizenId && ctx?.element && typeof ctx.element.value === 'string') {
         kaizenId = ctx.element.value || null;
       }
-      state.fineTune.activeKaizenId = kaizenId;
+      state.composerConfig.activeKaizenId = kaizenId;
       rerender();
     },
 
-    FINE_TUNE_CANCEL(_payload) {
-      if (!state.fineTune) return;
-      const snap = state.fineTune._snapshotBeforeChange;
-      if (snap) {
-        state.fineTune.capacityMinutes = snap.capacityMinutes;
-        state.fineTune.externalMinutesToday = snap.externalMinutesToday;
-        state.fineTune.activeKaizenId = snap.activeKaizenId;
-      }
-      state.fineTune.open = false;
-      state.fineTune._snapshotBeforeChange = null;
-      rerender();
-    },
-
-    FINE_TUNE_APPLY(_payload) {
-      // Discard the snapshot — the new values win.
-      if (state.fineTune) {
-        state.fineTune._snapshotBeforeChange = null;
-        state.fineTune.open = false;
-      }
-      const ft = state.fineTune ?? {};
+    COMPOSER_CONFIG_APPLY(_payload) {
+      // Apply current composerConfig values and re-compose the day.
+      const cfg = state.composerConfig ?? {};
       const override =
-        typeof ft.capacityMinutes === 'number' &&
-        ft.capacityMinutes !== DEFAULT_USER.dailyCapacityMinutes
-          ? ft.capacityMinutes
+        typeof cfg.capacityMinutes === 'number' &&
+        cfg.capacityMinutes !== DEFAULT_USER.dailyCapacityMinutes
+          ? cfg.capacityMinutes
           : undefined;
       runCompose({
         capacityMinutesOverride: override,
-        externalMinutesToday: ft.externalMinutesToday ?? 0,
-        activeKaizenId: ft.activeKaizenId ?? undefined
+        externalMinutesToday: cfg.externalMinutesToday ?? 0,
+        activeKaizenId: cfg.activeKaizenId ?? undefined
       });
     },
 
@@ -2813,15 +2779,7 @@ export function start() {
   //         a modal even when focus is on a form element (WCAG intent).
   /* istanbul ignore next — browser only */
   globalThis.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') {
-      // FineTuneDrawer Escape: check this first so it fires even when
-      // editMode is also active (unlikely but safe to handle).
-      if (state.fineTune && state.fineTune.open) {
-        ev.preventDefault();
-        handlers.FINE_TUNE_TOGGLE({});
-        return;
-      }
-    }
+    // (Iter 34: FineTuneDrawer Escape branch removed — drawer no longer exists.)
     if (!state.editMode) return;
     // Skip shortcuts while the user is typing in a form field.
     const tag = ev.target?.tagName?.toLowerCase?.();

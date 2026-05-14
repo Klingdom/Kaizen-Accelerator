@@ -67,8 +67,7 @@ function createMinState() {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    fineTune: {
-      open: false,
+    composerConfig: {
       capacityMinutes: DEFAULT_USER.dailyCapacityMinutes,
       externalMinutesToday: 0,
       activeKaizenId: null,

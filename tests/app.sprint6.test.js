@@ -150,7 +150,7 @@ describe('buildHandlers — Sprint 6 kaizen actions', () => {
       reflectionSheet: null,
       wizard: null,
       lastError: null,
-      fineTune: null,
+      composerConfig: null,
       openDialog: null
     };
     const rerender = () => {

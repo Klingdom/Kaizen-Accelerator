@@ -104,7 +104,7 @@ function stateStub() {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    fineTune: null,
+    composerConfig: null,
     openDialog: null,
     reflectionSheet: null,
     wizard: null,

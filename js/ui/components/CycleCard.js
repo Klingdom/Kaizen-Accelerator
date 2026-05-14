@@ -61,7 +61,13 @@ function formatDateDisplay(dateIso) {
   // Build a local date. Use a specific known date to prevent DST shifts.
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return dateIso;
-  return date.toLocaleDateString('en-GB', {
+  // Iter 34 (AC7): use browser-native locale so month/day order matches the
+  // user's locale. navigator.language may be undefined in non-browser
+  // environments (tests); fall back to 'en-US' which is the most common
+  // default and matches the en-US month-before-day order in the design spec.
+  const locale =
+    (typeof navigator !== 'undefined' && navigator.language) || 'en-US';
+  return date.toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

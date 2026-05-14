@@ -43,13 +43,11 @@ function stateStub() {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    fineTune: {
-      open: false,
+    composerConfig: {
       capacityMinutes: DEFAULT_USER.dailyCapacityMinutes,
       externalMinutesToday: 0,
       activeKaizenId: null,
-      availableKaizens: [],
-      _snapshotBeforeChange: null
+      availableKaizens: []
     },
     openDialog: null,
     reflectionSheet: null,

@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,106 (+541 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,107 (+542 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 730 (+127 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.96s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (21% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.42ms (Iter 29) → 1.30ms (Iter 30) → **1.27ms (Iter 31)** | ✅ stable |
+| Suite count | 731 (+128 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.20 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (20% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **3.71s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (26% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 31) → 1.25ms (Iter 32) → 1.18ms (Iter 33) → **1.20ms (Iter 34)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 31 commit) | (in progress) |
-| **Production deploy queue** | **1 iteration (Iter 31 only — Iter 22-30 deployed 2026-05-13)** | ✅ under gate (max 4 per META §7.7) |
+| Last green commit | (pending Iter 34 commit) | (in progress) |
+| **Production deploy queue** | **4 iterations (Iter 31 + 32 + 33 + 34)** | ⚠️ AT GATE LIMIT (max 4 per META §7.7) — deploy before Iter 35 |
 
 ---
 
@@ -105,7 +105,20 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-13 after Iteration 33 (Chartered Minimalism redesign — C-UX-AESTHETIC). User-directive feature; Phil ran the newly-installed `frontend-design` skill (everything-claude-code marketplace) as an assessment lens on the Today page; coordinator dispatched 2-pass implementation (proposal artifacts + production ship). All 20 ACs PASS. Typography retired the system-font stack (the skill's #1 named anti-pattern) for DM Serif Display + DM Sans + DM Mono Google Fonts trio. Block fills upgraded to 2-stop linear-gradients (Iter 31 green/yellow/purple identity preserved with depth added). Motion design: page-load stagger reveal, block hover-lift, now-line breathing, dialog scale-fade, signature kaizen-chip glow-ring ping. Spatial composition: right-margin bucket strip, hour-rail typography with hairline separators, vertical hairline grid backgrounds, PROPOSED-state banner. 2 new proposal artifacts (`UX_TODAY_REDESIGN.md` + `assets/today-redesign-preview.html`) + 7 production files modified. CSS LOC +241 net. Suite 3,106 (unchanged — selectors preserved). Runtime 3.65s (per-test 1.18ms — 21% headroom under META §7.1 1.5ms ceiling). §6.5: zero hits._
+_Last updated: 2026-05-14 after Iteration 34 (Polish pass — C-FE-3 + C-FE-4). Last non-Phil-blocked items bundled into single iteration. C-FE-3: renamed `state.fineTune` → `state.composerConfig` (13 occurrences across `js/app.js` + 12 test files); dropped dead fields (`open`, `_snapshotBeforeChange`); deleted handlers FINE_TUNE_TOGGLE + FINE_TUNE_CANCEL (drawer-management for drawer that doesn't exist); renamed FINE_TUNE_APPLY → COMPOSER_CONFIG_APPLY. C-FE-4: `formatDateDisplay` locale changed from hardcoded `en-GB` to browser-native via `navigator.language || 'en-US'`. AUTO_PLAN compose-input shape preserved (engine untouched). Suite 3,106 → 3,107 (+1 positive-assertion test). All 9 ACs PASS. §6.5: zero hits._
+
+_⚠️ **Deploy queue AT META §7.7 gate limit**: 4 iterations stacked (Iter 31 + 32 + 33 + 34). Iter 35 cannot dispatch until Phil deploys OR Iter 35 must include deploy step._
+
+_**Backlog is now functionally exhausted on the non-Phil-blocked side.** All remaining items require Phil's authority:_
+_- Phase 2 calendar drag (SW-Q-CAL-01, SW-Q-CAL-03)_
+_- Phase 3 click-empty-time (SW-Q-CAL-02)_
+_- Phase B composer rebalance (SW-Q6 through SW-Q10)_
+_- Phase C no-projects discovery (SW-Q1 through SW-Q5)_
+_- META operating-model deltas (Iter 27 §7 — 7 unapproved recommendations)_
+
+_Phil must answer SW-Q items OR approve META deltas OR deploy current queue + give a new directive to make further progress._
+
+_Iteration 33 — 2026-05-13 — Chartered Minimalism redesign — Today page (C-UX-AESTHETIC). User-directive feature; Phil ran the newly-installed `frontend-design` skill (everything-claude-code marketplace) as an assessment lens on the Today page; coordinator dispatched 2-pass implementation (proposal artifacts + production ship). All 20 ACs PASS. Typography retired the system-font stack (the skill's #1 named anti-pattern) for DM Serif Display + DM Sans + DM Mono Google Fonts trio. Block fills upgraded to 2-stop linear-gradients (Iter 31 green/yellow/purple identity preserved with depth added). Motion design: page-load stagger reveal, block hover-lift, now-line breathing, dialog scale-fade, signature kaizen-chip glow-ring ping. Spatial composition: right-margin bucket strip, hour-rail typography with hairline separators, vertical hairline grid backgrounds, PROPOSED-state banner. 2 new proposal artifacts (`UX_TODAY_REDESIGN.md` + `assets/today-redesign-preview.html`) + 7 production files modified. CSS LOC +241 net. Suite 3,106 (unchanged — selectors preserved). Runtime 3.65s (per-test 1.18ms — 21% headroom under META §7.1 1.5ms ceiling). §6.5: zero hits._
 
 _✅ **Per-test cost stable**: 1.18ms (21% headroom under 1.5ms ceiling). Runtime 3.65s (27% headroom under 5.0s alarm)._
 

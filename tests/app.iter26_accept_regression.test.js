@@ -63,13 +63,11 @@ function stateStub(overrides = {}) {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    fineTune: {
-      open: false,
+    composerConfig: {
       capacityMinutes: DEFAULT_USER.dailyCapacityMinutes,
       externalMinutesToday: 0,
       activeKaizenId: 'k_cadenceplan_mvp',
-      availableKaizens: [],
-      _snapshotBeforeChange: null
+      availableKaizens: []
     },
     openDialog: null,
     reflectionSheet: null,

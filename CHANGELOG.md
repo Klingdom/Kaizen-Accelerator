@@ -6,6 +6,43 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 34 — 2026-05-14 — Polish pass: state.fineTune cleanup + locale fix (C-FE-3 + C-FE-4)
+
+### What changed
+Two small deferred-cleanup items.
+
+**C-FE-3 — state.fineTune slice cleanup** (Iter 25 deferral):
+- `state.fineTune` renamed to `state.composerConfig` (13 occurrences across `js/app.js` + 12 test files)
+- Dead fields removed: `open`, `_snapshotBeforeChange`
+- Load-bearing fields preserved: `capacityMinutes`, `externalMinutesToday`, `activeKaizenId`, `availableKaizens`
+- Action handler `FINE_TUNE_APPLY` renamed to `COMPOSER_CONFIG_APPLY`
+- DELETED handlers: `FINE_TUNE_TOGGLE`, `FINE_TUNE_CANCEL` (both purely managed drawer-open state that no longer exists)
+- KEPT handlers: `CAPACITY_CHANGE`, `EXTERNAL_MEETINGS_CHANGE`, `PROJECT_FOCUS_CHANGE` (compose-pipeline inputs)
+- `_focusTrap.fineTuneDrawer` key retained as null sentinel for test-stub compatibility
+- AUTO_PLAN still receives same data shape via `state.composerConfig` — engine untouched
+
+**C-FE-4 — formatDateDisplay locale** (Iter 33 follow-up):
+- `js/ui/components/CycleCard.js:64` changed from hardcoded `'en-GB'` to `(typeof navigator !== 'undefined' && navigator.language) || 'en-US'`
+- Browser users now see their locale's native format (e.g., "Wednesday, May 14, 2026" for en-US; "Wednesday, 14 May 2026" for en-GB)
+- Node test environment: `navigator` undefined → falls through to `en-US` deterministically
+- `Intl.DateTimeFormat` options unchanged (`weekday: 'long'`, `day: 'numeric'`, `month: 'long'`, `year: 'numeric'`)
+
+### Why
+- Iter 25 left `state.fineTune` as a load-bearing slice with a misleading name (implied drawer UI that no longer rendered). Rename + dead-field removal eliminates the cognitive overhead.
+- Iter 33 hardcoded `en-GB` locale for the date heading. Trivial fix to use browser locale removes the assumption that all users are British.
+
+### Impact
+- Test suite: 3,106 → **3,107** (+1 — new positive assertion that FINE_TUNE_TOGGLE/FINE_TUNE_CANCEL no longer exist, guards against accidental re-introduction)
+- Runtime: 3.65s → **3.71s** ✅ (per-test 1.18 → 1.19ms; 21% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- Files touched: 14 (`js/app.js`, `js/ui/components/CycleCard.js`, 12 test files)
+- All 9 ACs PASS
+
+### Spec deviations
+- One addition beyond spec: positive assertion test in `app.test.js` asserting `FINE_TUNE_TOGGLE` and `FINE_TUNE_CANCEL` handlers no longer exist (test count +1). Guards against accidental re-introduction.
+
+---
+
 ## Iteration 33 — 2026-05-13 — Chartered Minimalism redesign — Today page (C-UX-AESTHETIC)
 
 ### What changed

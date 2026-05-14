@@ -48,13 +48,11 @@ function stateStub(overrides = {}) {
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
-    fineTune: {
-      open: false,
+    composerConfig: {
       capacityMinutes: DEFAULT_USER.dailyCapacityMinutes,
       externalMinutesToday: 0,
       activeKaizenId: null,
-      availableKaizens: [],
-      _snapshotBeforeChange: null
+      availableKaizens: []
     },
     openDialog: null,
     reflectionSheet: null,
@@ -243,8 +241,8 @@ describe('AUTO_PLAN handler — error toast on infeasible', () => {
     const env = makeEnv();
     const state = stateStub();
     // Cap to something so small the composer can't fit ceremony bottoms.
-    state.fineTune = {
-      ...state.fineTune,
+    state.composerConfig = {
+      ...state.composerConfig,
       capacityMinutes: 30,
       externalMinutesToday: 25
     };

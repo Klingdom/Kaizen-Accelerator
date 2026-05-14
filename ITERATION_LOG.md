@@ -1030,3 +1030,48 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phil visually verifies post-deploy
   - Phase 2 + 3 calendar drag still Phil-blocked on SW-Q-CAL-01/02/03
   - state.fineTune cleanup still queued as next non-Phil-blocked item
+
+---
+
+## Iteration 34 — 2026-05-14 — Polish pass: state.fineTune cleanup + locale fix (C-FE-3 + C-FE-4)
+
+- **Selected item**: Bundled small polish iteration. C-FE-3 (state.fineTune slice cleanup, Iter 25 deferral) + C-FE-4 (formatDateDisplay locale handling, Iter 33 follow-up). Both small (~30 min combined per FE actual).
+- **Reason for selection**: Phil said "proceed" with deploy queue at 3-deep. Last two genuinely non-Phil-blocked items in the backlog. After this, everything is Phil-blocked on SW-Q answers.
+- **Agents involved**: frontend-engineer (single-pass; clear deferred-work spec).
+- **Validation results**:
+  - Tests: 3,106 → **3,107** (+1: new positive assertion that deleted handlers no longer exist)
+  - Runtime: 3.65s → **3.71s** ✅ (per-test 1.18 → 1.19ms; 21% headroom under META §7.1 1.5ms ceiling)
+  - All 9 ACs PASS
+  - **§6.5 boundary**: zero hits. `js/app.js` is wiring/boot layer, out of protected paths.
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files (14)**:
+    - `js/app.js` — 13 state.fineTune → state.composerConfig renames; dead fields removed; FINE_TUNE_TOGGLE + FINE_TUNE_CANCEL handlers deleted; FINE_TUNE_APPLY → COMPOSER_CONFIG_APPLY
+    - `js/ui/components/CycleCard.js` — formatDateDisplay locale parameter updated
+    - 12 test files updated for state.composerConfig renames + 1 new positive-assertion test in `app.test.js`
+- **State slice transformation**:
+  - **Before**: `state.fineTune = { open, capacityMinutes, externalMinutesToday, activeKaizenId, availableKaizens, _snapshotBeforeChange }`
+  - **After**: `state.composerConfig = { capacityMinutes, externalMinutesToday, activeKaizenId, availableKaizens }`
+  - Dropped: `open` (no drawer to open), `_snapshotBeforeChange` (no cancel button to restore)
+- **Action handler transformation**:
+  - DELETED: `FINE_TUNE_TOGGLE` (drawer-open toggle — drawer doesn't exist)
+  - DELETED: `FINE_TUNE_CANCEL` (drawer-snapshot-restore — also dead without cancel button)
+  - RENAMED: `FINE_TUNE_APPLY` → `COMPOSER_CONFIG_APPLY` (same compose call; dead fields no longer mutated)
+  - KEPT (rename internals only): `CAPACITY_CHANGE`, `EXTERNAL_MEETINGS_CHANGE`, `PROJECT_FOCUS_CHANGE`
+- **Locale fix**:
+  - `formatDateDisplay(dateIso)` now uses `(typeof navigator !== 'undefined' && navigator.language) || 'en-US'`
+  - Browser users see their native locale's date format
+  - Node test environment: navigator undefined → en-US fallback (deterministic)
+- **Spec deviations**: One small addition — positive-assertion test in `app.test.js` (test count +1) guards against accidental re-introduction of FINE_TUNE_TOGGLE/CANCEL handlers.
+- **Time spent**: ~30 min actual vs 1-2 hr estimate. Well-specified deferred-work brief compressed discovery phase.
+- **Strategic outcome**:
+  - **Iter 25 latent issue closed**: state slice now has accurate name and zero dead fields. Code reads cleaner; future maintainers won't be confused by "fineTune" referring to a drawer that doesn't exist.
+  - **Iter 33 locale assumption fixed**: US users no longer see UK-format date headings.
+  - **Last non-Phil-blocked item shipped**: backlog is now functionally exhausted on the non-blocked side. All remaining work requires Phil's SW-Q answers.
+- **Latent issues**: None new.
+- **Follow-ups**:
+  - Commit + push.
+  - **Deploy queue now 4-deep (Iter 31 + 32 + 33 + 34) — at META §7.7 gate limit.** Per gate rule: next iteration must include deploy step before implementation OR Phil must deploy first.
+  - Phase 2 + 3 calendar drag/click still Phil-blocked on SW-Q-CAL-01/02/03
+  - Phase B simplify (composer rebalance) Phil-blocked on SW-Q6–Q10
+  - Phase C simplify (no-projects discovery) Phil-blocked on SW-Q1–Q5
+  - **Backlog is now functionally exhausted on the non-Phil-blocked side. Continuing further work without Phil's input would be inventing scope.**

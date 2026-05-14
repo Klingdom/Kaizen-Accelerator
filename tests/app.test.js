@@ -140,13 +140,11 @@ describe('app.buildHandlers — integration', () => {
       composerLoading: false,
       infeasibleExplain: null,
       lastError: null,
-      fineTune: {
-        open: false,
+      composerConfig: {
         capacityMinutes: 480,
         externalMinutesToday: 0,
         activeKaizenId: 'k_cadenceplan_mvp',
-        availableKaizens: [],
-        _snapshotBeforeChange: null
+        availableKaizens: []
       },
       openDialog: null
     };
@@ -165,7 +163,7 @@ describe('app.buildHandlers — integration', () => {
     }
   });
 
-  test('exposes Sprint 5 handlers: OPEN_CLOSE_DIALOG, SUBMIT_CLOSE_DIALOG, OPEN_SKIP_MODAL, SUBMIT_SKIP_MODAL, FINE_TUNE_TOGGLE, FINE_TUNE_APPLY', () => {
+  test('exposes Sprint 5 / Iter 34 handlers: OPEN_CLOSE_DIALOG, SUBMIT_CLOSE_DIALOG, OPEN_SKIP_MODAL, SUBMIT_SKIP_MODAL, COMPOSER_CONFIG_APPLY', () => {
     const keys = [
       'OPEN_CLOSE_DIALOG',
       'CLOSE_CLOSE_DIALOG',
@@ -173,9 +171,9 @@ describe('app.buildHandlers — integration', () => {
       'OPEN_SKIP_MODAL',
       'CLOSE_SKIP_MODAL',
       'SUBMIT_SKIP_MODAL',
-      'FINE_TUNE_TOGGLE',
-      'FINE_TUNE_CANCEL',
-      'FINE_TUNE_APPLY',
+      // Iter 34: FINE_TUNE_TOGGLE + FINE_TUNE_CANCEL deleted (drawer removed).
+      // FINE_TUNE_APPLY renamed to COMPOSER_CONFIG_APPLY.
+      'COMPOSER_CONFIG_APPLY',
       'CAPACITY_CHANGE',
       'EXTERNAL_MEETINGS_CHANGE',
       'PROJECT_FOCUS_CHANGE'
@@ -183,6 +181,12 @@ describe('app.buildHandlers — integration', () => {
     for (const k of keys) {
       assert.equal(typeof handlers[k], 'function', `missing handler ${k}`);
     }
+  });
+
+  test('Iter 34: FINE_TUNE_TOGGLE and FINE_TUNE_CANCEL no longer exist', () => {
+    assert.equal(handlers['FINE_TUNE_TOGGLE'], undefined, 'FINE_TUNE_TOGGLE must be removed');
+    assert.equal(handlers['FINE_TUNE_CANCEL'], undefined, 'FINE_TUNE_CANCEL must be removed');
+    assert.equal(handlers['FINE_TUNE_APPLY'], undefined, 'FINE_TUNE_APPLY must be removed (renamed to COMPOSER_CONFIG_APPLY)');
   });
 
   test('AUTO_PLAN composes a day and persists the Composition', () => {
