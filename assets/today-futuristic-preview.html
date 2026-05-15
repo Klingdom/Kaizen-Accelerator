@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-palette="phils-ci" data-motion="full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAM-X Today — Futuristic Preview (Luminous Constraint)</title>
+
+<!-- Typography: Instrument Serif + Geist + Geist Mono -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   DESIGN TOKENS — Luminous Constraint
+   Phil's CI palette (light), Phil's CI palette (dark),
+   and Monochrome Operator alternative
+   ============================================================ */
+
+:root {
+  /* --- Fonts --- */
+  --font-display: 'Instrument Serif', 'Georgia', serif;
+  --font-body:    'Geist', 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-mono:    'Geist Mono', 'DM Mono', 'Fira Code', monospace;
+
+  /* --- Radii / structure --- */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+
+  /* --- Motion --- */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-std:    cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   PHIL'S CI PALETTE — LIGHT
+   ============================================================ */
+[data-palette="phils-ci"][data-theme="light"],
+[data-palette="phils-ci"]:not([data-theme]) {
+  --surface-0:    #f8f7f5;
+  --surface-1:    #ffffff;
+  --surface-2:    #f2efe9;
+  --surface-glass: rgba(255,255,255,0.72);
+
+  --ink-900:  #0e0d0b;
+  --ink-700:  #3d3a35;
+  --ink-500:  #57534e;
+  --ink-300:  #a8a29e;
+  --ink-100:  #f5f4f2;
+
+  --border:         rgba(0,0,0,0.09);
+  --border-inner:   rgba(255,255,255,0.65);
+  --border-strong:  rgba(0,0,0,0.20);
+
+  --project-fill:   #16a34a;
+  --project-fill-t: #4ade80;
+  --project-fill-b: #15803d;
+  --project-glow:   rgba(22,163,74,0.20);
+  --project-bg:     #f0fdf4;
+  --project-fg:     #14532d;
+
+  --comm-fill:   #d97706;
+  --comm-fill-t: #fbbf24;
+  --comm-fill-b: #b45309;
+  --comm-glow:   rgba(217,119,6,0.18);
+  --comm-bg:     #fffbeb;
+  --comm-fg:     #78350f;
+
+  --ci-fill:   #9333ea;
+  --ci-fill-t: #c084fc;
+  --ci-fill-b: #7e22ce;
+  --ci-glow:   rgba(147,51,234,0.18);
+  --ci-bg:     #faf5ff;
+  --ci-fg:     #3b0764;
+
+  --lunch-fill: #78716c;
+  --lunch-bg:   #fafaf9;
+  --lunch-fg:   #44403c;
+
+  --now-red:  #e11d48;
+  --now-glow: rgba(225,29,72,0.25);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08);
+
+  --fg: var(--ink-900);
+  --muted: var(--ink-500);
+  --bg: var(--surface-0);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   PHIL'S CI PALETTE — DARK
+   ============================================================ */
+[data-palette="phils-ci"][data-theme="dark"] {
+  --surface-0:    #0c0c0e;
+  --surface-1:    #141417;
+  --surface-2:    #1a1a1f;
+  --surface-glass: rgba(20,20,23,0.80);
+
+  --ink-900:  #f0eff0;
+  --ink-700:  #c4c2c8;
+  --ink-500:  #8b8a92;
+  --ink-300:  #4a4a52;
+  --ink-100:  #1d1d24;
+
+  --border:         rgba(255,255,255,0.08);
+  --border-inner:   rgba(255,255,255,0.09);
+  --border-strong:  rgba(255,255,255,0.18);
+
+  --project-fill:   #22c55e;
+  --project-fill-t: #4ade80;
+  --project-fill-b: #16a34a;
+  --project-glow:   rgba(34,197,94,0.25);
+  --project-bg:     #0d2818;
+  --project-fg:     #86efac;
+
+  --comm-fill:   #f59e0b;
+  --comm-fill-t: #fbbf24;
+  --comm-fill-b: #d97706;
+  --comm-glow:   rgba(245,158,11,0.22);
+  --comm-bg:     #27200a;
+  --comm-fg:     #fde68a;
+
+  --ci-fill:   #a855f7;
+  --ci-fill-t: #c084fc;
+  --ci-fill-b: #9333ea;
+  --ci-glow:   rgba(168,85,247,0.25);
+  --ci-bg:     #1e0a2e;
+  --ci-fg:     #d8b4fe;
+
+  --lunch-fill: #a8a3a0;
+  --lunch-bg:   #1c1b1a;
+  --lunch-fg:   #d6d3d0;
+
+  --now-red:  #fb7185;
+  --now-glow: rgba(251,113,133,0.32);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.30), 0 1px 4px rgba(0,0,0,0.20);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.40), 0 1px 4px rgba(0,0,0,0.25);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.35);
+
+  --fg: var(--ink-900);
+  --muted: var(--ink-500);
+  --bg: var(--surface-0);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   MONOCHROME OPERATOR — LIGHT
+   ============================================================ */
+[data-palette="monochrome"][data-theme="light"],
+[data-palette="monochrome"]:not([data-theme]) {
+  --surface-0:    #f9fafb;
+  --surface-1:    #ffffff;
+  --surface-2:    #f3f4f6;
+  --surface-glass: rgba(255,255,255,0.80);
+
+  --ink-900:  #111827;
+  --ink-700:  #374151;
+  --ink-500:  #6b7280;
+  --ink-300:  #9ca3af;
+  --ink-100:  #f3f4f6;
+
+  --border:         rgba(0,0,0,0.10);
+  --border-inner:   rgba(255,255,255,0.70);
+  --border-strong:  rgba(0,0,0,0.22);
+
+  --project-fill:   #374151;
+  --project-fill-t: #6b7280;
+  --project-fill-b: #1f2937;
+  --project-glow:   rgba(55,65,81,0.18);
+  --project-bg:     #f9fafb;
+  --project-fg:     #111827;
+
+  --comm-fill:   #4b5563;
+  --comm-fill-t: #6b7280;
+  --comm-fill-b: #374151;
+  --comm-glow:   rgba(75,85,99,0.18);
+  --comm-bg:     #f3f4f6;
+  --comm-fg:     #1f2937;
+
+  --ci-fill:   #1f2937;
+  --ci-fill-t: #374151;
+  --ci-fill-b: #111827;
+  --ci-glow:   rgba(31,41,55,0.18);
+  --ci-bg:     #e5e7eb;
+  --ci-fg:     #111827;
+
+  --lunch-fill: #9ca3af;
+  --lunch-bg:   #f9fafb;
+  --lunch-fg:   #4b5563;
+
+  --now-red:  #e11d48;
+  --now-glow: rgba(225,29,72,0.22);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08);
+
+  --fg: var(--ink-900);
+  --muted: var(--ink-500);
+  --bg: var(--surface-0);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   MONOCHROME OPERATOR — DARK
+   ============================================================ */
+[data-palette="monochrome"][data-theme="dark"] {
+  --surface-0:    #0f0f0f;
+  --surface-1:    #1a1a1a;
+  --surface-2:    #222222;
+  --surface-glass: rgba(26,26,26,0.82);
+
+  --ink-900:  #f4f4f5;
+  --ink-700:  #d4d4d8;
+  --ink-500:  #71717a;
+  --ink-300:  #3f3f46;
+  --ink-100:  #27272a;
+
+  --border:         rgba(255,255,255,0.07);
+  --border-inner:   rgba(255,255,255,0.08);
+  --border-strong:  rgba(255,255,255,0.16);
+
+  --project-fill:   #6b7280;
+  --project-fill-t: #9ca3af;
+  --project-fill-b: #4b5563;
+  --project-glow:   rgba(107,114,128,0.22);
+  --project-bg:     #1a1a1a;
+  --project-fg:     #d1d5db;
+
+  --comm-fill:   #9ca3af;
+  --comm-fill-t: #d1d5db;
+  --comm-fill-b: #6b7280;
+  --comm-glow:   rgba(156,163,175,0.20);
+  --comm-bg:     #1f1f1f;
+  --comm-fg:     #e5e7eb;
+
+  --ci-fill:   #d1d5db;
+  --ci-fill-t: #f3f4f6;
+  --ci-fill-b: #9ca3af;
+  --ci-glow:   rgba(209,213,219,0.18);
+  --ci-bg:     #2a2a2a;
+  --ci-fg:     #f3f4f6;
+
+  --lunch-fill: #52525b;
+  --lunch-bg:   #18181b;
+  --lunch-fg:   #a1a1aa;
+
+  --now-red:  #fb7185;
+  --now-glow: rgba(251,113,133,0.28);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.50);
+  --shadow-lg: 0 24px 80px rgba(0,0,0,0.60), 0 4px 16px rgba(0,0,0,0.35);
+
+  --fg: var(--ink-900);
+  --muted: var(--ink-500);
+  --bg: var(--surface-0);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   BASE RESET + BODY
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg, #f8f7f5);
+  color: var(--fg, #0e0d0b);
+  transition: background 300ms var(--ease-std), color 200ms var(--ease-std);
+}
+
+/* ============================================================
+   AMBIENT PAGE DEPTH
+   ============================================================ */
+body {
+  min-height: 100vh;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% 5%, var(--project-glow) 0%, transparent 100%),
+    radial-gradient(ellipse 50% 40% at 85% 95%, var(--ci-glow) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+/* ============================================================
+   PREVIEW LAYOUT
+   ============================================================ */
+.preview-root {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   CUSTOMIZATION CONTROLS (floating top bar)
+   ============================================================ */
+.controls-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin: 0 0 24px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-inner);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md), inset 0 1px 0 var(--border-inner);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.controls-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctrl-seg {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.ctrl-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  font: 500 12px/1 var(--font-body);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  white-space: nowrap;
+}
+.ctrl-btn:hover { background: var(--surface-2); color: var(--fg); }
+.ctrl-btn.active {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.swatch-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 140ms var(--ease-spring), border-color 120ms;
+  position: relative;
+}
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { border-color: var(--fg); transform: scale(1.05); }
+.swatch-phils-ci { background: conic-gradient(#16a34a 0deg 120deg, #d97706 120deg 240deg, #9333ea 240deg 360deg); }
+.swatch-monochrome { background: conic-gradient(#374151 0deg 120deg, #6b7280 120deg 240deg, #1f2937 240deg 360deg); }
+
+.controls-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   APP SHELL / NAV
+   ============================================================ */
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  margin-right: 8px;
+}
+.nav-item {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--fg); }
+.nav-item.active { color: var(--fg); background: var(--ink-100); }
+.nav-spacer { flex: 1; }
+.nav-day-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   TODAY PAGE LAYOUT
+   ============================================================ */
+.today-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ============================================================
+   TODAY HEADER
+   ============================================================ */
+.today-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.today-date-group { flex: 1; }
+.today-weekday {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+}
+.today-date-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.today-day-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--fg);
+  color: var(--bg);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+}
+
+/* ============================================================
+   CADENCE PRESSURE RING (signature pattern)
+   ============================================================ */
+.cadence-ring-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cadence-ring-wrap:hover .cadence-tooltip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.cadence-ring-svg {
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+.cadence-arc {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms var(--ease-std);
+}
+.cadence-arc-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 4;
+}
+.cadence-arc-project { stroke: var(--project-fill); stroke-width: 4; }
+.cadence-arc-comm    { stroke: var(--comm-fill); stroke-width: 4; }
+.cadence-arc-ci      { stroke: var(--ci-fill); stroke-width: 4; }
+.cadence-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  text-align: center;
+  line-height: 1.2;
+}
+.cadence-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 200px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-inner);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--fg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms, transform 180ms var(--ease-spring);
+  z-index: 50;
+  white-space: nowrap;
+}
+.ct-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ct-row:last-child { margin-bottom: 0; }
+.ct-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ct-dot-project { background: var(--project-fill); }
+.ct-dot-comm    { background: var(--comm-fill); }
+.ct-dot-ci      { background: var(--ci-fill); }
+.ct-label { flex: 1; color: var(--muted); }
+.ct-value { font-family: var(--font-mono); font-weight: 500; }
+.ct-balanced {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--project-fg);
+  font-weight: 500;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ============================================================
+   CYCLE CARD (main container)
+   ============================================================ */
+.cycle-card {
+  background: var(--surface-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-inner);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md), inset 0 1px 0 var(--border-inner);
+  padding: 20px;
+  transition: background 300ms;
+}
+
+.cycle-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.cycle-card-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+.cycle-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 10px;
+  border: 1px solid;
+}
+.badge-proposed {
+  background: var(--ci-bg);
+  color: var(--ci-fg);
+  border-color: var(--ci-fill);
+}
+.badge-accepted {
+  background: var(--project-bg);
+  color: var(--project-fg);
+  border-color: var(--project-fill);
+}
+.cycle-card-intro { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+/* ============================================================
+   BUCKET STRIP (left rail style)
+   ============================================================ */
+.bucket-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.bucket-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+}
+.bucket-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.bucket-row.bucket-project .bucket-label { color: var(--project-fg); }
+.bucket-row.bucket-comm .bucket-label { color: var(--comm-fg); }
+.bucket-row.bucket-ci .bucket-label { color: var(--ci-fg); }
+.bucket-track {
+  position: relative;
+  height: 18px;
+  background: var(--surface-1);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.bucket-fill {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  border-radius: 4px;
+  animation: barReveal 500ms var(--ease-std) both;
+}
+.bucket-row.bucket-project .bucket-fill {
+  background: linear-gradient(to right, var(--project-fill-t), var(--project-fill));
+}
+.bucket-row.bucket-comm .bucket-fill {
+  background: linear-gradient(to right, var(--comm-fill-t), var(--comm-fill));
+  animation-delay: 100ms;
+}
+.bucket-row.bucket-ci .bucket-fill {
+  background: linear-gradient(to right, var(--ci-fill-t), var(--ci-fill));
+  animation-delay: 200ms;
+}
+.bucket-tick {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: rgba(0,0,0,0.30);
+  border-radius: 1px;
+}
+.bucket-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+  color: var(--muted);
+}
+.bucket-value strong { color: var(--fg); font-weight: 500; }
+
+@keyframes barReveal {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+
+/* ============================================================
+   CALENDAR GRID
+   ============================================================ */
+.cycle-calendar-grid {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+
+/* Hour rail */
+.cycle-hour-rail {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-300);
+  letter-spacing: -0.01em;
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 59px,
+    var(--border) 59px,
+    var(--border) 60px
+  );
+}
+.cycle-hour {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 6px 8px 0 0;
+  height: 60px;
+}
+.cycle-hour.hour-current {
+  color: var(--now-red);
+  font-weight: 600;
+}
+.cycle-hour.hour-past { opacity: 0.45; }
+
+/* Timeline */
+.cycle-timeline {
+  position: relative;
+  background: var(--surface-1);
+}
+.timeline-hlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.timeline-hline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.6;
+}
+.timeline-hline-half {
+  background: var(--border);
+  opacity: 0.3;
+}
+
+/* Activity blocks */
+.cycle-block {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  font-size: 12px;
+  line-height: 1.3;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 180ms var(--ease-spring), box-shadow 180ms var(--ease-spring);
+  animation: blockReveal 320ms var(--ease-spring) both;
+}
+.cycle-block:hover {
+  transform: translateY(-3px) scale(1.005);
+  z-index: 5;
+}
+
+/* Project block */
+.block-project {
+  background: linear-gradient(160deg, var(--project-fill-t) 0%, var(--project-fill) 45%, var(--project-fill-b) 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 3px var(--project-glow),
+    0 4px 12px var(--project-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.block-project:hover {
+  box-shadow:
+    0 2px 6px var(--project-glow),
+    0 8px 24px var(--project-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+
+/* Communication block */
+.block-comm {
+  background: linear-gradient(160deg, var(--comm-fill-t) 0%, var(--comm-fill) 45%, var(--comm-fill-b) 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 3px var(--comm-glow),
+    0 4px 12px var(--comm-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.block-comm:hover {
+  box-shadow:
+    0 2px 6px var(--comm-glow),
+    0 8px 24px var(--comm-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+
+/* CI block */
+.block-ci {
+  background: linear-gradient(160deg, var(--ci-fill-t) 0%, var(--ci-fill) 45%, var(--ci-fill-b) 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 3px var(--ci-glow),
+    0 4px 12px var(--ci-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.block-ci:hover {
+  box-shadow:
+    0 2px 6px var(--ci-glow),
+    0 8px 24px var(--ci-glow),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.block-ci.block-kaizen-linked {
+  animation: blockReveal 320ms var(--ease-spring) both, kaizenRing 1400ms ease-out 900ms both;
+}
+
+/* Lunch block */
+.block-lunch {
+  background: linear-gradient(160deg, var(--surface-2), var(--ink-100));
+  color: var(--muted);
+  font-style: italic;
+  border: 1px dashed var(--border-strong);
+  box-shadow: none !important;
+  cursor: default;
+}
+.block-lunch:hover { transform: none; }
+
+/* PROPOSED state */
+.block-proposed {
+  animation: blockReveal 320ms var(--ease-spring) both, proposedShimmer 2.2s ease-in-out 400ms infinite !important;
+  outline-offset: -2px;
+}
+.block-proposed.block-project {
+  background: linear-gradient(160deg, #bbf7d0, #dcfce7, #f0fdf4);
+  color: var(--project-fg);
+  border: 2px dashed var(--project-fill);
+  box-shadow: none;
+}
+.block-proposed.block-comm {
+  background: linear-gradient(160deg, #fde68a, #fef3c7, #fffbeb);
+  color: var(--comm-fg);
+  border: 2px dashed var(--comm-fill);
+  box-shadow: none;
+}
+.block-proposed.block-ci {
+  background: linear-gradient(160deg, #e9d5ff, #f3e8ff, #faf5ff);
+  color: var(--ci-fg);
+  border: 2px dashed var(--ci-fill);
+  box-shadow: none;
+}
+
+/* IN_PROGRESS state — bolder shadow ring */
+.block-in-progress {
+  outline: 2px solid rgba(255,255,255,0.60);
+  outline-offset: -3px;
+}
+.block-in-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(255,255,255,0.35);
+}
+
+/* CLOSED/SKIPPED states */
+.block-closed {
+  opacity: 0.45;
+}
+.block-skipped {
+  opacity: 0.50;
+  outline: 2px solid rgba(225,29,72,0.50);
+  outline-offset: -2px;
+}
+
+/* Block sub-elements */
+.block-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.80;
+  letter-spacing: 0.01em;
+}
+.block-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.block-kaizen-chip {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: rgba(0,0,0,0.18);
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
+/* Now-line */
+.cycle-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--now-red);
+  box-shadow: 0 0 12px 2px var(--now-glow), 0 0 4px 0 var(--now-red);
+  pointer-events: none;
+  z-index: 10;
+}
+.cycle-now-line::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 12px;
+  height: 12px;
+  background: var(--now-red);
+  border-radius: 50%;
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 0 8px 2px var(--now-glow);
+  animation: nowPulse 4s ease-in-out infinite;
+}
+.cycle-now-label {
+  position: absolute;
+  left: 10px;
+  top: -9px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--now-red);
+  background: var(--surface-glass);
+  backdrop-filter: blur(8px);
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--border-inner);
+}
+
+/* ============================================================
+   BLOCK DETAIL DIALOG
+   ============================================================ */
+.bdd-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.12);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  animation: backdropIn 250ms var(--ease-std) both;
+}
+.bdd-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--border-inner);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 var(--border-inner);
+  z-index: 201;
+  overflow: hidden;
+  animation: dialogIn 280ms var(--ease-bounce) both;
+}
+.bdd-color-bar {
+  height: 4px;
+  width: 100%;
+}
+.bdd-color-bar-project { background: linear-gradient(to right, var(--project-fill-t), var(--project-fill)); }
+.bdd-color-bar-comm    { background: linear-gradient(to right, var(--comm-fill-t), var(--comm-fill)); }
+.bdd-color-bar-ci      { background: linear-gradient(to right, var(--ci-fill-t), var(--ci-fill)); }
+.bdd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+}
+.bdd-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--fg);
+  line-height: 1.2;
+}
+.bdd-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background 120ms, color 120ms;
+}
+.bdd-close:hover { background: var(--surface-2); color: var(--fg); }
+.bdd-body {
+  padding: 4px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bdd-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.bdd-dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  width: 100px;
+  flex-shrink: 0;
+}
+.bdd-dd {
+  font-size: 13px;
+  color: var(--fg);
+}
+.bdd-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.bdd-chip-ci { background: var(--ci-bg); color: var(--ci-fg); border: 1px solid var(--ci-fill); }
+.bdd-time { font-family: var(--font-mono); }
+.bdd-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border);
+}
+.bdd-btn {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font: 500 13px var(--font-body);
+  cursor: pointer;
+  transition: background 120ms, transform 80ms, box-shadow 120ms;
+}
+.bdd-btn-edit {
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid var(--fg);
+}
+.bdd-btn-edit:hover { opacity: 0.85; transform: translateY(-1px); }
+.bdd-btn-secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border-strong);
+}
+.bdd-btn-secondary:hover { background: var(--surface-2); color: var(--fg); }
+
+/* ============================================================
+   TRIAD (Accept/Edit/Reject)
+   ============================================================ */
+.triad {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.triad-btn {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  font: 500 14px var(--font-body);
+  cursor: pointer;
+  transition: background 120ms, transform 80ms;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--fg);
+}
+.triad-accept {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+.triad-accept:hover { opacity: 0.85; }
+.triad-reject {
+  color: var(--now-red);
+  border-color: var(--now-red);
+  opacity: 0.75;
+}
+.triad-reject:hover { opacity: 1; background: rgba(225,29,72,0.06); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes blockReveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes nowPulse {
+  0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px 2px var(--now-glow); }
+  50% { transform: scale(1.45); opacity: 0.75; box-shadow: 0 0 16px 4px var(--now-glow); }
+}
+
+@keyframes kaizenRing {
+  0% { box-shadow: 0 0 0 0 var(--ci-glow), 0 0 0 0 var(--ci-glow); }
+  30% { box-shadow: 0 0 0 10px var(--ci-glow), 0 0 0 0 var(--ci-glow); }
+  60% { box-shadow: 0 0 0 18px rgba(147,51,234,0), 0 0 0 10px var(--ci-glow); }
+  100% { box-shadow: 0 0 0 22px rgba(147,51,234,0), 0 0 0 18px rgba(147,51,234,0); }
+}
+
+@keyframes proposedShimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.04); }
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ============================================================
+   MOTION REDUCED
+   ============================================================ */
+[data-motion="reduced"] .cycle-block,
+[data-motion="reduced"] .bucket-fill,
+[data-motion="reduced"] .bdd-panel,
+[data-motion="reduced"] .bdd-backdrop {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+}
+[data-motion="reduced"] .cycle-now-line::before {
+  animation: none !important;
+}
+[data-motion="reduced"] .cycle-block:hover {
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cycle-block,
+  .bucket-fill,
+  .bdd-panel,
+  .bdd-backdrop,
+  .cycle-now-line::before {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+  }
+  .cycle-block:hover { transform: none !important; }
+}
+
+/* ============================================================
+   DESIGN NOTES PANEL (bottom of page)
+   ============================================================ */
+.design-notes {
+  margin-top: 48px;
+  padding: 20px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-inner);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  color: var(--muted);
+}
+.design-notes h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--fg);
+  margin-bottom: 12px;
+}
+.design-notes ul { padding-left: 16px; display: flex; flex-direction: column; gap: 6px; }
+.design-notes li { line-height: 1.5; }
+.design-notes code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--ci-fg);
+}
+
+/* Preview label utility */
+.preview-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="preview-root">
+
+  <!-- ========== CONTROLS BAR ========== -->
+  <div class="controls-bar" role="toolbar" aria-label="Preview customization controls">
+    <span class="controls-label">Theme</span>
+    <div class="ctrl-seg controls-group" role="radiogroup" aria-label="Color theme">
+      <button class="ctrl-btn active" id="btn-light" onclick="setTheme('light')" aria-pressed="true">Light</button>
+      <button class="ctrl-btn" id="btn-dark" onclick="setTheme('dark')" aria-pressed="false">Dark</button>
+    </div>
+
+    <div class="controls-divider"></div>
+
+    <span class="controls-label">Palette</span>
+    <div class="swatch-group controls-group" role="radiogroup" aria-label="Color palette">
+      <div class="swatch swatch-phils-ci active" id="sw-phils" tabindex="0"
+           title="Phil's CI (green/yellow/purple)"
+           onclick="setPalette('phils-ci')"
+           onkeydown="if(event.key==='Enter')setPalette('phils-ci')"
+           role="radio" aria-checked="true" aria-label="Phil's CI palette"></div>
+      <div class="swatch swatch-monochrome" id="sw-mono" tabindex="0"
+           title="Monochrome Operator"
+           onclick="setPalette('monochrome')"
+           onkeydown="if(event.key==='Enter')setPalette('monochrome')"
+           role="radio" aria-checked="false" aria-label="Monochrome Operator palette"></div>
+    </div>
+    <div class="controls-group">
+      <span style="font-size:11px; color:var(--muted);" id="palette-name">Phil's CI</span>
+    </div>
+
+    <div class="controls-divider"></div>
+
+    <span class="controls-label">Motion</span>
+    <div class="ctrl-seg controls-group" role="radiogroup" aria-label="Motion intensity">
+      <button class="ctrl-btn active" id="btn-motion-full" onclick="setMotion('full')" aria-pressed="true">Full</button>
+      <button class="ctrl-btn" id="btn-motion-reduced" onclick="setMotion('reduced')" aria-pressed="false">Reduced</button>
+    </div>
+  </div>
+
+  <!-- ========== APP NAV ========== -->
+  <nav class="app-nav" aria-label="Main navigation">
+    <span class="nav-brand">CadencePlan</span>
+    <a class="nav-item active" href="#" aria-current="page">Today</a>
+    <a class="nav-item" href="#">Week</a>
+    <a class="nav-item" href="#">Portfolio</a>
+    <a class="nav-item" href="#">Catalog</a>
+    <a class="nav-item" href="#">Kaizen</a>
+    <div class="nav-spacer"></div>
+    <span class="nav-day-pill">Thu · Apr 30</span>
+  </nav>
+
+  <!-- ========== TODAY PAGE ========== -->
+  <main class="today-page" data-route="today">
+
+    <!-- TODAY HEADER -->
+    <header class="today-header">
+      <div class="today-date-group">
+        <h1 class="today-weekday">Thursday</h1>
+        <div class="today-date-sub">2026-04-30 · Day 9</div>
+      </div>
+
+      <!-- Cadence Pressure Ring (signature pattern) -->
+      <div class="cadence-ring-wrap" tabindex="0" role="img"
+           aria-label="Day balance: PROJECT 3h · COMM 1.5h · CI 2h — balanced">
+        <svg class="cadence-ring-svg" width="56" height="56" viewBox="0 0 56 56">
+          <!-- BG ring -->
+          <circle class="cadence-arc-bg" cx="28" cy="28" r="22" />
+          <!-- PROJECT arc: 3h/6.5h total = 46.2% of 138.23 circumference = 63.9px -->
+          <circle class="cadence-arc cadence-arc-project"
+            cx="28" cy="28" r="22"
+            stroke-dasharray="63.9 74.33"
+            stroke-dashoffset="0" />
+          <!-- COMM arc: 1.5h/6.5h = 23.1% = 31.9px, offset after project -->
+          <circle class="cadence-arc cadence-arc-comm"
+            cx="28" cy="28" r="22"
+            stroke-dasharray="31.9 106.33"
+            stroke-dashoffset="-63.9" />
+          <!-- CI arc: 2h/6.5h = 30.8% = 42.5px, offset after project+comm -->
+          <circle class="cadence-arc cadence-arc-ci"
+            cx="28" cy="28" r="22"
+            stroke-dasharray="42.5 95.73"
+            stroke-dashoffset="-95.8" />
+        </svg>
+        <div class="cadence-ring-label" aria-hidden="true">
+          <span>6.5h</span>
+        </div>
+        <div class="cadence-tooltip" role="tooltip" aria-hidden="true">
+          <div class="ct-row">
+            <div class="ct-dot ct-dot-project"></div>
+            <span class="ct-label">PROJECT</span>
+            <span class="ct-value">3h 0m</span>
+          </div>
+          <div class="ct-row">
+            <div class="ct-dot ct-dot-comm"></div>
+            <span class="ct-label">COMM</span>
+            <span class="ct-value">1h 30m</span>
+          </div>
+          <div class="ct-row">
+            <div class="ct-dot ct-dot-ci"></div>
+            <span class="ct-label">CI</span>
+            <span class="ct-value">2h 0m</span>
+          </div>
+          <div class="ct-balanced">Day is balanced</div>
+        </div>
+      </div>
+
+      <span class="today-day-badge" aria-label="Day 9 since signup">Day 9</span>
+    </header>
+
+    <!-- CYCLE CARD -->
+    <section class="cycle-card">
+      <div class="cycle-card-header">
+        <h2 class="cycle-card-title">Your Day</h2>
+        <span class="cycle-status-badge badge-accepted">Accepted</span>
+      </div>
+      <p class="cycle-card-intro">6 activities · 6h 30m planned · lunch protected</p>
+
+      <!-- Bucket strip -->
+      <div class="bucket-strip" aria-label="Bucket allocation">
+        <div class="bucket-row bucket-project">
+          <span class="bucket-label">Project</span>
+          <div class="bucket-track">
+            <div class="bucket-fill" style="width:75%"></div>
+            <div class="bucket-tick" style="left:62.5%" title="Target: 3h"></div>
+          </div>
+          <span class="bucket-value"><strong>3h 0m</strong><span style="color:var(--muted)"> / 4h</span></span>
+        </div>
+        <div class="bucket-row bucket-comm">
+          <span class="bucket-label">Comm</span>
+          <div class="bucket-track">
+            <div class="bucket-fill" style="width:75%"></div>
+            <div class="bucket-tick" style="left:50%" title="Target: 2h"></div>
+          </div>
+          <span class="bucket-value"><strong>1h 30m</strong><span style="color:var(--muted)"> / 2h</span></span>
+        </div>
+        <div class="bucket-row bucket-ci">
+          <span class="bucket-label">CI</span>
+          <div class="bucket-track">
+            <div class="bucket-fill" style="width:100%"></div>
+            <div class="bucket-tick" style="left:50%" title="Target: 2h"></div>
+          </div>
+          <span class="bucket-value"><strong>2h 0m</strong><span style="color:var(--muted)"> / 2h</span></span>
+        </div>
+      </div>
+
+      <!-- Calendar grid — 9AM to 5PM, 8 hours, each hour = 60px -->
+      <div class="preview-section-label">Calendar Grid</div>
+      <div class="cycle-calendar-grid">
+        <!-- Hour rail -->
+        <div class="cycle-hour-rail" aria-hidden="true">
+          <div class="cycle-hour hour-past">9AM</div>
+          <div class="cycle-hour hour-past">10AM</div>
+          <div class="cycle-hour hour-past">11AM</div>
+          <div class="cycle-hour hour-past">12PM</div>
+          <div class="cycle-hour hour-current">1PM</div>
+          <div class="cycle-hour">2PM</div>
+          <div class="cycle-hour">3PM</div>
+          <div class="cycle-hour">4PM</div>
+        </div>
+
+        <!-- Timeline — 8 hours = 480px -->
+        <div class="cycle-timeline" style="height:480px">
+          <!-- Horizontal hairlines at each hour -->
+          <div class="timeline-hlines" aria-hidden="true">
+            <div class="timeline-hline" style="top:60px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:30px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:90px"></div>
+            <div class="timeline-hline" style="top:120px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:150px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:180px"></div>
+            <div class="timeline-hline" style="top:240px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:210px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:270px"></div>
+            <div class="timeline-hline" style="top:300px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:330px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:360px"></div>
+            <div class="timeline-hline" style="top:360px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:390px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:420px"></div>
+            <div class="timeline-hline" style="top:420px"></div>
+            <div class="timeline-hline timeline-hline-half" style="top:450px"></div>
+          </div>
+
+          <!-- Block 1: PROJECT — 9:00–10:30 (CLOSED) -->
+          <div class="cycle-block block-project block-closed"
+               style="top:4px; height:86px; animation-delay:40ms"
+               tabindex="0" role="button"
+               aria-label="Client Report Synthesis — PROJECT — 9:00–10:30 — CLOSED">
+            <div class="block-time">09:00–10:30</div>
+            <div class="block-name">Client Report Synthesis</div>
+          </div>
+
+          <!-- Block 2: COMM — 10:30–11:15 (CLOSED) -->
+          <div class="cycle-block block-comm block-closed"
+               style="top:90px; height:41px; animation-delay:80ms"
+               tabindex="0" role="button"
+               aria-label="Team Standup — COMM — 10:30–11:15 — CLOSED">
+            <div class="block-time">10:30–11:15</div>
+            <div class="block-name">Team Standup</div>
+          </div>
+
+          <!-- Block 3: PROJECT — 11:15–12:30 (IN_PROGRESS) ← selected -->
+          <div class="cycle-block block-project block-in-progress"
+               style="top:135px; height:71px; animation-delay:120ms"
+               tabindex="0" role="button"
+               aria-label="Q3 Roadmap Deck — PROJECT — 11:15–12:30 — In progress">
+            <div class="block-time">11:15–12:30</div>
+            <div class="block-name">Q3 Roadmap Deck</div>
+          </div>
+
+          <!-- Block 4: LUNCH — 12:30–13:30 -->
+          <div class="cycle-block block-lunch"
+               style="top:210px; height:56px; animation-delay:160ms"
+               role="img"
+               aria-label="Lunch — protected break — 12:30–13:30">
+            <div class="block-time">12:30–13:30</div>
+            <div class="block-name">Lunch</div>
+          </div>
+
+          <!-- Now-line at ~1:10PM = 4h 10m from 9AM = 250px -->
+          <div class="cycle-now-line" style="top:250px" aria-label="Current time: 1:10 PM" role="timer">
+            <span class="cycle-now-label">1:10 PM</span>
+          </div>
+
+          <!-- Block 5: CI — 13:30–15:30 (PROPOSED) — Kaizen linked -->
+          <div class="cycle-block block-ci block-proposed block-kaizen-linked"
+               style="top:270px; height:116px; animation-delay:200ms"
+               tabindex="0" role="button"
+               aria-label="DMAIC Measurement Analysis — CI — 1:30–3:30 — PROPOSED — Kaizen linked">
+            <div class="block-time">13:30–15:30</div>
+            <div class="block-name">DMAIC Measurement Analysis</div>
+            <div class="block-kaizen-chip">⬡ Kaizen: Cycle Time</div>
+          </div>
+
+          <!-- Block 6: COMM — 15:30–16:15 (PROPOSED) -->
+          <div class="cycle-block block-comm block-proposed"
+               style="top:390px; height:41px; animation-delay:240ms"
+               tabindex="0" role="button"
+               aria-label="Client Check-in Call — COMM — 3:30–4:15 — PROPOSED">
+            <div class="block-time">15:30–16:15</div>
+            <div class="block-name">Client Check-in Call</div>
+          </div>
+
+          <!-- Block 7: PROJECT — 16:15–17:00 -->
+          <div class="cycle-block block-project"
+               style="top:435px; height:41px; animation-delay:280ms"
+               tabindex="0" role="button"
+               aria-label="Weekly Summary Write-up — PROJECT — 4:15–5:00">
+            <div class="block-time">16:15–17:00</div>
+            <div class="block-name">Weekly Summary Write-up</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Triad -->
+      <div class="triad">
+        <button class="triad-btn triad-accept" aria-label="Accept day plan">Accept Day</button>
+        <button class="triad-btn" aria-label="Edit day plan">Edit</button>
+        <button class="triad-btn triad-reject" aria-label="Reject and re-plan">Reject</button>
+      </div>
+    </section>
+
+  </main><!-- /today-page -->
+
+  <!-- ========== BLOCK DETAIL DIALOG (pre-open on CI block) ========== -->
+  <div id="bdd-demo" aria-hidden="true" style="display:none">
+    <div class="bdd-backdrop" id="bdd-backdrop" onclick="closeBDD()" aria-hidden="true"></div>
+    <div class="bdd-panel" role="dialog" aria-modal="true" aria-labelledby="bdd-heading">
+      <div class="bdd-color-bar bdd-color-bar-ci"></div>
+      <header class="bdd-header">
+        <h2 class="bdd-title" id="bdd-heading">DMAIC Measurement Analysis</h2>
+        <button class="bdd-close" onclick="closeBDD()" aria-label="Close activity detail">&times;</button>
+      </header>
+      <dl class="bdd-body">
+        <div class="bdd-row">
+          <dt class="bdd-dt">Bucket</dt>
+          <dd class="bdd-dd"><span class="bdd-chip bdd-chip-ci">CI</span></dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-dt">Time</dt>
+          <dd class="bdd-dd bdd-time">13:30–15:30</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-dt">Duration</dt>
+          <dd class="bdd-dd">120 min</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-dt">Output</dt>
+          <dd class="bdd-dd">Measurement System Analysis Report</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-dt">Kaizen</dt>
+          <dd class="bdd-dd">Cycle Time Reduction — Sprint 3</dd>
+        </div>
+        <div class="bdd-row">
+          <dt class="bdd-dt">State</dt>
+          <dd class="bdd-dd">Proposed</dd>
+        </div>
+      </dl>
+      <footer class="bdd-footer">
+        <button class="bdd-btn bdd-btn-edit" aria-label="Edit this activity">Edit</button>
+        <button class="bdd-btn bdd-btn-secondary" onclick="closeBDD()" aria-label="Close dialog">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- "Open Detail" demo button -->
+  <div style="text-align:center; margin: 16px 0;">
+    <button class="triad-btn triad-accept" onclick="openBDD()" style="font-size:12px; padding:7px 16px;">
+      Demo: Open Block Detail Dialog
+    </button>
+  </div>
+
+  <!-- ========== DESIGN NOTES ========== -->
+  <div class="design-notes" aria-label="Design notes">
+    <h3>Design Notes — Luminous Constraint (Preview)</h3>
+    <ul>
+      <li><strong>Typography trio:</strong> Instrument Serif (display) + Geist (body) + Geist Mono (numerals). Instrument Serif's optical warmth in "Thursday" headline contrasts the sterile precision of Geist Mono in time rails and numeric labels.</li>
+      <li><strong>Cadence Pressure Ring</strong> (top-right of header): SVG arc divided into project/comm/CI segments proportional to planned minutes. Hover for breakdown tooltip. This pattern does not exist in any competing calendar product. It compresses the 4-2-2 constraint into one 56px token.</li>
+      <li><strong>Block fills:</strong> 3-stop inner-top-light gradients — lighter top (highlight) → body fill → darker bottom (shadow). Combined with a top inner glow via <code>inset 0 1px 0 rgba(255,255,255,0.22)</code>, blocks feel spatially lit rather than flat-painted.</li>
+      <li><strong>Now-line:</strong> 2px with <code>box-shadow: 0 0 12px 2px var(--now-glow)</code>. The glassy timestamp pill uses <code>backdrop-filter: blur(8px)</code>. Dot animates on a 4s sine via <code>nowPulse</code> — the only persistent ambient animation on the page.</li>
+      <li><strong>PROPOSED blocks</strong> (CI block + Comm block after lunch): retain dashed border encoding from Iter 29 locked decision. Add a gentle <code>proposedShimmer</code> brightness pulse at 2.2s — communicates "pending" without being distracting.</li>
+      <li><strong>Kaizen two-ring ping</strong> (M3): the CI block fires <code>kaizenRing</code> at 900ms post-load — two concentric ring expansions from the block's boundary. Disciplined, not flashy.</li>
+      <li><strong>IN_PROGRESS block</strong> (Q3 Roadmap Deck, 11:15–12:30): double outline ring — outer <code>outline</code> at 60% white opacity + inner <code>::before</code> border at 35% — gives it a "currently active" halo without animation.</li>
+      <li><strong>Glassmorphism:</strong> <code>background: rgba(255,255,255,0.72); backdrop-filter: blur(24px) saturate(160%)</code> on the cycle card. The 1px border uses <code>rgba(255,255,255,0.65)</code> which reads as an inner highlight in light mode.</li>
+      <li><strong>Customization:</strong> Theme (light/dark), Palette (Phil's CI / Monochrome Operator), and Motion (full/reduced) all controlled via <code>data-*</code> attributes on <code>&lt;html&gt;</code>. Zero JavaScript variable mutations — pure CSS token switching. Try all combinations.</li>
+      <li><strong>Hour rail texture:</strong> <code>repeating-linear-gradient</code> hairlines every 60px align with hour boundaries without explicit DOM elements. Current hour label is in <code>--now-red</code>; past hours at 45% opacity.</li>
+      <li><strong>Motion reduced:</strong> Clicking "Reduced" disables all animation keyframes via <code>[data-motion="reduced"]</code> selector. Also respects <code>prefers-reduced-motion: reduce</code> OS setting.</li>
+    </ul>
+  </div>
+
+</div><!-- /preview-root -->
+
+<script>
+// ============================================================
+// THEME / PALETTE / MOTION toggle logic
+// ============================================================
+const html = document.documentElement;
+
+function setTheme(theme) {
+  html.setAttribute('data-theme', theme);
+  document.getElementById('btn-light').classList.toggle('active', theme === 'light');
+  document.getElementById('btn-dark').classList.toggle('active', theme === 'dark');
+  document.getElementById('btn-light').setAttribute('aria-pressed', theme === 'light');
+  document.getElementById('btn-dark').setAttribute('aria-pressed', theme === 'dark');
+  try { localStorage.setItem('bamx-preview-theme', theme); } catch(e) {}
+}
+
+function setPalette(palette) {
+  html.setAttribute('data-palette', palette);
+  document.getElementById('sw-phils').classList.toggle('active', palette === 'phils-ci');
+  document.getElementById('sw-mono').classList.toggle('active', palette === 'monochrome');
+  document.getElementById('sw-phils').setAttribute('aria-checked', palette === 'phils-ci');
+  document.getElementById('sw-mono').setAttribute('aria-checked', palette === 'monochrome');
+  document.getElementById('palette-name').textContent =
+    palette === 'phils-ci' ? "Phil's CI" : 'Monochrome Operator';
+  try { localStorage.setItem('bamx-preview-palette', palette); } catch(e) {}
+}
+
+function setMotion(motion) {
+  html.setAttribute('data-motion', motion);
+  document.getElementById('btn-motion-full').classList.toggle('active', motion === 'full');
+  document.getElementById('btn-motion-reduced').classList.toggle('active', motion === 'reduced');
+  document.getElementById('btn-motion-full').setAttribute('aria-pressed', motion === 'full');
+  document.getElementById('btn-motion-reduced').setAttribute('aria-pressed', motion === 'reduced');
+  try { localStorage.setItem('bamx-preview-motion', motion); } catch(e) {}
+}
+
+// ============================================================
+// BLOCK DETAIL DIALOG
+// ============================================================
+function openBDD() {
+  const el = document.getElementById('bdd-demo');
+  el.style.display = '';
+  el.removeAttribute('aria-hidden');
+  // Focus first interactive element
+  setTimeout(() => {
+    const closeBtn = el.querySelector('.bdd-close');
+    if (closeBtn) closeBtn.focus();
+  }, 50);
+}
+
+function closeBDD() {
+  const el = document.getElementById('bdd-demo');
+  el.style.display = 'none';
+  el.setAttribute('aria-hidden', 'true');
+}
+
+// Keyboard: Escape to close BDD
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeBDD();
+});
+
+// ============================================================
+// RESTORE PREFS FROM LOCALSTORAGE
+// ============================================================
+(function() {
+  try {
+    const theme   = localStorage.getItem('bamx-preview-theme');
+    const palette = localStorage.getItem('bamx-preview-palette');
+    const motion  = localStorage.getItem('bamx-preview-motion');
+    if (theme)   setTheme(theme);
+    if (palette) setPalette(palette);
+    if (motion)  setMotion(motion);
+  } catch(e) {}
+})();
+
+// ============================================================
+// CADENCE RING: animate stroke-dashoffset on load
+// ============================================================
+// Arcs are set inline — they animate via CSS transitions on opacity/transform.
+// On load, we stagger the arc reveals for a composed feeling.
+window.addEventListener('DOMContentLoaded', function() {
+  const arcs = document.querySelectorAll('.cadence-arc');
+  arcs.forEach(function(arc, i) {
+    arc.style.opacity = '0';
+    arc.style.transition = 'opacity 400ms ' + (300 + i * 80) + 'ms';
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        arc.style.opacity = '1';
+      });
+    });
+  });
+});
+</script>
+</body>
+</html>
