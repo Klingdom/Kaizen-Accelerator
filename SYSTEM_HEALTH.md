@@ -41,14 +41,14 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 | Tests passing | 3,343 (+778 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
 | Suite count | 780+ (+177 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.24 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (17% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.14s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (17% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 38) → **1.24ms (Iter 39)** | ✅ stable |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.24s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (15% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.24ms (Iter 39) → **1.27ms (Iter 40)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 39 commit) | (in progress) |
-| **Production deploy queue** | **3 (Iter 37 + 38 + 39)** | ✅ under gate (max 4 per META §7.7) |
+| Last green commit | (pending Iter 40 commit) | (in progress) |
+| **Production deploy queue** | **4 (Iter 37 + 38 + 39 + 40)** | ⚠️ AT GATE LIMIT (max 4 per META §7.7) — deploy before Iter 41 |
 
 ---
 
@@ -105,7 +105,17 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-17 after Iteration 39 (Luminous Constraint Phase 1 — C-UX-FUTURISTIC-P1). Phil approved futuristic redesign as the new core production Today page. Foundation phase ships: pre-existing pulse-red WCAG §2.3.3 violation closed; new UserPreferences typedef (only §6.5 hit, architect-predicted); new UserPreferencesService pure DI service; localStorage persistence; semantic CSS token architecture; 3 themes (System/Light/Dark) + motion intensity; new /settings page + header gear icon. Phil's color identity preserved saturated in both light + dark (Iter 31 base layer unchanged — translates naturally to light, glows against dark). Live-apply on selection. Backward compat: first-run user gets exact Iter 38 appearance. Suite 3,259 → 3,343 (+84). All 18 ACs PASS. §6.5: 1 hit exactly as architect predicted._
+_Last updated: 2026-05-17 after Iteration 40 (Luminous Constraint Phase 2 — C-UX-FUTURISTIC-P2). Typography swap shipped (DM trio → Instrument Serif + Geist + Geist Mono via Google Fonts). 3-stop linear-gradient block fills with inner-top-light depth. Hour-rail Geist Mono + refined separators + bold/red current-hour highlight. Now-line 2px + red glow box-shadow + extended fade trail (motion-reduced suppressed). Phil's color identity preserved (Iter 31 base layer unchanged). Suite 3,343 (unchanged — CSS-only). All 18 ACs PASS. §6.5: zero hits. 2 files modified (app.html, app.css)._
+
+_**Coordinator correction logged**: Initially mis-flagged `app.html` modification as "wrong file." Verified `app.html` IS the SPA entrypoint per Caddyfile routing; `index.html` is the marketing landing page. FE was correct. Lesson: check Caddyfile routing before assuming file naming conventions._
+
+_⚠️ **Deploy gate AT LIMIT**: queue now 4-deep (Iter 37 + 38 + 39 + 40). META §7.7 max is 4. **Iter 41 (Phase 3 Cadence Pressure Ring) cannot dispatch implementation without deploy** OR Iter 41 must include deploy step._
+
+_**Phases 3-4 remaining**:_
+_- Phase 3 — Cadence Pressure Ring SVG signature (10-14 hr, HIGH risk per QA — CCC bound update). The "memorable detail" per frontend-design skill._
+_- Phase 4 — Alternate palette + density toggle (8-10 hr, HIGH risk per QA — pixel-arithmetic tests). Conditional on Phase 3 reception._
+
+_Iteration 39 — 2026-05-17 — Luminous Constraint Phase 1: settings infra + dark mode + 3 themes (C-UX-FUTURISTIC-P1). Phil approved futuristic redesign as the new core production Today page. Foundation phase ships: pre-existing pulse-red WCAG §2.3.3 violation closed; new UserPreferences typedef (only §6.5 hit, architect-predicted); new UserPreferencesService pure DI service; localStorage persistence; semantic CSS token architecture; 3 themes (System/Light/Dark) + motion intensity; new /settings page + header gear icon. Phil's color identity preserved saturated in both light + dark (Iter 31 base layer unchanged — translates naturally to light, glows against dark). Live-apply on selection. Backward compat: first-run user gets exact Iter 38 appearance. Suite 3,259 → 3,343 (+84). All 18 ACs PASS. §6.5: 1 hit exactly as architect predicted._
 
 _**Architect prediction validation continues**: Phase B (Iter 38) predicted 6 §6.5 hits, landed exactly 6. Phase 1 (Iter 39) predicted 1 hit (types.js), landed exactly 1. Define-pass artifact predictive accuracy is high. META §7.4 boundary-effectiveness audit further vindicated._
 

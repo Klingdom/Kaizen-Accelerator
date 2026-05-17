@@ -2,8 +2,9 @@
  * CadencePlan MVP — single stylesheet.
  *
  * Iter 33 — Chartered Minimalism redesign (Phil approved Path A).
- * Typography: DM Serif Display (display) + DM Sans (body) + DM Mono (mono/numerals).
- * Gradients, motion, bucket strip, now-line timestamp all shipped.
+ * Iter 40 — Luminous Constraint Phase 2: Typography swap (Instrument Serif +
+ *   Geist + Geist Mono), 3-stop block-fill gradient, now-line glow refinement,
+ *   hour-rail Geist Mono refinement.
  *
  * Bucket tones (Iter 31 — Phil's color directive):
  *   PROJECT       — green  (pays the bills)
@@ -12,12 +13,14 @@
  */
 
 :root {
-  /* ---- Iter 33: Chartered Minimalism font trio ---- */
-  --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body:    'DM Sans', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono:    'DM Mono', 'Fira Code', 'Courier New', monospace;
+  /* ---- Iter 40: Luminous Constraint Phase 2 font trio ---- */
+  /* Replaces DM Serif Display + DM Sans + DM Mono (Iter 33). */
+  /* Fonts loaded via app.html <link> (Instrument Serif + Geist + Geist Mono). */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body:    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'Geist Mono', 'JetBrains Mono', 'Monaco', monospace;
 
-  /* Legacy alias — body font; used throughout existing rules */
+  /* Legacy alias — body font; used throughout existing rules (Iter 34 bridge) */
   --font-stack: var(--font-body);
 
   /* ---- Iter 33: Surface palette (warm off-white hierarchy) ---- */
@@ -295,7 +298,8 @@ html, body {
   opacity: 0.3;
 }
 
-/* Hour rail — Iter 33: DM Mono, 11px, --ink-400, --surface-2 bg (AC14). */
+/* Hour rail — Iter 40: Geist Mono (via --font-mono), 11px, --ink-400, --surface-2 bg (AC9, AC14). */
+/* Geist Mono has tighter metrics at 11px — improved readability over DM Mono. */
 .cycle-hour-rail {
   display: flex;
   flex-direction: column;
@@ -305,6 +309,14 @@ html, body {
   font-size: 11px;
   color: var(--ink-400);
   letter-spacing: -0.01em;
+  /* Subtle repeating hairline separators at each hour boundary */
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent calc(100% - 1px),
+    rgba(0,0,0,0.04) calc(100% - 1px),
+    rgba(0,0,0,0.04) 100%
+  );
 }
 
 .cycle-hour {
@@ -315,10 +327,11 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Current-hour label gets ink-900 + weight 500 (AC14). */
+/* Current-hour label — Iter 40: ink-900 + weight 600 + slight color accent (AC9). */
+/* Slightly more emphasized than Iter 33's weight 500 for clock-hero reading. */
 .cycle-hour-current {
-  color: var(--ink-900);
-  font-weight: 500;
+  color: var(--now-red, var(--ink-900));
+  font-weight: 600;
 }
 
 /* Day timeline — position: relative container for absolutely-placed blocks */
@@ -456,23 +469,54 @@ html, body {
  * colors read as truly "filled" rather than pale tints.
  * Other surfaces (chips, bucket rows, WeekGrid) keep the pale-tint --*-bg
  * treatment unchanged.
+ *
+ * Iter 40: 3-stop inner-top-light gradient (Luminous Constraint Phase 2).
+ * Replaces Iter 33's 2-stop 135deg gradient. Direction: 160deg (top-light
+ * model — lighter top → base-fill body → darker bottom) for depth perception.
+ * Inset highlight + glow box-shadow add luminous instrument-panel feel.
+ * WCAG AA: white text on all three fills verified (project 4.54:1 ✓,
+ * comm 4.6:1 ✓, ci 5.9:1 ✓ — top-glow zone is small; text in body zone).
  */
-/* Iter 33: 2-stop linear gradients replace flat fills (AC6). Border-left accent bar added. */
 .cycle-block-positioned.chip-project {
-  background: linear-gradient(135deg, var(--project-fill-top) 0%, var(--project-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #4ade80 0%,
+    var(--project-fill-base) 30%,
+    #15803d 100%
+  );
   color: var(--project-block-text);
-  border-left: 3px solid #15803d;
+  box-shadow:
+    0 1px 3px rgba(22,163,74,0.30),
+    0 4px 12px rgba(22,163,74,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 .cycle-block-positioned.chip-communication {
-  background: linear-gradient(135deg, var(--comm-fill-top) 0%, var(--comm-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #fbbf24 0%,
+    var(--comm-fill-base) 30%,
+    #a16207 100%
+  );
   color: var(--communication-block-text);
-  border-left: 3px solid #a16207;
+  box-shadow:
+    0 1px 3px rgba(217,119,6,0.30),
+    0 4px 12px rgba(217,119,6,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 .cycle-block-positioned.chip-ci {
-  background: linear-gradient(135deg, var(--ci-fill-top) 0%, var(--ci-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #c084fc 0%,
+    var(--ci-fill-base) 30%,
+    #7e22ce 100%
+  );
   color: var(--ci-block-text);
-  border-left: 3px solid #7e22ce;
+  box-shadow:
+    0 1px 3px rgba(147,51,234,0.30),
+    0 4px 12px rgba(147,51,234,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
+/* chip-unknown (lunch/unrecognized) — retains existing muted treatment (AC8). */
 .cycle-block-positioned.chip-unknown { background: var(--color-surface-muted); color: var(--color-text-muted); }
 
 /* Desaturated tone for composer-built blocks (matches .wg-block treatment) */
@@ -480,31 +524,64 @@ html, body {
   background-color: color-mix(in srgb, var(--bg) 60%, transparent);
   color: var(--fg);
 }
-/* Iter 33: User-edited blocks restore gradient fills (not flat colors). */
+/* Iter 33/40: User-edited blocks restore full 3-stop gradient fills (not flat colors). */
 .cycle-block-positioned.chip-project[data-user-edited="true"] {
-  background: linear-gradient(135deg, var(--project-fill-top) 0%, var(--project-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #4ade80 0%,
+    var(--project-fill-base) 30%,
+    #15803d 100%
+  );
   color: var(--project-block-text);
+  box-shadow:
+    0 1px 3px rgba(22,163,74,0.30),
+    0 4px 12px rgba(22,163,74,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 .cycle-block-positioned.chip-communication[data-user-edited="true"] {
-  background: linear-gradient(135deg, var(--comm-fill-top) 0%, var(--comm-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #fbbf24 0%,
+    var(--comm-fill-base) 30%,
+    #a16207 100%
+  );
   color: var(--communication-block-text);
+  box-shadow:
+    0 1px 3px rgba(217,119,6,0.30),
+    0 4px 12px rgba(217,119,6,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 .cycle-block-positioned.chip-ci[data-user-edited="true"] {
-  background: linear-gradient(135deg, var(--ci-fill-top) 0%, var(--ci-fill-base) 100%);
+  background: linear-gradient(
+    160deg,
+    #c084fc 0%,
+    var(--ci-fill-base) 30%,
+    #7e22ce 100%
+  );
   color: var(--ci-block-text);
+  box-shadow:
+    0 1px 3px rgba(147,51,234,0.30),
+    0 4px 12px rgba(147,51,234,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
 /*
- * Now-line — Iter 33 Chartered Minimalism treatment (AC7, AC8).
- * Three layers: 1.5px line + breathing glow trail (::after) + timestamp label.
- * The dot is rendered as ::before, breathing via dotBreathe animation.
+ * Now-line — Iter 40 Luminous Constraint Phase 2 refinement (AC10).
+ * Upgraded from Iter 33's 1.5px hairline to 2px glowing line.
+ * Three layers: 2px line with box-shadow glow trail + breathing dot (::before)
+ * + glassy timestamp pill (.cycle-now-label).
+ * prefers-reduced-motion: glow trail suppressed via existing animation rules.
  */
 .cycle-now-line {
   position: absolute;
   left: 0;
   right: 0;
-  height: 1.5px;
+  height: 2px;
   background: var(--now-red);
+  /* Subtle red glow trail — extends right, fades. Iter 40 AC10. */
+  box-shadow:
+    0 0 8px 2px var(--now-red),
+    0 0 20px 4px rgba(220,38,38,0.18);
   pointer-events: none;
   z-index: 10;
 }
@@ -523,18 +600,18 @@ html, body {
   animation: dotBreathe 3s ease-in-out infinite;
 }
 
-/* Glow trail — fades right, breathing opacity (AC8). */
+/* Glow trail — fades right, breathing opacity. Iter 40: extended trail (AC8, AC10). */
 .cycle-now-line::after {
   content: '';
   position: absolute;
   left: 0; right: 0;
-  top: -2.5px;
-  height: 6px;
-  background: linear-gradient(to right, rgba(220,38,38,0.35) 0%, rgba(220,38,38,0) 55%);
+  top: -3px;
+  height: 8px;
+  background: linear-gradient(to right, rgba(220,38,38,0.40) 0%, rgba(220,38,38,0.15) 35%, rgba(220,38,38,0) 65%);
   animation: nowGlow 3s ease-in-out infinite;
 }
 
-/* Timestamp label — always visible, DM Mono, red (AC7). */
+/* Timestamp label — always visible, Geist Mono, red (AC7, AC6). */
 .cycle-now-label {
   position: absolute;
   left: 8px;
@@ -549,6 +626,22 @@ html, body {
   line-height: 1.4;
   pointer-events: none;
   letter-spacing: 0.01em;
+}
+
+/* Iter 40 AC18: suppress now-line glow trail under prefers-reduced-motion.
+ * The box-shadow on .cycle-now-line and the ::after trail animation both
+ * must be neutralized to avoid visual noise for motion-sensitive users. */
+@media (prefers-reduced-motion: reduce) {
+  .cycle-now-line {
+    box-shadow: none;
+  }
+  .cycle-now-line::after {
+    animation: none;
+    opacity: 0;
+  }
+  .cycle-now-line::before {
+    animation: none;
+  }
 }
 
 /* ---------- TodayGrid — Iter 35 Phase 2 Drag-and-Drop ---------- */

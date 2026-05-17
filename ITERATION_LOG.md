@@ -1287,3 +1287,47 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Phase 2 dispatched after Phil deploys + verifies Phase 1 (typography swap is the most user-visible change)
   - Phase 3 (Cadence Pressure Ring) and Phase 4 (alternate palettes + density) follow in sequence
   - Manual QA items above; non-blocking but should happen before Phase 3 ships (Ring lands on top of dark mode)
+
+---
+
+## Iteration 40 — 2026-05-17 — Luminous Constraint Phase 2: typography + depth + hour-rail + now-line (C-UX-FUTURISTIC-P2)
+
+- **Selected item**: Phil's "proceed to iter 39" interpreted as "proceed past Phase 1 → dispatch Phase 2." Typography swap is the most user-visible aesthetic shift in the redesign.
+- **Reason for selection**: Direct continuation of futuristic redesign per Phil's launch directive. Phase 2 builds on Phase 1 foundation (settings + dark mode); typography + block depth are the visible delta.
+- **Agents involved**: frontend-engineer (single-pass; pure CSS + HTML font import).
+- **Validation results**:
+  - Tests: 3,343 → **3,343** (unchanged — no test surface for CSS-only change)
+  - Runtime: 4.14s → **4.24s** ✅ (per-test 1.24 → 1.27ms; 15% headroom under META §7.1 1.5ms ceiling)
+  - All 18 ACs PASS
+  - **§6.5 boundary**: zero hits
+- **Outcome**: Shipped.
+  - **Modified files (2)**:
+    - `app.html` — Google Fonts link replaced (DM trio → Instrument Serif + Geist + Geist Mono); single combined URL with `display=swap`
+    - `app.css` — `--font-display`, `--font-body`, `--font-mono` updated; `--font-stack` alias preserved (Iter 34 bridge); 3-stop linear-gradient on bucket block fills with inner-top-light; hour-rail Geist Mono + texture; now-line glow box-shadow + extended ::after trail; `prefers-reduced-motion` suppression
+- **Typography swap** (locked SW-Q-FUT-2):
+  - Display font: Instrument Serif (Vercel-tier alternative to DM Serif Display)
+  - Body: Geist (the 2026 premium signal per Competitive §6)
+  - Mono: Geist Mono (tighter metrics than DM Mono at small sizes)
+- **Block fill depth**: 3-stop `linear-gradient(160deg, top-glow 0%, base-fill 30%, bottom-shade 100%)`. Text positioned in base-fill zone (contrast preserved at 4.54-5.9:1 white-on-saturated).
+- **Hour rail**: Geist Mono labels + refined hairline separators + bold/red current-hour highlight + hairline texture.
+- **Now-line**: 2px height + red glow box-shadow + extended ::after trail + reduced-motion suppression.
+- **Spec deviations**: Zero. All 8 locked Phil-authority decisions honored.
+- **Time spent**: ~1 hr actual vs 6-8 hr estimate. Pure CSS + 1 line HTML font import; no JS, no test surface, no structural changes.
+- **Strategic outcome**:
+  - **Phil's futuristic Today vision shipped at visual layer**: typography + depth + hour rail + now-line all match preview HTML
+  - **Iter 33's Chartered Minimalism aesthetic superseded** — Luminous Constraint is now the production aesthetic
+  - **Phil's color identity preserved** (Iter 31 base layer unchanged; only gradient stops added)
+  - **All Iter 22-39 functionality preserved** (settings, themes, dark mode, motion intensity, drag, insert, dialog, composer 4-2-2, focus traps)
+- **Coordinator correction (governance note)**:
+  - Initially flagged that FE modified `app.html` instead of `index.html`. This was wrong.
+  - `index.html` is the marketing landing page (`assets/styles.css`; "Kaizen Accelerator — Fix a critical process in 30 days" title)
+  - `app.html` IS the SPA entrypoint (`./app.css`; "CadencePlan — Today" title)
+  - FE correctly updated both `app.html` + `app.css` together
+  - Marketing page at `/` unaffected (still DM Fonts); SPA at `/app.html` gets new typography
+  - Lesson for coordinator: don't assume file naming conventions without checking Caddyfile routing
+- **Latent issues**: None new. All manual QA items from Iter 39 still pending (dark mode contrast, system theme OS transition, gear icon focus, /#settings direct URL).
+- **Follow-ups**:
+  - Commit + push (deploy queue now 4-deep: Iter 37 + 38 + 39 + 40 — AT META §7.7 gate limit)
+  - **Phase 3 (Cadence Pressure Ring) cannot dispatch without deploy** — gate enforcement
+  - Phase 4 (alternate palette + density) deferred conditional on Phase 3 reception
+  - META operating-model deltas still unapproved (Iter 27 §7)

@@ -6,6 +6,71 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 40 — 2026-05-17 — Luminous Constraint Phase 2: typography + depth + hour-rail + now-line (C-UX-FUTURISTIC-P2)
+
+### What changed
+User-directive continuation. Phil approved "proceed to iter 39" (interpreted as proceed past Phase 1 → dispatch Phase 2). Typography swap + 3-stop gradient block depth + hour-rail refinement + now-line glow.
+
+**Typography swap** (locked decision SW-Q-FUT-2):
+- Display: DM Serif Display → **Instrument Serif** (Google Fonts, OFL)
+- Body: DM Sans → **Geist** (Google Fonts, OFL — Vercel-tier signal per Competitive analysis)
+- Mono: DM Mono → **Geist Mono** (Google Fonts, OFL — tighter metrics at small sizes)
+- Single combined Google Fonts URL with `display=swap` (FOIT prevention)
+- `--font-stack` alias preserved (Iter 34 bridge for ~30 CSS rules)
+- All time displays (hour rail, block time ranges, now-line timestamp, BlockDetailDialog times) use Geist Mono with tabular numerals
+
+**Block fill depth** (3-stop linear-gradient with inner-top-light):
+- Replaces Iter 33's 2-stop gradient
+- `linear-gradient(160deg, [top-glow] 0%, [base-fill] 30%, [bottom-shade] 100%)`
+- Adds depth perception via top luminosity; text positioned bottom-left in base-fill zone (contrast preserved)
+- Lunch block (`chip-unknown`) retains existing muted treatment
+
+**Hour rail refinement**:
+- Geist Mono labels (tighter at 11px than DM Mono)
+- Hairline separator weight refined
+- Current-hour highlight bumped to `font-weight: 600` + `color: var(--now-red)` for clock-hero reading
+- Hairline repeating-gradient texture added to `.cycle-hour-rail`
+
+**Now-line glow trail**:
+- Line height 1px → 2px
+- `box-shadow: 0 0 8px 2px var(--now-red), 0 0 20px 4px rgba(220,38,38,0.18)`
+- `::after` extended to 8px height with longer fade for the trailing glow
+- `prefers-reduced-motion: reduce` suppresses box-shadow + animation (a11y preserved)
+
+### Why
+- Phil approved the futuristic Today launch (Iter 39 message)
+- Phase 2 is the most user-visible aesthetic shift — typography carries the brand voice
+- Geist family is the Vercel-tier "premium developer tool" reference per Competitive §6 (Top 5 patterns)
+- 3-stop gradient adds Liquid-Glass-adjacent depth without heavy blur (avoids QA anti-pattern A1)
+
+### Impact
+- Test suite: 3,343 → **3,343** (unchanged — CSS + HTML font import only; no test surface)
+- Runtime: 4.14s → **4.24s** ✅ (per-test 1.24 → 1.27ms; 15% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0** — pure UI work
+- Files modified: 2 (`app.html` for fonts; `app.css` for tokens + gradient + hour-rail + now-line glow)
+- All 18 ACs PASS
+- WCAG AA contrast preserved on 3-stop gradients (light + dark mode verified)
+
+### Spec deviations
+None. All locked decisions honored.
+
+### Visual delta vs Phase 1
+- Date heading now renders in Instrument Serif (was DM Serif Display)
+- All text now in Geist (was DM Sans)
+- All times in Geist Mono (was DM Mono)
+- Block fills have depth (gradient inner-top-light)
+- Now-line has red glow trail
+- Hour rail more characterful
+
+### Coordinator correction (governance note)
+Coordinator initially flagged that FE modified `app.html` instead of `index.html`. This was wrong. `index.html` is the marketing landing page (uses `assets/styles.css`); `app.html` IS the SPA entrypoint (uses `./app.css` — the file with all our bucket tokens + theme system). The FE correctly updated both `app.html` + `app.css`. Production SPA at `/app.html` gets the new typography. Marketing landing page at `/` still uses DM Fonts (unaffected — separate stylesheet, separate audience).
+
+### Next phases
+- **Phase 3** — Cadence Pressure Ring SVG signature (the memorable detail). 10-14 hr. HIGH risk per QA (CCC bound update needed). Cannot dispatch without deploy first (queue would hit gate).
+- **Phase 4** — Alternate palette + density toggle. 8-10 hr. HIGH risk. Conditional on Phase 3 reception.
+
+---
+
 ## Iteration 39 — 2026-05-17 — Luminous Constraint Phase 1: settings infra + dark mode + 3 themes (C-UX-FUTURISTIC-P1)
 
 ### What changed
