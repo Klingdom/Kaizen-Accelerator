@@ -1236,3 +1236,54 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - REVIEW_DAY anchor conflict should be considered if/when Sprint Review users start hitting it. Defer until evidence.
   - Phase C (no-projects discovery) still Phil-blocked on SW-Q1–Q5 (Phil-authored content required, not batch-approvable defaults).
   - META operating-model deltas still unapproved (governance hygiene; 1 hr work).
+
+---
+
+## Iteration 39 — 2026-05-17 — Luminous Constraint Phase 1: settings + dark mode + themes (C-UX-FUTURISTIC-P1)
+
+- **Selected item**: Phil reviewed `assets/today-futuristic-preview.html` and approved the futuristic Today as the new core production page. Phase 1 = foundation (settings infra + dark mode + 3 themes + motion intensity). Score 15 (base 12 + ConvergenceBonus +3 from 7 lenses).
+- **Reason for selection**: Direct production-launch directive from Phil. Phase 1 first per §6.1 single-item discipline; Phases 2-4 sequenced after this lands and deploys (3-of-4 phases are HIGH risk per QA).
+- **Agents involved**: frontend-engineer (single-pass implementation against ARCHITECTURE_DELTA_TODAY_FUTURISTIC.md canonical spec).
+- **Validation results**:
+  - Tests: 3,259 → **3,343** (+84 new)
+  - Runtime: 4.15s → **4.14s** ✅ (per-test 1.27 → 1.24ms; 17% headroom under META §7.1 1.5ms ceiling)
+  - All 18 ACs PASS
+  - **§6.5 boundary**: exactly 1 hit as architect predicted (`js/domain/types.js`)
+- **Outcome**: Shipped.
+  - **NEW files (5)**:
+    - `js/services/UserPreferencesService.js` (147 LOC) — pure DI-pattern service
+    - `js/ui/pages/Settings.js` (109 LOC) — 3-theme radio + 2-motion radio
+    - `tests/services/UserPreferencesService.test.js` (229 LOC)
+    - `tests/ui/pages/Settings.test.js` (207 LOC)
+    - `tests/app.iter39.test.js` (393 LOC integration coverage)
+  - **Modified files (7)**:
+    - `js/domain/types.js` (+36 LOC) — UserPreferences typedef + ThemeId/MotionPreference enums (THE §6.5 hit)
+    - `app.css` (+229 LOC) — prefers-reduced-motion fix on pulse-red + semantic surface/text/border tokens + dark mode + motion-reduced overrides + Settings page CSS
+    - `js/app.js` (+103 LOC) — UserPreferences boot + applyPreferences + 2 action handlers + settings route branch
+    - `js/ui/AppShell.js` (+21 LOC) — header gear icon
+    - `js/ui/router.js` (+11 LOC) — settings route promoted from PLACEHOLDER to VISIBLE
+    - 2 test files updated for gear icon + route promotion
+- **Pre-Phase-1 a11y fix**: `pulse-red` animation now has `prefers-reduced-motion: reduce` override. Pre-existing WCAG §2.3.3 violation closed before any new animations land in Phase 2-3.
+- **Settings infrastructure** (architect's spec implemented):
+  - localStorage key `bamx.userPreferences.v1` (schemaVersion captured)
+  - Defaults: `{themeId: 'system', motion: 'full', schemaVersion: 'v1'}`
+  - System theme uses `matchMedia('(prefers-color-scheme: dark)')` listener for OS-level theme transitions
+  - Live-apply on selection (no Save button — Vercel/Linear pattern)
+- **Spec deviations**: 1 minor — SW-Q-FUT-7 customization gate. Synthesis default was "first-plan-accepted" (Growth recommendation); coordinator revised to "always-available" (easier to gate later than ungate later — softer landing). Documented in Phil-authority queue.
+- **Time spent**: ~3 hr actual vs 4-6 hr estimate.
+- **Strategic outcome**:
+  - **Foundation in place for Phases 2-4**: semantic CSS token architecture, settings persistence layer, theme switching mechanism
+  - **Architect's prediction held exactly**: 1 §6.5 hit, no surprises
+  - **Iter 21 instrumentation pattern extended**: Settings page is new UI but settings actions reuse existing data-action dispatcher
+  - **Phil's color identity preserved in both themes**: green/yellow/purple stay saturated in dark mode (glow against dark backgrounds), translate naturally to light mode (Iter 31 values unchanged at base layer)
+  - **Iter 37 drift-detection lesson applied**: bucketMeta tests updated to assert semantic tokens (not hex literals) — prevents the canonical-source-of-truth drift class
+- **Latent issues** (FE-flagged, manual QA needed):
+  - Dark mode visual contrast: structurally tested + annotated but no visual regression tooling
+  - System theme OS transition: browser-only `matchMedia` listener
+  - Gear icon focus ring meets WCAG 2.4.7
+  - /#settings direct URL resolves correctly
+- **Follow-ups**:
+  - Commit + push (deploy queue 3-deep: Iter 37 + 38 + 39 — under META §7.7 4-deep gate)
+  - Phase 2 dispatched after Phil deploys + verifies Phase 1 (typography swap is the most user-visible change)
+  - Phase 3 (Cadence Pressure Ring) and Phase 4 (alternate palettes + density) follow in sequence
+  - Manual QA items above; non-blocking but should happen before Phase 3 ships (Ring lands on top of dark mode)

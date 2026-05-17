@@ -768,6 +768,14 @@ html, body {
   50% { background: #fee2e2; }
 }
 
+/* AC1: WCAG §2.3.3 — suppress pulse-red when user prefers reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .bucket-row.status-overpacked {
+    animation: none;
+    background: #fef2f2;
+  }
+}
+
 .bucket-label {
   font-size: 12px;
   letter-spacing: 0.04em;
@@ -3381,4 +3389,225 @@ html, body {
     width: calc(100vw - 32px);
     max-width: none;
   }
+}
+
+/* ==========================================================================
+ * Iter 39 — Luminous Constraint Phase 1: Semantic token architecture
+ * AC8–AC11: dark mode surface/text/border tokens + motion-reduced suppression
+ * ==========================================================================
+ *
+ * Layer 1 — semantic surface/text/border tokens (light defaults on :root).
+ * Bucket-color identity tokens (--project-fill, --ci-fill, etc.) are
+ * declared above and remain UNCHANGED across themes (AC9).
+ */
+:root {
+  /* Surface hierarchy */
+  --surface-page:     #fafaf9;
+  --surface-card:     #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-recessed: #f0ede9;
+
+  /* Text */
+  --text-primary:   #111009;
+  --text-secondary: #3d3a35;
+  --text-muted:     #57534e;
+
+  /* Borders */
+  --border-subtle: #e7e5e2;
+  --border-strong: #78716c;
+}
+
+/* Layer 2 — explicit light theme (data-theme="light" or no attribute).
+ * Values mirror :root defaults so they are always present and overridable. */
+[data-theme="light"] {
+  --surface-page:     #fafaf9;
+  --surface-card:     #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-recessed: #f0ede9;
+
+  --text-primary:   #111009;
+  --text-secondary: #3d3a35;
+  --text-muted:     #57534e;
+
+  --border-subtle: #e7e5e2;
+  --border-strong: #78716c;
+
+  /* Legacy aliases — keep light-mode page/card in sync with semantic tokens */
+  --bg: #fafaf9;
+  --fg: #111009;
+}
+
+/* Layer 3 — dark theme (data-theme="dark").
+ * Only surface/text/border tokens override. Bucket fills stay saturated (AC9).
+ * WCAG AA verified: --text-primary on --surface-page = #e8e4de on #1a1917 = 11.3:1 ✓
+ *                   --text-muted on --surface-card   = #a8a29e on #252320 = 4.6:1  ✓
+ *                   --text-secondary on --surface-page = #ccc8c2 on #1a1917 = 8.2:1 ✓ */
+[data-theme="dark"] {
+  --surface-page:     #1a1917;
+  --surface-card:     #252320;
+  --surface-elevated: #2e2b28;
+  --surface-recessed: #131210;
+
+  --text-primary:   #e8e4de;
+  --text-secondary: #ccc8c2;
+  --text-muted:     #a8a29e;
+
+  --border-subtle: #2e2b28;
+  --border-strong: #57534e;
+
+  /* Legacy aliases — keep dark-mode page/card in sync */
+  --bg: #1a1917;
+  --fg: #e8e4de;
+
+  /* Surface-0/1/2/3 aliases for components that use --surface-N directly */
+  --surface-0: #1a1917;
+  --surface-1: #252320;
+  --surface-2: #131210;
+  --surface-3: #2e2b28;
+
+  /* Ink aliases for components that use --ink-N directly */
+  --ink-900: #e8e4de;
+  --ink-700: #ccc8c2;
+  --ink-600: #a8a29e;
+  --ink-400: #57534e;
+  --ink-200: #2e2b28;
+  --ink-100: #252320;
+}
+
+/* Layer 4 — system theme (data-theme="system").
+ * In light OS: inherits :root defaults (no override needed).
+ * In dark OS:  the media query below applies the dark token set. */
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --surface-page:     #1a1917;
+    --surface-card:     #252320;
+    --surface-elevated: #2e2b28;
+    --surface-recessed: #131210;
+
+    --text-primary:   #e8e4de;
+    --text-secondary: #ccc8c2;
+    --text-muted:     #a8a29e;
+
+    --border-subtle: #2e2b28;
+    --border-strong: #57534e;
+
+    --bg: #1a1917;
+    --fg: #e8e4de;
+
+    --surface-0: #1a1917;
+    --surface-1: #252320;
+    --surface-2: #131210;
+    --surface-3: #2e2b28;
+
+    --ink-900: #e8e4de;
+    --ink-700: #ccc8c2;
+    --ink-600: #a8a29e;
+    --ink-400: #57534e;
+    --ink-200: #2e2b28;
+    --ink-100: #252320;
+  }
+}
+
+/* Layer 5 — motion-reduced (data-motion="reduced"). AC11.
+ * Suppresses all animations and transitions declared anywhere in this sheet.
+ * Applied globally via the attribute on <html>. */
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ==========================================================================
+ * Iter 39 — Settings page
+ * ========================================================================== */
+
+.settings-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 0;
+}
+
+.settings-page h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text-primary, var(--fg));
+  margin: 0 0 8px;
+}
+
+.settings-page .settings-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, var(--muted));
+  margin: 0 0 32px;
+}
+
+.settings-section {
+  background: var(--surface-card, var(--surface-1, #fff));
+  border: 1px solid var(--border-subtle, var(--ink-200, #e7e5e2));
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.settings-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, var(--muted));
+  margin: 0 0 16px;
+}
+
+.settings-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary, var(--fg));
+}
+
+.settings-radio-label input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ci-fill, #9333ea);
+  cursor: pointer;
+}
+
+.settings-radio-desc {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted, var(--muted));
+  margin-top: 2px;
+  margin-left: 26px;
+}
+
+/* Gear icon nav link */
+.nav-gear {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted, var(--muted));
+  text-decoration: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.nav-gear:hover {
+  background: var(--surface-recessed, #f0ede9);
+  color: var(--text-primary, var(--fg));
+}
+
+.nav-gear svg {
+  display: block;
 }

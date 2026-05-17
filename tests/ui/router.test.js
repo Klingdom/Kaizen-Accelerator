@@ -74,7 +74,9 @@ describe('router — VISIBLE_ROUTE_NAMES (Sprint 11 P0-T1)', () => {
     ]);
   });
 
-  test('VISIBLE_ROUTE_NAMES does NOT contain insights / settings (placeholders)', () => {
+  test('VISIBLE_ROUTE_NAMES does NOT contain insights (placeholder) or settings (gear-icon-only)', () => {
+    // Iter 39: settings ships as a real page but is accessed via the gear icon
+    // in AppShell — not via a text nav link — so it stays out of VISIBLE_ROUTE_NAMES.
     assert.ok(!VISIBLE_ROUTE_NAMES.includes('insights'));
     assert.ok(!VISIBLE_ROUTE_NAMES.includes('settings'));
   });
@@ -85,14 +87,20 @@ describe('router — VISIBLE_ROUTE_NAMES (Sprint 11 P0-T1)', () => {
     });
   });
 
-  test('PLACEHOLDER_ROUTE_NAMES lists the 2 placeholder routes', () => {
-    assert.deepEqual([...PLACEHOLDER_ROUTE_NAMES], ['insights', 'settings']);
+  test('PLACEHOLDER_ROUTE_NAMES lists the 1 remaining placeholder route (Iter 39: settings promoted)', () => {
+    // Iter 39: settings was promoted from PlaceholderPage to a real Settings
+    // page; only `insights` remains as a placeholder.
+    assert.deepEqual([...PLACEHOLDER_ROUTE_NAMES], ['insights']);
   });
 
-  test('VISIBLE and PLACEHOLDER sets together cover ROUTE_NAMES', () => {
+  test('VISIBLE, PLACEHOLDER, and gear-icon-only routes together cover ROUTE_NAMES', () => {
+    // Iter 39: `settings` is its own category — real page, gear-icon access.
+    // It is neither in VISIBLE (no text nav link) nor in PLACEHOLDER (real page).
+    const gearOnlyRoutes = ['settings'];
     const covered = new Set([
       ...VISIBLE_ROUTE_NAMES,
-      ...PLACEHOLDER_ROUTE_NAMES
+      ...PLACEHOLDER_ROUTE_NAMES,
+      ...gearOnlyRoutes
     ]);
     assert.equal(covered.size, ROUTE_NAMES.length);
     for (const r of ROUTE_NAMES) {

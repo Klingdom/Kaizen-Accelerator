@@ -6,6 +6,83 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 39 — 2026-05-17 — Luminous Constraint Phase 1: settings infra + dark mode + 3 themes (C-UX-FUTURISTIC-P1)
+
+### What changed
+User-directive feature. Phil reviewed `assets/today-futuristic-preview.html` and approved: *"Futuristic today looks good. Proceed to launch as core today page."* Phase 1 ships the FOUNDATION (settings infra + dark mode + 3 themes + motion intensity) that Phases 2-4 depend on.
+
+**Pre-Phase-1 mandatory a11y fix:**
+- `pulse-red` animation on IN_PROGRESS blocks now has `prefers-reduced-motion: reduce` override. Pre-existing WCAG §2.3.3 violation closed before any new animations land in Phase 2-3.
+
+**Settings infrastructure:**
+- New `UserPreferences` typedef in `js/domain/types.js` (only §6.5 hit — architect's prediction held exactly)
+- Supporting enums: `ThemeId` ('system' | 'light' | 'dark'), `MotionPreference` ('full' | 'reduced')
+- New `js/services/UserPreferencesService.js` (147 LOC) — pure-function service with `load/save/getDefaults`; dependency-injection pattern matches Iter 24 focusTrap + Iter 35 dragController precedents
+- localStorage key: `bamx.userPreferences.v1` (schemaVersion captured for migration safety)
+- `js/app.js` loads preferences early; applies `data-theme` + `data-motion` attributes to `<html>` before first render
+- `matchMedia('(prefers-color-scheme: dark)')` listener active when themeId === 'system' — swaps theme on OS-level change
+
+**Dark mode + 3 themes via semantic CSS token architecture:**
+- `app.css` restructured into semantic token layers:
+  - Surface tokens (`--surface-page`, `--surface-card`, `--surface-elevated`)
+  - Text tokens (`--text-primary`, `--text-secondary`, `--text-muted`)
+  - Border tokens (`--border-subtle`, `--border-strong`)
+- `[data-theme="dark"]` selector block overrides surface/text/border tokens (NOT bucket colors — Phil's green/yellow/purple stay saturated in both modes, glow against dark backgrounds)
+- `[data-theme="system"]` + `prefers-color-scheme: dark` combo overrides to dark tokens
+- WCAG AA contrast annotated in CSS comments for every fg/bg pair
+
+**Motion intensity:**
+- `[data-motion="reduced"]` selector block overrides all `animation`/`transition` rules with `none`
+
+**Settings page + header gear icon:**
+- `/settings` route promoted from PLACEHOLDER to VISIBLE_ROUTE_NAMES in `js/ui/router.js`
+- NEW `js/ui/pages/Settings.js` (109 LOC) — pure render; 3-theme radio + 2-motion radio
+- Live-apply on selection (matches Vercel/Linear pattern; no Save button needed)
+- NEW gear icon in `js/ui/AppShell.js` header — one-click route to /settings
+
+### Locked Phil-authority decisions (PHIL_AUTHORITY_QUEUE.md §F)
+| SW-Q-FUT | Phil's answer |
+|---|---|
+| 1 (direction name) | Luminous Constraint |
+| 2 (typography swap) | Yes — deferred to Phase 2 |
+| 3 (Cadence Pressure Ring signature) | Yes — deferred to Phase 3 |
+| 4 (settings UI location) | Dedicated /settings page + header gear icon (shipped) |
+| 5 (MVP customization) | 3 themes + motion intensity (shipped) |
+| 6 (default theme) | System (shipped) |
+| 7 (customization gate) | Always-available (revised from synthesis default of first-plan-accepted — easier to gate later than ungate later) |
+| 8 (multi-device sync) | No — localStorage only |
+
+### Why
+- Phil approved the futuristic redesign as the new production Today page
+- Phase 1 is the foundation; everything else (typography, signature ring, alternate palettes) depends on this token + settings + persistence layer
+- Pre-existing a11y violation fixed before new animations stack on top
+
+### Impact
+- Test suite: 3,259 → **3,343** (+84 net: 84 new tests across services/Settings/integration)
+- Runtime: 4.15s → **4.14s** ✅ (per-test 1.27 → 1.24ms; 17% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **exactly 1** as architect predicted (`js/domain/types.js`)
+- 5 NEW files (1,085 LOC), 7 modified files (+427 / -17)
+- All 18 ACs PASS
+
+### What Phase 1 does NOT change (preserved exactly)
+- DM Serif Display + DM Sans + DM Mono typography (Phase 2 swaps)
+- Iter 33 Chartered Minimalism aesthetic in light mode (default unchanged)
+- All Iter 22-38 functionality (calendar grid, drag, insert, BlockDetailDialog, composer 4-2-2 actual, lunch, focus traps)
+- First-run user (no localStorage prefs) gets exact-Iter-38 appearance
+
+### Manual QA needed (FE-flagged)
+1. Visual contrast verification in dark mode (annotated WCAG ratios but no visual screenshot tooling)
+2. System theme OS transition (browser-only `matchMedia` listener — change OS to dark while app open with system theme selected)
+3. Gear icon focus ring (WCAG 2.4.7)
+4. /#settings direct URL resolves
+
+### Next phases
+- **Phase 2** — Typography switch (Instrument Serif + Geist + Geist Mono) + depth + block evolution. 6-8 hr. MEDIUM risk.
+- **Phase 3** — Cadence Pressure Ring SVG. 10-14 hr. HIGH risk per QA (CCC bound).
+- **Phase 4** — Alternate palette + density toggle (conditional on Phase 3 reception). 8-10 hr. HIGH risk per QA.
+
+---
+
 ## Iteration 38 — 2026-05-14 — Phase B composer rebalance: 4-2-2 actual + CI sacredness (C-PM-SIMPLIFY-B)
 
 ### What changed

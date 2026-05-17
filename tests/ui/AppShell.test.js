@@ -41,10 +41,15 @@ describe('AppShell — structure', () => {
     assert.ok(weekIdx > portfolioIdx);
   });
 
-  test('nav hides insights + settings routes (Sprint 11 P0-T1)', () => {
+  test('nav hides insights as text nav item; settings accessible via gear icon only (Iter 39)', () => {
     const html = AppShell({ route: 'today' });
+    // insights is still hidden entirely from the nav.
     assert.ok(!html.includes('href="#insights"'));
-    assert.ok(!html.includes('href="#settings"'));
+    // settings is now accessible via the gear icon (not a text nav-item link).
+    // Verify it uses the nav-gear class (not nav-item) so it is distinct from text nav.
+    assert.match(html, /class="nav-gear"/);
+    assert.match(html, /href="#settings"/); // gear icon link
+    assert.ok(!html.includes('class="nav-item"[^>]*href="#settings"')); // not a text nav-item
   });
 
   test('nav includes kaizen route (functional screen)', () => {

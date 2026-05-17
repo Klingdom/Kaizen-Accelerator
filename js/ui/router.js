@@ -49,9 +49,8 @@ export const ROUTE_NAMES = Object.freeze([
  * Subset of `ROUTE_NAMES` that the primary nav renders for the user.
  * Sprint 11 P0-T1 trims the nav to shipped screens only: `today`,
  * `portfolio`, `week`, `catalog`, and `kaizen` (which renders a functional
- * KaizenCard detail). `insights` and `settings` still resolve through the
- * router — direct URL access works — but they are placeholder screens
- * and therefore hidden from the nav.
+ * KaizenCard detail). `insights` is still a placeholder, hidden from nav.
+ * Iter 39: `settings` promoted to visible (shipped — gear icon + dedicated page).
  */
 export const VISIBLE_ROUTE_NAMES = Object.freeze([
   'today',
@@ -59,16 +58,18 @@ export const VISIBLE_ROUTE_NAMES = Object.freeze([
   'week',
   'catalog',
   'kaizen'
+  // settings is intentionally omitted from the text nav — it is accessible
+  // via the gear icon in the AppShell header only (AC15).
 ]);
 
 /**
  * Routes that currently render a `PlaceholderPage` and should display a
  * "Ships next" polite message on direct URL access. Kept in sync with the
  * `else` branch in `renderApp()`.
+ * Iter 39: `settings` removed from placeholders — it ships this iteration.
  */
 export const PLACEHOLDER_ROUTE_NAMES = Object.freeze([
-  'insights',
-  'settings'
+  'insights'
 ]);
 
 const KNOWN = new Set(ROUTE_NAMES);

@@ -76,6 +76,9 @@ import { Portfolio } from './ui/pages/Portfolio.js';
 import { Catalog as CatalogPage } from './ui/pages/Catalog.js';
 import { Week as WeekPage } from './ui/pages/Week.js';
 import { PlaceholderPage } from './ui/pages/PlaceholderPage.js';
+import { Settings } from './ui/pages/Settings.js';
+import * as UserPreferencesService from './services/UserPreferencesService.js';
+import { USER_PREFS_KEY } from './services/UserPreferencesService.js';
 import { InsightsPortfolio } from './ui/pages/InsightsPortfolio.js';
 import { parseArtifactFields } from './ui/components/OutputArtifactDialog.js';
 import { ReflectionSheet } from './ui/components/ReflectionSheet.js';
@@ -307,6 +310,9 @@ function createState() {
   return {
     route: 'today',
     params: {},
+    // Iter 39 — Luminous Constraint Phase 1: user theme/motion preferences.
+    // Loaded from localStorage at boot; defaults to {themeId:'system', motion:'full'}.
+    userPreferences: UserPreferencesService.getDefaults(),
     composerLoading: false,
     infeasibleExplain: null,
     lastError: null,
@@ -893,6 +899,13 @@ export function renderApp(services, state, handlers = {}) {
       nowIso: services.clock.now(),
       locationHash
     });
+  } else if (state.route === 'settings') {
+    // Iter 39 — Luminous Constraint Phase 1: dedicated settings page (AC12).
+    const prefs = state.userPreferences ?? UserPreferencesService.getDefaults();
+    pageHtml = Settings({
+      themeId: prefs.themeId,
+      motion: prefs.motion
+    });
   } else {
     pageHtml = PlaceholderPage({ route: state.route });
   }
@@ -1173,6 +1186,32 @@ function lookupActivity(services, activityId) {
 }
 
 /**
+ * Iter 39 — Apply user preferences to the `<html>` element.
+ *
+ * Sets `data-theme` to the chosen ThemeId ('system' | 'light' | 'dark').
+ * Sets `data-motion` to the chosen MotionPreference ('full' | 'reduced').
+ *
+ * When themeId === 'system', the CSS handles the OS preference via
+ * `@media (prefers-color-scheme: dark)` + `[data-theme="system"]` combo.
+ *
+ * No-op when `document` is not available (test environment).
+ *
+ * @param {{ themeId: string, motion: string }} prefs
+ */
+/* istanbul ignore next — browser only */
+export function applyPreferences(prefs) {
+  if (typeof document === 'undefined') return;
+  if (!prefs || typeof prefs !== 'object') return;
+  const html = document.documentElement;
+  if (typeof prefs.themeId === 'string') {
+    html.setAttribute('data-theme', prefs.themeId);
+  }
+  if (typeof prefs.motion === 'string') {
+    html.setAttribute('data-motion', prefs.motion);
+  }
+}
+
+/**
  * Build the click handler registry.
  *
  * @param {{services: object, state: object, rerender: () => void}} scope
@@ -1230,6 +1269,37 @@ export function buildHandlers(scope) {
 
     TOAST_DISMISS(_payload) {
       state.toast = null;
+      rerender();
+    },
+
+    // Iter 39 — Luminous Constraint Phase 1 (AC6, AC14).
+    // Live-apply theme change: update state + persist + apply data-attribute.
+    PREF_CHANGE_THEME(payload, ctx) {
+      // The themeId may come from payload.themeId (unit tests) or from
+      // the radio input's data-theme-id attribute via the click-delegate ctx.
+      let themeId = payload && typeof payload.themeId === 'string' ? payload.themeId : null;
+      if (!themeId && ctx && ctx.element) {
+        themeId = ctx.element.dataset?.themeId ?? ctx.element.getAttribute('data-theme-id');
+      }
+      if (!themeId) return;
+      if (!state.userPreferences) state.userPreferences = UserPreferencesService.getDefaults();
+      state.userPreferences = { ...state.userPreferences, themeId };
+      UserPreferencesService.save(state.userPreferences, services.repo);
+      applyPreferences(state.userPreferences);
+      rerender();
+    },
+
+    // Live-apply motion change: update state + persist + apply data-attribute.
+    PREF_CHANGE_MOTION(payload, ctx) {
+      let motion = payload && typeof payload.motion === 'string' ? payload.motion : null;
+      if (!motion && ctx && ctx.element) {
+        motion = ctx.element.dataset?.motion ?? ctx.element.getAttribute('data-motion');
+      }
+      if (!motion) return;
+      if (!state.userPreferences) state.userPreferences = UserPreferencesService.getDefaults();
+      state.userPreferences = { ...state.userPreferences, motion };
+      UserPreferencesService.save(state.userPreferences, services.repo);
+      applyPreferences(state.userPreferences);
       rerender();
     },
 
@@ -3107,6 +3177,39 @@ export function start() {
   }
   const services = buildServices();
   const state = createState();
+
+  // Iter 39 — Luminous Constraint Phase 1: load and apply user preferences
+  // early in boot, before first render, so the correct theme is applied
+  // before any paint (AC6).
+  {
+    const savedUserPrefs = UserPreferencesService.load(services.repo);
+    state.userPreferences = savedUserPrefs;
+    applyPreferences(savedUserPrefs);
+
+    // AC7: when themeId === 'system', listen for OS dark/light transitions
+    // and update the data-theme attribute. The CSS [data-theme="system"] +
+    // prefers-color-scheme combo handles the visual switch automatically, but
+    // we still call applyPreferences so any JS-driven code stays in sync.
+    /* istanbul ignore next — browser only */
+    if (typeof globalThis.matchMedia === 'function') {
+      try {
+        const mq = globalThis.matchMedia('(prefers-color-scheme: dark)');
+        const onColorSchemeChange = () => {
+          if (state.userPreferences && state.userPreferences.themeId === 'system') {
+            applyPreferences(state.userPreferences);
+          }
+        };
+        if (typeof mq.addEventListener === 'function') {
+          mq.addEventListener('change', onColorSchemeChange);
+        } else if (typeof mq.addListener === 'function') {
+          // Deprecated but present in some older browsers.
+          mq.addListener(onColorSchemeChange);
+        }
+      } catch {
+        /* swallow — optional enhancement */
+      }
+    }
+  }
 
   // Restore persisted Portfolio prefs (Sprint 7 P1-T3).
   const savedPrefs = loadPortfolioPrefs(services.repo);

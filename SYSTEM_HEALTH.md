@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,259 (+694 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,343 (+778 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 770+ (+167 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom — Iter 37 variance confirmed environmental) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.15s** | ✅ |
+| Suite count | 780+ (+177 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.24 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (17% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.14s** | ✅ |
 | **Runtime alarm (META §7.1)** | **5.0s** | (17% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.31ms (Iter 36) → 1.61-2.16ms (Iter 37 environmental) → **1.27ms (Iter 38 normal)** | ✅ stable; Iter 37 variance was environmental |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 38) → **1.24ms (Iter 39)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 38 commit) | (in progress) |
-| **Production deploy queue** | **2 (Iter 37 + 38)** | ✅ under gate (max 4 per META §7.7) |
+| Last green commit | (pending Iter 39 commit) | (in progress) |
+| **Production deploy queue** | **3 (Iter 37 + 38 + 39)** | ✅ under gate (max 4 per META §7.7) |
 
 ---
 
@@ -105,7 +105,18 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-14 after Iteration 38 (Phase B composer rebalance — C-PM-SIMPLIFY-B). The HIGH-risk iteration meta-coordinator flagged most carefully. Phil approved SW-Q6–Q10 batch (Path A). Composer now PRODUCES 4-2-2 actual: PROJECT 240 ✓ / COMMUNICATION 120 ✓ (was 105 — Phil's 2h target hit) / CI 120 ✓ + sacredness mechanism on skip. New POST_DEEP_COMM anchor at 15:30/15 min in DAILY_NON_OPTIONAL_SET. composeWeekly mirrors. validateComposition requires + relaxConfigurable preserves + orderDay packs around. CI sacredness via SkipReasonModal CISacredConfirmBanner + new CISkipConfirmed event (39→40 events). §6.5 hits: exactly 6 as architect predicted (composeDaily, composeWeekly, validateComposition, relaxConfigurable, orderDay, events.js). capacity.js + types.js NOT touched (verified no-op). 30 new + ~8 updated tests. Suite 3,229 → 3,259. Runtime 4.15s (per-test 1.27ms — Iter 37 variance confirmed environmental). All 16 ACs PASS._
+_Last updated: 2026-05-17 after Iteration 39 (Luminous Constraint Phase 1 — C-UX-FUTURISTIC-P1). Phil approved futuristic redesign as the new core production Today page. Foundation phase ships: pre-existing pulse-red WCAG §2.3.3 violation closed; new UserPreferences typedef (only §6.5 hit, architect-predicted); new UserPreferencesService pure DI service; localStorage persistence; semantic CSS token architecture; 3 themes (System/Light/Dark) + motion intensity; new /settings page + header gear icon. Phil's color identity preserved saturated in both light + dark (Iter 31 base layer unchanged — translates naturally to light, glows against dark). Live-apply on selection. Backward compat: first-run user gets exact Iter 38 appearance. Suite 3,259 → 3,343 (+84). All 18 ACs PASS. §6.5: 1 hit exactly as architect predicted._
+
+_**Architect prediction validation continues**: Phase B (Iter 38) predicted 6 §6.5 hits, landed exactly 6. Phase 1 (Iter 39) predicted 1 hit (types.js), landed exactly 1. Define-pass artifact predictive accuracy is high. META §7.4 boundary-effectiveness audit further vindicated._
+
+_**Phases 2-4 sequenced post-deploy**:_
+_- Phase 2 (typography + depth + block evolution): 6-8 hr, MEDIUM risk, 0 §6.5 hits_
+_- Phase 3 (Cadence Pressure Ring SVG signature): 10-14 hr, HIGH risk (CCC bound update needed)_
+_- Phase 4 (alternate palette + density toggle): 8-10 hr, HIGH risk, conditional on Phase 3 reception_
+
+_Manual QA items flagged for Phase 1 deploy: dark mode visual contrast verification, system theme OS-transition test, gear icon focus ring (WCAG 2.4.7), /#settings direct URL._
+
+_Iteration 38 — 2026-05-14 — Phase B composer rebalance: 4-2-2 actual + CI sacredness (C-PM-SIMPLIFY-B). The HIGH-risk iteration meta-coordinator flagged most carefully. Phil approved SW-Q6–Q10 batch (Path A). Composer now PRODUCES 4-2-2 actual: PROJECT 240 ✓ / COMMUNICATION 120 ✓ (was 105 — Phil's 2h target hit) / CI 120 ✓ + sacredness mechanism on skip. New POST_DEEP_COMM anchor at 15:30/15 min in DAILY_NON_OPTIONAL_SET. composeWeekly mirrors. validateComposition requires + relaxConfigurable preserves + orderDay packs around. CI sacredness via SkipReasonModal CISacredConfirmBanner + new CISkipConfirmed event (39→40 events). §6.5 hits: exactly 6 as architect predicted (composeDaily, composeWeekly, validateComposition, relaxConfigurable, orderDay, events.js). capacity.js + types.js NOT touched (verified no-op). 30 new + ~8 updated tests. Suite 3,229 → 3,259. Runtime 4.15s (per-test 1.27ms — Iter 37 variance confirmed environmental). All 16 ACs PASS._
 
 _**Iter 37 runtime variance confirmed environmental**: Iter 38 baseline returned to 4.15s / 1.27ms per-test. Iter 37's 5.20-6.97s range was system-load noise, not a real regression. META §7.1 ceiling has 15% headroom restored._
 

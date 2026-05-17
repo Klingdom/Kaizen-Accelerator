@@ -263,6 +263,37 @@ export const PdcaClosedReason = Object.freeze({
 });
 
 /**
+ * Iter 39 — Luminous Constraint Phase 1.
+ *
+ * ThemeId — the three display themes the user can choose from.
+ * @typedef {'system' | 'light' | 'dark'} ThemeId
+ */
+export const ThemeId = Object.freeze({
+  SYSTEM: 'system',
+  LIGHT: 'light',
+  DARK: 'dark'
+});
+
+/**
+ * MotionPreference — user's animation intensity preference.
+ * @typedef {'full' | 'reduced'} MotionPreference
+ */
+export const MotionPreference = Object.freeze({
+  FULL: 'full',
+  REDUCED: 'reduced'
+});
+
+/**
+ * UserPreferences — persisted in localStorage at `bamx.userPreferences.v1`.
+ *
+ * @typedef {object} UserPreferences
+ * @property {ThemeId} themeId           - 'system' | 'light' | 'dark'
+ * @property {MotionPreference} motion   - 'full' | 'reduced'
+ * @property {string} schemaVersion      - 'v1' for migration safety
+ */
+export const UserPreferences = null;
+
+/**
  * Opportunity.status values (Sprint 7 §2.14). FSM:
  *   INTAKE → SCORED → (PROMOTED | DEFERRED | REJECTED)
  *   INTAKE → (PROMOTED | DEFERRED | REJECTED)
@@ -794,5 +825,8 @@ export const ENUMS = Object.freeze({
   ReflectionKind,
   PdcaState,
   PdcaClosedReason,
-  OpportunityStatus
+  OpportunityStatus,
+  // Iter 39 — Luminous Constraint Phase 1
+  ThemeId,
+  MotionPreference
 });
