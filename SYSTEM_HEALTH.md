@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,343 (+778 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,347 (+782 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 780+ (+177 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.27 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (15% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.24s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (15% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.24ms (Iter 39) → **1.27ms (Iter 40)** | ✅ stable |
+| Suite count | 781+ (+178 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.29 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (14% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.31s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (14% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 40) → **1.29ms (Iter 41 hotfix)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 40 commit) | (in progress) |
-| **Production deploy queue** | **4 (Iter 37 + 38 + 39 + 40)** | ⚠️ AT GATE LIMIT (max 4 per META §7.7) — deploy before Iter 41 |
+| Last green commit | (pending Iter 41 commit) | (in progress) |
+| **Production deploy queue** | **5 (Iter 37 + 38 + 39 + 40 + 41-hotfix)** | 🚨 OVER GATE — Iter 41 was P0 hotfix exception; deploy CRITICAL |
 
 ---
 
@@ -105,7 +105,13 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-17 after Iteration 40 (Luminous Constraint Phase 2 — C-UX-FUTURISTIC-P2). Typography swap shipped (DM trio → Instrument Serif + Geist + Geist Mono via Google Fonts). 3-stop linear-gradient block fills with inner-top-light depth. Hour-rail Geist Mono + refined separators + bold/red current-hour highlight. Now-line 2px + red glow box-shadow + extended fade trail (motion-reduced suppressed). Phil's color identity preserved (Iter 31 base layer unchanged). Suite 3,343 (unchanged — CSS-only). All 18 ACs PASS. §6.5: zero hits. 2 files modified (app.html, app.css)._
+_Last updated: 2026-05-17 after Iteration 41 (P0 hotfix — IN_PROGRESS click bug). Phil reported clicking IN_PROGRESS cards showed drag-prevention toast instead of opening BlockDetailDialog. Same bug class as Iter 28 (Update button overly broad). Root cause: dragController `onPointerDown` IN_PROGRESS check fired on every pointerdown (including pure clicks). Fix: removed pointerdown check; added equivalent check in `onPointerMove` after 5px click-threshold. Toast only fires on genuine drag attempts. 4 regression-locking tests added (DC-IP1-4). Suite 3,343 → 3,347. All 8 ACs PASS. §6.5: zero hits._
+
+_🚨 **Operating-model finding logged**: Second iteration to ship "overly-broad safety guard blocks legitimate flow" bug class (Iter 28 + Iter 41). META §7 should add rule: every safety-gate test must include BOTH blocked-case AND allowed-case explicitly. Would have caught both hotfixes preventatively. Recommend amending Iter 27 §7 META deltas with this addition before next approval cycle._
+
+_🚨 **Deploy gate OVER LIMIT**: queue 5-deep (Iter 37-41). Iter 41 was P0 hotfix exception. Deploy is now critical-path-blocker for any further dispatch. Phase 3 Cadence Pressure Ring queued but blocked on deploy._
+
+_Iteration 40 — 2026-05-17 — Luminous Constraint Phase 2: typography + depth + hour-rail + now-line (C-UX-FUTURISTIC-P2). Typography swap shipped (DM trio → Instrument Serif + Geist + Geist Mono via Google Fonts). 3-stop linear-gradient block fills with inner-top-light depth. Hour-rail Geist Mono + refined separators + bold/red current-hour highlight. Now-line 2px + red glow box-shadow + extended fade trail (motion-reduced suppressed). Phil's color identity preserved (Iter 31 base layer unchanged). Suite 3,343 (unchanged — CSS-only). All 18 ACs PASS. §6.5: zero hits. 2 files modified (app.html, app.css)._
 
 _**Coordinator correction logged**: Initially mis-flagged `app.html` modification as "wrong file." Verified `app.html` IS the SPA entrypoint per Caddyfile routing; `index.html` is the marketing landing page. FE was correct. Lesson: check Caddyfile routing before assuming file naming conventions._
 

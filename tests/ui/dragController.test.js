@@ -555,8 +555,9 @@ describe('dragController — controller lifecycle', () => {
     handle.release();
   });
 
-  // DC-L9: isInProgress guard
-  test('DC-L9: IN_PROGRESS activity — pointerdown bails, fires onInProgressAttempt', () => {
+  // DC-L9: isInProgress guard — pointerdown alone (pure click) must NOT fire the toast.
+  // The guard fires only when movement exceeds CLICK_THRESHOLD_PX (see DC-IP tests below).
+  test('DC-L9: IN_PROGRESS activity — pointerdown alone does NOT fire onInProgressAttempt (click must be allowed)', () => {
     const blockEl = makeBlockEl({ activityId: 'sa_active', startMin: 600, duration: 60 });
     const timelineEl = makeTimelineEl(blockEl);
 
@@ -571,10 +572,13 @@ describe('dragController — controller lifecycle', () => {
       onInProgressAttempt() { inProgressCalled = true; }
     });
 
+    // Only pointerdown — no move, no up.
     timelineEl._dispatch('pointerdown', makePointerEvent('pointerdown', { clientY: 120, target: blockEl }));
 
-    assert.ok(inProgressCalled, 'onInProgressAttempt must fire for IN_PROGRESS activity');
-    assert.ok(!blockEl.classList.has('cycle-block-dragging'), 'IN_PROGRESS block must not gain dragging class');
+    // The toast must never fire from pointerdown alone (click path).
+    // The dragging class may be present at this point (session is open) — it will
+    // be removed on pointerup/pointercancel. What matters is that no toast fired.
+    assert.ok(!inProgressCalled, 'onInProgressAttempt must NOT fire on pointerdown-only (click path)');
     handle.release();
   });
 
@@ -811,6 +815,116 @@ describe('dragController — pending result shape (AC8)', () => {
     assert.ok(typeof pendingResult.originalStart === 'string', 'pendingResult.originalStart is HH:MM string');
     assert.ok(typeof pendingResult.originalDuration === 'number', 'pendingResult.originalDuration is number');
     assert.ok(typeof pendingResult.mode === 'string',          'pendingResult.mode is string');
+    handle.release();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DC-IP: IN_PROGRESS click vs drag regression tests (P0 bug fix, Iter 36)
+//
+//   DC-IP1: pointerdown only  → no toast (click allowed)
+//   DC-IP2: pointerdown + move > threshold → toast fires, drag cancelled
+//   DC-IP3: pointerdown + move < threshold → no toast (treated as click jitter)
+//   DC-IP4: pointerdown + pointerup (no move) → no toast, click propagates
+// ---------------------------------------------------------------------------
+describe('dragController — IN_PROGRESS click vs drag regression (DC-IP)', () => {
+
+  // DC-IP1: pure pointerdown — no toast
+  test('DC-IP1: IN_PROGRESS block pointerdown only does NOT fire onInProgressAttempt', () => {
+    const blockEl = makeBlockEl({ activityId: 'sa_wip', startMin: 600, duration: 60 });
+    const timelineEl = makeTimelineEl(blockEl);
+
+    let toastFired = false;
+    const handle = installDragController(timelineEl, {
+      getCompositionState: () => 'ACCEPTED',
+      isProtected:  () => false,
+      isInProgress: (id) => id === 'sa_wip',
+      onDragPreview() {},
+      onDragCommit() {},
+      onDragPending() {},
+      onInProgressAttempt() { toastFired = true; }
+    });
+
+    timelineEl._dispatch('pointerdown', makePointerEvent('pointerdown', { clientY: 120, target: blockEl }));
+    // No pointermove, no pointerup.
+
+    assert.ok(!toastFired, 'DC-IP1: toast must NOT fire on pointerdown alone for IN_PROGRESS block');
+    handle.release();
+  });
+
+  // DC-IP2: pointerdown + move > threshold → toast fires, session cancelled
+  test('DC-IP2: IN_PROGRESS block with move > threshold fires onInProgressAttempt and cancels drag', () => {
+    const blockEl = makeBlockEl({ activityId: 'sa_wip', startMin: 600, duration: 60 });
+    const timelineEl = makeTimelineEl(blockEl);
+
+    let toastFired = false;
+    let commitFired = false;
+    const handle = installDragController(timelineEl, {
+      getCompositionState: () => 'ACCEPTED',
+      isProtected:  () => false,
+      isInProgress: (id) => id === 'sa_wip',
+      onDragPreview() {},
+      onDragCommit()  { commitFired = true; },
+      onDragPending() {},
+      onInProgressAttempt() { toastFired = true; }
+    });
+
+    // 60px move is well above the 5px CLICK_THRESHOLD_PX.
+    timelineEl._dispatch('pointerdown', makePointerEvent('pointerdown', { clientY: 120, target: blockEl }));
+    timelineEl._dispatch('pointermove', makePointerEvent('pointermove', { clientY: 180, target: blockEl }));
+
+    assert.ok(toastFired,  'DC-IP2: toast MUST fire when IN_PROGRESS block is dragged > threshold');
+    assert.ok(!commitFired, 'DC-IP2: commit must NOT fire — drag cancelled by IN_PROGRESS guard');
+    handle.release();
+  });
+
+  // DC-IP3: pointerdown + move < threshold → no toast (jitter treated as click)
+  test('DC-IP3: IN_PROGRESS block with move < threshold does NOT fire onInProgressAttempt', () => {
+    const blockEl = makeBlockEl({ activityId: 'sa_wip', startMin: 600, duration: 60 });
+    const timelineEl = makeTimelineEl(blockEl);
+
+    let toastFired = false;
+    const handle = installDragController(timelineEl, {
+      getCompositionState: () => 'ACCEPTED',
+      isProtected:  () => false,
+      isInProgress: (id) => id === 'sa_wip',
+      onDragPreview() {},
+      onDragCommit() {},
+      onDragPending() {},
+      onInProgressAttempt() { toastFired = true; }
+    });
+
+    // 3px move is below the 5px CLICK_THRESHOLD_PX.
+    timelineEl._dispatch('pointerdown', makePointerEvent('pointerdown', { clientY: 120, target: blockEl }));
+    timelineEl._dispatch('pointermove', makePointerEvent('pointermove', { clientY: 123, target: blockEl }));
+
+    assert.ok(!toastFired, 'DC-IP3: toast must NOT fire when movement is below click threshold (jitter)');
+    handle.release();
+  });
+
+  // DC-IP4: pointerdown + pointerup (no move) → no toast, click can propagate
+  test('DC-IP4: IN_PROGRESS block pointerdown + pointerup without move does NOT fire onInProgressAttempt', () => {
+    const blockEl = makeBlockEl({ activityId: 'sa_wip', startMin: 600, duration: 60 });
+    const timelineEl = makeTimelineEl(blockEl);
+
+    let toastFired = false;
+    let commitFired = false;
+    const handle = installDragController(timelineEl, {
+      getCompositionState: () => 'ACCEPTED',
+      isProtected:  () => false,
+      isInProgress: (id) => id === 'sa_wip',
+      onDragPreview() {},
+      onDragCommit()  { commitFired = true; },
+      onDragPending() {},
+      onInProgressAttempt() { toastFired = true; }
+    });
+
+    const pos = { clientY: 120, target: blockEl };
+    timelineEl._dispatch('pointerdown', makePointerEvent('pointerdown', pos));
+    timelineEl._dispatch('pointerup',   makePointerEvent('pointerup',   pos));
+
+    assert.ok(!toastFired,  'DC-IP4: toast must NOT fire on click (pointerdown + pointerup, no move)');
+    assert.ok(!commitFired, 'DC-IP4: dragCommit must not fire for IN_PROGRESS block even without the guard toast');
     handle.release();
   });
 });

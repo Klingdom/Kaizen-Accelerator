@@ -1331,3 +1331,34 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **Phase 3 (Cadence Pressure Ring) cannot dispatch without deploy** — gate enforcement
   - Phase 4 (alternate palette + density) deferred conditional on Phase 3 reception
   - META operating-model deltas still unapproved (Iter 27 §7)
+
+---
+
+## Iteration 41 — 2026-05-17 — P0 hotfix: IN_PROGRESS click bug (C-FE-HOTFIX-2)
+
+- **Selected item**: P0 production bug. Phil reports: clicking an IN_PROGRESS activity card shows toast "This block is in progress and cannot be moved" instead of opening BlockDetailDialog. Same bug class as Iter 28 (overly-broad guard intercepting clicks).
+- **Reason for selection**: P0 production-blocking regression. Deploy gate exception for hotfixes (same precedent as Iter 28).
+- **Agents involved**: frontend-engineer (debug + fix + regression tests in single pass).
+- **Validation results**:
+  - Tests: 3,343 → **3,347** (+4 regression-locking tests DC-IP1 through DC-IP4)
+  - Runtime: 4.24s → **4.31s** ✅ (per-test 1.29ms — 14% headroom under META §7.1 1.5ms ceiling)
+  - All 8 ACs PASS
+  - **§6.5 boundary**: zero hits
+- **Outcome**: Shipped.
+  - **Root cause**: `js/ui/dragController.js:188-207` — `onPointerDown` IN_PROGRESS guard from Iter 35 fired `onInProgressAttempt()` on every pointerdown (including pure clicks), not just drag attempts. Pointerdown precedes click.
+  - **Fix**: Removed IN_PROGRESS check from `onPointerDown`; added equivalent check in `onPointerMove` after `CLICK_THRESHOLD_PX` (5px) move threshold. Toast only fires when user has actually moved past click threshold (genuine drag attempt).
+  - **Modified files**: 2 (`js/ui/dragController.js`, `tests/ui/dragController.test.js`)
+- **Why test suite missed it**: Iter 35 DC-L9 test asserted onInProgressAttempt fires on pointerdown — matched then-correct (but wrong) implementation. Never dispatched pointermove in that path, never tested click-only sequence. Safety-gate test passed broadly ("blocks drag") but didn't probe orthogonal case ("doesn't accidentally block click"). DC-IP1-4 close exactly that gap.
+- **Spec deviations**: One implementation-detail divergence. Brief offered two options:
+  - (a) Move check to pointermove (recommended)
+  - (b) Silent return in pointerdown (simpler alternative)
+  - FE tried (b) first but it broke DC-IP2 — without session creation, pointermove sees `!session` and returns immediately so toast could never fire on real drag attempts. FE correctly switched to (a) which requires session always be created so pointermove can observe movement. Right call documented.
+- **Time spent**: ~20 min actual.
+- **Operating-model lesson logged**:
+  - **Second iteration to ship "guard too broad, blocks legitimate flow" bug** (first was Iter 28 Update-on-PROPOSED). Pattern: safety-gate-against-X tests pass ("does X get blocked? Yes") but don't probe orthogonal case ("does NON-X also get blocked? Should NOT"). Recommend META §7 addition: every safety-gate test must include BOTH blocked-case AND allowed-case explicitly.
+  - This rule would have caught BOTH hotfix bug classes preventatively.
+- **Latent issues**: None new.
+- **Follow-ups**:
+  - Commit + push.
+  - **Deploy queue now 5-deep (Iter 37-41)** — META §7.7 gate ALREADY VIOLATED for non-hotfix iterations. Phil must deploy before Iter 42 (Phase 3 Cadence Pressure Ring) can dispatch. Hotfix-class exceptions allowed but limited.
+  - META §7 amendment proposal (orthogonal-case safety-gate testing rule) — surface for Phil's META deltas decision.

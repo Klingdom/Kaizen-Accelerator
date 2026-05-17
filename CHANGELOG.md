@@ -6,6 +6,47 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 41 — 2026-05-17 — P0 hotfix: IN_PROGRESS click bug (C-FE-HOTFIX-2)
+
+### What changed
+P0 production bug. Phil reports: clicking an IN_PROGRESS activity card on the Today calendar shows toast *"This block is in progress and cannot be moved"* instead of opening BlockDetailDialog. Same bug class as Iter 28 (overly-broad guard intercepting clicks).
+
+**Root cause** (`js/ui/dragController.js:188-207`):
+The `onPointerDown` IN_PROGRESS guard from Iter 35 fired `onInProgressAttempt()` (the toast) on EVERY pointerdown on an IN_PROGRESS block — not just drag attempts. Pointerdown precedes any pointer event including pure clicks. So clicking to open the detail dialog inappropriately surfaced the drag-prevention message.
+
+**Fix** (single-file CSS-less code change):
+- REMOVED IN_PROGRESS check from `onPointerDown`. Session is now always created so `onPointerMove` can observe movement.
+- ADDED IN_PROGRESS check in `onPointerMove` post-CLICK_THRESHOLD_PX guard (5px threshold). Only fires `onInProgressAttempt()` when user has actually moved past click-threshold (i.e., genuinely attempting drag).
+- On pure click (no movement past threshold): pointerdown tracks → pointerup sees no movement → returns early → native click event fires → OPEN_BLOCK_DETAIL dispatches → BlockDetailDialog opens ✓
+- On drag attempt (>5px move): toast fires + drag cancelled (session nulled, pointer capture released, dragging class removed) ✓
+
+### Regression tests added
+4 new tests in `tests/ui/dragController.test.js` (DC-IP1 through DC-IP4):
+- DC-IP1: Click on IN_PROGRESS block does NOT fire onInProgressAttempt
+- DC-IP2: Drag > 5px on IN_PROGRESS block DOES fire onInProgressAttempt
+- DC-IP3: Drag < 5px on IN_PROGRESS block does NOT fire onInProgressAttempt
+- DC-IP4: Click on IN_PROGRESS block allows click event to propagate (session opens, hasMoved stays false, pointerup returns early)
+
+### Why test suite missed it originally
+Iter 35 DC-L9 test asserted `onInProgressAttempt` fires on pointerdown — which matched the then-correct (but wrong) implementation. It never dispatched pointermove in that path, and never tested click-only sequence (pointerdown + pointerup, no move). The safety gate was tested for "does it block a drag" but not for "does it accidentally block a click." Classic **broad-positive test missed adverse-side-effect coverage**. DC-IP1 through DC-IP4 close exactly that gap.
+
+### Operating-model lesson
+This is the **second iteration** to ship a "guard too broad, blocks legitimate flow" bug class (first was Iter 28 — Update button suppressed on PROPOSED). Pattern: a safety-gate-against-X test passes ("does X get blocked? Yes") but doesn't probe the orthogonal case ("does NON-X also get blocked? Should not"). META should add a rule: every safety-gate test must include BOTH the blocked-case AND the allowed-case explicitly.
+
+### Impact
+- Test suite: 3,343 → **3,347** (+4 regression tests)
+- Runtime: 4.24s → **4.31s** ✅ (per-test 1.29ms — 14% headroom under META §7.1)
+- §6.5 hits: **0**
+- Files: 2 (`js/ui/dragController.js`, `tests/ui/dragController.test.js`)
+- All 8 ACs PASS
+
+### Bug class summary
+- **Iter 28 hotfix**: Update button on PROPOSED rows → stuck state. Guard suppressed Update button overly broadly.
+- **Iter 41 hotfix** (this): IN_PROGRESS click → toast on click. Guard fired drag-prevention overly broadly.
+- Common pattern: safety guards must distinguish between the action being guarded (drag/edit) and orthogonal actions (click/view).
+
+---
+
 ## Iteration 40 — 2026-05-17 — Luminous Constraint Phase 2: typography + depth + hour-rail + now-line (C-UX-FUTURISTIC-P2)
 
 ### What changed

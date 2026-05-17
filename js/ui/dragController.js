@@ -200,11 +200,11 @@ export function installDragController(rootEl, options = {}) {
     const activityId = blockEl.getAttribute('data-activity-id');
     if (!activityId) return;
 
-    // Safety gate 1: IN_PROGRESS activities cannot be dragged.
-    if (isInProgress(activityId)) {
-      onInProgressAttempt();
-      return;
-    }
+    // Safety gate 1: IN_PROGRESS activities cannot be dragged, but they CAN be
+    // clicked. We do NOT bail here — the session is tracked so that:
+    //   • a pure click (no movement) propagates normally to OPEN_BLOCK_DETAIL.
+    //   • an actual drag attempt (movement > CLICK_THRESHOLD_PX) is caught in
+    //     onPointerMove, which fires onInProgressAttempt and cancels the session.
 
     // Safety gate 2: protected blocks — should have no handles, but guard here.
     if (isProtected(activityId)) {
@@ -270,6 +270,24 @@ export function installDragController(rootEl, options = {}) {
       session.hasMoved = true;
     }
     if (!session.hasMoved) return;
+
+    // Safety gate: IN_PROGRESS check deferred from pointerdown so that pure
+    // clicks are never interrupted. Now that we know the user is actually
+    // dragging, block + notify.
+    if (isInProgress(session.activityId)) {
+      onInProgressAttempt();
+      // Cancel the session without committing.
+      const s = session;
+      session = null;
+      if (s.blockEl) {
+        if (typeof s.blockEl.releasePointerCapture === 'function') {
+          try { s.blockEl.releasePointerCapture(ev.pointerId); } catch (_) { /* non-fatal */ }
+        }
+        s.blockEl.classList.remove('cycle-block-dragging');
+        _restoreBlock(s);
+      }
+      return;
+    }
 
     const snappedDelta = pxToSnappedMinutes(deltaY, rowHeightPx, snapInterval);
 
