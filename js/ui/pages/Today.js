@@ -36,6 +36,8 @@ import { BlockDetailDialog } from '../components/BlockDetailDialog.js';
 import { CatalogPickerDialog } from '../components/CatalogPickerDialog.js';
 import { validateEditState } from '../editMode.js';
 import { DEFAULT_TARGETS } from '../components/BucketStrip.js';
+// Iter 42 Phase 3 — Cadence Pressure Ring (signature pattern).
+import { CadencePressureRing } from '../components/CadencePressureRing.js';
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
@@ -144,7 +146,25 @@ export function Today(props = {}) {
   const dayBadge = daysSinceSignup !== null
     ? `<span class="today-day-badge" aria-label="day ${esc(String(daysSinceSignup + 1))} since signup">Day ${esc(String(daysSinceSignup + 1))}</span>`
     : '';
+
+  // Iter 42 Phase 3 — Cadence Pressure Ring. Render when a composition exists
+  // with activities; absent in empty / infeasible states (ring needs data to mean
+  // something). Targets from composition snapshot when available, otherwise
+  // canonical 4-2-2 defaults from BucketStrip.DEFAULT_TARGETS.
+  // In edit mode, use the draft activities so the ring reflects live changes.
+  // Note: editMode is already defined above (line ~123); !!editMode resolves isEditing.
+  const ringActivities = activeState
+    ? (!!editMode && editMode.activities ? editMode.activities : activeState.activities)
+    : null;
+  const ringHtml = ringActivities
+    ? CadencePressureRing({
+        activities: ringActivities,
+        targets: DEFAULT_TARGETS
+      })
+    : '';
+
   const header = `<header class="today-header">
+  ${ringHtml}
   ${dayBadge}
 </header>`;
 

@@ -1362,3 +1362,44 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - Commit + push.
   - **Deploy queue now 5-deep (Iter 37-41)** — META §7.7 gate ALREADY VIOLATED for non-hotfix iterations. Phil must deploy before Iter 42 (Phase 3 Cadence Pressure Ring) can dispatch. Hotfix-class exceptions allowed but limited.
   - META §7 amendment proposal (orthogonal-case safety-gate testing rule) — surface for Phil's META deltas decision.
+
+---
+
+## Iteration 42 — 2026-05-17 — Luminous Constraint Phase 3: Cadence Pressure Ring signature (C-UX-FUTURISTIC-P3)
+
+- **Selected item**: Phil dispatched Phase 3 Cadence Pressure Ring explicitly. The "memorable signature" per frontend-design skill output. 6/7 lens convergence on visualizing 4-2-2 discipline as the signature; synthesis chose Ring over Discipline Pulse.
+- **Reason for selection**: Direct Phil dispatch despite deploy gate-over (queue 5-deep before this; Iter 41 was P0 hotfix exception). Phil overrode gate; coordinator acknowledged + dispatched.
+- **Agents involved**: frontend-engineer (single-pass; preview HTML provided full visual + interaction spec).
+- **Validation results**:
+  - Tests: 3,347 → **3,388** (+41 new tests)
+  - Runtime: 4.31s → **4.46s** ✅ (per-test 1.29 → 1.32ms; 12% headroom under META §7.1 1.5ms ceiling)
+  - All 20 ACs PASS
+  - **§6.5 boundary**: zero hits
+- **Outcome**: Shipped.
+  - **NEW files (2)**:
+    - `js/ui/components/CadencePressureRing.js` (243 LOC) — pure render returning HTML with inner SVG; props {activities, targets, size=56, strokeWidth=4, showTooltip=true}
+    - `tests/ui/components/CadencePressureRing.test.js` (499 LOC, 41 tests)
+  - **Modified files (3)**: `app.css` (+199 LOC for ring + tooltip + motion + dark mode), `js/ui/pages/Today.js` (+20 LOC for header integration), `tests/ui/pages/Today.ccc.test.js` (CCC bound ≤4 → ≤5; new region documented)
+- **Visual structure**: 56px SVG `viewBox` with `transform: rotate(-90deg)` (start at 12 o'clock); 3 stroke arcs via stroke-dasharray + stroke-dashoffset; Geist Mono center for total hours; subtle background border circle
+- **Color identity preserved**: `cadence-arc-{project,comm,ci}` classes use `var(--{project,communication,ci}-fill)` — Iter 31 base layer unchanged; saturated in both light + dark themes
+- **Hover/focus tooltip**: `:hover` + `:focus-visible` reveal breakdown with balance status; keyboard-accessible via `tabindex="0"`
+- **Edge cases**: lunch excluded (Iter 26 bucket: null); empty activities shows neutral state; single-bucket fills full arc; zero-minute activities skipped; works in edit mode (uses editMode.activities) AND normal mode (uses activeState.activities)
+- **Motion**: `cadenceBreath` 3s keyframe (low intensity); BOTH `prefers-reduced-motion: reduce` + `[data-motion="reduced"]` suppress
+- **CCC bound update (QA-predicted)**: ≤4 → ≤5. Ring is 5th structural region. One slot of headroom preserved for Phase 4. Test file header has 13-line rationale comment.
+- **Spec deviations** (minor, all justified):
+  - ARIA label more detailed than spec literal
+  - Tooltip triggers on both :hover AND :focus-visible (added keyboard a11y)
+  - Container class `cadence-ring` (cleaner than preview's `cadence-ring-wrap`)
+  - Used canonical `--communication-fill` token (not preview's non-existent `--comm-fill`)
+- **Time spent**: ~2 hr actual vs 10-14 hr estimate. Preview HTML provided full spec; SVG geometry straightforward; CSS hover for tooltip; piggybacks on existing rerender cycle.
+- **Strategic outcome**:
+  - **The "memorable detail" shipped**: Cadence Pressure Ring is the signature that no other calendar competitor has
+  - **Compresses 4-2-2 brand promise into one glanceable header token** — visible day-0 BEFORE any blocks close (solves the pre-baseline AdherenceDial gap UX_DESIGN_THEMES §2.7 flagged)
+  - **Luminous Constraint redesign now ~75% complete** (3 of 4 phases shipped)
+  - **Architect's §6.5 prediction continues to hold**: 0 hits as predicted for Phase 3
+- **Latent issues**: None new.
+- **Follow-ups**:
+  - Commit + push.
+  - **Deploy queue now 6-deep** (Iter 37-42). META §7.7 gate violated by 2. Phil must deploy before any further work (Phase 4 or other).
+  - Phase 4 (alternate palette + density toggle) is CONDITIONAL on Phil seeing Phase 3 in production and deciding it's worth more customization breadth. Recommend pause + Phil-decide after deploy.
+  - META operating-model deltas (Iter 27 §7 + my proposed safety-gate-orthogonal-case rule from Iter 41) still unapproved.

@@ -15,10 +15,22 @@
  *   Remaining regions: 3 (header, cycle-card, cycle-activities).
  *   CCC bound updated from ≤6 to ≤4.
  *
+ * Iter 42 update (Phase 3 — Cadence Pressure Ring):
+ *   Added the CadencePressureRing as a 4th region (cadence-ring) in the Today header.
+ *   CCC bound updated from ≤4 to ≤5.
+ *   The Ring is the 5th structural element:
+ *     header → cadence-ring → cycle-card → cycle-calendar-grid → (bucket-strip in right margin)
+ *   With activities present, the REGIONS count is now 4: header, cadence-ring,
+ *   cycle-card, cycle-calendar-grid. Bucket strip renders separately (not in REGIONS).
+ *   Bound ≤5 gives one slot of headroom for the next Phase 4 addition.
+ *   QA note: UX_TODAY_FUTURISTIC_DELTA.md §4 Phase 3 flagged this as HIGH risk —
+ *   "CCC upper bound (≤4) at capacity; new structural element pushes count over."
+ *   This update is the deliberate resolution per the spec.
+ *
  * Based on UX_TODAY_V2_QA.md §1 and UX_TODAY_V2_THEMES.md §5.
  *
  * CCC definition: count of distinct UI regions visible in a rendered Today
- * HTML string. Each named region below scores +1. Assert CCC ≤ 4 for the
+ * HTML string. Each named region below scores +1. Assert CCC ≤ 5 for the
  * active-composition (PROPOSED + activities) state.
  *
  * All fixtures are deterministic. No Date.now(), no Math.random().
@@ -74,11 +86,17 @@ function extractProseText(html, cssClass) {
 // Iter 29 update: cycle-activities replaced by cycle-calendar-grid (TodayGrid).
 // Registry updated; count remains 3 (header, cycle-card, cycle-calendar-grid).
 //
+// Iter 42 update (Phase 3 — Cadence Pressure Ring):
+// Added cadence-ring as a 4th region. Bound updated from ≤4 to ≤5.
+// The Ring renders in the Today header alongside the day badge when a
+// composition with activities is present.
+//
 // Region registry — each entry is a [name, pattern] pair. A region scores
 // +1 if its pattern is found anywhere in the HTML string.
 // ---------------------------------------------------------------------------
 const REGIONS = [
   ['header',              /class="today-header"/],
+  ['cadence-ring',        /class="cadence-ring"/],
   ['cycle-card',          /class="cycle-card/],
   ['cycle-calendar-grid', /class="cycle-calendar-grid/],
 ];
@@ -164,26 +182,28 @@ function renderEmpty() {
 // ---------------------------------------------------------------------------
 
 describe('CCC — active-composition state (PROPOSED + activities)', () => {
-  test('AC-Q2: CCC ≤ 4 in active-composition state (Iter 29: 3 regions remain)', () => {
-    // Iter 29 baseline: 3 regions (header, cycle-card, cycle-calendar-grid).
-    // cycle-activities replaced by cycle-calendar-grid. Bound ≤ 4 preserved.
+  test('AC-Q2: CCC ≤ 5 in active-composition state (Iter 42: cadence-ring adds 4th region)', () => {
+    // Iter 42 baseline: 4 regions (header, cadence-ring, cycle-card, cycle-calendar-grid).
+    // Bound updated from ≤4 to ≤5 per SW-Q-FUT-3 locked decision and QA Phase 3
+    // risk notice (UX_TODAY_FUTURISTIC_DELTA.md §4). One slot of headroom preserved.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc <= 4,
-      `CCC is ${ccc}, expected ≤ 4. Present regions: ${
+      ccc <= 5,
+      `CCC is ${ccc}, expected ≤ 5. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );
   });
 
-  test('CCC >= 3 in active-composition state (lower bound guards against silent empties)', () => {
-    // At minimum header + cycle-card + cycle-calendar-grid must be present.
+  test('CCC >= 4 in active-composition state (lower bound guards against silent empties)', () => {
+    // Iter 42: minimum 4 regions must be present:
+    // header + cadence-ring + cycle-card + cycle-calendar-grid.
     const html = renderActiveComposition();
     const ccc = computeCCC(html);
     assert.ok(
-      ccc >= 3,
-      `CCC is ${ccc}, expected ≥ 3. Present regions: ${
+      ccc >= 4,
+      `CCC is ${ccc}, expected ≥ 4. Present regions: ${
         REGIONS.filter(([, p]) => p.test(html)).map(([n]) => n).join(', ')
       }`
     );

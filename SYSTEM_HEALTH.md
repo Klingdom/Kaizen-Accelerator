@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,347 (+782 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,388 (+823 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 781+ (+178 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.29 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (14% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.31s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (14% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.27ms (Iter 40) → **1.29ms (Iter 41 hotfix)** | ✅ stable |
+| Suite count | 800+ (+197 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.32 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (12% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.46s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (11% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.29ms (Iter 41) → **1.32ms (Iter 42)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 41 commit) | (in progress) |
-| **Production deploy queue** | **5 (Iter 37 + 38 + 39 + 40 + 41-hotfix)** | 🚨 OVER GATE — Iter 41 was P0 hotfix exception; deploy CRITICAL |
+| Last green commit | (pending Iter 42 commit) | (in progress) |
+| **Production deploy queue** | **6 (Iter 37-42)** | 🚨🚨 OVER GATE — 2 deep over META §7.7; deploy CRITICAL-PATH-BLOCKER |
 
 ---
 
@@ -105,7 +105,15 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-17 after Iteration 41 (P0 hotfix — IN_PROGRESS click bug). Phil reported clicking IN_PROGRESS cards showed drag-prevention toast instead of opening BlockDetailDialog. Same bug class as Iter 28 (Update button overly broad). Root cause: dragController `onPointerDown` IN_PROGRESS check fired on every pointerdown (including pure clicks). Fix: removed pointerdown check; added equivalent check in `onPointerMove` after 5px click-threshold. Toast only fires on genuine drag attempts. 4 regression-locking tests added (DC-IP1-4). Suite 3,343 → 3,347. All 8 ACs PASS. §6.5: zero hits._
+_Last updated: 2026-05-17 after Iteration 42 (Luminous Constraint Phase 3 — Cadence Pressure Ring signature). The memorable detail per frontend-design skill output. 56px SVG arc in Today header with 3 color-coded segments (green/yellow/purple) proportional to planned minutes per bucket; Geist Mono center for total hours; hover + focus-visible tooltip with breakdown. Lunch excluded (capacity-neutral). Edge cases handled (empty, single-bucket, edit mode). prefers-reduced-motion + data-motion=reduced both suppress cadenceBreath animation. CCC bound updated ≤4 → ≤5 (1 slot headroom preserved for Phase 4). 2 new files (243 + 499 LOC); 3 modified. §6.5: zero hits. Suite 3,347 → 3,388 (+41). All 20 ACs PASS. Phil's color identity preserved across both themes._
+
+_**Luminous Constraint redesign now ~75% complete**: Phase 1 (Iter 39 settings infra) + Phase 2 (Iter 40 typography + depth) + Phase 3 (Iter 42 signature) shipped. Phase 4 (alternate palette + density toggle) CONDITIONAL on Phil seeing Phase 3 in production and deciding it's worth more customization breadth. Recommend pause + Phil-decide after deploy._
+
+_**Competitive whitespace shipped**: Cadence Pressure Ring is the signature pattern no other calendar competitor has. Compresses 4-2-2 brand promise into single glanceable header token visible day-0 BEFORE any blocks close._
+
+_🚨🚨 **Deploy gate 50% OVER LIMIT**: queue 6-deep (Iter 37-42). META §7.7 max is 4. Iter 41 P0 hotfix exception + Iter 42 Phil-dispatched-despite-gate = pattern of pushing through gate. **Phil must deploy.** Further dispatch will compound to 7+ if not deployed first._
+
+_Iteration 41 — 2026-05-17 — P0 hotfix: IN_PROGRESS click bug (C-FE-HOTFIX-2). Phil reported clicking IN_PROGRESS cards showed drag-prevention toast instead of opening BlockDetailDialog. Same bug class as Iter 28 (Update button overly broad). Root cause: dragController `onPointerDown` IN_PROGRESS check fired on every pointerdown (including pure clicks). Fix: removed pointerdown check; added equivalent check in `onPointerMove` after 5px click-threshold. Toast only fires on genuine drag attempts. 4 regression-locking tests added (DC-IP1-4). Suite 3,343 → 3,347. All 8 ACs PASS. §6.5: zero hits._
 
 _🚨 **Operating-model finding logged**: Second iteration to ship "overly-broad safety guard blocks legitimate flow" bug class (Iter 28 + Iter 41). META §7 should add rule: every safety-gate test must include BOTH blocked-case AND allowed-case explicitly. Would have caught both hotfixes preventatively. Recommend amending Iter 27 §7 META deltas with this addition before next approval cycle._
 

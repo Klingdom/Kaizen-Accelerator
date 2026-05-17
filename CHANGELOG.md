@@ -6,6 +6,75 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 42 — 2026-05-17 — Luminous Constraint Phase 3: Cadence Pressure Ring signature (C-UX-FUTURISTIC-P3)
+
+### What changed
+The **memorable signature** per `frontend-design` skill output. Cadence Pressure Ring — 56px SVG arc in Today header with 3 color-coded segments (green/yellow/purple) proportional to PLANNED minutes per bucket against the 4-2-2 target. **No other calendar competitor visualizes the planned-day discipline as a single glanceable token in the header.**
+
+**New component:**
+- `js/ui/components/CadencePressureRing.js` (243 LOC) — pure render returning HTML string with inner SVG
+- `tests/ui/components/CadencePressureRing.test.js` (499 LOC, 41 tests)
+
+**Visual structure:**
+- `<svg viewBox="0 0 56 56">` with `transform: rotate(-90deg)` (start at 12 o'clock)
+- 3 stroke arcs (green/yellow/purple) positioned via `stroke-dasharray` + `stroke-dashoffset`
+- Each segment arc length = `(bucketMinutes / total) * circumference`
+- Center: Geist Mono total hours display ("8h", "6h 30m", etc.)
+- Subtle background border circle at full circumference
+
+**Color identity preserved:**
+- `cadence-arc-project` → `var(--project-fill)` (green)
+- `cadence-arc-comm` → `var(--communication-fill)` (yellow)
+- `cadence-arc-ci` → `var(--ci-fill)` (purple)
+- Iter 31 bucket identity unchanged; Phil's colors stay saturated in both light + dark themes
+
+**Hover tooltip:**
+- `:hover` and `:focus-visible` reveal breakdown ("Project 4h · Comm 2h · CI 2h" + balance status)
+- Keyboard-accessible via `tabindex="0"` + focus state
+
+**Edge cases handled:**
+- Lunch (`bucket: null`) excluded from calculation (capacity-neutral, Iter 26)
+- Empty activities renders ring with subtle border + "0h" center
+- Single-bucket fills full arc for that segment
+- Activities with zero minutes skipped
+- Updates in edit mode (uses `editMode.activities`) AND normal mode (uses `activeState.activities`)
+
+**Motion:**
+- Subtle `cadenceBreath` keyframe animation (3s loop, low intensity)
+- `@media (prefers-reduced-motion: reduce)` + `[data-motion="reduced"]` both suppress
+
+### Why
+- 6/7 lens convergence on visualizing 4-2-2 discipline as the signature (UX proposed Discipline Pulse strip below; Frontend proposed Cadence Pressure Ring in header — synthesis chose Ring for greater visibility)
+- Genuine competitive whitespace: NO other calendar app shows planned-day balance as a single glanceable header token
+- BAM-X-coherent: compresses the 4-2-2 brand promise into one visual token; visible day-0 BEFORE any blocks close (solves the pre-baseline AdherenceDial gap from `UX_DESIGN_THEMES §2.7`)
+
+### Impact
+- Test suite: 3,347 → **3,388** (+41 new tests)
+- Runtime: 4.31s → **4.46s** ✅ (per-test 1.29 → 1.32ms; 12% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- 2 new files; 3 modified (`app.css` +199 LOC, `Today.js` +20 LOC, `Today.ccc.test.js` +30 net)
+- All 20 ACs PASS
+
+### CCC test bound update (QA-predicted)
+Updated `Today.ccc.test.js` from `≤4` to `≤5`. Ring is the 5th structural region (header + cadence-ring + cycle-card + cycle-calendar-grid + activities). One slot of headroom preserved for Phase 4. Documented in test file header (13-line rationale comment).
+
+### Spec deviations (minor — all justified)
+- ARIA label text more detailed than spec literal ("Day allocation: Xh total — Project Xh Xm, Communication...")
+- Tooltip triggers on both `:hover` AND `:focus-visible` (added keyboard a11y per spec §11)
+- Container class `cadence-ring` (matches prop name; cleaner in CCC test) vs preview's `cadence-ring-wrap`
+- Used canonical `--communication-fill` token (not preview's non-existent `--comm-fill` shorthand)
+
+### Implementation efficiency
+~2 hr actual vs 10-14 hr estimate. Preview HTML provided full visual + interaction spec; SVG geometry math was straightforward; tooltip used CSS hover (no JS state needed); ring updates piggyback on existing rerender cycle.
+
+### Luminous Constraint redesign now ~75% complete (3 of 4 phases shipped)
+- ✅ **Phase 1** (Iter 39) — Settings + dark mode + 3 themes + motion intensity
+- ✅ **Phase 2** (Iter 40) — Typography (Geist family) + 3-stop block depth + hour rail + now-line glow
+- ✅ **Phase 3** (Iter 42, this) — **Cadence Pressure Ring signature** ← the "memorable detail"
+- 🔄 **Phase 4** (CONDITIONAL) — Alternate palette + density toggle. Defer until Phil sees Phase 3 in production and decides.
+
+---
+
 ## Iteration 41 — 2026-05-17 — P0 hotfix: IN_PROGRESS click bug (C-FE-HOTFIX-2)
 
 ### What changed
