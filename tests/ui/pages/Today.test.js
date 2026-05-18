@@ -388,10 +388,13 @@ describe('Today — Iter 30: BlockDetailDialog rendered when blockDetail set', (
 
 // ---------------------------------------------------------------------------
 // Iter 37 — renderBucketStrip() canonical default targets (bug fix)
-// Verifies that the right-margin cycle-bucket-strip uses BucketStrip.DEFAULT_TARGETS
-// as fallback (240/120/120) not the old Iter 33 invented values (270/120/240).
+// UPDATED by Iter 48 Phase 3C (AC8): bucket strip removed from Today page.
+// The strip is no longer rendered; cycle-bucket-strip is always absent.
+// The Cadence Pressure Ring (Iter 42) covers the same 4-2-2 data in the header.
+//
+// DEFAULT_TARGETS contract is preserved for CadencePressureRing (still imported).
 // ---------------------------------------------------------------------------
-describe('Today — Iter 37: renderBucketStrip uses canonical DEFAULT_TARGETS', () => {
+describe('Today — Iter 37 / Iter 48 AC8: bucket strip removed from Today page', () => {
   const ACTIVITIES_ALL_BUCKETS = [
     {
       id: 'sa_deep',
@@ -425,58 +428,37 @@ describe('Today — Iter 37: renderBucketStrip uses canonical DEFAULT_TARGETS', 
       userId: 'user_phil_mvp',
       state: 'ACCEPTED',
       cycleType: 'DAILY'
-      // intentionally NO targets field — forces fallback to DEFAULT_TARGETS
     },
     activities: ACTIVITIES_ALL_BUCKETS
   };
 
-  test('AC2: PROJECT target display is 4h (240m), not 4h 30m (270m)', () => {
+  test('Iter 48 AC8: cycle-bucket-strip is ABSENT from Today page (bucket strip removed)', () => {
     const html = Today({ activeState: STATE_NO_TARGETS });
-    // The bucket strip formats 240m as "4h" and shows "target 4h".
-    assert.ok(html.includes('cycle-bucket-strip'), 'cycle-bucket-strip must be present');
+    // Iter 48 Phase 3C removes the bucket strip. Ring covers the same 4-2-2 data.
     assert.ok(
-      html.includes('target 4h'),
-      'PROJECT target must show 4h (240m from DEFAULT_TARGETS), not 4h 30m (old buggy 270)'
-    );
-    assert.ok(
-      !html.includes('target 4h 30m'),
-      'old buggy PROJECT target 270m (4h 30m) must not appear'
+      !html.includes('cycle-bucket-strip'),
+      'cycle-bucket-strip must be ABSENT after Iter 48 Phase 3C removal (AC8)'
     );
   });
 
-  test('AC4: CI target display is 2h (120m), not 4h (240m)', () => {
+  test('Iter 48 AC9: TodayGrid (today-body) still renders without bucket strip', () => {
     const html = Today({ activeState: STATE_NO_TARGETS });
-    // CI planned=60m, target=120m → "target 2h"
-    // Old bug: target=240m → "target 4h" which would collide with PROJECT target in a wrong way;
-    // now the only "target 4h" is for PROJECT, and CI must show "target 2h".
-    const matches = [...html.matchAll(/target 2h/g)];
+    // Single-column layout — .today-body wraps the card column.
     assert.ok(
-      matches.length >= 2,
-      'Both COMMUNICATION (2h) and CI (2h) must show "target 2h" — CI target must be 120m not 240m'
+      html.includes('today-body'),
+      'today-body wrapper must still render after strip removal (AC9)'
     );
   });
 
-  test('AC8: composition.targets values override DEFAULT_TARGETS when present', () => {
-    const stateWithTargets = {
-      composition: {
-        id: 'comp_iter37_override',
-        userId: 'user_phil_mvp',
-        state: 'ACCEPTED',
-        cycleType: 'DAILY',
-        targets: { PROJECT: 300, COMMUNICATION: 90, CI: 90 }
-      },
-      activities: ACTIVITIES_ALL_BUCKETS
-    };
-    const html = Today({ activeState: stateWithTargets });
-    // 300m = 5h, 90m = 1h 30m
-    assert.ok(html.includes('target 5h'), 'explicit PROJECT target 300m must render as "target 5h"');
+  test('Iter 48 AC10: Cadence Pressure Ring still visible in header after strip removal', () => {
+    const html = Today({ activeState: STATE_NO_TARGETS });
     assert.ok(
-      !html.includes('target 4h'),
-      'DEFAULT_TARGETS PROJECT (4h) must not appear when composition provides explicit targets'
+      html.includes('cadence-ring'),
+      'cadence-ring must still be present in header — Ring is the bucket summary affordance (AC10)'
     );
   });
 
-  test('DEFAULT_TARGETS export is 240/120/120 (contract check)', () => {
+  test('DEFAULT_TARGETS export is 240/120/120 (contract check — Ring still uses it)', () => {
     assert.equal(DEFAULT_TARGETS.PROJECT, 240);
     assert.equal(DEFAULT_TARGETS.COMMUNICATION, 120);
     assert.equal(DEFAULT_TARGETS.CI, 120);

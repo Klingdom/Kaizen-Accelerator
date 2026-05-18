@@ -202,8 +202,15 @@ function blockWrapper(wrapCtx, innerHtml) {
  * Render a PROJECT block.
  *
  * Shows: time label + name + secondary line (intention > outputArtifact.name)
- * when block height >= 56px + kaizen chip + resize handle (if not protected).
- * AC2: renderProjectBlock exists with PROJECT-specific content.
+ * when block height >= 56px + kaizen sub-label (Iter 48 Phase 3A) + resize handle.
+ *
+ * Iter 48 Phase 3A (AC1): when linkedKaizenId is present, render a kaizen
+ * sub-label below the activity name (height-gated ≥56px). The kaizen chip
+ * on the PROJECT block already existed (kaizenChip) — the sub-label is a
+ * distinct smaller element showing kaizen title inline.
+ *
+ * AC7 (META §A.2 orthogonal): PROJECT blocks WITHOUT linkedKaizenId do NOT
+ * show an "unlinked" indicator — that indicator only applies to CI blocks.
  *
  * @param {object} activity
  * @param {object|null} catalogEntry
@@ -211,7 +218,7 @@ function blockWrapper(wrapCtx, innerHtml) {
  * @returns {string}
  */
 function renderProjectBlock(activity, catalogEntry, ctx) {
-  const { timeLabel, name, kaizenChip, resizeHandle, h } = ctx;
+  const { timeLabel, name, kaizenChip, kaizenTitle, resizeHandle, h } = ctx;
 
   // Secondary info line: prefer intention, fall back to outputArtifact.name.
   let secondaryLine = '';
@@ -222,13 +229,23 @@ function renderProjectBlock(activity, catalogEntry, ctx) {
     const artifactName = catalogEntry?.outputArtifact?.name ?? null;
     const secondaryText = intentionText ?? artifactName ?? null;
     if (secondaryText) {
+      // AC12/AC4E: truncate with ellipsis via CSS (overflow:hidden; text-overflow:ellipsis)
       secondaryLine = `<span class="cycle-block-secondary" aria-label="Output: ${esc(secondaryText)}">${esc(secondaryText)}</span>`;
     }
   }
 
+  // Iter 48 Phase 3A (AC1): kaizen sub-label on PROJECT blocks with a linked kaizen.
+  // Height-gated: only render when block height ≥56px to avoid clutter on short blocks.
+  // Distinct from kaizenChip (which is the existing glow-ring chip) — sub-label is
+  // a smaller muted text line below the activity name.
+  let kaizenSubLabel = '';
+  if (h >= SECONDARY_LINE_MIN_HEIGHT_PX && kaizenTitle) {
+    kaizenSubLabel = `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`;
+  }
+
   return `<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${secondaryLine}${kaizenChip}${resizeHandle}`;
+    ${secondaryLine}${kaizenSubLabel}${kaizenChip}${resizeHandle}`;
 }
 
 /**
@@ -268,13 +285,21 @@ function renderCommBlock(activity, _catalogEntry, ctx) {
  * All other protected CI blocks (sprint ceremonies) keep the lock indicator.
  * AC4: renderCIBlock exists with .cycle-block-sacred class on EoAR.
  *
+ * Iter 48 Phase 3A (AC2): when linkedKaizenId is present, render a kaizen
+ * sub-label below the activity name (height-gated ≥56px).
+ *
+ * Iter 48 Phase 3B (AC5): CI blocks WITHOUT linkedKaizenId that are NOT sprint
+ * ceremonies (user-added CI) show a subtle "unlinked" left-border indicator.
+ * Sprint ceremony blocks (PROTECTED_CATALOG_IDS) do NOT get this indicator (AC6).
+ * PROJECT blocks WITHOUT linkedKaizenId do NOT get this indicator (AC7).
+ *
  * @param {object} activity
  * @param {object|null} _catalogEntry
  * @param {object} ctx — shared pre-computed context
  * @returns {string}
  */
 function renderCIBlock(activity, _catalogEntry, ctx) {
-  const { timeLabel, kaizenChip, resizeHandle } = ctx;
+  const { timeLabel, kaizenChip, kaizenTitle, resizeHandle, h } = ctx;
   const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
 
   const isEoAR = activity.catalogEntryId === EAR_CATALOG_ID;
@@ -290,9 +315,27 @@ function renderCIBlock(activity, _catalogEntry, ctx) {
     lockOrSacred = `<span class="cycle-block-lock" aria-label="Protected block" title="Protected — cannot be moved">&#x1F512;</span>`;
   }
 
-  return `${lockOrSacred}<span class="cycle-block-time">${esc(timeLabel)}</span>
+  // Iter 48 Phase 3A (AC2): kaizen sub-label on CI blocks with a linked kaizen.
+  // Height-gated: only render when block height ≥56px.
+  let kaizenSubLabel = '';
+  if (h >= SECONDARY_LINE_MIN_HEIGHT_PX && kaizenTitle) {
+    kaizenSubLabel = `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`;
+  }
+
+  // Iter 48 Phase 3B (AC5, AC6): unlinked CI indicator for user-added CI without a kaizen link.
+  // Conditions for showing: CI block, no linkedKaizenId, NOT a sprint ceremony (protected),
+  // NOT EoAR (already has its own sacred indicator).
+  // Sprint ceremonies (protected) are excluded — they are anchors, not evidence-linked (AC6).
+  const hasKaizen = !!activity.linkedKaizenId;
+  const isSprintCeremony = ctx.protected_ && !isEoAR;
+  const showUnlinked = !hasKaizen && !isEoAR && !isSprintCeremony;
+  const unlinkedIndicator = showUnlinked
+    ? `<span class="cycle-block-ci-unlinked" aria-label="No Kaizen link" title="No evidence link — consider linking to a Kaizen"></span>`
+    : '';
+
+  return `${lockOrSacred}${unlinkedIndicator}<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${kaizenChip}${resizeHandle}`;
+    ${kaizenSubLabel}${kaizenChip}${resizeHandle}`;
 }
 
 /**
@@ -457,10 +500,13 @@ function renderTodayBlock(ctx) {
     : null;
 
   // Shared context passed to per-bucket renderers.
+  // Iter 48 Phase 3A: add kaizenTitle to shared context so renderProjectBlock
+  // and renderCIBlock can build the kaizen sub-label (AC1, AC2).
   const sharedCtx = {
     timeLabel,
     name,
     kaizenChip,
+    kaizenTitle,    // Iter 48 Phase 3A — kaizen title string or null
     resizeHandle,
     h,
     protected_,

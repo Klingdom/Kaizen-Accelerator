@@ -195,12 +195,15 @@ export function Today(props = {}) {
       })
     : '';
 
-  // Iter 43 Item 2 — Calendar date in header (AC4, AC5).
-  // Derive from composition date when a composition is present; absent otherwise.
-  const compositionDate = activeState?.composition?.date ?? null;
-  const headerDateHtml = compositionDate
-    ? `<time class="today-header-date" datetime="${esc(compositionDate)}">${esc(formatHeaderDate(compositionDate))}</time>`
-    : '';
+  // Iter 48 Phase 4D (AC11): page-header date echo REMOVED.
+  // The cycle-date-display h1 inside CycleCard is the semantic owner of the date.
+  // Rendering the same date in the page header was an Iter 43 addition that created
+  // a hierarchy inversion (secondary echo renders above primary h1) and counted as
+  // a 5th competing element in the header row.
+  // After this removal the header becomes: Ring + Now/Next + Day Badge (3 elements).
+  // The formatHeaderDate function is retained for potential future use but no longer
+  // called here. The cycle-date-display h1 in CycleCard.js is unchanged (AC11 preserved).
+  const headerDateHtml = ''; // AC11: always empty — date lives in CycleCard h1.
 
   // Iter 43 Item 6 — Current/next activity summary in header (AC12, AC13).
   // Computes "Now: X" or "Up next: Y" from the active activities + nowIso.
@@ -353,38 +356,23 @@ export function Today(props = {}) {
     ? renderConflictBanner(conflictBanner)
     : '';
 
-  // Iter 33: bucket strip in right margin (AC9). Only shown when not editing.
-  const bucketStripHtml = !isEditing
-    ? renderBucketStrip(activitiesForRender, compositionForRender)
-    : '';
+  // Iter 48 Phase 3C (AC8, AC9): bucket strip REMOVED.
+  // The Cadence Pressure Ring (Iter 42) already encodes the same 4-2-2 allocation
+  // in the header; the strip duplicated it. Removing recovers ~164px of horizontal
+  // space so TodayGrid expands to fill the full content width (single-column layout).
+  // renderBucketStrip() is retained as a function but is no longer called.
+  // META §A.3: CSS classes .cycle-bucket-strip, .today-body-with-strip remain in
+  // app.css as inert (no element references them) — safe to deprecate in a future
+  // CSS cleanup pass. No other surface referenced these classes.
+  const bucketStripHtml = ''; // AC8: always empty — strip removed.
 
   // Iter 43 Item 7 — Jump to Now button. Rendered inside today-grid-col
   // when nowIso is present so the grid is live (AC14, AC15).
   const nowJumpButtonHtml = nowIso ? NowJumpButton() : '';
 
-  // Iter 33: use flex layout with bucket strip alongside grid (AC9).
-  const bodyWrapper = bucketStripHtml
-    ? `<div class="today-body-with-strip">
-    <div class="today-grid-col">
-      ${CycleCard({
-        composition: compositionForRender,
-        activities: activitiesForRender,
-        nowIso,
-        kaizenTitleById: props.kaizenTitleById ?? {},
-        catalog: props.catalog ?? [],
-        editMode: isEditing,
-        selectedActivityId: isEditing ? editMode.selectedActivityId ?? null : null,
-        undoCount: isEditing && Array.isArray(editMode.undoStack) ? editMode.undoStack.length : 0,
-        priorDayRecap,
-        eodRecap,
-        whyPlanExpanded,
-        dragSession
-      })}
-      ${nowJumpButtonHtml}
-    </div>
-    ${bucketStripHtml}
-  </div>`
-    : `<div class="today-body">
+  // Single-column layout — .today-body wraps CycleCard + NowJump button.
+  // (Iter 33 today-body-with-strip path is no longer taken since bucketStripHtml is '').
+  const bodyWrapper = `<div class="today-body">
     <div class="today-card-col">
       ${CycleCard({
         composition: compositionForRender,

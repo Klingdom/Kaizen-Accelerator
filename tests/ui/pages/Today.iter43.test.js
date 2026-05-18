@@ -52,47 +52,45 @@ const ACTIVE_STATE = {
 };
 
 // ---------------------------------------------------------------------------
-// Item 2: Calendar date in header (AC4, AC5)
+// Item 2: Calendar date in header (AC4, AC5) — UPDATED BY ITER 48
+//
+// Iter 48 Phase 4D (AC11) removes the page-header date echo entirely.
+// The cycle-date-display h1 inside CycleCard is the semantic owner of the date.
+// The tests below are updated to verify the new correct behavior:
+//   - today-header-date is NO LONGER present in the page header
+//   - The date still appears inside the CycleCard (cycle-date-display)
 // ---------------------------------------------------------------------------
-describe('Today Iter 43 — Item 2: calendar date in header', () => {
-  test('AC4: today-header-date element present when composition has a date', () => {
+describe('Today Iter 43 — Item 2: calendar date in header (updated by Iter 48)', () => {
+  test('Iter 48 AC11: today-header-date is REMOVED from page header (date echo cut)', () => {
     const html = Today({ activeState: ACTIVE_STATE });
     assert.ok(
-      html.includes('today-header-date'),
-      'today-header-date must be present in header when composition has date'
+      !html.includes('today-header-date'),
+      'today-header-date must NOT be in page header after Iter 48 Phase 4D removal (AC11)'
     );
   });
 
-  test('AC5: renders <time> element with datetime attribute equal to composition date', () => {
+  test('Iter 48 AC11: cycle-date-display h1 inside CycleCard still shows the date', () => {
     const html = Today({ activeState: ACTIVE_STATE });
+    // CycleCard renders the date as cycle-date-display — verify it is preserved
     assert.ok(
-      html.includes('<time') && html.includes('datetime="2026-05-17"'),
-      'Must render <time datetime="2026-05-17"> element for semantic correctness'
+      html.includes('cycle-date-display'),
+      'cycle-date-display h1 inside CycleCard must still render the date (AC11 preserved)'
     );
   });
 
-  test('AC4: formatted date text is present (long weekday format)', () => {
-    const html = Today({ activeState: ACTIVE_STATE });
-    // The date 2026-05-17 is a Sunday.
-    assert.ok(
-      html.includes('2026') && html.includes('today-header-date'),
-      'Formatted date text (including year 2026) must appear inside today-header-date'
-    );
-  });
-
-  test('date absent in empty state (no composition)', () => {
+  test('Iter 48 AC11: today-header-date absent in empty state (as before)', () => {
     const html = Today({ activeState: null });
     assert.ok(
       !html.includes('today-header-date'),
-      'today-header-date must be absent when there is no active composition'
+      'today-header-date was already absent in empty state — still absent after Iter 48'
     );
   });
 
-  test('today-header-center wrapper is present when date renders', () => {
+  test('today-header-center wrapper is still present (holds Now/Next summary)', () => {
     const html = Today({ activeState: ACTIVE_STATE });
     assert.ok(
       html.includes('today-header-center'),
-      'today-header-center wrapper must be present for center layout'
+      'today-header-center wrapper must still be present — now holds activity summary only'
     );
   });
 });

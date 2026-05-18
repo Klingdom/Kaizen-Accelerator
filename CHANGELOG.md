@@ -6,6 +6,71 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 48 — 2026-05-18 — Per-task-type info Phase 3 + 4: Kaizen sub-labels + bucket-strip removal + polish (C-UX-TASKTYPE-INFO-P34)
+
+### What changed
+Final 2 phases of the per-task-type bundle, bundled back-to-back per Phil's Path B approval. Per-task-type info work is now **end-to-end complete**.
+
+**Phase 3 — Kaizen sub-labels + visual indicators + bucket-strip removal**:
+- PROJECT blocks with `linkedKaizenId` show Kaizen title as sub-label (height-gated ≥56px)
+- CI blocks with `linkedKaizenId` show Kaizen title as sub-label
+- CI blocks WITHOUT linkedKaizenId get subtle `cycle-block-ci-unlinked` indicator (repeating-linear-gradient — doesn't compete with `.cycle-block-sacred` outline from Iter 47)
+- Sprint ceremonies + EoAR EXCLUDED from unlinked indicator (anchors / sacred treatment already)
+- **Right-margin bucket-strip REMOVED** (Iter 45 UX audit recommendation) — Cadence Pressure Ring (Iter 42) already encodes 4-2-2; strip was duplicate. TodayGrid expands to recover ~164px horizontal space.
+- Single-column `today-body` layout
+
+**Phase 4 — Polish + edge cases**:
+- **Page-header date echo REMOVED** (Iter 45 UX audit) — date now renders only in `cycle-date-display` h1 inside CycleCard (semantic owner)
+- Long activity names truncate via ellipsis + max-width
+- Missing intention + outputArtifact + participants + trigger + kaizenTitle all degrade gracefully (no broken UI)
+- Visual hierarchy refinements (3 chosen):
+  1. `today-header-center` vertically centered (single-line activity summary)
+  2. `today-header-activity` color bumped from ink-400 → ink-600 (sole text in center; no date competition)
+  3. `cycle-block-name` line-height + font-weight + max-width tightened
+
+**Orthogonal removals — clarification**:
+- `.cycle-bucket-strip` and `.today-body-with-strip` CSS rules retained in app.css but inert (no element references after removal). Safe to deprecate in future CSS-cleanup pass; coded comment notes this.
+- Same status for `.today-header-date` class (inert).
+
+### META rule validations
+**§A.2 orthogonal-case rule** — every per-bucket addition has orthogonal test:
+- COMM/Lunch do NOT show `cycle-block-kaizen-sublabel`
+- PROJECT/COMM/Lunch/EoAR do NOT show `cycle-block-ci-unlinked`
+- Bucket-strip absent even in edit mode
+- Date echo absent even in empty/infeasible states
+
+**§A.3 reconciliation audit** — pre-implementation grep:
+- `.cycle-block-kaizen-sublabel` NEW — no prior rule
+- `.cycle-block-ci-unlinked` NEW — deliberately uses `repeating-linear-gradient` (not box-shadow) so it doesn't visually compete with `.cycle-block-sacred` Iter 47 outline
+- Bucket-strip removal: CSS rules left inert; no element references after Today.js change
+
+### Impact
+- Test suite: 3,539 → **3,591** (+52 new tests across 2 new files: TodayGrid.iter48 + Today.iter48; plus 2 updated test files for removed elements)
+- Runtime: 4.27s → **4.48s** ✅ (per-test 1.21 → 1.25ms; 17% headroom under META §A.1 ceiling)
+- §6.5 hits: **0** (FE prediction held for entire 4-phase bundle)
+- Files: 4 modified (TodayGrid, Today.js, app.css, 2 existing tests); 2 NEW test files
+- LOC: ~+170 production + ~+460 tests
+- All 22 ACs PASS
+
+### Time efficiency
+~3 hr actual vs 5-7 hr estimate. Phase 2 foundation (Iter 47 per-bucket render functions) absorbed Phase 3 additions naturally.
+
+### Per-task-type bundle COMPLETE
+- ✅ **Phase 1** (Iter 46): foundation — data threading + PROJECT intention + COMM participants/trigger
+- ✅ **Phase 2** (Iter 47): per-bucket refactor + protected-block cleanup + CI sacred + Lunch tooltip
+- ✅ **Phase 3** (Iter 48 this): Kaizen sub-labels + CI unlinked indicator + bucket-strip removal
+- ✅ **Phase 4** (Iter 48 this): page-header date-echo cut + edge cases + visual hierarchy tightening
+
+**Bundle total**: ~7.5 hr actual (was estimated 11-16 hr; clean foundation enabled efficient phase work).
+
+### Today page information density journey
+- Pre-bundle (Iter 45): bucket-strip + page-date echo + disabled Edit + bucket-label rows + generic block names + Lunch full dialog = visually busy
+- Post-bundle (Iter 48): per-type-specific info + sub-type names + Kaizen surfacing + sacred CI treatment + lunch tooltip + no echoes = **information rich AND less dense**
+
+Phil's "still not thrilled about the information" feedback (post-Iter 43) directly addressed across these 3 iterations (46, 47, 48).
+
+---
+
 ## Iteration 47 — 2026-05-18 — Per-task-type info Phase 2: per-bucket render refactor + protected cleanup (C-UX-TASKTYPE-INFO-P2)
 
 ### What changed
