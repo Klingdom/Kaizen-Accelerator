@@ -6,6 +6,60 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 45 — 2026-05-18 — P0 hotfix #4: PROTECTED click bug + UX info audit (C-FE-HOTFIX-3)
+
+### What changed
+**P0 production bug — 4th instance of same bug class** (Iter 28 + 41 + 43 + this). Phil report: clicking protected/locked activity cards (Daily Standup, AM Comm, Post-lunch Comm, Reflection, Lunch) shows toast *"This block can't be moved — it's required for your daily rhythm"* instead of opening BlockDetailDialog.
+
+**Root cause**: `dragController.js` has TWO safety guards in `onPointerDown`:
+- `isInProgress` — FIXED in Iter 41 (moved to `onPointerMove` after 5px threshold)
+- `isProtected` — **NOT FIXED** — still fires on every pointerdown
+
+Iter 41 fixed one guard but missed the structurally identical sibling guard 3 lines below. **META §A.2 codified TODAY (Iter 44) would have caught this — the rule is "audit all structurally-identical sibling guards in the same function before closing the ticket."** Applied retroactively now.
+
+**Fix**: Mirror Iter 41 — REMOVE `isProtected` check from `onPointerDown`; ADD it to `onPointerMove` after `CLICK_THRESHOLD_PX` (5px). Toast only fires when user actually moves past click-threshold.
+
+**Regression tests applied (META §A.2 orthogonal-case rule)**:
+- DC-PR1: Click on protected block does NOT fire onProtectedAttempt
+- DC-PR2: Drag > 5px on protected block DOES fire onProtectedAttempt
+- DC-PR3: Drag < 5px on protected block does NOT fire onProtectedAttempt
+- DC-PR4: Click on protected block allows click event to propagate
+
+Direct mirror of Iter 41 DC-IP1-4 pattern.
+
+### UX info audit (Phil's "still not thrilled about the information" feedback)
+Dispatched UX agent in parallel. Returned `UX_TODAY_INFO_AUDIT.md` with two recommended cuts:
+
+1. **Remove right-margin bucket strip** — the Cadence Pressure Ring (Iter 42) already encodes the same 4-2-2 allocation; strip was never retired when Ring was added. Removing recovers 164px + 20px horizontal space; makes Ring the unambiguous bucket summary.
+
+2. **Remove page-header date echo** — date renders twice in Instrument Serif (header + `cycle-date-display` h1 inside CycleCard). Inverted hierarchy: secondary echo sits above primary h1.
+
+One question for Phil: "Does the Ring's hover tooltip give you enough of a read on per-bucket allocation, or do you want those numbers persistently visible without hovering?"
+
+**These cuts NOT applied in Iter 45** — saved for Iter 46 pending Phil's per-task-type info directive (just received) which may inform what info SHOULD be where.
+
+### Impact
+- Test suite: 3,421 → **3,425** (+4 regression tests)
+- Runtime: 4.30s → **4.47s** ✅ (per-test 1.30ms — 13% headroom under META §A.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- Files: 2 modified (`dragController.js`, `dragController.test.js`); 1 NEW artifact (`UX_TODAY_INFO_AUDIT.md`)
+- All 8 ACs PASS
+
+### Bug class summary (now FOUR instances)
+| Iter | Bug | Pattern |
+|---|---|---|
+| 28 | Update button suppressed on PROPOSED → stuck | Guard against state X also blocked orthogonal flow |
+| 41 | IN_PROGRESS drag-prevention toast on clicks | Guard against drag also blocked clicks |
+| 43 | data-user-edited desat hid Phil's colors | Earlier rule overrode later visual intent |
+| **45** (this) | PROTECTED click → toast | Same pattern as Iter 41 — sibling guard not fixed |
+
+**Iter 41's incomplete fix is the coordinator's failure**, not the FE's. The dispatch brief should have said "apply this fix pattern to BOTH safety guards." META §A.2 now codifies this — but it was codified in Iter 44, AFTER this bug was already in production.
+
+### Honest lesson
+META §A.2 prevention rule was codified Iter 44. Bug found Iter 45. The rule would have prevented this had it existed at Iter 41 — but Phil shouldn't have to wait for META rules to catch bugs the coordinator should have caught on simple structural inspection. **Coordinator must apply the "audit sibling structurally-identical patterns" check NOW for every safety-guard work, not just when META rule exists.**
+
+---
+
 ## Iteration 44 — 2026-05-18 — META amendments: 3 bug-class-preventive rules applied to coordinator.md (C-META-AMEND-1)
 
 ### What changed

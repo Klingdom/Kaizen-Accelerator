@@ -19,8 +19,9 @@
  *   - composition.state ∈ {'ACCEPTED','EDITED',...} → immediate; call onDragCommit
  *
  * Safety gates:
- *   - Protected blocks: no drag handles rendered (enforced in TodayGrid.js)
- *   - IN_PROGRESS activities: pointerdown bails immediately
+ *   - Protected blocks: no drag handles rendered (enforced in TodayGrid.js).
+ *     Guard deferred to onPointerMove (same pattern as IN_PROGRESS, Iter 41/44).
+ *   - IN_PROGRESS activities: guard deferred to onPointerMove after CLICK_THRESHOLD_PX
  *   - PROPOSED pending: updates dragSession slice only, no immediate state mutation
  *
  * §6.5 boundary: this file lives in js/ui/ — frontend only.
@@ -206,11 +207,10 @@ export function installDragController(rootEl, options = {}) {
     //   • an actual drag attempt (movement > CLICK_THRESHOLD_PX) is caught in
     //     onPointerMove, which fires onInProgressAttempt and cancels the session.
 
-    // Safety gate 2: protected blocks — should have no handles, but guard here.
-    if (isProtected(activityId)) {
-      onProtectedAttempt();
-      return;
-    }
+    // Safety gate 2: protected blocks — same deferred pattern as IN_PROGRESS
+    // (Iter 44 / META §A.2). We do NOT bail here; a pure click must propagate
+    // to OPEN_BLOCK_DETAIL. onProtectedAttempt is fired only when the pointer
+    // moves past CLICK_THRESHOLD_PX in onPointerMove.
 
     // Determine mode: resize if on the handle, otherwise move.
     const isResizeHandle = target.closest('.cycle-block-resize-handle') !== null;
@@ -285,6 +285,24 @@ export function installDragController(rootEl, options = {}) {
         }
         s.blockEl.classList.remove('cycle-block-dragging');
         _restoreBlock(s);
+      }
+      return;
+    }
+
+    // Safety gate: protected blocks — same deferred pattern (Iter 44 / META §A.2).
+    // Toast fires only when the user has genuinely started a drag; pure clicks
+    // propagate normally (session.hasMoved remains false → pointerup returns early).
+    if (isProtected(session.activityId)) {
+      onProtectedAttempt();
+      // Cancel the session without committing.
+      const sp = session;
+      session = null;
+      if (sp.blockEl) {
+        if (typeof sp.blockEl.releasePointerCapture === 'function') {
+          try { sp.blockEl.releasePointerCapture(ev.pointerId); } catch (_) { /* non-fatal */ }
+        }
+        sp.blockEl.classList.remove('cycle-block-dragging');
+        _restoreBlock(sp);
       }
       return;
     }
