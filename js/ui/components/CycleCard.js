@@ -320,11 +320,13 @@ function renderProposed(composition, activities, extras = {}) {
 
   // Iter 29 Phase 1 — calendar grid replaces the table.
   // Iter 35 Phase 2: pass dragSession for ghost block rendering.
+  // Iter 46 Phase 1: pass catalogEntryById for PROJECT secondary line (AC1–AC4).
   const calendarGrid = TodayGrid({
     composition,
     activities,
     nowIso: extras.nowIso ?? null,
     kaizenTitleById: extras.kaizenTitleById ?? {},
+    catalogEntryById: extras.catalogById ?? {},
     compositionState: 'PROPOSED',
     dragSession: extras.dragSession ?? null,
     // rowHeightPx / gridStartHour / gridEndHour use TodayGrid defaults.
@@ -374,12 +376,14 @@ function renderAccepted(composition, activities, { isActive, nowIso, kaizenTitle
   // Iter 29 Phase 1 — calendar grid replaces the table.
   // Iter 35 Phase 2: pass dragSession for ghost block rendering (ACCEPTED+ not needed
   // since dragSession is only populated in PROPOSED flow; pass through for correctness).
+  // Iter 46 Phase 1: pass catalogEntryById for PROJECT secondary line (AC1–AC4).
   const compState = isActive ? 'ACTIVE' : (composition.state ?? 'ACCEPTED');
   const calendarGrid = TodayGrid({
     composition,
     activities,
     nowIso: nowIso ?? null,
     kaizenTitleById: kaizenTitleById ?? {},
+    catalogEntryById: catalogById ?? {},
     compositionState: compState,
     dragSession: dragSession ?? null,
   });

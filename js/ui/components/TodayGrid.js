@@ -81,6 +81,14 @@ const CLICK_SNAP_MINUTES = 15;
 const RANGE_MIN_HEIGHT_PX = 40;
 
 /**
+ * Iter 46 Phase 1 — minimum block height (px) at which the PROJECT secondary
+ * info line (intention or outputArtifact.name) is shown. Blocks shorter than
+ * this threshold suppress the line to avoid clutter.
+ * AC2: height < 56px → secondary line hidden.
+ */
+const SECONDARY_LINE_MIN_HEIGHT_PX = 56;
+
+/**
  * Format an ISO/HH:MM start time as a clean `HH:MM` display string.
  *
  * @param {string | null | undefined} value
@@ -101,18 +109,22 @@ function formatHHMM(value) {
  * and drag-handle aria-label. Protected blocks and lunch blocks receive no
  * resize handle (safety gate AC6).
  *
+ * Iter 46 Phase 1: accepts catalogEntryById map for PROJECT secondary line
+ * (AC1–AC4). Pass the full map; lookup is done inside this function.
+ *
  * @param {{
  *   activity:          object,
  *   gridStartHour:     number,
  *   rowHeightPx:       number,
  *   kaizenTitleById:   Record<string, string>,
+ *   catalogEntryById:  Record<string, object>,
  *   isProposed:        boolean,
  *   blockIndex:        number
  * }} ctx
  * @returns {string}
  */
 function renderTodayBlock(ctx) {
-  const { activity, gridStartHour, rowHeightPx, kaizenTitleById, isProposed, blockIndex } = ctx;
+  const { activity, gridStartHour, rowHeightPx, kaizenTitleById, catalogEntryById, isProposed, blockIndex } = ctx;
 
   const startValue = activity.plannedStartAt ?? activity.anchor ?? null;
   const top = topOffsetPx(startValue, gridStartHour, rowHeightPx);
@@ -197,6 +209,27 @@ function renderTodayBlock(ctx) {
     ? ` aria-roledescription="draggable calendar block"`
     : '';
 
+  // Iter 46 Phase 1 — PROJECT secondary info line (AC1–AC4).
+  // Shows `intention` (on the activity) OR `outputArtifact.name` (from catalog).
+  // Only rendered for PROJECT bucket blocks when the block is tall enough (≥56px).
+  // COMMUNICATION/CI/Lunch: no secondary line — those get per-bucket treatment in Phase 2.
+  let secondaryLine = '';
+  if (bucket === 'PROJECT' && h >= SECONDARY_LINE_MIN_HEIGHT_PX) {
+    // Prefer activity.intention (author's stated intention) over catalog artifact name.
+    const intentionText = typeof activity.intention === 'string' && activity.intention.trim()
+      ? activity.intention.trim()
+      : null;
+    // Fall back to outputArtifact.name from the catalog entry.
+    const catalogEntry = catalogEntryById && activity.catalogEntryId
+      ? catalogEntryById[activity.catalogEntryId] ?? null
+      : null;
+    const artifactName = catalogEntry?.outputArtifact?.name ?? null;
+    const secondaryText = intentionText ?? artifactName ?? null;
+    if (secondaryText) {
+      secondaryLine = `<span class="cycle-block-secondary" aria-label="Output: ${esc(secondaryText)}">${esc(secondaryText)}</span>`;
+    }
+  }
+
   return `<article
     class="cycle-block-positioned ${esc(bucketChipClass)}${proposedClass}${lunchClass}"
     style="top: ${top}px; height: ${h}px; animation-delay: ${staggerMs}ms"
@@ -213,7 +246,7 @@ function renderTodayBlock(ctx) {
   >
     ${lockChip}<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${kaizenChip}${resizeHandle}
+    ${secondaryLine}${kaizenChip}${resizeHandle}
   </article>`;
 }
 
@@ -291,15 +324,16 @@ function renderHalfHourLines(gridStartHour, gridEndHour, rowHeightPx) {
  * Iter 35 Phase 2: accepts dragSession for ghost block rendering.
  *
  * @param {{
- *   composition:       object | null,
- *   activities:        object[],
- *   nowIso?:           string | null,
- *   kaizenTitleById?:  Record<string, string>,
- *   compositionState?: string,
- *   gridStartHour?:    number,
- *   gridEndHour?:      number,
- *   rowHeightPx?:      number,
- *   dragSession?:      object | null  — from app.js state.dragSession (Phase 2 pending flow)
+ *   composition:        object | null,
+ *   activities:         object[],
+ *   nowIso?:            string | null,
+ *   kaizenTitleById?:   Record<string, string>,
+ *   catalogEntryById?:  Record<string, object>,
+ *   compositionState?:  string,
+ *   gridStartHour?:     number,
+ *   gridEndHour?:       number,
+ *   rowHeightPx?:       number,
+ *   dragSession?:       object | null  — from app.js state.dragSession (Phase 2 pending flow)
  * }} props
  * @returns {string}
  */
@@ -314,6 +348,8 @@ export function TodayGrid(props = {}) {
   const activities = Array.isArray(props.activities) ? props.activities : [];
   const nowIso = typeof props.nowIso === 'string' ? props.nowIso : null;
   const kaizenTitleById = props.kaizenTitleById ?? {};
+  // Iter 46 Phase 1: catalog entry lookup map for PROJECT secondary line (AC1–AC4).
+  const catalogEntryById = props.catalogEntryById ?? {};
   const gridStartHour = Number.isFinite(props.gridStartHour) ? props.gridStartHour : DEFAULT_GRID_START_HOUR;
   const gridEndHour = Number.isFinite(props.gridEndHour) ? props.gridEndHour : DEFAULT_GRID_END_HOUR;
   const rowHeightPx = Number.isFinite(props.rowHeightPx) ? props.rowHeightPx : DEFAULT_ROW_HEIGHT_PX;
@@ -329,7 +365,7 @@ export function TodayGrid(props = {}) {
 
   // Build blocks — Iter 33: pass blockIndex for staggered reveal (AC11).
   const blocks = ordered
-    .map((a, i) => renderTodayBlock({ activity: a, gridStartHour, rowHeightPx, kaizenTitleById, isProposed, blockIndex: i }))
+    .map((a, i) => renderTodayBlock({ activity: a, gridStartHour, rowHeightPx, kaizenTitleById, catalogEntryById, isProposed, blockIndex: i }))
     .filter(Boolean)
     .join('\n');
 

@@ -596,13 +596,13 @@ function renderBlockDetailDialog(blockDetail, activeState, kaizenTitleById, cata
     ? kaizenTitleById[activity.linkedKaizenId]
     : null;
 
-  // Resolve outputArtifact from catalog entry.
+  // Iter 46 Phase 1: resolve full catalogEntry (not just outputArtifact) so
+  // BlockDetailDialog can access participants, trigger, and other fields (AC5).
   const catalogEntry = Array.isArray(catalog)
     ? catalog.find((c) => c && c.id === activity.catalogEntryId) ?? null
     : null;
-  const outputArtifact = catalogEntry?.outputArtifact ?? null;
 
-  return BlockDetailDialog({ activity, kaizenTitle, outputArtifact });
+  return BlockDetailDialog({ activity, kaizenTitle, catalogEntry });
 }
 
 /**

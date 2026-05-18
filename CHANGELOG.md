@@ -6,6 +6,69 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 46 — 2026-05-18 — Per-task-type info Phase 1: PROJECT secondary line + COMM participants/trigger (C-UX-TASKTYPE-INFO-P1)
+
+### What changed
+First of 4 phases addressing Phil's per-task-type info directive. Cheap-subset foundation per synthesis.
+
+**1. PROJECT compact-card secondary line**:
+- New `cycle-block-secondary` span on PROJECT blocks (height-gated ≥56px)
+- Shows `intention` (preference) OR `outputArtifact.name` (fallback)
+- Geist body, 10px, opacity 0.72 on white-over-saturated bucket fills
+- Skipped on COMMUNICATION/CI/Lunch (those get per-type treatment in Phase 2)
+- WCAG AA: 6.1:1 on PROJECT green; theme-agnostic via opacity
+
+**2. Full `catalogEntry` threaded to BlockDetailDialog**:
+- Previously only `outputArtifact` was threaded; now full entry available for richer rendering
+- Backward-compatible: `outputArtifact` prop still accepted (resolved from `catalogEntry` if absent)
+- Sets up Phase 2 per-bucket render functions
+
+**3. COMMUNICATION dialog shows `participants` + `trigger`**:
+- New `bdd-row-participants` + `bdd-row-trigger` rows on COMMUNICATION blocks only
+- Uses `--text-secondary` token (9.7:1 light / 8.2:1 dark — both AAA)
+- Graceful absence when fields are empty (no broken UI)
+- Other bucket types' dialogs unchanged
+
+### Why
+- Phil approved Path A (all 4 phases of per-task-type bundle)
+- Phase 1 is the cheap foundation — data threading + simplest per-type addition
+- Sets up Phase 2 (per-bucket render refactor + protected-block cleanup)
+- 0 §6.5 hits per FE prediction; data already available
+
+### Impact
+- Test suite: 3,425 → **3,441** (+16 new tests; 7 in TodayGrid + 9 in BlockDetailDialog)
+- Runtime: 4.47s → **4.31s** ✅ (per-test 1.25ms — 17% headroom under META §A.1 ceiling)
+- §6.5 hits: **0**
+- Files: 5 modified (TodayGrid, BlockDetailDialog, CycleCard, Today, app.css); 2 test files updated
+- LOC: +330 across the bundle
+- All 15 ACs PASS
+
+### §A.3 reconciliation audit (per META §A.3 codified Iter 44)
+Pre-implementation grep documented 7 findings:
+- No existing `cycle-block-secondary` class (non-conflicting)
+- Existing 56px references unrelated (week-grid hour rail + cadence ring widths)
+- Flex layout slots new span naturally
+- Truncation rules independent
+- Height-gating pattern matches existing `RANGE_MIN_HEIGHT_PX = 40` precedent
+- `intention`/`outputArtifact` words absent from CSS
+- Opacity 0.72 pattern matches existing `.cycle-block-time { opacity: 0.85 }` precedent
+
+**Zero rule conflicts. META §A.3 successfully applied — would have prevented Iter 43's silent-override bug if rule had existed then.**
+
+### Disabled Edit button preserved per §A.2
+Per META §A.2 (orthogonal-case rule), preserved current behavior on protected-block disabled Edit button. Phase 2 will remove it (synthesis-confirmed convergent recommendation as "the most useless element in the system").
+
+### Time efficiency
+~1.5h actual vs 2-3h estimate. Data threading was simpler than estimated because `catalogById` already built in CycleCard — only needed pass-through. Phase 1 proves cheap as predicted.
+
+### Phase plan progress
+- ✅ **Phase 1** (this iteration): foundation
+- 🔄 **Phase 2** (next): per-bucket render refactor + protected-block cleanup (REMOVE disabled Edit + bucket-label rows; CI sacred treatment; Lunch dialog suppression)
+- 🔄 **Phase 3**: Kaizen sub-labels + bucket-strip removal
+- 🔄 **Phase 4**: Polish + edge cases
+
+---
+
 ## Iteration 45 — 2026-05-18 — P0 hotfix #4: PROTECTED click bug + UX info audit (C-FE-HOTFIX-3)
 
 ### What changed

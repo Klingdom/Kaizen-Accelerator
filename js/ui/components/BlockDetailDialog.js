@@ -28,10 +28,16 @@ import { isProtectedBlock } from '../editMode.js';
 /**
  * BlockDetailDialog component.
  *
+ * Iter 46 Phase 1: accepts full `catalogEntry` object (AC5) in addition to
+ * backward-compatible `outputArtifact`. When `catalogEntry` is provided it
+ * takes precedence for outputArtifact resolution. COMMUNICATION blocks gain
+ * `participants` and `trigger` rows when those fields are present (AC6–AC8).
+ *
  * @param {{
  *   activity:        object,
  *   kaizenTitle?:    string | null,
- *   outputArtifact?: object | null
+ *   outputArtifact?: object | null,
+ *   catalogEntry?:   object | null
  * }} props
  * @returns {string}
  */
@@ -42,7 +48,11 @@ export function BlockDetailDialog(props = {}) {
   const kaizenTitle = typeof props.kaizenTitle === 'string' && props.kaizenTitle.length > 0
     ? props.kaizenTitle
     : null;
-  const outputArtifact = props.outputArtifact ?? null;
+
+  // Iter 46 Phase 1: prefer full catalogEntry prop; fall back to outputArtifact prop
+  // for backward compatibility with call sites not yet passing catalogEntry.
+  const catalogEntry = props.catalogEntry ?? null;
+  const outputArtifact = catalogEntry?.outputArtifact ?? props.outputArtifact ?? null;
 
   // --- Activity data ---
   const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
@@ -64,6 +74,32 @@ export function BlockDetailDialog(props = {}) {
   const outputName = outputArtifact
     ? (outputArtifact.name ?? outputArtifact.kind ?? outputArtifact.schema ?? '—')
     : '—';
+
+  // Iter 46 Phase 1 — COMMUNICATION bucket: participants + trigger rows (AC6–AC8).
+  // Only render rows when the field is present and non-empty. Graceful absence:
+  // missing or empty strings silently skip the row (AC8). Other bucket types
+  // are unaffected (AC9).
+  const isComm = bucket === 'COMMUNICATION';
+  const participantsText = isComm && catalogEntry && typeof catalogEntry.participants === 'string' && catalogEntry.participants.trim()
+    ? catalogEntry.participants.trim()
+    : null;
+  const triggerText = isComm && catalogEntry && typeof catalogEntry.trigger === 'string' && catalogEntry.trigger.trim()
+    ? catalogEntry.trigger.trim()
+    : null;
+
+  const participantsRow = participantsText
+    ? `<div class="bdd-row bdd-row-participants">
+        <dt class="bdd-label">Who&#x2019;s involved</dt>
+        <dd class="bdd-value bdd-comm-detail">${esc(participantsText)}</dd>
+      </div>`
+    : '';
+
+  const triggerRow = triggerText
+    ? `<div class="bdd-row bdd-row-trigger">
+        <dt class="bdd-label">What kicks this off</dt>
+        <dd class="bdd-value bdd-comm-detail">${esc(triggerText)}</dd>
+      </div>`
+    : '';
 
   // Protected block treatment.
   const protected_ = isProtectedBlock(activity);
@@ -131,7 +167,7 @@ export function BlockDetailDialog(props = {}) {
       <div class="bdd-row">
         <dt class="bdd-label">Expected output</dt>
         <dd class="bdd-value bdd-output">${esc(outputName)}</dd>
-      </div>${kaizenChip ? `
+      </div>${participantsRow}${triggerRow}${kaizenChip ? `
       <div class="bdd-row bdd-row-kaizen">
         <dt class="bdd-label">Kaizen</dt>
         <dd class="bdd-value">${kaizenChip}</dd>

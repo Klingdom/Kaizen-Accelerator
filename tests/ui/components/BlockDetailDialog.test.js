@@ -267,3 +267,127 @@ describe('BlockDetailDialog — edge cases', () => {
     assert.match(html, /Duration/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter 46 Phase 1 — AC5: full catalogEntry prop threading
+// ---------------------------------------------------------------------------
+describe('BlockDetailDialog — Iter 46 full catalogEntry prop (AC5)', () => {
+  const CATALOG_ENTRY_WITH_ARTIFACT = {
+    id: 'cat_deep_work',
+    outputArtifact: { name: 'SIPOC Diagram', schema: 'DOCUMENT' },
+    participants: 'Team lead + engineer',
+    trigger: 'Sprint kickoff'
+  };
+
+  test('AC5: catalogEntry.outputArtifact.name takes precedence over outputArtifact prop', () => {
+    const html = BlockDetailDialog({
+      activity: BASE_ACTIVITY,
+      catalogEntry: CATALOG_ENTRY_WITH_ARTIFACT,
+      outputArtifact: { name: 'OLD Artifact' }   // should be ignored in favor of catalogEntry
+    });
+    assert.match(html, /SIPOC Diagram/);
+    assert.ok(!html.includes('OLD Artifact'), 'catalogEntry.outputArtifact must override separate outputArtifact prop');
+  });
+
+  test('AC5: catalogEntry null falls back to outputArtifact prop', () => {
+    const html = BlockDetailDialog({
+      activity: BASE_ACTIVITY,
+      catalogEntry: null,
+      outputArtifact: OUTPUT_ARTIFACT
+    });
+    assert.match(html, /Pull Request/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter 46 Phase 1 — AC6–AC8: COMMUNICATION participants + trigger rows
+// ---------------------------------------------------------------------------
+describe('BlockDetailDialog — Iter 46 COMMUNICATION participants + trigger (AC6–AC8)', () => {
+  const COMM_ACTIVITY = {
+    id: 'sa_am_comm',
+    name: 'AM Communication',
+    bucket: 'COMMUNICATION',
+    plannedStartAt: '09:15',
+    plannedDurationMinutes: 60,
+    state: 'SCHEDULED',
+    catalogEntryId: 'cat_am_comm'
+  };
+
+  const CATALOG_COMM = {
+    id: 'cat_am_comm',
+    participants: 'Product team',
+    trigger: 'Daily 9:15 anchor slot'
+  };
+
+  test('AC6: COMMUNICATION block shows participants row when catalogEntry.participants present', () => {
+    const html = BlockDetailDialog({
+      activity: COMM_ACTIVITY,
+      catalogEntry: CATALOG_COMM
+    });
+    assert.ok(html.includes('bdd-row-participants'), 'Participants row must be present for COMMUNICATION with participants');
+    assert.ok(html.includes('Product team'), 'Participants text must appear in dialog');
+  });
+
+  test('AC7: COMMUNICATION block shows trigger row when catalogEntry.trigger present', () => {
+    const html = BlockDetailDialog({
+      activity: COMM_ACTIVITY,
+      catalogEntry: CATALOG_COMM
+    });
+    assert.ok(html.includes('bdd-row-trigger'), 'Trigger row must be present for COMMUNICATION with trigger');
+    assert.ok(html.includes('Daily 9:15 anchor slot'), 'Trigger text must appear in dialog');
+  });
+
+  test('AC8: COMMUNICATION block — missing participants field skips that row gracefully', () => {
+    const html = BlockDetailDialog({
+      activity: COMM_ACTIVITY,
+      catalogEntry: { id: 'cat_am_comm', trigger: 'Daily anchor' }
+    });
+    assert.ok(!html.includes('bdd-row-participants'), 'Participants row must be absent when field is missing');
+    assert.ok(html.includes('bdd-row-trigger'), 'Trigger row must still render when present');
+  });
+
+  test('AC8: COMMUNICATION block — missing trigger field skips that row gracefully', () => {
+    const html = BlockDetailDialog({
+      activity: COMM_ACTIVITY,
+      catalogEntry: { id: 'cat_am_comm', participants: 'Product team' }
+    });
+    assert.ok(!html.includes('bdd-row-trigger'), 'Trigger row must be absent when field is missing');
+    assert.ok(html.includes('bdd-row-participants'), 'Participants row must still render when present');
+  });
+
+  test('AC8: COMMUNICATION block — null catalogEntry renders no participants/trigger rows', () => {
+    const html = BlockDetailDialog({
+      activity: COMM_ACTIVITY,
+      catalogEntry: null
+    });
+    assert.ok(!html.includes('bdd-row-participants'), 'No participants row when catalogEntry is null');
+    assert.ok(!html.includes('bdd-row-trigger'), 'No trigger row when catalogEntry is null');
+  });
+
+  test('AC9: PROJECT block does NOT show participants/trigger rows even with catalogEntry', () => {
+    const html = BlockDetailDialog({
+      activity: BASE_ACTIVITY,  // bucket: PROJECT
+      catalogEntry: { id: 'cat_deep', participants: 'Solo', trigger: 'DMAIC step' }
+    });
+    assert.ok(!html.includes('bdd-row-participants'), 'No participants row on PROJECT bucket');
+    assert.ok(!html.includes('bdd-row-trigger'), 'No trigger row on PROJECT bucket');
+  });
+
+  test('AC9: CI block does NOT show participants/trigger rows even with catalogEntry', () => {
+    const CI_ACTIVITY = {
+      id: 'sa_ci',
+      name: 'PDCA Cycle',
+      bucket: 'CI',
+      plannedStartAt: '16:00',
+      plannedDurationMinutes: 30,
+      state: 'SCHEDULED',
+      catalogEntryId: 'cat_pdca'
+    };
+    const html = BlockDetailDialog({
+      activity: CI_ACTIVITY,
+      catalogEntry: { id: 'cat_pdca', participants: 'Team', trigger: 'Experiment tick' }
+    });
+    assert.ok(!html.includes('bdd-row-participants'), 'No participants row on CI bucket');
+    assert.ok(!html.includes('bdd-row-trigger'), 'No trigger row on CI bucket');
+  });
+});

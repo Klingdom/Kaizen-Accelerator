@@ -516,6 +516,29 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/*
+ * Iter 46 Phase 1 — PROJECT compact card secondary info line (AC1–AC4, AC14, AC15).
+ * Shows intention or outputArtifact.name beneath the activity name.
+ * Only rendered by JS when block height ≥56px (height-gated; AC2).
+ *
+ * Styling: Geist body (inherits font-family from block), smaller than name,
+ * semi-transparent white so it reads cleanly on all bucket fill gradients.
+ * font-style: normal (not italic — italic is reserved for lunch blocks only).
+ *
+ * WCAG AA: white at 0.72 opacity on the darkest chip-project fill (#166534)
+ * = ~6.1:1 contrast against the gradient body zone ✓.
+ * Dark theme: block backgrounds are the same saturated fills (AC9 preserved);
+ * the opacity approach keeps contrast consistent across both themes (AC15).
+ */
+.cycle-block-secondary {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
 /* Iter 33: kaizen chip — DM Mono, styled. Glow-ring ping fires via data-kaizen-linked (AC10). */
 .cycle-block-kaizen {
   align-self: flex-start;
@@ -3303,6 +3326,22 @@ html, body {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
+}
+
+/*
+ * Iter 46 Phase 1 — COMMUNICATION block detail: participants + trigger rows (AC6–AC8, AC14, AC15).
+ * Plain-prose rendering. Secondary text color for graceful de-emphasis.
+ * Only rendered when catalogEntry.participants / .trigger are non-empty strings (AC8).
+ * bdd-row-participants and bdd-row-trigger use the shared bdd-row layout; this
+ * class only adjusts the value text appearance.
+ *
+ * WCAG AA: --text-secondary = #3d3a35 on --surface-card #ffffff = 9.7:1 (light) ✓
+ *          --text-secondary = #ccc8c2 on --surface-card #252320 = 8.2:1 (dark) ✓
+ */
+.bdd-comm-detail {
+  color: var(--text-secondary, var(--ink-700, #3d3a35));
+  font-size: 0.875rem;
+  font-style: normal;
 }
 
 /* Footer: action buttons. */

@@ -528,3 +528,87 @@ describe('TodayGrid — grid structure', () => {
     assert.ok(html.includes('chip-communication'), 'COMMUNICATION block must use chip-communication');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter 46 Phase 1 — PROJECT secondary info line (AC1–AC4)
+// ---------------------------------------------------------------------------
+describe('TodayGrid — Iter 46 PROJECT secondary line (AC1–AC4)', () => {
+  // Fixture: catalog entry with an outputArtifact
+  const CATALOG_ENTRY = {
+    id: 'cat_deep',
+    outputArtifact: { name: 'SIPOC Matrix', schema: 'DOCUMENT' }
+  };
+  const CATALOG_ENTRY_BY_ID = { cat_deep: CATALOG_ENTRY };
+
+  test('AC1: PROJECT block ≥56px shows secondary line from outputArtifact.name', () => {
+    // 60 min × 60px/hr = 60px — above the 56px threshold
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ plannedDurationMinutes: 60, catalogEntryId: 'cat_deep' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    assert.ok(html.includes('cycle-block-secondary'), 'Secondary line element must be present for ≥56px PROJECT block');
+    assert.ok(html.includes('SIPOC Matrix'), 'outputArtifact.name must appear in secondary line');
+  });
+
+  test('AC1: PROJECT block prefers intention over outputArtifact.name', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ plannedDurationMinutes: 60, catalogEntryId: 'cat_deep', intention: 'Ship the C&E matrix draft' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    assert.ok(html.includes('Ship the C&amp;E matrix draft') || html.includes('Ship the C&E matrix draft'),
+      'intention must take precedence over outputArtifact.name in secondary line');
+    // The artifact name should NOT appear when intention is present
+    assert.ok(!html.includes('SIPOC Matrix'), 'outputArtifact.name must NOT appear when intention is set');
+  });
+
+  test('AC2: PROJECT block <56px does NOT show secondary line', () => {
+    // 55 min × 60px/hr = 55px — below the 56px threshold
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ plannedDurationMinutes: 55, catalogEntryId: 'cat_deep' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    assert.ok(!html.includes('cycle-block-secondary'), 'Secondary line must be absent for blocks <56px tall');
+    assert.ok(!html.includes('SIPOC Matrix'), 'Artifact name must not appear in short blocks');
+  });
+
+  test('AC4: COMMUNICATION block does NOT show secondary line even when tall', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ bucket: 'COMMUNICATION', plannedDurationMinutes: 120, catalogEntryId: 'cat_deep' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    assert.ok(!html.includes('cycle-block-secondary'), 'COMMUNICATION block must not show secondary line (Phase 2 handles it)');
+  });
+
+  test('AC4: CI block does NOT show secondary line even when tall', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ bucket: 'CI', plannedDurationMinutes: 120, catalogEntryId: 'cat_deep' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    assert.ok(!html.includes('cycle-block-secondary'), 'CI block must not show secondary line (Phase 2 handles it)');
+  });
+
+  test('AC8 (graceful absence): PROJECT block with no catalog entry shows no secondary line', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ plannedDurationMinutes: 60, catalogEntryId: 'unknown_entry' })],
+      catalogEntryById: CATALOG_ENTRY_BY_ID
+    });
+    // unknown_entry has no entry in the map — secondary line should simply be absent
+    assert.ok(!html.includes('cycle-block-secondary'), 'No secondary line when catalogEntryId not in map');
+  });
+
+  test('AC8 (graceful absence): PROJECT block with neither intention nor outputArtifact shows no secondary line', () => {
+    const CATALOG_NO_ARTIFACT = { id: 'cat_bare' };
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({ plannedDurationMinutes: 60, catalogEntryId: 'cat_bare' })],
+      catalogEntryById: { cat_bare: CATALOG_NO_ARTIFACT }
+    });
+    assert.ok(!html.includes('cycle-block-secondary'), 'No secondary line when no intention and no outputArtifact');
+  });
+});
