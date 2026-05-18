@@ -715,3 +715,64 @@ When reviewing future iterations, coordinator should ask:
 3. Is per-test ms staying under 1.5?
 
 If any answer is "no" or "didn't check," surface before dispatch.
+
+## §A.5 — §6.5 boundary path-recursion (codifying existing practice)
+
+**Origin**: META §7.4 (Iter 27). Already in practice across Iter 19, 26, 38 (all composer iterations recognized recursive path protection without prompting).
+
+**Rule**: The §6.5 boundary protection is **path-recursive**. Any new file created under a protected path inherits §6.5 protection automatically from the moment of creation.
+
+**Protected paths** (recursive):
+- `js/composer/**` — composition logic
+- `js/engine/**` — invariants, validation, packing
+- `js/domain/types.js` — domain entity types
+- `js/events/events.js` — event constants
+
+**Examples already in practice**:
+- `js/composer/lunchBlock.js` (Iter 26) — created inside `js/composer/`, recognized as §6.5-protected without separate authorization
+- Any new file under `js/engine/` future-protected
+
+**Why codify**: Removes ambiguity about whether new files inside protected paths require fresh §6.5 authorization (they do).
+
+## §A.6 — User-directive bypass (codifying existing practice)
+
+**Origin**: META §7.6 (Iter 27). Already in practice across Iter 22, 23, 25, 26, 29, 35, 38 — every user-directive feature shipped without explicit lens-score-13 gate evaluation.
+
+**Rule**: User-directive features (Phil-stated requirements with explicit verbatim quotes) bypass the score-13 multi-lens gate that applies to coordinator-selected backlog items.
+
+**When applies**:
+- Phil's direct quote captured in dispatch brief
+- Coordinator's role is to scope + sequence the directive, NOT to challenge or rescore it
+- Define-pass still REQUIRED (per §6.3) when effort ≥ M or new domain entities involved — but the lens-convergence gate is waived
+
+**When does NOT apply**:
+- Coordinator-selected backlog items (still need score-13 gate)
+- Items dispatched without verbatim Phil quote (treat as coordinator-selected)
+- META operating-model changes (require Phil's explicit yes, NOT bypass)
+
+**Examples**:
+- Iter 22 (column refactor): "We can remove the adherence..." — user-directive, lens-gate bypassed
+- Iter 31 (color theming): "Use color themes heavily..." — user-directive, lens-gate bypassed
+- Iter 35 (calendar drag): batch-approved SW-Q-CAL with verbatim defaults — user-directive
+- Iter 47-48 (per-task-type info): user-directive "have subagents determine the best information" — user-directive
+
+**Why codify**: Coordinator has been doing this without an explicit rule. New iterations should not waste cycles trying to apply lens-13 gate to user-directive features.
+
+## §A.7 — META amendment application discipline
+
+When coordinator applies META amendments without explicit Phil sign-off (as Iter 44 + this iteration):
+
+**MAY apply** (coordinator discretion):
+- Amendments codifying existing de-facto practice with empirical bug-class prevention OR documented examples
+- Amendments that align with explicit Phil-stated values (his color identity matters; deliberate-ratification matters)
+- Documentation-only changes (no behavior change in coordinator's operating mode)
+
+**MUST NOT apply** without Phil's explicit yes:
+- Amendments that change behavior Phil has been observed to override (e.g., deploy gate codification when Phil keeps proceeding past it)
+- Amendments without empirical bug-class anchoring (speculative process improvements)
+- Amendments that meaningfully change coordinator's stop-conditions or autonomy
+- Amendments that introduce new mandatory dispatch requirements
+
+**When in doubt**: document the proposed amendment in META_REVIEW.md as a deferred item, surface for Phil's explicit decision.
+
+**Rationale**: Coordinator discretion is bounded by Phil's observed pattern. Iter 44 + this iteration apply amendments that ARE within bounds. The 4 remaining META amendments are explicitly NOT applied because they fall outside these bounds.

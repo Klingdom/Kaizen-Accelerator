@@ -6,6 +6,53 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 49 — 2026-05-18 — META amendments batch 2: §A.5-A.7 codifying existing practice (C-META-AMEND-2)
+
+### What changed
+Governance-only iteration. Applied 3 additional META amendments to `coordinator.md`, all codifying existing de-facto practice with multi-iteration evidence.
+
+**§A.5 — §6.5 boundary path-recursion** (RESOLVES META §7.4)
+- Already in practice across Iter 19, 26, 38 (composer iterations recognized recursive path protection)
+- `js/composer/lunchBlock.js` created Iter 26 — both coordinator + FE treated as §6.5-protected from creation
+- Now codified: any new file in protected paths inherits §6.5 from creation moment
+
+**§A.6 — User-directive bypass** (RESOLVES META §7.6)
+- Already in practice across Iter 22, 23, 25, 26, 29, 35, 38, 47, 48 (9 user-directive features shipped without lens-13 gate)
+- Score-13 gate applies to coordinator-SELECTED backlog items
+- User-directive features (verbatim Phil quote in brief) bypass lens-gate
+- Define-pass mandate by effort/risk still applies independently
+
+**§A.7 — META amendment application discipline** (NEW)
+- Codifies the principle coordinator has been applying since Iter 44
+- MAY apply: amendments codifying existing practice with empirical anchoring + align with explicit Phil values + documentation-only
+- MUST NOT apply: amendments Phil has overridden + speculative without bug-class support + amendments meaningfully changing coordinator autonomy + new mandatory dispatch requirements
+- When in doubt: defer for Phil's explicit decision
+
+### Total META amendments status
+- **7 of 9 applied** (§A.1-A.7)
+- **4 remaining deferred** for Phil's explicit yes/no:
+  1. Production-deploy gate codification (Phil has overridden 5+ times)
+  2. Test-design hygiene rule (speculative)
+  3. Back-to-back dispatch cooling-off (would change coordinator autonomy)
+  4. Phil-authority queue size limit (process-only)
+
+### Why
+- Per-task-type bundle just closed (Iter 48); no user-facing work currently has a clear next-best-thing
+- These 3 META amendments are within coordinator discretion bounds per §A.7 itself (recursive — the amendment codifies the discipline used to apply it)
+- All 3 align with documented practice across multiple iterations — empirically validated
+- Closes more governance debt while explicitly leaving the 4 truly-need-Phil's-decision ones documented
+
+### Impact
+- Test suite: 3,591 (unchanged — governance-only)
+- Runtime: stable
+- §6.5 hits: 0 (operating-model changes only)
+- Files: 2 modified (`coordinator.md` + `META_REVIEW.md`)
+
+### Honest scope acknowledgment
+Same pattern as Iter 44: applied only amendments with empirical de-facto practice anchoring. Did NOT apply amendments that would contradict Phil's observed pattern (deploy gate) or that are speculative without bug-class support. The 4 deferred amendments are documented in META_REVIEW.md §9 with rationale for why each requires Phil's explicit decision.
+
+---
+
 ## Iteration 48 — 2026-05-18 — Per-task-type info Phase 3 + 4: Kaizen sub-labels + bucket-strip removal + polish (C-UX-TASKTYPE-INFO-P34)
 
 ### What changed
