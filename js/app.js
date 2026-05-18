@@ -370,6 +370,9 @@ function createState() {
     editMode: null,
     // Iter 30 — block detail popover. null = closed; {activityId} = open.
     blockDetail: null,
+    // Iter 47 Phase 2 — Lunch tooltip. null = hidden; {timeRange} = visible.
+    // Replaces BlockDetailDialog for lunch blocks (AC13, AC14).
+    lunchTooltip: null,
     // Iter 36 — catalog picker dialog. null = closed; {startMinutes, search, bucketFilter} = open.
     catalogPickerDialog: null,
     // Iter 35 — drag-and-drop state (Phase 2).
@@ -789,7 +792,9 @@ export function renderApp(services, state, handlers = {}) {
       dragSession:    state.dragSession    ?? null,
       conflictBanner: state.conflictBanner ?? null,
       // Iter 36: catalog picker dialog state.
-      catalogPickerDialog: state.catalogPickerDialog ?? null
+      catalogPickerDialog: state.catalogPickerDialog ?? null,
+      // Iter 47 Phase 2: lunch tooltip state (AC13, AC14).
+      lunchTooltip: state.lunchTooltip ?? null
     });
     const reflectionSheetHtml = state.reflectionSheet
       ? ReflectionSheet(state.reflectionSheet)
@@ -1443,6 +1448,22 @@ export function buildHandlers(scope) {
 
     CLOSE_BLOCK_DETAIL(_payload) {
       state.blockDetail = null;
+      rerender();
+    },
+
+    // ---- Iter 47 Phase 2: Lunch inline tooltip (AC13, AC14) ----------------
+    // Lunch blocks emit OPEN_LUNCH_TOOLTIP instead of OPEN_BLOCK_DETAIL.
+    // The tooltip shows time + auto-protected note; no full dialog.
+
+    OPEN_LUNCH_TOOLTIP(payload) {
+      if (!payload) return;
+      const timeRange = typeof payload.timeRange === 'string' ? payload.timeRange : 'Lunch';
+      state.lunchTooltip = { timeRange };
+      rerender();
+    },
+
+    CLOSE_LUNCH_TOOLTIP(_payload) {
+      state.lunchTooltip = null;
       rerender();
     },
 

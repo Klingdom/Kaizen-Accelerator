@@ -80,55 +80,59 @@ describe('BlockDetailDialog — time range', () => {
 
 // ---------------------------------------------------------------------------
 // Render: bucket chip
+// Iter 47 Phase 2 AC8: Bucket-label text rows REMOVED from dialog.
+// The color bar accent at the top carries the semantic; text chip is gone.
 // ---------------------------------------------------------------------------
 
-describe('BlockDetailDialog — bucket chip', () => {
-  test('renders the bucket chip class for PROJECT', () => {
+describe('BlockDetailDialog — bucket chip (Phase 2: bucket-label text row removed)', () => {
+  test('AC8: dialog does NOT render bucket-label text chip for PROJECT', () => {
     const html = BlockDetailDialog({ activity: BASE_ACTIVITY });
-    assert.match(html, /chip-project/);
-    assert.match(html, /Project/);
+    // The color bar class still uses chip-project in its own class name,
+    // but the standalone bucket-label chip row is gone.
+    // We verify the dl/bdd-body does not contain a "Bucket" label row.
+    assert.ok(!html.includes('<dt class="bdd-label">Bucket</dt>'), 'Bucket label row must be absent (AC8)');
   });
 
-  test('renders chip-communication for COMMUNICATION bucket', () => {
+  test('AC8: dialog does NOT render bucket-label text chip for COMMUNICATION', () => {
     const html = BlockDetailDialog({ activity: PROTECTED_ACTIVITY });
-    assert.match(html, /chip-communication/);
-    assert.match(html, /Communication/);
+    assert.ok(!html.includes('<dt class="bdd-label">Bucket</dt>'), 'Bucket label row must be absent for COMMUNICATION (AC8)');
   });
 
-  test('renders chip-unknown when bucket is null (Lunch)', () => {
-    const html = BlockDetailDialog({
-      activity: { ...BASE_ACTIVITY, bucket: null }
-    });
-    assert.match(html, /chip-unknown/);
-    assert.match(html, /Unscheduled/);
+  test('AC8: color bar still renders for PROJECT (carries semantic via class)', () => {
+    const html = BlockDetailDialog({ activity: BASE_ACTIVITY });
+    // Color bar class uses bdd-color-bar-project — confirms bucket color still present
+    assert.ok(html.includes('bdd-color-bar'), 'Color bar must still render (carries bucket semantic)');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Render: protected block — Edit disabled
+// Render: protected block — Edit button behavior
+// Iter 47 Phase 2 AC7: Disabled Edit button REMOVED from protected blocks.
+// Dialog still shows all info; just no Edit button at all.
 // ---------------------------------------------------------------------------
 
-describe('BlockDetailDialog — protected block treatment', () => {
-  test('protected block renders Edit button as disabled', () => {
+describe('BlockDetailDialog — protected block treatment (Phase 2: disabled Edit removed)', () => {
+  test('AC7: protected block does NOT render a disabled Edit button', () => {
     const html = BlockDetailDialog({ activity: PROTECTED_ACTIVITY });
-    assert.match(html, /disabled/);
-    assert.match(html, /aria-disabled="true"/);
+    // The disabled Edit button is completely removed (AC7).
+    assert.ok(!html.includes('aria-disabled="true"'), 'Disabled Edit button must be absent (AC7)');
+    assert.ok(!html.includes('bdd-btn-edit'), 'bdd-btn-edit must be absent on protected blocks (AC7)');
   });
 
-  test('protected block Edit button has explanatory aria-label', () => {
+  test('AC7: protected block does NOT have BLOCK_DETAIL_EDIT action', () => {
     const html = BlockDetailDialog({ activity: PROTECTED_ACTIVITY });
-    assert.match(html, /This block is required for your daily rhythm/);
-  });
-
-  test('protected block Edit button does NOT have data-action', () => {
-    const html = BlockDetailDialog({ activity: PROTECTED_ACTIVITY });
-    // The disabled button should not have a data-action attribute
-    // (it may never fire, but also should not carry BLOCK_DETAIL_EDIT)
-    const buttonSection = html.slice(html.lastIndexOf('bdd-btn-edit'));
     assert.ok(
-      !buttonSection.includes('data-action="BLOCK_DETAIL_EDIT"'),
-      'disabled edit button must not carry BLOCK_DETAIL_EDIT action'
+      !html.includes('data-action="BLOCK_DETAIL_EDIT"'),
+      'Protected block must not carry BLOCK_DETAIL_EDIT action (AC7)'
     );
+  });
+
+  test('AC7: protected block dialog still shows name, time, and close button', () => {
+    const html = BlockDetailDialog({ activity: PROTECTED_ACTIVITY });
+    // Dialog still shows all the info — just no Edit button.
+    assert.match(html, /Daily Standup/);
+    assert.match(html, /CLOSE_BLOCK_DETAIL/);
+    assert.match(html, /bdd-title/);
   });
 });
 
@@ -189,30 +193,30 @@ describe('BlockDetailDialog — linked kaizen chip', () => {
 
 // ---------------------------------------------------------------------------
 // Render: outputArtifact
+// Iter 47 Phase 2: output row shown when outputName present; OMITTED when null.
+// No "—" shown for null — we simply omit the row entirely (cleaner UX).
 // ---------------------------------------------------------------------------
 
-describe('BlockDetailDialog — outputArtifact', () => {
+describe('BlockDetailDialog — outputArtifact (Phase 2: row omitted when null)', () => {
   test('renders output artifact name when provided', () => {
     const html = BlockDetailDialog({
       activity: BASE_ACTIVITY,
       outputArtifact: OUTPUT_ARTIFACT
     });
     assert.match(html, /Pull Request/);
+    assert.ok(html.includes('bdd-output'), 'bdd-output element must be present when artifact exists');
   });
 
-  test('renders graceful — when outputArtifact is null', () => {
+  test('Phase 2: output row OMITTED (not shown as em dash) when outputArtifact is null', () => {
     const html = BlockDetailDialog({ activity: BASE_ACTIVITY, outputArtifact: null });
-    // bdd-output should contain the em dash
-    const match = html.match(/bdd-output[^>]*>([^<]+)</);
-    assert.ok(match, 'bdd-output element must be present');
-    assert.equal(match[1].trim(), '—');
+    // Row is omitted when there is no artifact — no "—" fallback.
+    assert.ok(!html.includes('bdd-output'), 'bdd-output element must be absent when outputArtifact is null (Phase 2)');
   });
 
-  test('renders graceful — when outputArtifact is undefined', () => {
+  test('Phase 2: output row OMITTED when outputArtifact is undefined', () => {
     const html = BlockDetailDialog({ activity: BASE_ACTIVITY });
-    const match = html.match(/bdd-output[^>]*>([^<]+)</);
-    assert.ok(match, 'bdd-output element must be present');
-    assert.equal(match[1].trim(), '—');
+    // Row absent — not showing a useless "—".
+    assert.ok(!html.includes('bdd-output'), 'bdd-output element must be absent when no outputArtifact (Phase 2)');
   });
 });
 
@@ -259,12 +263,13 @@ describe('BlockDetailDialog — edge cases', () => {
     assert.match(html, /cat_entry_xyz/);
   });
 
-  test('renders duration as — when plannedDurationMinutes is 0', () => {
+  test('Phase 2 AC9: standalone Duration row REMOVED — only Time row remains', () => {
     const html = BlockDetailDialog({
       activity: { ...BASE_ACTIVITY, plannedDurationMinutes: 0 }
     });
-    // Duration row value should be em dash when dur is 0
-    assert.match(html, /Duration/);
+    // Duration row is removed (AC9). The time range still exists.
+    assert.ok(!html.includes('<dt class="bdd-label">Duration</dt>'), 'Duration row must be absent (AC9)');
+    assert.ok(html.includes('bdd-time'), 'Time row must still be present');
   });
 });
 

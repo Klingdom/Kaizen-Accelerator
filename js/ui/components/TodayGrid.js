@@ -22,6 +22,14 @@
  *   - Dragging class applied via installDragController (DOM-side; no rerender needed)
  *   - Protected blocks / lunch: no resize handle rendered
  *
+ * Iter 47 Phase 2 additions:
+ *   - Per-bucket render functions: blockWrapper(), renderProjectBlock(),
+ *     renderCommBlock(), renderCIBlock(), renderLunchBlock(), renderProtectedBlock()
+ *   - renderTodayBlock() is now a dispatch function (AC1–AC6)
+ *   - Lunch blocks emit OPEN_LUNCH_TOOLTIP instead of OPEN_BLOCK_DETAIL (AC13)
+ *   - CI EoAR blocks get .cycle-block-sacred CSS class (AC4, AC18)
+ *   - Lock emoji replaced by CSS-only .cycle-block-sacred indicator on EoAR
+ *
  * Pure render. Returns an HTML string. No DOM access. Imports positioning
  * helpers from weekGridMath.js as-is (zero changes to that module).
  *
@@ -89,6 +97,12 @@ const RANGE_MIN_HEIGHT_PX = 40;
 const SECONDARY_LINE_MIN_HEIGHT_PX = 56;
 
 /**
+ * CatalogEntryId for End-of-Activity Reflection — gets sacred treatment.
+ * Iter 47 Phase 2 §A.3: documented as the only ID that gets .cycle-block-sacred.
+ */
+const EAR_CATALOG_ID = 'gen_end_of_activity_reflection';
+
+/**
  * Format an ISO/HH:MM start time as a clean `HH:MM` display string.
  *
  * @param {string | null | undefined} value
@@ -102,6 +116,244 @@ function formatHHMM(value) {
   return `${hh}:${mm}`;
 }
 
+// ---------------------------------------------------------------------------
+// Iter 47 Phase 2 — Shared block wrapper (AC1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the shared positioning shell for every calendar block.
+ *
+ * Extracts all common concerns (absolute positioning, aria-label, data-attrs,
+ * click-handler wiring, staggered animation, drag attrs) so per-bucket
+ * renderers can focus purely on their inner content.
+ *
+ * @param {{
+ *   activity:       object,
+ *   h:              number,      — rendered height in px (clamped)
+ *   top:            number,      — top offset in px
+ *   bucketChipClass:string,
+ *   proposedClass:  string,
+ *   lunchClass:     string,
+ *   ariaLabel:      string,
+ *   payload:        string,      — JSON-stringified click payload
+ *   staggerMs:      number,
+ *   startAttr:      string,
+ *   durationAttr:   string,
+ *   canDrag:        boolean,
+ *   kaizenLinkedAttr:string,
+ *   extraClasses:   string,      — additional CSS classes (e.g. cycle-block-sacred)
+ *   actionAttr:     string,      — data-action value (default OPEN_BLOCK_DETAIL)
+ * }} wrapCtx
+ * @param {string} innerHtml — the bucket-specific inner HTML
+ * @returns {string}
+ */
+function blockWrapper(wrapCtx, innerHtml) {
+  const {
+    activity,
+    h,
+    top,
+    bucketChipClass,
+    proposedClass,
+    lunchClass,
+    ariaLabel,
+    payload,
+    staggerMs,
+    startAttr,
+    durationAttr,
+    canDrag,
+    kaizenLinkedAttr,
+    extraClasses = '',
+    actionAttr = 'OPEN_BLOCK_DETAIL'
+  } = wrapCtx;
+
+  const activityId = activity.id ?? '';
+  const activityState = activity.state ?? '';
+  const userEdited = activity.userEdited === true;
+
+  const dragHandleAttr = canDrag
+    ? ` aria-roledescription="draggable calendar block"`
+    : '';
+
+  const extraClassStr = extraClasses ? ` ${extraClasses}` : '';
+
+  return `<article
+    class="cycle-block-positioned ${esc(bucketChipClass)}${proposedClass}${lunchClass}${extraClassStr}"
+    style="top: ${top}px; height: ${h}px; animation-delay: ${staggerMs}ms"
+    data-activity-id="${esc(activityId)}"
+    data-bucket="${esc(activity.bucket ?? '')}"
+    data-state="${esc(activityState)}"
+    data-user-edited="${userEdited ? 'true' : 'false'}"
+    data-block-index="${wrapCtx.blockIndex ?? 0}"${kaizenLinkedAttr}${startAttr}${durationAttr}
+    role="button"
+    tabindex="0"
+    aria-label="${esc(ariaLabel)}"${dragHandleAttr}
+    data-action="${esc(actionAttr)}"
+    data-payload='${esc(payload)}'
+  >
+    ${innerHtml}
+  </article>`;
+}
+
+// ---------------------------------------------------------------------------
+// Iter 47 Phase 2 — Per-bucket render functions (AC2–AC6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Render a PROJECT block.
+ *
+ * Shows: time label + name + secondary line (intention > outputArtifact.name)
+ * when block height >= 56px + kaizen chip + resize handle (if not protected).
+ * AC2: renderProjectBlock exists with PROJECT-specific content.
+ *
+ * @param {object} activity
+ * @param {object|null} catalogEntry
+ * @param {object} ctx — shared pre-computed context from renderTodayBlock
+ * @returns {string}
+ */
+function renderProjectBlock(activity, catalogEntry, ctx) {
+  const { timeLabel, name, kaizenChip, resizeHandle, h } = ctx;
+
+  // Secondary info line: prefer intention, fall back to outputArtifact.name.
+  let secondaryLine = '';
+  if (h >= SECONDARY_LINE_MIN_HEIGHT_PX) {
+    const intentionText = typeof activity.intention === 'string' && activity.intention.trim()
+      ? activity.intention.trim()
+      : null;
+    const artifactName = catalogEntry?.outputArtifact?.name ?? null;
+    const secondaryText = intentionText ?? artifactName ?? null;
+    if (secondaryText) {
+      secondaryLine = `<span class="cycle-block-secondary" aria-label="Output: ${esc(secondaryText)}">${esc(secondaryText)}</span>`;
+    }
+  }
+
+  return `<span class="cycle-block-time">${esc(timeLabel)}</span>
+    <span class="cycle-block-name">${esc(name)}</span>
+    ${secondaryLine}${kaizenChip}${resizeHandle}`;
+}
+
+/**
+ * Render a COMMUNICATION block.
+ *
+ * Shows: time label + specific sub-type name (NOT generic "COMMUNICATION")
+ * + kaizen chip + resize handle.
+ * AC3: renderCommBlock exists; shows sub-type name.
+ *
+ * @param {object} activity
+ * @param {object|null} _catalogEntry
+ * @param {object} ctx — shared pre-computed context
+ * @returns {string}
+ */
+function renderCommBlock(activity, _catalogEntry, ctx) {
+  const { timeLabel, kaizenChip, resizeHandle } = ctx;
+
+  // Use the activity name as primary — it is already the sub-type name
+  // (Daily Standup, AM High-value Communication, etc.) from the composer.
+  // Lock chip for protected COMM blocks.
+  const lockChip = ctx.protected_
+    ? `<span class="cycle-block-lock" aria-label="Protected block" title="Protected anchor"></span>`
+    : '';
+
+  const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
+
+  return `${lockChip}<span class="cycle-block-time">${esc(timeLabel)}</span>
+    <span class="cycle-block-name">${esc(name)}</span>
+    ${kaizenChip}${resizeHandle}`;
+}
+
+/**
+ * Render a CI (Continuous Improvement) block.
+ *
+ * End-of-Activity Reflection (gen_end_of_activity_reflection) gets the
+ * .cycle-block-sacred CSS class and a CSS-only sacred indicator (no lock emoji).
+ * All other protected CI blocks (sprint ceremonies) keep the lock indicator.
+ * AC4: renderCIBlock exists with .cycle-block-sacred class on EoAR.
+ *
+ * @param {object} activity
+ * @param {object|null} _catalogEntry
+ * @param {object} ctx — shared pre-computed context
+ * @returns {string}
+ */
+function renderCIBlock(activity, _catalogEntry, ctx) {
+  const { timeLabel, kaizenChip, resizeHandle } = ctx;
+  const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
+
+  const isEoAR = activity.catalogEntryId === EAR_CATALOG_ID;
+
+  // EoAR: CSS-only sacred indicator instead of lock emoji.
+  // Sprint ceremonies and other protected CI: standard lock chip.
+  let lockOrSacred = '';
+  if (isEoAR) {
+    // CSS class (.cycle-block-sacred) is applied via extraClasses in blockWrapper.
+    // The lock indicator is a CSS dot/halo rendered by the class — no emoji.
+    lockOrSacred = `<span class="cycle-block-sacred-indicator" aria-label="Sacred reflection block" aria-hidden="true"></span>`;
+  } else if (ctx.protected_) {
+    lockOrSacred = `<span class="cycle-block-lock" aria-label="Protected block" title="Protected — cannot be moved">&#x1F512;</span>`;
+  }
+
+  return `${lockOrSacred}<span class="cycle-block-time">${esc(timeLabel)}</span>
+    <span class="cycle-block-name">${esc(name)}</span>
+    ${kaizenChip}${resizeHandle}`;
+}
+
+/**
+ * Render a Lunch block (bucket: null).
+ *
+ * Minimal: time + "Lunch" label only. No kaizen chip. No resize handle.
+ * Emits OPEN_LUNCH_TOOLTIP action so app.js can show an inline tooltip
+ * instead of the full BlockDetailDialog (AC5, AC13).
+ * AC5: renderLunchBlock exists with minimal content.
+ *
+ * @param {object} activity
+ * @param {object} ctx — shared pre-computed context
+ * @returns {string}
+ */
+function renderLunchBlock(activity, ctx) {
+  const { timeLabel } = ctx;
+  const name = activity.name ?? 'Lunch';
+
+  return `<span class="cycle-block-time">${esc(timeLabel)}</span>
+    <span class="cycle-block-name">${esc(name)}</span>`;
+}
+
+/**
+ * Render a protected block that doesn't fall into a specific bucket category
+ * (e.g. strategic PROJECT blocks, carried-over blocks).
+ *
+ * Uses CSS-only lock indicator (.cycle-block-lock as styled element, no emoji
+ * on the rendered lock chip — the lock class provides the visual). No disabled
+ * Edit button (that is handled in BlockDetailDialog, not here).
+ * AC6: renderProtectedBlock exists; no disabled Edit button anywhere in block.
+ *
+ * @param {object} activity
+ * @param {object|null} catalogEntry
+ * @param {object} ctx — shared pre-computed context
+ * @returns {string}
+ */
+function renderProtectedBlock(activity, catalogEntry, ctx) {
+  const { timeLabel, kaizenChip } = ctx;
+  const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
+
+  // Visual lock indicator (CSS-only, no emoji) — communicates protection without text.
+  const lockChip = `<span class="cycle-block-lock" aria-label="Protected block" title="Protected — cannot be moved">&#x1F512;</span>`;
+
+  // Secondary line from catalog artifact if available.
+  let secondaryLine = '';
+  if (ctx.h >= SECONDARY_LINE_MIN_HEIGHT_PX) {
+    const artifactName = catalogEntry?.outputArtifact?.name ?? null;
+    if (artifactName) {
+      secondaryLine = `<span class="cycle-block-secondary">${esc(artifactName)}</span>`;
+    }
+  }
+
+  return `${lockChip}<span class="cycle-block-time">${esc(timeLabel)}</span>
+    <span class="cycle-block-name">${esc(name)}</span>
+    ${secondaryLine}${kaizenChip}`;
+}
+
+// ---------------------------------------------------------------------------
+// Iter 47 Phase 2 — Main dispatch function (refactored from single render fn)
+// ---------------------------------------------------------------------------
+
 /**
  * Render a single calendar block absolutely positioned on the timeline.
  *
@@ -111,6 +363,10 @@ function formatHHMM(value) {
  *
  * Iter 46 Phase 1: accepts catalogEntryById map for PROJECT secondary line
  * (AC1–AC4). Pass the full map; lookup is done inside this function.
+ *
+ * Iter 47 Phase 2: refactored to dispatch to per-bucket render functions
+ * (AC1–AC6). blockWrapper() holds all shared concerns. Lunch blocks emit
+ * OPEN_LUNCH_TOOLTIP instead of OPEN_BLOCK_DETAIL (AC13).
  *
  * @param {{
  *   activity:          object,
@@ -137,7 +393,7 @@ function renderTodayBlock(ctx) {
   // Clamp to minimum so short blocks remain clickable.
   const h = Math.max(rawH, MIN_BLOCK_HEIGHT_PX);
 
-  // Bucket styling.
+  // Bucket detection.
   const bucket = activity.bucket ?? null;
   const isLunch = bucket === null;
   const meta = bucketMeta(bucket);
@@ -149,11 +405,8 @@ function renderTodayBlock(ctx) {
   // Lunch modifier.
   const lunchClass = isLunch ? ' cycle-block-lunch' : '';
 
-  // Protected blocks get a lock indicator.
+  // Protected detection.
   const protected_ = isProtectedBlock(activity);
-  const lockChip = protected_
-    ? `<span class="cycle-block-lock" aria-label="Protected block" title="Protected — cannot be moved">&#x1F512;</span>`
-    : '';
 
   // Time label — full range when block is tall enough, start-only when short.
   const timeLabel = rawH < RANGE_MIN_HEIGHT_PX
@@ -161,7 +414,6 @@ function renderTodayBlock(ctx) {
     : formatTimeRange(startValue, dur);
 
   const name = activity.name ?? activity.catalogEntryId ?? '(unnamed)';
-  const userEdited = activity.userEdited === true;
   const activityId = activity.id ?? '';
   const activityState = activity.state ?? '';
 
@@ -175,7 +427,7 @@ function renderTodayBlock(ctx) {
     ? `<span class="cycle-block-kaizen cycle-block-kaizen-linked" aria-label="part of Kaizen ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
     : '';
 
-  // Accessible aria-label matching AC18.
+  // Accessible aria-label.
   const endMin = parseMinutesOfDay(startValue);
   const endFormatted = endMin !== null
     ? (() => {
@@ -185,69 +437,92 @@ function renderTodayBlock(ctx) {
     : '';
   const ariaLabel = `${name}, ${activityState}, ${formatHHMM(startValue)} to ${endFormatted}, ${isLunch ? 'Lunch' : meta.label}${protected_ ? ', protected, cannot be moved' : ''}`;
 
-  // Click action — emits OPEN_BLOCK_DETAIL so app.js can open the detail popover.
-  const payload = JSON.stringify({ activityId });
-
   // Iter 33: staggered animation-delay per block index (AC11). Cap at 6 blocks.
   const staggerMs = Math.min(blockIndex, 6) * 60 + 120;
 
   // Iter 35 Phase 2: minutes-of-day for drag math.
-  // Store start in minutes and duration so dragController can read them.
   const startMinutesOfDay = parseMinutesOfDay(startValue);
   const startAttr = startMinutesOfDay !== null ? ` data-activity-start="${startMinutesOfDay}"` : '';
   const durationAttr = ` data-activity-duration="${Math.round(dur)}"`;
 
   // Iter 35 Phase 2: resize handle — only on non-protected, non-lunch blocks.
-  // Protected/lunch blocks MUST NOT have drag/resize handles (AC6).
   const canDrag = !protected_ && !isLunch;
   const resizeHandle = canDrag
     ? `<div class="cycle-block-resize-handle" aria-label="Drag to resize ${esc(name)}" aria-hidden="true" title="Drag to resize"></div>`
     : '';
 
-  // Iter 35 Phase 2: draggable role hint (AC14) — only on non-protected, non-lunch.
-  const dragHandleAttr = canDrag
-    ? ` aria-roledescription="draggable calendar block"`
-    : '';
+  // Catalog entry lookup for per-bucket renderers.
+  const catalogEntry = catalogEntryById && activity.catalogEntryId
+    ? catalogEntryById[activity.catalogEntryId] ?? null
+    : null;
 
-  // Iter 46 Phase 1 — PROJECT secondary info line (AC1–AC4).
-  // Shows `intention` (on the activity) OR `outputArtifact.name` (from catalog).
-  // Only rendered for PROJECT bucket blocks when the block is tall enough (≥56px).
-  // COMMUNICATION/CI/Lunch: no secondary line — those get per-bucket treatment in Phase 2.
-  let secondaryLine = '';
-  if (bucket === 'PROJECT' && h >= SECONDARY_LINE_MIN_HEIGHT_PX) {
-    // Prefer activity.intention (author's stated intention) over catalog artifact name.
-    const intentionText = typeof activity.intention === 'string' && activity.intention.trim()
-      ? activity.intention.trim()
-      : null;
-    // Fall back to outputArtifact.name from the catalog entry.
-    const catalogEntry = catalogEntryById && activity.catalogEntryId
-      ? catalogEntryById[activity.catalogEntryId] ?? null
-      : null;
-    const artifactName = catalogEntry?.outputArtifact?.name ?? null;
-    const secondaryText = intentionText ?? artifactName ?? null;
-    if (secondaryText) {
-      secondaryLine = `<span class="cycle-block-secondary" aria-label="Output: ${esc(secondaryText)}">${esc(secondaryText)}</span>`;
-    }
+  // Shared context passed to per-bucket renderers.
+  const sharedCtx = {
+    timeLabel,
+    name,
+    kaizenChip,
+    resizeHandle,
+    h,
+    protected_,
+    blockIndex
+  };
+
+  // Wrapper context (shared positioning + aria + data-attrs).
+  const baseWrapCtx = {
+    activity,
+    h,
+    top,
+    bucketChipClass,
+    proposedClass,
+    lunchClass,
+    ariaLabel,
+    staggerMs,
+    startAttr,
+    durationAttr,
+    canDrag,
+    kaizenLinkedAttr,
+    extraClasses: '',
+    actionAttr: 'OPEN_BLOCK_DETAIL',
+    blockIndex
+  };
+
+  // Iter 47 Phase 2 — Dispatch to per-bucket renderer.
+  if (isLunch) {
+    // AC13: Lunch emits OPEN_LUNCH_TOOLTIP, not OPEN_BLOCK_DETAIL.
+    const payload = JSON.stringify({ activityId, timeRange: formatTimeRange(startValue, dur) });
+    const wrapCtx = { ...baseWrapCtx, actionAttr: 'OPEN_LUNCH_TOOLTIP', payload };
+    return blockWrapper(wrapCtx, renderLunchBlock(activity, sharedCtx));
   }
 
-  return `<article
-    class="cycle-block-positioned ${esc(bucketChipClass)}${proposedClass}${lunchClass}"
-    style="top: ${top}px; height: ${h}px; animation-delay: ${staggerMs}ms"
-    data-activity-id="${esc(activityId)}"
-    data-bucket="${esc(bucket ?? '')}"
-    data-state="${esc(activityState)}"
-    data-user-edited="${userEdited ? 'true' : 'false'}"
-    data-block-index="${blockIndex}"${kaizenLinkedAttr}${startAttr}${durationAttr}
-    role="button"
-    tabindex="0"
-    aria-label="${esc(ariaLabel)}"${dragHandleAttr}
-    data-action="OPEN_BLOCK_DETAIL"
-    data-payload='${esc(payload)}'
-  >
-    ${lockChip}<span class="cycle-block-time">${esc(timeLabel)}</span>
-    <span class="cycle-block-name">${esc(name)}</span>
-    ${secondaryLine}${kaizenChip}${resizeHandle}
-  </article>`;
+  const payload = JSON.stringify({ activityId });
+
+  if (bucket === 'PROJECT') {
+    const wrapCtx = { ...baseWrapCtx, payload };
+    return blockWrapper(wrapCtx, renderProjectBlock(activity, catalogEntry, sharedCtx));
+  }
+
+  if (bucket === 'COMMUNICATION') {
+    const wrapCtx = { ...baseWrapCtx, payload };
+    return blockWrapper(wrapCtx, renderCommBlock(activity, catalogEntry, sharedCtx));
+  }
+
+  if (bucket === 'CI') {
+    // AC4, AC18: EoAR gets .cycle-block-sacred extra class.
+    const isEoAR = activity.catalogEntryId === EAR_CATALOG_ID;
+    const extraClasses = isEoAR ? 'cycle-block-sacred' : '';
+    const wrapCtx = { ...baseWrapCtx, payload, extraClasses };
+    return blockWrapper(wrapCtx, renderCIBlock(activity, catalogEntry, sharedCtx));
+  }
+
+  // Fallback: protected blocks or unknown bucket types.
+  if (protected_) {
+    const wrapCtx = { ...baseWrapCtx, payload };
+    return blockWrapper(wrapCtx, renderProtectedBlock(activity, catalogEntry, sharedCtx));
+  }
+
+  // Generic fallback — render same as project block for unknown buckets.
+  const wrapCtx = { ...baseWrapCtx, payload };
+  return blockWrapper(wrapCtx, renderProjectBlock(activity, catalogEntry, sharedCtx));
 }
 
 /**

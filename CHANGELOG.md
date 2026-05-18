@@ -6,6 +6,89 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 47 — 2026-05-18 — Per-task-type info Phase 2: per-bucket render refactor + protected cleanup (C-UX-TASKTYPE-INFO-P2)
+
+### What changed
+The biggest visible impact phase of the per-task-type bundle. Per-bucket render functions extracted + convergent "useless" elements removed + CI sacred treatment + Lunch dialog suppression. Phil approved Path A; this is Phase 2 of 4.
+
+**Per-bucket render functions (Option b)** — `js/ui/components/TodayGrid.js` refactored:
+- `blockWrapper()` shared helper — positioning, aria, data-attrs
+- `renderProjectBlock` — name + intention/output (from Phase 1)
+- `renderCommBlock` — **sub-type name** (Daily Standup / AM Comm / Post-lunch / End-of-Deep-Cycles) NOT generic "COMMUNICATION"
+- `renderCIBlock` — `.cycle-block-sacred` CSS treatment on End-of-Activity Reflection
+- `renderLunchBlock` — minimal: time + "Lunch" only
+- `renderProtectedBlock` — visual lock indicator (no emoji on EoAR)
+
+**Convergent removals** (3/3 lens consensus) — `BlockDetailDialog.js`:
+- ❌ **Disabled Edit button** on protected blocks — REMOVED ("the most useless element in the system" — UX agent verdict)
+- ❌ **Bucket-label text rows** ("PROJECT"/"COMMUNICATION"/"CI" text) — REMOVED (color carries semantic)
+- ❌ **Standalone duration row** — REMOVED (time range already shows it)
+- ❌ **Generic "—" empty output row** — REMOVED (row absent when null instead of placeholder)
+
+**Per-type additions**:
+- COMM blocks get **slotKind-keyed rationale sentence** (5 variants):
+  - DAILY_STANDUP: "Quick sync on yesterday → today → blockers."
+  - AM_COMM: "Start-of-day high-value communication."
+  - POST_LUNCH_COMM: "Post-lunch high-value communication."
+  - POST_DEEP_COMM (Iter 38 anchor): "End-of-deep-cycles communication."
+  - User-added: catalog description OR generic "Communication time"
+- CI End-of-Activity Reflection gets working **"Start Reflection"** action button (dispatches existing `EOD_OPEN_REFLECTION`)
+- Sprint ceremonies get ceremony-specific rationale
+- LUNCH block: clicking does NOT open BlockDetailDialog; shows **inline tooltip** instead ("Lunch — 12:00–12:30. Auto-protected; not editable.")
+
+**New CSS**:
+- `.cycle-block-sacred` — outline + box-shadow halo (replaces lock emoji on EoAR)
+- `.lunch-tooltip` — small inline pop near lunch block
+- `.bdd-rationale` — secondary-text rationale sentence styling
+- `.bdd-btn-reflect` — "Start Reflection" action button
+
+**New app.js state + handlers**:
+- `state.lunchTooltip` slice
+- `OPEN_LUNCH_TOOLTIP({activityId})` — set state, render tooltip
+- `CLOSE_LUNCH_TOOLTIP()` — clear
+
+### META rule applications validated
+**§A.2 orthogonal-case rule** — every per-bucket branch has BOTH expected-treatment AND orthogonal tests (8 branches documented; each tested both directions):
+| Branch | Expected | Orthogonal test |
+|---|---|---|
+| PROJECT → secondary line | Renders | COMM/CI/Lunch do NOT render it |
+| COMM → renderCommBlock | sub-type name | PROJECT/CI/Lunch don't use COMM template |
+| CI EoAR → .cycle-block-sacred | Halo present | Non-EoAR CI + other buckets do NOT get class |
+| Lunch click → OPEN_LUNCH_TOOLTIP | Tooltip action | Other buckets still emit OPEN_BLOCK_DETAIL |
+| Protected → no Edit button | Absent | Non-protected blocks still get Edit button |
+| EoAR → Start Reflection | Action button present | Other CI/COMM/PROJECT do NOT get it |
+| COMM → rationale | slotKind-keyed prose | Other buckets do NOT get COMM rationale |
+| Sprint ceremony → rationale | Ceremony prose | User-added CI + COMM do NOT |
+
+**§A.3 reconciliation audit** — pre-implementation grep for `sacred`/`ceremony`/`anchor`/`lock` CSS rules. Findings:
+- `.cycle-block-lock` exists (emoji positioning) — NOT a conflict; EoAR uses `.cycle-block-sacred-indicator` span instead
+- `.cycle-block-sacred` NEW — no prior rule existed
+- `.edit-protected` exists in EditDrawer — separate namespace
+- Zero CSS conflicts. Additive only.
+
+### Impact
+- Test suite: 3,441 → **3,539** (+98 new across 3 new test files: TodayGrid.iter47, BlockDetailDialog.iter47, Today.iter47)
+- Runtime: 4.31s → **4.27s** ✅ (per-test 1.25 → 1.21ms; 19% headroom under META §A.1 ceiling)
+- §6.5 hits: **0**
+- Files: 5 modified (TodayGrid +381 LOC, BlockDetailDialog +191, Today +41, app.js +23, app.css +118); 3 NEW test files
+- Production LOC: ~+950; test LOC: ~+1,286
+- All 20 ACs PASS
+
+### Spec deviations (2 minor, both improvements)
+1. **AC11 action target**: spec said `OPEN_REFLECTION_SHEET` but that action doesn't exist. Used `EOD_OPEN_REFLECTION` (semantically equivalent; opens ReflectionSheet for oldest pending). Documented in code comment.
+2. **Null output artifact**: spec said keep "—" placeholder; FE chose to omit the row entirely. Cleaner UX, matches delta spec's intent of net-cut info density.
+
+### Time efficiency
+~3.5h actual vs 4-6h estimate. Per-bucket pattern was clean; `EOD_OPEN_REFLECTION` action already existed.
+
+### Phase plan progress
+- ✅ **Phase 1** (Iter 46): foundation — data threading + PROJECT secondary line + COMM participants/trigger
+- ✅ **Phase 2** (this iteration): per-bucket render refactor + convergent removals + CI sacred + Lunch tooltip
+- 🔄 **Phase 3** (next): Kaizen sub-labels on PROJECT + CI + bucket-strip removal
+- 🔄 **Phase 4**: edge-case polish
+
+---
+
 ## Iteration 46 — 2026-05-18 — Per-task-type info Phase 1: PROJECT secondary line + COMM participants/trigger (C-UX-TASKTYPE-INFO-P1)
 
 ### What changed

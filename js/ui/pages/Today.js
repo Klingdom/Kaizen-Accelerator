@@ -158,6 +158,8 @@ export function Today(props = {}) {
   const conflictBanner = props.conflictBanner ?? null;
   // Iter 36 — catalog picker dialog.
   const catalogPickerDialog = props.catalogPickerDialog ?? null;
+  // Iter 47 Phase 2 — lunch tooltip state (AC13, AC14).
+  const lunchTooltip = props.lunchTooltip ?? null;
   // Phase A: props forwarded to CycleCard for disclosure regions + EOD CTA.
   const priorDayRecap = props.priorDayRecap ?? null;
   const eodRecap = props.eodRecap ?? null;
@@ -332,6 +334,13 @@ export function Today(props = {}) {
       })
     : '';
 
+  // Iter 47 Phase 2 — render lunch tooltip when lunchTooltip is set (AC13, AC14).
+  // A non-modal inline tooltip that auto-dismisses on click-outside.
+  // Shows: "Lunch · [HH:MM–HH:MM] · Auto-protected; not editable."
+  const lunchTooltipHtml = lunchTooltip
+    ? renderLunchTooltip(lunchTooltip)
+    : '';
+
   const mainClass = isEditing ? 'today-page today-editing' : 'today-page';
 
   // Iter 35 Phase 2: drag-confirm banner for PROPOSED pending-commit flow (AC8).
@@ -404,6 +413,7 @@ export function Today(props = {}) {
   ${modal}
   ${blockDetailHtml}
   ${catalogPickerHtml}
+  ${lunchTooltipHtml}
 </main>`;
 }
 
@@ -603,6 +613,37 @@ function renderBlockDetailDialog(blockDetail, activeState, kaizenTitleById, cata
     : null;
 
   return BlockDetailDialog({ activity, kaizenTitle, catalogEntry });
+}
+
+/**
+ * Iter 47 Phase 2 — Render the lunch inline tooltip (AC13, AC14).
+ *
+ * A non-modal, dismissable tooltip that replaces BlockDetailDialog for lunch blocks.
+ * Shows: "Lunch · [time range] · Auto-protected; not editable."
+ * Dismisses on backdrop click (CLOSE_LUNCH_TOOLTIP) or auto after a few seconds
+ * (handled by CSS animation — no JS timer needed in this pure render).
+ *
+ * @param {{timeRange: string}} lunchTooltip
+ * @returns {string}
+ */
+function renderLunchTooltip(lunchTooltip) {
+  if (!lunchTooltip || typeof lunchTooltip !== 'object') return '';
+  const timeRange = typeof lunchTooltip.timeRange === 'string' ? lunchTooltip.timeRange : 'Lunch';
+  const closePayload = esc(JSON.stringify({}));
+  return `<div
+  class="lunch-tooltip"
+  role="tooltip"
+  aria-live="polite"
+  aria-label="Lunch block info"
+  data-action="CLOSE_LUNCH_TOOLTIP"
+  data-payload='${closePayload}'
+>
+  <div class="lunch-tooltip-content">
+    <span class="lunch-tooltip-label">Lunch</span>
+    <span class="lunch-tooltip-time">${esc(timeRange)}</span>
+    <span class="lunch-tooltip-note">Auto-protected; not editable.</span>
+  </div>
+</div>`;
 }
 
 /**

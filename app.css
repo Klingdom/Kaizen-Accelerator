@@ -563,6 +563,124 @@ html, body {
 }
 
 /*
+ * Iter 47 Phase 2 — Sacred CI block treatment (META §A.3 reconciliation).
+ *
+ * §A.3 audit: No prior `.cycle-block-sacred` or `.cycle-block-ceremony` rules
+ * exist in this file. The only related CSS is `.cycle-block-lock` (emoji
+ * positioned at top-right) and `.edit-protected` (opacity on list rows).
+ * This new class is additive and does NOT conflict with any existing rule.
+ *
+ * Applied to: gen_end_of_activity_reflection blocks only.
+ * Visual: left-border halo + slightly brighter background to signal "sacred"
+ * status without using emoji. The lock emoji is suppressed for EoAR in JS
+ * (renderCIBlock uses cycle-block-sacred-indicator span instead).
+ *
+ * WCAG AA: left border uses the CI fill color (#7c3aed equiv). Text contrast
+ * remains white on CI fill (5.9:1 ✓).
+ */
+.cycle-block-sacred {
+  outline: 2px solid rgba(167, 139, 250, 0.85) !important;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* Sacred indicator dot — rendered by renderCIBlock for EoAR. */
+.cycle-block-sacred-indicator {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.7);
+}
+
+/*
+ * Iter 47 Phase 2 — Lunch inline tooltip (AC13, AC14).
+ *
+ * Non-modal overlay that replaces BlockDetailDialog for lunch blocks.
+ * Positioned centered in the viewport, auto-dismissed by backdrop click.
+ * Uses muted styling to match the lunch block's low-stakes nature.
+ */
+.lunch-tooltip {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  background: rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.lunch-tooltip-content {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 200px;
+  pointer-events: none;
+}
+
+.lunch-tooltip-label {
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  font-size: 0.95rem;
+}
+
+.lunch-tooltip-time {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.lunch-tooltip-note {
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #9ca3af);
+  font-style: italic;
+}
+
+/*
+ * Iter 47 Phase 2 — .bdd-rationale styling for per-type rationale sentences
+ * in BlockDetailDialog (AC10, AC11, AC12).
+ *
+ * Plain prose in Geist body, secondary text color. Occupies the visual
+ * space previously held by the disabled Edit button.
+ */
+.bdd-rationale-section {
+  padding: 0 16px 4px;
+}
+
+.bdd-rationale {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.5;
+}
+
+/* Start Reflection button — distinct from the standard Edit button */
+.bdd-btn-reflect {
+  background: var(--ci-fill-base, #6d28d9);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.bdd-btn-reflect:hover {
+  background: #5b21b6;
+}
+
+/*
  * Bucket coloring — Today calendar blocks (cycle-block-positioned).
  * Iter 31: Phil's directive — "make each card filled in the color for the
  * activity." Uses saturated fill variables with white text (option a) so
