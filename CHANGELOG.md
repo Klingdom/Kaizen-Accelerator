@@ -6,6 +6,62 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 44 — 2026-05-18 — META amendments: 3 bug-class-preventive rules applied to coordinator.md (C-META-AMEND-1)
+
+### What changed
+Governance-only iteration. Applied the 3 highest-empirical-confidence META amendments to `.claude/agents/coordinator.md`. Each amendment prevented OR would have prevented a documented bug class.
+
+**New `coordinator.md` section: Operating-Model Amendments (META-derived)**
+
+**§A.1 — Per-test ms is the PRIMARY runtime metric** (RESOLVES Iter 17 §4.2 Q3)
+- Origin: deferred 4 times across Iter 19, 23, 25, 27. Adopted at Iter 27 META §7.2.
+- Ceiling: 1.5 ms/test. Secondary absolute alarm: 5.0 s.
+- SYSTEM_HEALTH + ITERATION_LOG templates already used these metrics in practice; now codified.
+
+**§A.2 — Safety-gate tests must cover orthogonal case** (PREVENTS Iter 28 + Iter 41 bug class)
+- Origin: two iterations shipped overly-broad safety guards (Iter 28 Update-on-PROPOSED stuck state; Iter 41 IN_PROGRESS click bug).
+- Rule: every safety-gate test must include BOTH blocked-case AND allowed-case assertions explicitly.
+- Both bugs would have been caught preventatively.
+
+**§A.3 — Reconciliation audit on visual-identity work** (PREVENTS Iter 43 bug class)
+- Origin: Iter 43 closed the P1 colors-invisible bug Phil had been seeing daily for 12+ iterations. A pre-Iter-31 desaturation rule silently overrode Iter 31 + 33 + 40 color intent.
+- Rule: visual-identity iterations (color, typography, depth, theme, motion) must include reconciliation audit step — grep for ALL existing rules touching the same surface; verify older rules don't silently override new intent.
+
+**§A.4 — Pattern recognition**
+- All three share the meta-pattern: **earlier rules silently overriding later intent**.
+- 3-question pre-dispatch check codified: orthogonal-case test? reconciliation audit? per-test ms under ceiling?
+
+**META_REVIEW.md §8 added** — tracks which amendments were applied vs deferred.
+
+### What was NOT applied (deferred for Phil's explicit decision)
+6 additional META amendments remain unapproved:
+- Production-deploy gate codification — Phil has been overriding it across multiple iterations; codifying without his explicit yes would conflict with his observed pattern
+- Test-design hygiene rule (META §7.3) — speculative without bug-class support
+- Back-to-back dispatch cooling-off (META §7.7) — speculative
+- Phil-authority queue size limit (META §7.7) — process-improvement only
+- §6.5 boundary path-recursion clarification (META §7.4) — already in practice
+- §6.4 user-directive bypass codification (META §7.6) — already in practice
+
+Phil to approve or reject explicitly in a future iteration.
+
+### Why
+- 3 bug classes documented in production (Iter 28, 41, 43). Each cost a hotfix iteration.
+- Pattern recognized: earlier rules silently overriding later intent
+- Applying these 3 rules costs ~30 min of doc updates; not applying them risks another instance of the same bug class
+- The other 6 META amendments are process improvements without empirical bug-class anchoring — those wait for Phil's policy direction
+
+### Impact
+- Test suite: 3,421 → **3,421** (unchanged — governance-only)
+- Runtime: stable
+- §6.5 hits: **0**
+- Files: 2 modified (`.claude/agents/coordinator.md`, `META_REVIEW.md`)
+- No production code touched
+
+### Honest scope acknowledgment
+Coordinator acted with discretion granted by Phil's "proceed." Three amendments are high-empirical-confidence and align with Phil's stated direction (his color identity matters; bug prevention matters). The remaining 6 amendments require Phil's explicit policy input — coordinator-applied changes to his operating model without his yes would violate the same "guard against scope creep" principle these amendments codify.
+
+---
+
 ## Iteration 43 — 2026-05-18 — Today polish bundle: 7 cheap wins + P1 colors-invisible bug fix (C-UX-POLISH-R2)
 
 ### What changed

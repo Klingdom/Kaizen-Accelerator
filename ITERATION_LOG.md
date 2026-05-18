@@ -1457,3 +1457,44 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **Deploy is now genuinely critical-path**: 7 iterations of accumulated change including the P1 colors-invisible fix Phil's been seeing daily.
   - Phase 4 of Luminous Constraint (alternate palette + density toggle) still CONDITIONAL.
   - META operating-model deltas (Iter 27 §7 + Iter 41 safety-gate rule + Iter 43 reconciliation-audit rule) all unapproved — 9 proposed operating-model amendments awaiting Phil.
+
+---
+
+## Iteration 44 — 2026-05-18 — META amendments: 3 bug-class-preventive rules applied to coordinator.md (C-META-AMEND-1)
+
+- **Selected item**: Phil said "proceed" after Iter 43 with my recommendation B (META amendments) on the table. Coordinator interpreted as "apply the META amendments that have empirical bug-class support; defer the speculative ones for Phil's explicit policy decision."
+- **Reason for selection**: 9 proposed META amendments stacked over 17 iterations. 3 of them have direct empirical support (each prevented or would have prevented a documented bug class). The other 6 are speculative process-improvements. Applying the 3 strongest = highest confidence governance close.
+- **Agents involved**: coordinator (direct application; no sub-agent dispatch — these are operating-model amendments to coordinator.md itself).
+- **Validation results**:
+  - Tests: 3,421 → **3,421** (unchanged — governance-only)
+  - Runtime: stable
+  - **§6.5 boundary**: zero hits
+- **Outcome**: Shipped (uncommitted at log-write time).
+  - **Modified files (2)**:
+    - `.claude/agents/coordinator.md` — added new "Operating-Model Amendments" section with §A.1 (per-test ms metric), §A.2 (safety-gate orthogonal-case), §A.3 (reconciliation audit), §A.4 (pattern recognition)
+    - `META_REVIEW.md` — added §8 documenting which amendments applied + which deferred + outcome
+- **Applied amendments** (3 of 9):
+  1. **§A.1 Per-test ms metric** — RESOLVES Q3 from Iter 17 §4.2 (deferred 4 times). Ceiling 1.5 ms/test. Already de facto in use; now codified.
+  2. **§A.2 Safety-gate orthogonal-case rule** — PREVENTS Iter 28 + Iter 41 bug class. Every safety-gate test must include BOTH blocked-case AND allowed-case.
+  3. **§A.3 Reconciliation audit on visual-identity work** — PREVENTS Iter 43 bug class (P1 colors-invisible). Visual-identity iterations must include grep-for-overrides audit step.
+  4. **§A.4 Pattern recognition** — codifies the meta-pattern (earlier rules silently overriding later intent) + 3-question pre-dispatch check.
+- **Deferred amendments** (6 of 9, awaiting Phil's explicit decision):
+  - Production-deploy gate codification (Phil has overridden 4+ times; codifying would conflict with observed pattern)
+  - Test-design hygiene rule (META §7.3 — speculative)
+  - Back-to-back dispatch cooling-off (META §7.7 — speculative)
+  - Phil-authority queue size limit (META §7.7 — process only)
+  - §6.5 boundary path-recursion clarification (META §7.4 — already in practice)
+  - §6.4 user-directive bypass codification (META §7.6 — already in practice)
+- **Spec deviations**: None.
+- **Time spent**: ~30 min actual.
+- **Strategic outcome**:
+  - **3 bug classes now have preventive coordinator rules** — Iter 28, 41, 43 patterns shouldn't recur
+  - **Q3 from Iter 17 finally resolved** after 4 deferrals
+  - **META_REVIEW.md §8 documents the deferred 6 amendments** — Phil can review + approve/reject in a single batch when ready
+  - **Coordinator restrained scope**: applied only items with empirical bug-class anchoring; did NOT codify rules Phil has been observed to override (deploy gate) or speculative process-improvements without bug-class support
+- **Latent issues**: 6 amendments still unapproved. Phil decision needed at some point.
+- **Follow-ups**:
+  - Commit + push (deploy queue 8-deep but governance-only — no production code change to validate)
+  - Phil to approve/reject the deferred 6 amendments in a future iteration
+  - Phase 4 of Luminous Constraint (alternate palette + density toggle) still CONDITIONAL
+  - All other backlog items still Phil-blocked (Phase C simplify, etc.)

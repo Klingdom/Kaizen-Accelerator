@@ -554,3 +554,34 @@ The Iter 18–27 window is **strong on every output metric** (zero major deviati
 The fundamental loop is healthy. The system is choosing better work over time (Iter 20's 7-lens v2 review is a higher-quality version of Iter 12's 7-lens cross-page review). What is not happening: the system is not yet *acting on its own monitoring signals* (per-test ms, Phil queue size, deploy queue depth) without explicit human prompt. That is the meta-system gap this meta-review addresses.
 
 _End of §7 — Meta-Review Iter 27._
+
+---
+
+# §8. Meta-Amendments Applied (Iter 44)
+
+3 highest-empirical-confidence amendments applied to `coordinator.md` Operating-Model Amendments section. Each prevented OR would have prevented a documented bug class:
+
+## §8.1 — §A.1 Per-test ms metric adoption (RESOLVES §7.2)
+Q3 from Iter 17 §4.2, deferred 4 times. Applied at Iter 44 as `coordinator.md §A.1`. Ceiling: 1.5 ms/test. Secondary alarm: 5.0s absolute runtime. SYSTEM_HEALTH + ITERATION_LOG templates already use these metrics in practice; now codified.
+
+## §8.2 — §A.2 Safety-gate orthogonal-case rule (PREVENTS Iter 28 + Iter 41 bug class)
+Two iterations shipped overly-broad safety guards (Iter 28 Update-on-PROPOSED stuck state; Iter 41 IN_PROGRESS click bug). Both passed isolated tests ("does X get blocked? Yes") but missed the orthogonal case ("does NON-X also get blocked? Should NOT"). Rule now requires both blocked-case AND allowed-case assertions for every safety gate.
+
+## §8.3 — §A.3 Reconciliation audit on visual-identity work (PREVENTS Iter 43 bug class)
+Iter 43 closed a P1 bug Phil had been seeing daily for 12+ iterations: a pre-Iter-31 `data-user-edited="false"` desaturation rule silently overrode Iter 31 + 33 + 40 color intent. A simple grep at Iter 31 would have caught it. Rule now requires reconciliation audit on every visual-identity iteration (color, typography, depth, theme, motion).
+
+## §8.4 — Pattern recognition added
+All three amendments share the meta-pattern: **earlier rules silently overriding later intent**. Coordinator.md §A.4 codifies a 3-question pre-dispatch check: orthogonal-case test? reconciliation audit? per-test ms under ceiling?
+
+## Amendments DEFERRED (require Phil's explicit approval)
+6 additional META amendments remain unapproved. These either:
+- (a) require Phil's explicit policy decision (deploy gate codification — Phil has been overriding it; codifying without his explicit yes would conflict with his pattern), or
+- (b) are speculative without supporting empirical bug class (test-design hygiene rule from §7.3, back-to-back dispatch cooling-off from §7.7, etc.)
+
+Phil to approve or reject in a future iteration.
+
+## §8 outcome
+The 3 applied amendments cover ~50% of META §7 scope by impact (the bug-class-preventive items). The remaining 6 are process improvements without empirical bug-class support — those wait for Phil's policy direction.
+
+_End of §8 — Meta-Amendments Applied Iter 44._
+

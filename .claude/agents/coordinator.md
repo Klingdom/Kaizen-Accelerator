@@ -656,3 +656,62 @@ Use its output to refine:
 - selection logic
 - agent invocation order
 - improvement categories to emphasize
+
+---
+
+# 🛡️ OPERATING-MODEL AMENDMENTS (META-derived)
+
+Each rule below is empirically grounded — it prevented OR would have prevented a documented bug class.
+
+## §A.1 — Per-test ms is the PRIMARY runtime metric
+
+**Origin**: Iter 17 §4.2 Q3 (deferred 4 times across Iter 19, 23, 25, 27). Adopted at Iter 27 META §7.2.
+
+**Rule**:
+- Primary runtime metric is `runtime / test_count` reported in ms
+- Ceiling: **1.5 ms / test**
+- Secondary absolute runtime alarm: **5.0 s**
+- SYSTEM_HEALTH.md dashboard must report per-test cost as the headline metric
+- ITERATION_LOG.md entries must include `per_test_ms` computed at iteration close
+- Any iteration that increases per-test cost by >5% requires a 1-line rationale in the iteration log
+
+**Rationale**: absolute runtime drifts with test count and stops being informative. Per-test ms is unit-stable as the suite grows.
+
+## §A.2 — Safety-gate tests must cover the orthogonal case
+
+**Origin**: Iter 28 (Update button on PROPOSED — stuck state) + Iter 41 (IN_PROGRESS click bug — toast on click). Two iterations shipped the same bug class.
+
+**Rule**: Every safety-gate test must include BOTH the blocked-case AND the allowed-case explicitly.
+
+- If a guard blocks action X under condition Y, the test suite must assert both:
+  - Action X is correctly blocked when condition Y is true
+  - Action X' (orthogonal flow that should NOT be blocked) is NOT accidentally blocked when condition Y is true
+- Apply this rule on every iteration that adds a new safety guard, pointer-event interceptor, or condition-based affordance suppression
+- During Define-pass for any new safety mechanism, the dispatch brief must enumerate the orthogonal cases the test suite must cover
+
+**Rationale**: "does X get blocked? Yes" tests pass while orthogonal flows (clicks vs drags; PROPOSED vs ACCEPTED state) silently regress. Two ship-blocking hotfixes resulted from this gap.
+
+## §A.3 — Reconciliation audit on visual-identity work
+
+**Origin**: Iter 43 (P1 colors-invisible bug — Phil's vibrant green/yellow/purple identity hidden by an earlier desaturation rule for 12+ iterations).
+
+**Rule**: When iterating on color, typography, depth, or any visual-identity surface, the dispatch brief must include a reconciliation audit step:
+
+1. Grep for ALL existing CSS rules, data-attributes, classes, and animations that touch the same surface
+2. Explicitly verify that older rules don't silently override the new intent
+3. Document the audit in the iteration's deliverable report
+
+**Applies to**: bucket color changes, typography swaps, gradient/depth treatments, theme system additions, motion vocabulary changes.
+
+**Rationale**: Iter 31 (Phil's colors), Iter 33 (gradient fills), Iter 40 (3-stop depth) were all CORRECT in intent. A pre-Iter-31 `data-user-edited="false"` desaturation rule silently overrode all three for 12+ iterations. Phil looked at pale-wash blocks daily without knowing it was a bug. A simple "grep for rules touching this selector" at Iter 31 would have caught it immediately.
+
+## §A.4 — Pattern recognition
+
+These three amendments share a meta-pattern: **earlier rules silently overriding later intent**. Every visual-identity iteration since Iter 31 + every safety-guard iteration since Iter 28 was vulnerable to this class.
+
+When reviewing future iterations, coordinator should ask:
+1. Does this safety guard have an orthogonal-case test?
+2. Does this visual change pass reconciliation audit?
+3. Is per-test ms staying under 1.5?
+
+If any answer is "no" or "didn't check," surface before dispatch.
