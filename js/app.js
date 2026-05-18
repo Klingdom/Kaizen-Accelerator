@@ -1272,6 +1272,18 @@ export function buildHandlers(scope) {
       rerender();
     },
 
+    // Iter 43 Item 7 — Jump to Now (AC15).
+    // Scrolls the now-line into viewport center with smooth behavior.
+    // Browser-only: guarded by typeof document check so unit tests pass.
+    /* istanbul ignore next — browser-only DOM scroll */
+    SCROLL_TO_NOW(_payload) {
+      if (typeof document === 'undefined') return;
+      const nowLine = document.querySelector('.cycle-now-line');
+      if (nowLine) {
+        nowLine.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    },
+
     // Iter 39 — Luminous Constraint Phase 1 (AC6, AC14).
     // Live-apply theme change: update state + persist + apply data-attribute.
     PREF_CHANGE_THEME(payload, ctx) {

@@ -6,6 +6,68 @@ Format: each iteration is a top-level section. Each entry states **what changed*
 
 ---
 
+## Iteration 43 — 2026-05-18 — Today polish bundle: 7 cheap wins + P1 colors-invisible bug fix (C-UX-POLISH-R2)
+
+### What changed
+3-lens convergent cheap-wins bundle from Iter 42 R2 review. Score 16 (base 14 + ConvergenceBonus +2). All 7 items shipped in single iteration. Includes the P1 colors-invisible bug Phil has been seeing daily.
+
+**Item 1 — P1 colors-invisible bug FIXED**
+Removed `.cycle-block-positioned[data-user-edited="false"]` desaturation CSS rule from `app.css` (was at line ~523). This rule desaturated every Auto-Plan block to a flat pale wash since `userEdited: false` is the default. **Phil's vibrant green/yellow/purple identity (Iter 31) has been invisible by default since Iter 31 shipped.** Now Auto-Plan blocks render with Iter 40's full 3-stop gradient at saturation.
+
+Additive user-edited cue: `[data-user-edited="true"]` now shows `box-shadow: inset 0 0 0 1px rgba(255,255,255,0.30)` — subtle inner border. NOT desaturation reversal. Tracks the user-edited state visually without erasing the brand color.
+
+**Item 2 — Calendar date in header**
+Today header now renders calendar date (e.g., "Sunday, May 17, 2026") in Instrument Serif via `var(--font-display)`. Semantic `<time datetime="YYYY-MM-DD">` element. Derived from `activeState.composition.date` ISO string. Uses `Intl.DateTimeFormat` with Iter 34 locale fallback pattern.
+
+**Item 3 — Now-line glow trail tightening**
+- `::after` fade tightened from 65% → 45% (more concentrated glow)
+- Dot border increased from 2px → 3px (more precise visual anchor)
+- Pure CSS value changes, no selector rename
+
+**Item 4 — Half-hour grid lines (GCal pattern)**
+New `renderHalfHourLines()` in TodayGrid.js mirrors existing `renderHourLines()` at every `:30` offset. CSS: `border-top: 1px dashed` at `opacity: 0.25` (vs hour lines at `opacity: 0.5` solid). Adds finer time orientation without grid clutter.
+
+**Item 5 — Past-hour subtle dimming (GCal pattern)**
+TodayGrid hour-rail labels now compute `isPast = hour < currentHour` from `nowIso` prop. Past hours get `.cycle-hour-past` class → `opacity: 0.55`. Current hour stays full opacity. Eye drawn to current + future.
+
+**Item 6 — Elevate current/next activity to visible header**
+CycleCard.js:111-156 already computed "Now: X" + "Up next: Y" but rendered ONLY as invisible `aria-live="polite"` span. New `.today-header-activity` plain text now surfaces this visually in the header. Aria-live span preserved separately for screen readers (parallel surface).
+
+**Item 7 — "Jump to Now" sticky button (GCal pattern)**
+NEW `js/ui/components/NowJumpButton.js` (~32 LOC) — small pill-shaped sticky button in `.today-grid-col`. Click dispatches new `SCROLL_TO_NOW` action → handler finds `.cycle-now-line` element and calls `scrollIntoView({ block: 'center', behavior: 'smooth' })`. Always visible (no IntersectionObserver complexity). aria-label + focus-visible outline for a11y.
+
+### Why
+- Iter 42 R2 review (UX + Frontend + Competitive) converged on "incremental polish, not redesign"
+- Architecture is sound post-Iter 42; 4th redesign pass would be overengineering
+- The colors-invisible bug is THE highest-impact single change in the entire Luminous Constraint redesign — Phil's stated visual identity finally renders
+- GCal craft conventions (half-hour grid, past-hour dimming, Jump-to-Now) adopted; GCal philosophy (no opinions, user-taxonomy colors, frictionless drag) explicitly rejected
+- All items chosen by "adopt pixels, reject philosophy" heuristic from Competitive analysis
+
+### Impact
+- Test suite: 3,388 → **3,421** (+33 new tests across 4 new test files)
+- Runtime: 4.46s → **4.30s** ✅ (per-test 1.32 → 1.26ms; 16% headroom under META §7.1 1.5ms ceiling)
+- §6.5 hits: **0**
+- Files: 4 modified (`app.css`, `js/app.js`, `TodayGrid.js`, `Today.js`); 1 NEW component (`NowJumpButton.js`); 3 NEW test files
+- All 18 ACs PASS
+
+### Spec deviations
+None material. Two minor implementation notes:
+- "no past hours before grid start" test omitted because `parseMinutesOfDay` correctly handles edge case (test would have been a no-op)
+- Used `.today-header-center` flex wrapper to hold both date + activity summary (kept ring left, badge right per existing flex layout)
+
+### Strategic outcome
+- **Phil's vibrant identity FINALLY VISIBLE by default.** Every iteration since Iter 31 was correct in intent; the desaturation rule was the silent regression. P1 closure has the largest perceptual impact of any single CSS change in the entire Luminous Constraint redesign.
+- **GCal-craft adoption validates "pixels not philosophy" heuristic**: half-hour grid, past-hour dimming, Jump-to-Now all serve familiarity without eroding BAM-X positioning
+- **Cumulative redesign now ~80% complete** when measured by the original 7-lens recommendations from Iter 20 onward
+- **Architect's §6.5 prediction continues to hold**: 0 hits as predicted for polish work
+
+### Operating-model finding
+The Iter 41 + Iter 28 pattern (overly-broad safety guard) and the Iter 43 colors-invisible bug share a common shape: **rules added in earlier iterations were never reconciled against later iterations' intent.** Iter 28: drag-prevention guard from Iter 35 blocked Iter 30 clicks. Iter 41: same pattern more broadly. Iter 43: desaturation rule from pre-Iter-31 sprint blocked Iter 31 + 33 + 40 color intent.
+
+**Recommend META §7 addition**: "Reconciliation audit on visual-identity work" — when iterating on color/typography/depth, explicitly grep for ALL existing rules that touch the same surface (data-attributes, CSS classes, animations) and verify they don't silently override the new intent. Would have caught Iter 43 colors-bug at Iter 31 ship time.
+
+---
+
 ## Iteration 42 — 2026-05-17 — Luminous Constraint Phase 3: Cadence Pressure Ring signature (C-UX-FUTURISTIC-P3)
 
 ### What changed

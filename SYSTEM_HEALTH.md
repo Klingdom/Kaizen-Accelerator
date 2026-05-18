@@ -38,17 +38,17 @@ Phase: MVP build — Iterations 9–16 complete. Branch: `main`. Last committed 
 
 | Metric | Value | Status |
 |---|---|---|
-| Tests passing | 3,388 (+823 since Iteration 9 baseline of 2,565) | ✅ |
+| Tests passing | 3,421 (+856 since Iteration 9 baseline of 2,565) | ✅ |
 | Tests failing | 0 | ✅ |
-| Suite count | 800+ (+197 since Iteration 9) | ✅ |
-| **Per-test cost (PRIMARY metric per META §7.1)** | **1.32 ms/test** | ✅ healthy |
-| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (12% headroom) |
-| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.46s** | ✅ |
-| **Runtime alarm (META §7.1)** | **5.0s** | (11% headroom) |
-| Per-test cost trend | 0.82ms (Iter 9) → 1.29ms (Iter 41) → **1.32ms (Iter 42)** | ✅ stable |
+| Suite count | 840+ (+237 since Iteration 9) | ✅ |
+| **Per-test cost (PRIMARY metric per META §7.1)** | **1.26 ms/test** | ✅ healthy |
+| **Per-test ceiling (META §7.1)** | **1.5 ms/test** | (16% headroom) |
+| **Absolute runtime (SECONDARY alarm per META §7.1)** | **4.30s** | ✅ |
+| **Runtime alarm (META §7.1)** | **5.0s** | (14% headroom) |
+| Per-test cost trend | 0.82ms (Iter 9) → 1.32ms (Iter 42) → **1.26ms (Iter 43)** | ✅ stable |
 | Fail rate | 0% | ✅ |
-| Last green commit | (pending Iter 42 commit) | (in progress) |
-| **Production deploy queue** | **6 (Iter 37-42)** | 🚨🚨 OVER GATE — 2 deep over META §7.7; deploy CRITICAL-PATH-BLOCKER |
+| Last green commit | (pending Iter 43 commit) | (in progress) |
+| **Production deploy queue** | **7 (Iter 37-43)** | 🚨🚨🚨 OVER GATE — 3 deep over META §7.7; deploy CRITICAL-PATH-BLOCKER |
 
 ---
 
@@ -105,7 +105,15 @@ The product is closer to MVP-launch than at Iteration 9. Core workflow infrastru
 
 ---
 
-_Last updated: 2026-05-17 after Iteration 42 (Luminous Constraint Phase 3 — Cadence Pressure Ring signature). The memorable detail per frontend-design skill output. 56px SVG arc in Today header with 3 color-coded segments (green/yellow/purple) proportional to planned minutes per bucket; Geist Mono center for total hours; hover + focus-visible tooltip with breakdown. Lunch excluded (capacity-neutral). Edge cases handled (empty, single-bucket, edit mode). prefers-reduced-motion + data-motion=reduced both suppress cadenceBreath animation. CCC bound updated ≤4 → ≤5 (1 slot headroom preserved for Phase 4). 2 new files (243 + 499 LOC); 3 modified. §6.5: zero hits. Suite 3,347 → 3,388 (+41). All 20 ACs PASS. Phil's color identity preserved across both themes._
+_Last updated: 2026-05-18 after Iteration 43 (Today polish bundle + P1 colors-invisible bug fix — C-UX-POLISH-R2). 3-lens R2 review (UX + FE + Competitive) converged: incremental polish, NOT redesign. 7-item bundle shipped. Headline fix: **P1 colors-invisible bug** — removed `[data-user-edited="false"]` desaturation rule from app.css that hid Phil's green/yellow/purple identity by default since Iter 31. Phil's vibrant colors finally render on Auto-Plan blocks (the every-day default state). Plus: calendar date in header (Instrument Serif `<time>` element), now-line glow tightening, half-hour grid lines (GCal), past-hour dimming (GCal), current/next activity in header, NowJumpButton sticky scroll-to-now (GCal). All GCal-craft adoption; zero GCal-philosophy adoption per Competitive verdict. Suite 3,388 → 3,421 (+33 tests across 4 new test files). All 18 ACs PASS. §6.5: zero hits._
+
+_**Strategic milestone**: P1 colors-invisible bug closed. Phil's stated visual identity (Iter 31 directive) is FINALLY visible by default. This is the highest-perceptual-impact single CSS change of the entire Luminous Constraint redesign — every iteration since Iter 31 was correct in intent; the desaturation rule was the silent regression._
+
+_**Third iteration of "earlier rule silently overrides later intent" bug class** (Iter 28 + Iter 41 + Iter 43). Proposed META §7 amendment: "Reconciliation audit on visual-identity work" — grep for ALL existing rules touching the same surface before iterating on color/typography/depth. Would have caught Iter 43 at Iter 31 ship. Logged for Phil's META deltas decision (now 9 proposed amendments pending)._
+
+_🚨🚨🚨 **Deploy gate 75% OVER LIMIT**: queue 7-deep (Iter 37-43). Iter 41 hotfix exception + Iter 42 + 43 dispatched-despite-gate = sustained gate violation. Deploy is now the critical-path blocker; the colors-bug fix Phil has been wanting daily is in this queue._
+
+_Iteration 42 — 2026-05-17 — Luminous Constraint Phase 3: Cadence Pressure Ring signature (C-UX-FUTURISTIC-P3). The memorable detail per frontend-design skill output. 56px SVG arc in Today header with 3 color-coded segments (green/yellow/purple) proportional to planned minutes per bucket; Geist Mono center for total hours; hover + focus-visible tooltip with breakdown. Lunch excluded (capacity-neutral). Edge cases handled (empty, single-bucket, edit mode). prefers-reduced-motion + data-motion=reduced both suppress cadenceBreath animation. CCC bound updated ≤4 → ≤5 (1 slot headroom preserved for Phase 4). 2 new files (243 + 499 LOC); 3 modified. §6.5: zero hits. Suite 3,347 → 3,388 (+41). All 20 ACs PASS. Phil's color identity preserved across both themes._
 
 _**Luminous Constraint redesign now ~75% complete**: Phase 1 (Iter 39 settings infra) + Phase 2 (Iter 40 typography + depth) + Phase 3 (Iter 42 signature) shipped. Phase 4 (alternate palette + density toggle) CONDITIONAL on Phil seeing Phase 3 in production and deciding it's worth more customization breadth. Recommend pause + Phil-decide after deploy._
 

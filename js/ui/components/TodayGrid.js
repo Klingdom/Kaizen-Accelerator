@@ -220,20 +220,27 @@ function renderTodayBlock(ctx) {
 /**
  * Render the hour rail (left column).
  * Iter 33: supports current-hour highlighting via data-block-index (AC14).
+ * Iter 43 Item 5: past hours get cycle-hour-past class for dim treatment (AC10-AC11).
  *
  * @param {number} gridStartHour
  * @param {number} gridEndHour
  * @param {number} rowHeightPx
- * @param {number|null} nowMinutesOfDay — for current-hour highlight
+ * @param {number|null} nowMinutesOfDay — for current-hour highlight + past dimming
  * @returns {string}
  */
 function renderTodayHourRail(gridStartHour, gridEndHour, rowHeightPx, nowMinutesOfDay = null) {
   const labels = hourRailLabels(gridStartHour, gridEndHour);
+  const currentHour = nowMinutesOfDay !== null ? Math.floor(nowMinutesOfDay / 60) : null;
   const hours = labels
     .map((label, i) => {
       const hour = gridStartHour + i;
-      const isCurrent = nowMinutesOfDay !== null && hour === Math.floor(nowMinutesOfDay / 60);
-      const cls = isCurrent ? 'cycle-hour cycle-hour-current' : 'cycle-hour';
+      const isCurrent = currentHour !== null && hour === currentHour;
+      // Iter 43 Item 5: dim hours strictly before the current hour (AC10, AC11).
+      // Current hour stays full opacity; only strictly past hours are dimmed.
+      const isPast = currentHour !== null && hour < currentHour;
+      let cls = 'cycle-hour';
+      if (isCurrent) cls += ' cycle-hour-current';
+      if (isPast) cls += ' cycle-hour-past';
       return `<span class="${cls}" style="height: ${rowHeightPx}px">${esc(label)}</span>`;
     })
     .join('');
@@ -254,6 +261,26 @@ function renderHourLines(gridStartHour, gridEndHour, rowHeightPx) {
   for (let h = gridStartHour; h <= gridEndHour; h++) {
     const top = (h - gridStartHour) * rowHeightPx;
     lines.push(`<div class="cycle-hour-line" style="top: ${top}px" aria-hidden="true"></div>`);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Render half-hour divider lines inside the timeline — Iter 43 Item 4 (GCal pattern).
+ * Visually fainter than hour lines (.cycle-half-hour-line: dashed + lower opacity).
+ * Renders lines at the :30 mark within each hour (not at hour boundaries).
+ *
+ * @param {number} gridStartHour
+ * @param {number} gridEndHour
+ * @param {number} rowHeightPx
+ * @returns {string}
+ */
+function renderHalfHourLines(gridStartHour, gridEndHour, rowHeightPx) {
+  const lines = [];
+  for (let h = gridStartHour; h < gridEndHour; h++) {
+    // Half-hour offset: (h - gridStartHour + 0.5) * rowHeightPx
+    const top = (h - gridStartHour + 0.5) * rowHeightPx;
+    lines.push(`<div class="cycle-half-hour-line" style="top: ${top}px" aria-hidden="true"></div>`);
   }
   return lines.join('\n');
 }
@@ -349,6 +376,9 @@ export function TodayGrid(props = {}) {
   // Hour lines — Iter 33: subtle hairlines in timeline (AC15).
   const hourLines = renderHourLines(gridStartHour, gridEndHour, rowHeightPx);
 
+  // Half-hour lines — Iter 43 Item 4: fainter dashed marks at :30 (GCal pattern, AC8-AC9).
+  const halfHourLines = renderHalfHourLines(gridStartHour, gridEndHour, rowHeightPx);
+
   // Timeline height.
   const timelineHeight = (gridEndHour - gridStartHour) * rowHeightPx;
 
@@ -378,6 +408,7 @@ export function TodayGrid(props = {}) {
   <div class="cycle-timeline" style="height: ${timelineHeight}px">
     ${emptyOverlay}
     ${hourLines}
+    ${halfHourLines}
     ${blocks}
     ${ghostBlockHtml}
     ${nowLine}

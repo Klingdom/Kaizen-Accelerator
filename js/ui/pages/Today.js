@@ -38,6 +38,36 @@ import { validateEditState } from '../editMode.js';
 import { DEFAULT_TARGETS } from '../components/BucketStrip.js';
 // Iter 42 Phase 3 — Cadence Pressure Ring (signature pattern).
 import { CadencePressureRing } from '../components/CadencePressureRing.js';
+// Iter 43 Item 7 — Jump to Now button.
+import { NowJumpButton } from '../components/NowJumpButton.js';
+
+/**
+ * Iter 43 Item 2 — format a YYYY-MM-DD ISO date string into a display string
+ * for the Today header. Mirrors the CycleCard-private formatDateDisplay but
+ * lives here so Today.js can use it without coupling to CycleCard internals.
+ *
+ * Returns a string like "Sunday, May 17, 2026" (locale-sensitive via Intl).
+ * Falls back to the raw ISO string on any parse error.
+ *
+ * @param {string} dateIso — "YYYY-MM-DD"
+ * @returns {string}
+ */
+function formatHeaderDate(dateIso) {
+  if (!dateIso || typeof dateIso !== 'string') return '';
+  const parts = dateIso.split('-');
+  if (parts.length !== 3) return dateIso;
+  const [y, m, d] = parts.map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return dateIso;
+  const locale =
+    (typeof navigator !== 'undefined' && navigator.language) || 'en-US';
+  return date.toLocaleDateString(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
@@ -163,8 +193,62 @@ export function Today(props = {}) {
       })
     : '';
 
+  // Iter 43 Item 2 — Calendar date in header (AC4, AC5).
+  // Derive from composition date when a composition is present; absent otherwise.
+  const compositionDate = activeState?.composition?.date ?? null;
+  const headerDateHtml = compositionDate
+    ? `<time class="today-header-date" datetime="${esc(compositionDate)}">${esc(formatHeaderDate(compositionDate))}</time>`
+    : '';
+
+  // Iter 43 Item 6 — Current/next activity summary in header (AC12, AC13).
+  // Computes "Now: X" or "Up next: Y" from the active activities + nowIso.
+  // The aria-live span in CycleCard remains the screen-reader surface;
+  // this is a separate VISIBLE span in the page-level header.
+  let headerActivitySummary = '';
+  if (activeState && Array.isArray(activeState.activities)) {
+    const list = activeState.activities;
+    const inProgress = list.find((a) => a && a.state === 'IN_PROGRESS');
+    if (inProgress) {
+      const name = inProgress.name ?? inProgress.catalogEntryId ?? 'activity';
+      const dur = Number.isFinite(inProgress.plannedDurationMinutes) ? inProgress.plannedDurationMinutes : 0;
+      headerActivitySummary = `Now: ${name} (${dur}m left)`;
+    } else if (nowIso && typeof nowIso === 'string') {
+      const nowMs = new Date(nowIso).getTime();
+      if (!Number.isNaN(nowMs)) {
+        const upcoming = list
+          .filter((a) => a && a.state === 'SCHEDULED')
+          .map((a) => {
+            const start = a.plannedStartAt ?? '';
+            const iso = start.length >= 16 && start[10] === 'T'
+              ? start
+              : /^\d{2}:\d{2}(:\d{2})?$/.test(start)
+                ? `${nowIso.slice(0, 10)}T${start.length === 5 ? start + ':00' : start}`
+                : null;
+            const ms = iso ? new Date(iso).getTime() : NaN;
+            return { a, ms };
+          })
+          .filter(({ ms }) => !Number.isNaN(ms) && ms > nowMs)
+          .sort((x, y) => x.ms - y.ms)[0];
+        if (upcoming) {
+          const name = upcoming.a.name ?? upcoming.a.catalogEntryId ?? 'activity';
+          const start = upcoming.a.plannedStartAt ?? '';
+          const timeLabel = start.length >= 5 ? start.slice(0, 5) : start;
+          headerActivitySummary = `Up next: ${name}${timeLabel ? ` at ${timeLabel}` : ''}`;
+        }
+      }
+    }
+  }
+  const headerActivityHtml = headerActivitySummary
+    ? `<span class="today-header-activity">${esc(headerActivitySummary)}</span>`
+    : '';
+
+  // Compose the header: ring left, date+activity center, badge right.
   const header = `<header class="today-header">
   ${ringHtml}
+  <div class="today-header-center">
+    ${headerDateHtml}
+    ${headerActivityHtml}
+  </div>
   ${dayBadge}
 </header>`;
 
@@ -265,6 +349,10 @@ export function Today(props = {}) {
     ? renderBucketStrip(activitiesForRender, compositionForRender)
     : '';
 
+  // Iter 43 Item 7 — Jump to Now button. Rendered inside today-grid-col
+  // when nowIso is present so the grid is live (AC14, AC15).
+  const nowJumpButtonHtml = nowIso ? NowJumpButton() : '';
+
   // Iter 33: use flex layout with bucket strip alongside grid (AC9).
   const bodyWrapper = bucketStripHtml
     ? `<div class="today-body-with-strip">
@@ -283,6 +371,7 @@ export function Today(props = {}) {
         whyPlanExpanded,
         dragSession
       })}
+      ${nowJumpButtonHtml}
     </div>
     ${bucketStripHtml}
   </div>`
@@ -302,6 +391,7 @@ export function Today(props = {}) {
         whyPlanExpanded,
         dragSession
       })}
+      ${nowJumpButtonHtml}
     </div>
   </div>`;
 

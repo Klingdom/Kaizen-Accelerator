@@ -1403,3 +1403,57 @@ Sprints prior to Iteration 9 (this governance recovery) were executed before the
   - **Deploy queue now 6-deep** (Iter 37-42). META §7.7 gate violated by 2. Phil must deploy before any further work (Phase 4 or other).
   - Phase 4 (alternate palette + density toggle) is CONDITIONAL on Phil seeing Phase 3 in production and deciding it's worth more customization breadth. Recommend pause + Phil-decide after deploy.
   - META operating-model deltas (Iter 27 §7 + my proposed safety-gate-orthogonal-case rule from Iter 41) still unapproved.
+
+---
+
+## Iteration 43 — 2026-05-18 — Today polish bundle: 7 cheap wins + P1 colors-invisible bug fix (C-UX-POLISH-R2)
+
+- **Selected item**: Iter 42 R2 review's 7-item convergent cheap-wins bundle. Score 16 (base 14 + ConvergenceBonus +2 from 3 lenses). Includes P1 colors-invisible bug fix as item #1.
+- **Reason for selection**: Phil approved Path A (full 7-item bundle). 3-lens convergence (UX + Frontend + Competitive) validated this is incremental polish, NOT a 4th redesign pass. Item #1 alone (Phil's-colors-invisible bug) is the highest-impact single change in the entire Luminous Constraint redesign.
+- **Agents involved**: frontend-engineer (single-pass implementation against R2 synthesis delta + 3 lens artifacts).
+- **Validation results**:
+  - Tests: 3,388 → **3,421** (+33 across 4 new test files)
+  - Runtime: 4.46s → **4.30s** ✅ (per-test 1.32 → 1.26ms; 16% headroom under META §7.1 1.5ms ceiling)
+  - All 18 ACs PASS
+  - **§6.5 boundary**: zero hits
+- **Outcome**: Shipped.
+  - **Modified files (4)**:
+    - `app.css` (+131 lines, -10 lines — Item 1 rule removal + all new CSS rules)
+    - `js/app.js` (+12 lines — SCROLL_TO_NOW handler for Item 7)
+    - `js/ui/components/TodayGrid.js` (+37 lines — renderHalfHourLines, isPast hour-rail logic)
+    - `js/ui/pages/Today.js` (+90 lines — formatHeaderDate, header date/activity wiring, NowJumpButton render)
+  - **NEW files (4)**:
+    - `js/ui/components/NowJumpButton.js` (32 LOC) — sticky pill-shaped scroll-to-now button
+    - `tests/ui/components/NowJumpButton.test.js` (6 tests)
+    - `tests/ui/components/TodayGrid.iter43.test.js` (16 tests — Items 4 + 5)
+    - `tests/ui/pages/Today.iter43.test.js` (17 tests — Items 1-3, 6-7, AC16)
+- **The P1 fix (Item 1)** — explicit commit:
+  - REMOVED from app.css (was line ~523-526):
+    ```css
+    .cycle-block-positioned[data-user-edited="false"] {
+      background-color: color-mix(in srgb, var(--bg) 60%, transparent);
+      color: var(--fg);
+    }
+    ```
+  - REPLACED with additive cue on `[data-user-edited="true"]`: `box-shadow: inset 0 0 0 1px rgba(255,255,255,0.30)` (subtle inner border)
+  - **Result**: Iter 40's 3-stop gradients now render at saturation on Auto-Plan blocks. Phil's green/yellow/purple identity finally visible by default.
+- **Spec deviations**: None material. Two minor implementation notes documented in CHANGELOG.
+- **Time spent**: ~2-3h actual within estimate.
+- **Strategic outcome**:
+  - **Phil's vibrant identity FINALLY VISIBLE by default**. Every iteration since Iter 31 (color theming) was correct in intent; the desaturation rule was the silent regression. P1 closure has the largest perceptual impact of any single CSS change in the entire Luminous Constraint redesign.
+  - **GCal-craft adoption validates "pixels not philosophy" heuristic** (half-hour grid, past-hour dimming, Jump-to-Now serve familiarity without eroding BAM-X positioning)
+  - **Cumulative redesign now ~80% complete** when measured by original 7-lens recommendations from Iter 20 onward
+  - **Architect's §6.5 prediction held**: 0 hits as predicted for polish work
+- **Operating-model finding (logged)**:
+  - **THIRD iteration to ship "earlier rule silently overrides later intent" bug class**:
+    - Iter 28: drag-prevention guard from Iter 35 blocked Iter 30 clicks
+    - Iter 41: same pattern more broadly (IN_PROGRESS click bug)
+    - Iter 43: desaturation rule from pre-Iter-31 sprint blocked Iter 31 + 33 + 40 color intent
+  - **Pattern**: rules added in earlier iterations were never reconciled against later iterations' intent
+  - **Proposed META §7 addition**: "Reconciliation audit on visual-identity work" — when iterating on color/typography/depth, explicitly grep for ALL existing rules that touch the same surface (data-attributes, CSS classes, animations) and verify they don't silently override the new intent. Would have caught Iter 43 colors-bug at Iter 31 ship time.
+- **Latent issues**: None new.
+- **Follow-ups**:
+  - Commit + push (deploy queue now 7-deep — META §7.7 critically over).
+  - **Deploy is now genuinely critical-path**: 7 iterations of accumulated change including the P1 colors-invisible fix Phil's been seeing daily.
+  - Phase 4 of Luminous Constraint (alternate palette + density toggle) still CONDITIONAL.
+  - META operating-model deltas (Iter 27 §7 + Iter 41 safety-gate rule + Iter 43 reconciliation-audit rule) all unapproved — 9 proposed operating-model amendments awaiting Phil.
