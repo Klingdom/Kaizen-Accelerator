@@ -18,12 +18,16 @@
  * @returns {string} HTML string
  */
 export function NowJumpButton() {
+  // Phase 3.3 (R3): dropped the directional ↓ arrow (&#8595;).
+  // A static ↓ misleads users scrolled below the now-line. Plain "Now"
+  // pill is direction-neutral; red color + Geist Mono carry the temporal
+  // urgency signal without an ambiguous direction indicator.
   return `<button
   class="now-jump-btn"
   data-action="SCROLL_TO_NOW"
   aria-label="Jump to current time"
   type="button"
->&#8595; Now</button>`;
+>Now</button>`;
 }
 
 export default NowJumpButton;

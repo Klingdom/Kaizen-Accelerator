@@ -47,3 +47,40 @@ describe('NowJumpButton — render', () => {
     assert.ok(html.includes('type="button"'), 'Must declare type="button"');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 3.3 (R3): directional arrow removed — AC-NJ1/2/3
+// ---------------------------------------------------------------------------
+
+describe('NowJumpButton Phase 3.3 — no directional arrow', () => {
+  test('AC-NJ1: button text is "Now" (no arrow prefix)', () => {
+    const html = NowJumpButton();
+    // Must contain "Now" as visible text
+    assert.ok(html.includes('>Now<'), 'AC-NJ1: button content must be plain "Now" with no arrow');
+  });
+
+  test('AC-NJ2: click dispatches SCROLL_TO_NOW', () => {
+    const html = NowJumpButton();
+    assert.ok(
+      html.includes('data-action="SCROLL_TO_NOW"'),
+      'AC-NJ2: button must carry data-action="SCROLL_TO_NOW" for click delegate'
+    );
+  });
+
+  test('AC-NJ3: no down-arrow character in rendered output', () => {
+    const html = NowJumpButton();
+    // Must not contain the down-arrow in any encoding variant
+    assert.ok(
+      !html.includes('↓'),
+      'AC-NJ3: rendered HTML must not contain the ↓ Unicode character'
+    );
+    assert.ok(
+      !html.includes('&#8595;'),
+      'AC-NJ3: rendered HTML must not contain the &#8595; HTML entity'
+    );
+    assert.ok(
+      !html.includes('&#x2193;'),
+      'AC-NJ3: rendered HTML must not contain the &#x2193; hex entity'
+    );
+  });
+});
