@@ -693,7 +693,9 @@ export function TodayGrid(props = {}) {
   // Iter 35 Phase 2: ghost block for PROPOSED pending-confirm flow.
   // Shown as a dashed overlay at the proposed position while Confirm/Cancel is visible.
   let ghostBlockHtml = '';
-  if (dragSession && dragSession.activityId && dragSession.proposedStart !== undefined && dragSession.proposedDuration !== undefined) {
+  // Phase 3.1 (R3): guard requires proposedStart to be a finite number (not null/undefined).
+  // Prior guard used !== undefined which let null through, producing NaN positioning.
+  if (dragSession && dragSession.activityId && Number.isFinite(dragSession.proposedStart) && dragSession.proposedDuration !== undefined) {
     const ghostTop = (dragSession.proposedStart - gridStartHour * 60) * (rowHeightPx / 60);
     const ghostH   = Math.max(dragSession.proposedDuration * (rowHeightPx / 60), MIN_BLOCK_HEIGHT_PX);
     ghostBlockHtml = `<div

@@ -404,10 +404,15 @@ export function installDragController(rootEl, options = {}) {
       // PROPOSED path: queue pending. Do not commit immediately.
       // Restore the visual position — pending-confirm banner takes over.
       _restoreBlock(s);
+      // Phase 3.1 (R3): include proposedStartMin (integer minutes-of-day) so
+      // app.js DRAG_START_PROPOSED can populate dragSession.proposedStart
+      // correctly. Without this, TodayGrid:697 computes null - gridStart*60 = NaN
+      // and the ghost block renders at top:NaNpx (invisible).
       onDragPending({
-        activityId: s.activityId,
-        newStart:   newStartHHMM,
+        activityId:      s.activityId,
+        newStart:        newStartHHMM,
         newDuration,
+        proposedStartMin: newStart,   // integer minutes-of-day (already computed above)
         originalStart:    s.originalStartMin !== null ? minutesToHHMM(s.originalStartMin) : newStartHHMM,
         originalDuration: s.originalDuration ?? newDuration,
         mode: s.mode
