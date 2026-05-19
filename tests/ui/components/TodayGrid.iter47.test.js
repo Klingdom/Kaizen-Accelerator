@@ -638,3 +638,117 @@ describe('TodayGrid Iter47 — mixed bucket integrity (AC19)', () => {
     assert.ok(!pdcaHtml.includes('cycle-block-sacred'), 'Non-EoAR CI block must NOT contain cycle-block-sacred');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 3.4 (R3): Unknown bucket fallback — warn + render without crash
+// AC-UB1: Activity with unknown bucket renders without throw AND console.warn called
+// AC-UB2: Known buckets do NOT trigger the warn (orthogonal check, META §A.2)
+// ---------------------------------------------------------------------------
+
+describe('TodayGrid Phase 3.4 — unknown bucket fallback warn', () => {
+  test('AC-UB1: unknown bucket "LEARNING" renders without throwing and calls console.warn', () => {
+    const warnCalls = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnCalls.push(args.join(' '));
+    let html;
+    try {
+      assert.doesNotThrow(() => {
+        html = TodayGrid({
+          composition: mkComposition(),
+          activities: [mkActivity({
+            bucket: 'LEARNING',
+            plannedDurationMinutes: 60
+          })]
+        });
+      }, 'TodayGrid must not throw for unknown bucket "LEARNING"');
+    } finally {
+      console.warn = origWarn;
+    }
+    assert.ok(html && html.length > 0, 'AC-UB1: HTML must be non-empty for unknown bucket');
+    assert.equal(warnCalls.length, 1,
+      'AC-UB1: console.warn must be called exactly once for the unknown bucket'
+    );
+    assert.ok(
+      warnCalls[0].includes('LEARNING'),
+      'AC-UB1: warn message must cite the unknown bucket name ("LEARNING")'
+    );
+    assert.ok(
+      warnCalls[0].includes('TodayGrid'),
+      'AC-UB1: warn message must include [TodayGrid] prefix'
+    );
+  });
+
+  test('AC-UB1: unknown bucket "WELLNESS" warns and still renders a block', () => {
+    const warnCalls = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnCalls.push(args.join(' '));
+    let html;
+    try {
+      html = TodayGrid({
+        composition: mkComposition(),
+        activities: [mkActivity({
+          id: 'sa_wellness',
+          bucket: 'WELLNESS',
+          name: 'Morning Yoga',
+          plannedDurationMinutes: 30
+        })]
+      });
+    } finally {
+      console.warn = origWarn;
+    }
+    assert.ok(html.includes('data-activity-id="sa_wellness"'), 'AC-UB1: block must render for unknown bucket');
+    assert.equal(warnCalls.length, 1, 'AC-UB1: exactly one warn for one unknown-bucket block');
+    assert.ok(warnCalls[0].includes('WELLNESS'), 'AC-UB1: warn cites the bucket name');
+  });
+
+  test('AC-UB2: known bucket PROJECT does NOT trigger console.warn', () => {
+    const warnCalls = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnCalls.push(args.join(' '));
+    try {
+      TodayGrid({
+        composition: mkComposition(),
+        activities: [mkActivity({ bucket: 'PROJECT', plannedDurationMinutes: 60 })]
+      });
+    } finally {
+      console.warn = origWarn;
+    }
+    assert.equal(warnCalls.length, 0,
+      'AC-UB2: known bucket PROJECT must NOT trigger console.warn (META §A.2 orthogonal)'
+    );
+  });
+
+  test('AC-UB2: known bucket CI does NOT trigger console.warn', () => {
+    const warnCalls = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnCalls.push(args.join(' '));
+    try {
+      TodayGrid({
+        composition: mkComposition(),
+        activities: [mkActivity({ bucket: 'CI', catalogEntryId: 'cat_pdca', name: 'PDCA', plannedDurationMinutes: 60 })]
+      });
+    } finally {
+      console.warn = origWarn;
+    }
+    assert.equal(warnCalls.length, 0,
+      'AC-UB2: known bucket CI must NOT trigger console.warn (META §A.2 orthogonal)'
+    );
+  });
+
+  test('AC-UB2: known bucket COMMUNICATION does NOT trigger console.warn', () => {
+    const warnCalls = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => warnCalls.push(args.join(' '));
+    try {
+      TodayGrid({
+        composition: mkComposition(),
+        activities: [mkActivity({ bucket: 'COMMUNICATION', name: 'Standup', plannedDurationMinutes: 15 })]
+      });
+    } finally {
+      console.warn = origWarn;
+    }
+    assert.equal(warnCalls.length, 0,
+      'AC-UB2: known bucket COMMUNICATION must NOT trigger console.warn (META §A.2 orthogonal)'
+    );
+  });
+});

@@ -579,6 +579,9 @@ function renderTodayBlock(ctx) {
   }
 
   // Generic fallback — render same as project block for unknown buckets.
+  // Phase 3.4 (R3): warn so future bucket additions don't silently render as Deep Work.
+  // eslint-disable-next-line no-console
+  console.warn(`[TodayGrid] Unknown bucket "${activity.bucket}" — rendering as PROJECT fallback. Add a dedicated renderer or register the bucket in dispatch table.`);
   const wrapCtx = { ...baseWrapCtx, payload };
   return blockWrapper(wrapCtx, renderProjectBlock(activity, catalogEntry, sharedCtx));
 }
