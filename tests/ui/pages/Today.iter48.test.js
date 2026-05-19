@@ -10,10 +10,9 @@
  *   - Bucket-strip removal: verify cadence ring STILL present (AC10)
  *   - Date echo removal: verify cycle-date-display h1 STILL present in CycleCard
  *
- * META §A.3 reconciliation:
- *   - cycle-bucket-strip CSS: CSS rules remain in app.css as inert (no element
- *     references them after removal). Safe to deprecate in a future CSS cleanup pass.
- *   - today-header-date CSS: CSS rule remains in app.css as inert. Same safe status.
+ * META §A.3 reconciliation (CLOSED — Phase 2 R3):
+ *   - cycle-bucket-strip CSS: deleted from app.css in Phase 2B (R3). Previously inert.
+ *   - today-header-date CSS: deleted from app.css in Phase 2B (R3). Previously inert.
  *   - No new CSS classes introduced by Today.js in this phase.
  */
 

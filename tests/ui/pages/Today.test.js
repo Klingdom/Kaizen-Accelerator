@@ -392,7 +392,9 @@ describe('Today — Iter 30: BlockDetailDialog rendered when blockDetail set', (
 // The strip is no longer rendered; cycle-bucket-strip is always absent.
 // The Cadence Pressure Ring (Iter 42) covers the same 4-2-2 data in the header.
 //
-// DEFAULT_TARGETS contract is preserved for CadencePressureRing (still imported).
+// Phase 2A (R3): renderBucketStrip() function deleted from Today.js.
+// Phase 2B (R3): cycle-bucket-strip CSS deleted from app.css (META §A.3 closed).
+// DEFAULT_TARGETS still exported from BucketStrip.js (tested directly below).
 // ---------------------------------------------------------------------------
 describe('Today — Iter 37 / Iter 48 AC8: bucket strip removed from Today page', () => {
   const ACTIVITIES_ALL_BUCKETS = [

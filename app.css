@@ -176,18 +176,6 @@ html, body {
   min-width: 0;
 }
 
-/* <time> element — Instrument Serif, prominent but not competing with ring/badge. */
-.today-header-date {
-  font-family: var(--font-display);
-  font-size: 17px;
-  color: var(--ink-800, var(--fg));
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
 /*
  * Iter 43 Item 6 — Current/next activity summary in header (AC12).
  * Iter 48 Phase 4G (hierarchy refinement 2): now that the date echo is removed,
@@ -208,7 +196,6 @@ html, body {
 }
 
 /* Iter 43 Item 7 — Jump to Now sticky button (AC14). */
-/* Sticky inside the today-grid-col flex column; hugs the bottom-right. */
 .now-jump-btn {
   position: sticky;
   bottom: 12px;
@@ -3707,127 +3694,9 @@ html, body {
   pointer-events: none;
 }
 
-/* ---- Right-margin bucket summary strip (AC9) ---- */
-/* This is a new layout mode for Today.js. The .today-body grid needs
-   adjustment when the strip is present — handled in Today.js render. */
-.cycle-bucket-strip {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 4px;
-  width: 164px;
-  flex-shrink: 0;
-}
-
-.cycle-bucket-strip-heading {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-400);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--ink-200);
-  margin: 0;
-}
-
-.cycle-bucket-row {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.cycle-bucket-row-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.cycle-bucket-name {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-.cycle-bucket-name-project      { color: #15803d; }
-.cycle-bucket-name-communication { color: #a16207; }
-.cycle-bucket-name-ci           { color: #7e22ce; }
-
-.cycle-bucket-value {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-600);
-}
-
-.cycle-bucket-track {
-  height: 3px;
-  background: var(--ink-200);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.cycle-bucket-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 600ms ease;
-}
-
-.cycle-bucket-fill-project {
-  background: linear-gradient(to right, var(--project-fill-top), var(--project-fill-base));
-}
-.cycle-bucket-fill-communication {
-  background: linear-gradient(to right, var(--comm-fill-top), var(--comm-fill-base));
-}
-.cycle-bucket-fill-ci {
-  background: linear-gradient(to right, var(--ci-fill-top), var(--ci-fill-base));
-}
-
-.cycle-bucket-sub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-400);
-  margin: 0;
-}
-
-/* ---- Today page layout with bucket strip (AC9) ---- */
-/* The .today-body-with-strip overrides the existing flex layout to add
-   the right-margin bucket column. Coexists with existing .today-body. */
-.today-body-with-strip {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.today-grid-col {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Iter 33 forced-colors additions are folded into the main @media block above. */
-
-/* ---- Mobile breakpoints for new Iter 33 components (AC20) ---- */
-@media (max-width: 860px) {
-  .today-body-with-strip {
-    flex-direction: column;
-  }
-  .cycle-bucket-strip {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-  .cycle-bucket-strip-heading {
-    display: none;
-  }
-}
-
 @media (max-width: 560px) {
   .cycle-date-display {
     font-size: 22px;
-  }
-  .cycle-bucket-strip {
-    grid-template-columns: 1fr;
   }
   .bdd-panel {
     width: calc(100vw - 32px);
@@ -4256,10 +4125,6 @@ html, body {
 }
 
 /* Iter 43 — dark-mode overrides for new header + button elements. */
-[data-theme="dark"] .today-header-date {
-  color: var(--ink-700, #ccc8c2);
-}
-
 [data-theme="dark"] .today-header-activity {
   color: var(--ink-400, #57534e);
 }
@@ -4271,9 +4136,6 @@ html, body {
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-theme="system"] .today-header-date {
-    color: var(--ink-700, #ccc8c2);
-  }
   [data-theme="system"] .today-header-activity {
     color: var(--ink-400, #57534e);
   }

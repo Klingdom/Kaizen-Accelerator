@@ -35,39 +35,10 @@ import { EditDrawer } from '../components/EditDrawer.js';
 import { BlockDetailDialog } from '../components/BlockDetailDialog.js';
 import { CatalogPickerDialog } from '../components/CatalogPickerDialog.js';
 import { validateEditState } from '../editMode.js';
-import { DEFAULT_TARGETS } from '../components/BucketStrip.js';
 // Iter 42 Phase 3 — Cadence Pressure Ring (signature pattern).
 import { CadencePressureRing } from '../components/CadencePressureRing.js';
 // Iter 43 Item 7 — Jump to Now button.
 import { NowJumpButton } from '../components/NowJumpButton.js';
-
-/**
- * Iter 43 Item 2 — format a YYYY-MM-DD ISO date string into a display string
- * for the Today header. Mirrors the CycleCard-private formatDateDisplay but
- * lives here so Today.js can use it without coupling to CycleCard internals.
- *
- * Returns a string like "Sunday, May 17, 2026" (locale-sensitive via Intl).
- * Falls back to the raw ISO string on any parse error.
- *
- * @param {string} dateIso — "YYYY-MM-DD"
- * @returns {string}
- */
-function formatHeaderDate(dateIso) {
-  if (!dateIso || typeof dateIso !== 'string') return '';
-  const parts = dateIso.split('-');
-  if (parts.length !== 3) return dateIso;
-  const [y, m, d] = parts.map(Number);
-  const date = new Date(y, m - 1, d);
-  if (Number.isNaN(date.getTime())) return dateIso;
-  const locale =
-    (typeof navigator !== 'undefined' && navigator.language) || 'en-US';
-  return date.toLocaleDateString(locale, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-}
 
 /**
  * Empty-state copy per SCHEDULING_UX §6.5.2.
@@ -181,18 +152,15 @@ export function Today(props = {}) {
 
   // Iter 42 Phase 3 — Cadence Pressure Ring. Render when a composition exists
   // with activities; absent in empty / infeasible states (ring needs data to mean
-  // something). Targets from composition snapshot when available, otherwise
-  // canonical 4-2-2 defaults from BucketStrip.DEFAULT_TARGETS.
+  // something). CadencePressureRing uses its own internal 4-2-2 canonical defaults
+  // when no targets prop is supplied (see CadencePressureRing.js:27).
   // In edit mode, use the draft activities so the ring reflects live changes.
   // Note: editMode is already defined above (line ~123); !!editMode resolves isEditing.
   const ringActivities = activeState
     ? (!!editMode && editMode.activities ? editMode.activities : activeState.activities)
     : null;
   const ringHtml = ringActivities
-    ? CadencePressureRing({
-        activities: ringActivities,
-        targets: DEFAULT_TARGETS
-      })
+    ? CadencePressureRing({ activities: ringActivities })
     : '';
 
   // Iter 48 Phase 4D (AC11): page-header date echo REMOVED.
@@ -201,8 +169,7 @@ export function Today(props = {}) {
   // a hierarchy inversion (secondary echo renders above primary h1) and counted as
   // a 5th competing element in the header row.
   // After this removal the header becomes: Ring + Now/Next + Day Badge (3 elements).
-  // The formatHeaderDate function is retained for potential future use but no longer
-  // called here. The cycle-date-display h1 in CycleCard.js is unchanged (AC11 preserved).
+  // Phase 2 (R3): formatHeaderDate() deleted (META §A.3 closure).
   const headerDateHtml = ''; // AC11: always empty — date lives in CycleCard h1.
 
   // Iter 43 Item 6 — Current/next activity summary in header (AC12, AC13).
@@ -360,10 +327,7 @@ export function Today(props = {}) {
   // The Cadence Pressure Ring (Iter 42) already encodes the same 4-2-2 allocation
   // in the header; the strip duplicated it. Removing recovers ~164px of horizontal
   // space so TodayGrid expands to fill the full content width (single-column layout).
-  // renderBucketStrip() is retained as a function but is no longer called.
-  // META §A.3: CSS classes .cycle-bucket-strip, .today-body-with-strip remain in
-  // app.css as inert (no element references them) — safe to deprecate in a future
-  // CSS cleanup pass. No other surface referenced these classes.
+  // Phase 2 (R3): renderBucketStrip() and orphaned CSS deleted (META §A.3 closure).
   const bucketStripHtml = ''; // AC8: always empty — strip removed.
 
   // Iter 43 Item 7 — Jump to Now button. Rendered inside today-grid-col
@@ -371,7 +335,6 @@ export function Today(props = {}) {
   const nowJumpButtonHtml = nowIso ? NowJumpButton() : '';
 
   // Single-column layout — .today-body wraps CycleCard + NowJump button.
-  // (Iter 33 today-body-with-strip path is no longer taken since bucketStripHtml is '').
   const bodyWrapper = `<div class="today-body">
     <div class="today-card-col">
       ${CycleCard({
@@ -403,70 +366,6 @@ export function Today(props = {}) {
   ${catalogPickerHtml}
   ${lunchTooltipHtml}
 </main>`;
-}
-
-/**
- * Iter 33 — render right-margin bucket summary strip (AC9).
- * Computes minutes-per-bucket from the activities array. Target values are
- * looked up from the composition's targets snapshot when available, otherwise
- * canonical defaults from BucketStrip.DEFAULT_TARGETS are used
- * (PROJECT 240m, COMMUNICATION 120m, CI 120m per BucketStrip.DEFAULT_TARGETS).
- *
- * @param {object[]} activities
- * @param {object} composition
- * @returns {string}
- */
-function renderBucketStrip(activities, composition) {
-  if (!Array.isArray(activities) || activities.length === 0) return '';
-
-  // Compute actual minutes per bucket.
-  const totals = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
-  for (const a of activities) {
-    const b = a.bucket;
-    if (b && b in totals) {
-      totals[b] += Number(a.plannedDurationMinutes ?? 0);
-    }
-  }
-
-  // Target minutes — from composition targets if present, else canonical
-  // 4-2-2 defaults from BucketStrip.DEFAULT_TARGETS (single source of truth).
-  const targetMins = {
-    PROJECT:       composition?.targets?.PROJECT       ?? DEFAULT_TARGETS.PROJECT,
-    COMMUNICATION: composition?.targets?.COMMUNICATION ?? DEFAULT_TARGETS.COMMUNICATION,
-    CI:            composition?.targets?.CI            ?? DEFAULT_TARGETS.CI,
-  };
-
-  function fmtMins(mins) {
-    if (mins === 0) return '0m';
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h === 0) return `${m}m`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}m`;
-  }
-
-  function bucketRow(bucketKey, displayName, cssNameClass, fillClass) {
-    const actual = totals[bucketKey] ?? 0;
-    const target = targetMins[bucketKey] ?? 1;
-    const pct = Math.min(Math.round((actual / target) * 100), 100);
-    return `<div class="cycle-bucket-row">
-      <div class="cycle-bucket-row-label">
-        <span class="cycle-bucket-name ${esc(cssNameClass)}">${esc(displayName)}</span>
-        <span class="cycle-bucket-value">${esc(fmtMins(actual))}</span>
-      </div>
-      <div class="cycle-bucket-track">
-        <div class="cycle-bucket-fill ${esc(fillClass)}" style="width: ${pct}%" aria-hidden="true"></div>
-      </div>
-      <p class="cycle-bucket-sub">target ${esc(fmtMins(target))}</p>
-    </div>`;
-  }
-
-  return `<aside class="cycle-bucket-strip" aria-label="Bucket capacity summary">
-  <p class="cycle-bucket-strip-heading">Today's Load</p>
-  ${bucketRow('PROJECT', 'Deep Work', 'cycle-bucket-name-project', 'cycle-bucket-fill-project')}
-  ${bucketRow('COMMUNICATION', 'Comms', 'cycle-bucket-name-communication', 'cycle-bucket-fill-communication')}
-  ${bucketRow('CI', 'CI', 'cycle-bucket-name-ci', 'cycle-bucket-fill-ci')}
-</aside>`;
 }
 
 /**

@@ -4,7 +4,7 @@
  * Covers:
  *   Item 2: Calendar date in header (AC4, AC5)
  *   Item 6: Current/next activity summary visible in header (AC12, AC13)
- *   Item 7: NowJumpButton present in today-grid-col when nowIso provided (AC14)
+ *   Item 7: NowJumpButton present in Today page when nowIso provided (AC14)
  *
  * Existing tests guard AC1-AC3 indirectly via data-user-edited attribute
  * behavior; no new assertions needed there since the removal is CSS-only.

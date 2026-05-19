@@ -1442,6 +1442,12 @@ export function buildHandlers(scope) {
 
     OPEN_BLOCK_DETAIL(payload) {
       if (!payload || typeof payload.activityId !== 'string') return;
+      // Phase 2C (R3): mutual exclusion — if a drag-confirm banner is showing
+      // (dragSession is non-null), the user must resolve it first. The drag
+      // represents a pending action the user just initiated; opening a dialog
+      // on top would leave the dragSession in an unresolvable state because
+      // Escape only dismisses the dialog, not the banner (role="alert").
+      if (state.dragSession) return;
       state.blockDetail = { activityId: payload.activityId };
       rerender();
     },
@@ -3054,7 +3060,10 @@ export function buildHandlers(scope) {
 
     // C-UX-3 (Iteration 15) — open ReflectionSheet for the oldest pending
     // reflection from the EOD closure strip CTA.
+    // Phase 2C (R3): clear blockDetail before opening to prevent double-overlay
+    // when "Start Reflection" is clicked from within a BlockDetailDialog.
     EOD_OPEN_REFLECTION(_payload) {
+      state.blockDetail = null; // mutual-exclusion: dismiss any open block detail
       const pending = services.reflectionService
         ? services.reflectionService.listPending()
         : [];
