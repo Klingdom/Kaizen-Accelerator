@@ -71,6 +71,61 @@ const CI_CEREMONY_RATIONALE = Object.freeze({
 /** CatalogEntryId for End-of-Activity Reflection. */
 const EAR_CATALOG_ID = 'gen_end_of_activity_reflection';
 
+// ---------------------------------------------------------------------------
+// Phase 1 (steps-to-complete) — renderCompletionSteps helper
+// Renders CatalogEntry.procedure for PROJECT and CI activities.
+// Returns '' for COMM, LUNCH (bucket===null), and EoAR (has its own action).
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the "Steps to complete" section for PROJECT and CI blocks.
+ * Uses existing CatalogEntry.procedure (string[]) directly — no schema change.
+ *
+ * Scope dispatch (per STEPS_TO_COMPLETE_DELTA.md §3.1):
+ *   PROJECT → numbered <ol>, type-specific empty state
+ *   CI      → numbered <ol>, type-specific empty state
+ *   COMM    → '' (existing getCommRationale path unchanged)
+ *   LUNCH   → '' (bucket===null sentinel)
+ *   EoAR    → '' (has dedicated "Start Reflection" footer action — AC-ST8)
+ *
+ * Token discipline: Iter 39 semantic tokens only (R3 P1 lesson — no --color-* tokens).
+ *
+ * @param {object|null} catalogEntry
+ * @param {string|null} bucket
+ * @param {string} catalogEntryId  — used for EoAR exclusion (data-driven, not bucket-derived)
+ * @returns {string}
+ */
+function renderCompletionSteps(catalogEntry, bucket, catalogEntryId) {
+  // LUNCH (bucket===null) and COMM skip entirely.
+  if (!bucket) return '';
+  if (bucket === 'COMMUNICATION') return '';
+  // EoAR already has "Start Reflection" footer action — skip to avoid redundancy.
+  if (catalogEntryId === EAR_CATALOG_ID) return '';
+
+  const steps = catalogEntry?.procedure;
+  const hasSteps = Array.isArray(steps) && steps.length > 0;
+
+  if (!hasSteps) {
+    // Type-specific empty state copy (UX §3 — UX wins over PM generic).
+    const emptyText = bucket === 'CI'
+      ? 'No steps defined for this improvement activity yet.'
+      : 'No steps defined for this work type yet.';
+    return `<div class="bdd-steps-section bdd-steps-section--empty">
+    <h3 class="bdd-steps-heading">Steps to complete</h3>
+    <p class="bdd-steps-empty">${esc(emptyText)}</p>
+  </div>`;
+  }
+
+  // Render plain string steps — Phase 1 has no optional flag (that's Phase 3).
+  const items = steps.map((s) => `<li class="bdd-step-item">${esc(s)}</li>`).join('\n      ');
+  return `<div class="bdd-steps-section">
+    <h3 class="bdd-steps-heading">Steps to complete</h3>
+    <ol class="bdd-steps-list">
+      ${items}
+    </ol>
+  </div>`;
+}
+
 /**
  * Derive the COMM rationale sentence for an activity.
  * Priority: catalogEntryId → slotKind → catalogEntry.description → generic.
@@ -212,6 +267,14 @@ export function BlockDetailDialog(props = {}) {
   const colorBar = colorBarClass ? `<div class="${esc(colorBarClass)}" aria-hidden="true"></div>` : '';
 
   // ---------------------------------------------------------------------------
+  // Phase 1 (steps-to-complete) — compute completion steps HTML
+  // Insert between </dl> and bdd-rationale-section per DELTA §3.3 hierarchy:
+  //   metadata rows → STEPS → rationale sentence → footer
+  // ---------------------------------------------------------------------------
+  const catalogEntryId = activity.catalogEntryId ?? '';
+  const completionStepsHtml = renderCompletionSteps(catalogEntry, bucket, catalogEntryId);
+
+  // ---------------------------------------------------------------------------
   // Iter 47 Phase 2 — Per-type rationale sentence + footer actions (AC10–AC12)
   // ---------------------------------------------------------------------------
 
@@ -292,7 +355,8 @@ export function BlockDetailDialog(props = {}) {
         <dt class="bdd-label">Kaizen</dt>
         <dd class="bdd-value">${kaizenChip}</dd>
       </div>` : ''}
-    </dl>${rationaleHtml ? `
+    </dl>${completionStepsHtml ? `
+    ${completionStepsHtml}` : ''}${rationaleHtml ? `
     <div class="bdd-rationale-section">${rationaleHtml}</div>` : ''}
     <footer class="bdd-footer">
       ${footerAction}

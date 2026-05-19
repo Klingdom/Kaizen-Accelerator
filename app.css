@@ -3405,6 +3405,9 @@ html, body {
 }
 
 /* Iter 33: scale-fade entrance, refined proportions (AC13). */
+/* Phase 1 (steps-to-complete): overflow changed from hidden→clip + max-height added   */
+/* so long step lists don't push footer below viewport on short screens (UX §5).       */
+/* overflow-y:auto on .bdd-steps-list keeps the list scrollable; footer stays pinned.  */
 .bdd-panel {
   position: relative;
   z-index: 1;
@@ -3417,6 +3420,8 @@ html, body {
   width: calc(100% - 48px);
   padding: 0;
   overflow: hidden;
+  max-height: 80vh;
+  overflow-y: auto;
   animation: dialogEnter 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -3582,6 +3587,66 @@ html, body {
   border-color: var(--border);
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+/* ---------------------------------------------------------------------------
+ * Steps to complete section — BlockDetailDialog (Phase 1, steps-to-complete)
+ * Renders CatalogEntry.procedure for PROJECT + CI inside the block detail
+ * dialog. Inserted between </dl> and .bdd-rationale-section per DELTA §3.3.
+ * Token discipline: Iter 39 semantic tokens only (R3 P1 lesson — no --color-*
+ * tokens introduced here). Verified: --text-primary, --text-secondary,
+ * --text-muted, --border-subtle all declared in light + dark theme blocks.
+ * ------------------------------------------------------------------------- */
+
+.bdd-steps-section {
+  margin-top: 16px;
+  padding: 0 16px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.bdd-steps-section--empty {
+  /* same outer treatment as populated section */
+}
+
+.bdd-steps-heading {
+  margin: 10px 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.bdd-steps-list {
+  margin: 0;
+  padding-left: 20px;
+  padding-right: 4px; /* prevent scrollbar from clipping text */
+  max-height: 160px;
+  overflow-y: auto;
+  list-style: decimal;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bdd-step-item {
+  margin-bottom: 4px;
+}
+
+.bdd-step-item:last-child {
+  margin-bottom: 0;
+}
+
+.bdd-step-item--optional {
+  color: var(--text-muted);
+}
+
+.bdd-steps-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* ==========================================================================
