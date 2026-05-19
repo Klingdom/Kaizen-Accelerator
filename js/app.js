@@ -2171,11 +2171,24 @@ export function buildHandlers(scope) {
     DRAG_CONFIRM(payload) {
       if (!state.dragSession) return;
       const session = state.dragSession;
-      state.dragSession = null;
+      // Phase 3.5 (R3): DO NOT clear dragSession before _ensureEditMode().
+      // Prior code cleared dragSession first → on guard failure the banner
+      // disappeared but nothing persisted (silent discard, no user feedback).
+      // Fix: ensure edit mode FIRST; clear dragSession only on success; on
+      // failure preserve dragSession (banner stays) and surface a toast.
 
       // Ensure edit mode is open.
       const opened = this._ensureEditMode();
-      if (!opened) return;
+      if (!opened) {
+        // Guard failed (e.g. composition flushed mid-session). Keep dragSession
+        // so the confirm banner remains visible and the user can retry.
+        showToast(state, ToastKind.ERROR, 'Cannot commit drag — please retry', rerender);
+        rerender();
+        return;
+      }
+
+      // Guard passed — now safe to clear the session.
+      state.dragSession = null;
 
       if (session.mode === 'resize') {
         this.EDIT_CHANGE_DURATION({
