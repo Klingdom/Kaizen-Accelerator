@@ -510,18 +510,35 @@ describe('TodayGrid Iter48 — AC19: Iter 47 functionality preserved', () => {
     assert.ok(html.includes('cycle-block-secondary'), 'PROJECT secondary line (Iter 46) still renders (AC19)');
   });
 
-  test('AC19: kaizen chip glow-ring still renders for linked blocks', () => {
+  test('AC19: kaizen sub-label renders for linked blocks at ≥56px (Phase 3.2 consolidation)', () => {
+    // Phase 3.2 (R3): for h ≥ 56px, sub-label wins over chip — no dual representation.
+    // The data-kaizen-linked attribute and aria-label still convey the kaizen signal.
     const html = TodayGrid({
       composition: COMP,
       activities: [mkActivity({
         bucket: 'PROJECT',
         linkedKaizenId: 'k1',
-        plannedDurationMinutes: 60
+        plannedDurationMinutes: 60  // 60px >= 56px → sub-label shown, chip suppressed
       })],
       kaizenTitleById: KAIZEN_MAP
     });
-    assert.ok(html.includes('cycle-block-kaizen'), 'Kaizen glow-ring chip still renders (AC19)');
-    assert.ok(html.includes('cycle-block-kaizen-linked'), 'Kaizen glow-ring linked class preserved (AC19)');
+    assert.ok(html.includes('cycle-block-kaizen-sublabel'), 'Kaizen sub-label renders for tall linked blocks (Phase 3.2)');
+    assert.ok(html.includes('data-kaizen-linked="true"'), 'data-kaizen-linked attribute preserved (AC19)');
+  });
+
+  test('AC19: kaizen chip glow-ring still renders for short linked blocks (h < 56px)', () => {
+    // Phase 3.2 (R3): chip is retained for h < 56px so kaizen signal is never dropped.
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'PROJECT',
+        linkedKaizenId: 'k1',
+        plannedDurationMinutes: 30  // 30px < 56px → chip shown, sub-label suppressed
+      })],
+      kaizenTitleById: KAIZEN_MAP
+    });
+    assert.ok(html.includes('cycle-block-kaizen-linked'), 'Kaizen glow-ring chip preserved for short blocks (AC19)');
+    assert.ok(!html.includes('cycle-block-kaizen-sublabel'), 'Sub-label suppressed for short blocks (h < 56px)');
   });
 
   test('AC19: all block types render without crash in mixed grid', () => {
@@ -546,5 +563,139 @@ describe('TodayGrid Iter48 — AC19: Iter 47 functionality preserved', () => {
     assert.ok(html.includes('data-activity-id="l1"'), 'Lunch renders');
     assert.ok(html.includes('cycle-block-ci-unlinked'), 'Unlinked CI indicator on PDCA block');
     assert.ok(!html.includes('cycle-block-ci-unlinked') === false, 'ci-unlinked present in grid');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 3.2 (R3): Kaizen dual representation — sub-label wins at h >= 56px
+// AC-KZ1: Block with kaizenTitle and h >= 56 renders sub-label but NOT chip
+// AC-KZ2: Block with kaizenTitle and h < 56 renders chip but NOT sub-label
+// AC-KZ3: Block without kaizenTitle renders neither
+// ---------------------------------------------------------------------------
+
+describe('TodayGrid Phase 3.2 — kaizen dual representation consolidation', () => {
+  test('AC-KZ1: PROJECT block with kaizenTitle and h >= 56px shows sub-label but NOT chip', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'PROJECT',
+        linkedKaizenId: 'k1',
+        plannedDurationMinutes: TALL_BLOCK_MINS   // 60px >= 56px
+      })],
+      kaizenTitleById: KAIZEN_MAP
+    });
+    assert.ok(
+      html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ1: sub-label must render for tall PROJECT block with kaizenTitle'
+    );
+    // chip uses class cycle-block-kaizen-linked -- must NOT appear when sub-label wins
+    const chipCount = (html.match(/cycle-block-kaizen-linked/g) ?? []).length;
+    assert.equal(chipCount, 0,
+      'AC-KZ1: chip (cycle-block-kaizen-linked) must NOT render alongside sub-label on tall PROJECT block'
+    );
+  });
+
+  test('AC-KZ1: CI block with kaizenTitle and h >= 56px shows sub-label but NOT chip', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'CI',
+        catalogEntryId: 'cat_pdca',
+        name: 'PDCA Cycle',
+        linkedKaizenId: 'k2',
+        plannedDurationMinutes: TALL_BLOCK_MINS   // 60px >= 56px
+      })],
+      kaizenTitleById: KAIZEN_MAP
+    });
+    assert.ok(
+      html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ1: sub-label must render for tall CI block with kaizenTitle'
+    );
+    const chipCount = (html.match(/cycle-block-kaizen-linked/g) ?? []).length;
+    assert.equal(chipCount, 0,
+      'AC-KZ1: chip must NOT render alongside sub-label on tall CI block'
+    );
+  });
+
+  test('AC-KZ2: PROJECT block with kaizenTitle and h < 56px shows chip but NOT sub-label', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'PROJECT',
+        linkedKaizenId: 'k1',
+        plannedDurationMinutes: SHORT_BLOCK_MINS  // 30px < 56px
+      })],
+      kaizenTitleById: KAIZEN_MAP
+    });
+    assert.ok(
+      html.includes('cycle-block-kaizen-linked'),
+      'AC-KZ2: chip must render for short PROJECT block with kaizenTitle'
+    );
+    assert.ok(
+      !html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ2: sub-label must NOT render for short PROJECT block (height gate preserved)'
+    );
+  });
+
+  test('AC-KZ2: CI block with kaizenTitle and h < 56px shows chip but NOT sub-label', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'CI',
+        catalogEntryId: 'cat_pdca',
+        name: 'PDCA Cycle',
+        linkedKaizenId: 'k2',
+        plannedDurationMinutes: SHORT_BLOCK_MINS  // 30px < 56px
+      })],
+      kaizenTitleById: KAIZEN_MAP
+    });
+    assert.ok(
+      html.includes('cycle-block-kaizen-linked'),
+      'AC-KZ2: chip must render for short CI block with kaizenTitle'
+    );
+    assert.ok(
+      !html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ2: sub-label must NOT render for short CI block (height gate preserved)'
+    );
+  });
+
+  test('AC-KZ3: PROJECT block without kaizenTitle renders neither sub-label nor chip', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'PROJECT',
+        plannedDurationMinutes: TALL_BLOCK_MINS
+        // no linkedKaizenId
+      })]
+    });
+    assert.ok(
+      !html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ3: no sub-label when kaizenTitle is absent (PROJECT)'
+    );
+    assert.ok(
+      !html.includes('cycle-block-kaizen-linked'),
+      'AC-KZ3: no chip when kaizenTitle is absent (PROJECT)'
+    );
+  });
+
+  test('AC-KZ3: CI block without kaizenTitle renders neither sub-label nor chip', () => {
+    const html = TodayGrid({
+      composition: COMP,
+      activities: [mkActivity({
+        bucket: 'CI',
+        catalogEntryId: 'cat_pdca',
+        name: 'PDCA Cycle',
+        plannedDurationMinutes: TALL_BLOCK_MINS
+        // no linkedKaizenId
+      })]
+    });
+    assert.ok(
+      !html.includes('cycle-block-kaizen-sublabel'),
+      'AC-KZ3: no sub-label when kaizenTitle is absent (CI)'
+    );
+    assert.ok(
+      !html.includes('cycle-block-kaizen-linked'),
+      'AC-KZ3: no chip when kaizenTitle is absent (CI)'
+    );
   });
 });

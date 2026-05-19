@@ -238,14 +238,20 @@ function renderProjectBlock(activity, catalogEntry, ctx) {
   // Height-gated: only render when block height ≥56px to avoid clutter on short blocks.
   // Distinct from kaizenChip (which is the existing glow-ring chip) — sub-label is
   // a smaller muted text line below the activity name.
-  let kaizenSubLabel = '';
-  if (h >= SECONDARY_LINE_MIN_HEIGHT_PX && kaizenTitle) {
-    kaizenSubLabel = `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`;
-  }
+  //
+  // Phase 3.2 (R3): sub-label wins over chip when h ≥ 56px to avoid dual
+  // representation. Chip still renders on short blocks (h < 56px) so the
+  // kaizen signal is never silently dropped (AC-KZ1/AC-KZ2).
+  const showSubLabel = h >= SECONDARY_LINE_MIN_HEIGHT_PX && !!kaizenTitle;
+  const kaizenSubLabel = showSubLabel
+    ? `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
+    : '';
+  // Suppress chip when sub-label is rendered to avoid dual representation.
+  const effectiveKaizenChip = showSubLabel ? '' : kaizenChip;
 
   return `<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${secondaryLine}${kaizenSubLabel}${kaizenChip}${resizeHandle}`;
+    ${secondaryLine}${kaizenSubLabel}${effectiveKaizenChip}${resizeHandle}`;
 }
 
 /**
@@ -317,10 +323,16 @@ function renderCIBlock(activity, _catalogEntry, ctx) {
 
   // Iter 48 Phase 3A (AC2): kaizen sub-label on CI blocks with a linked kaizen.
   // Height-gated: only render when block height ≥56px.
-  let kaizenSubLabel = '';
-  if (h >= SECONDARY_LINE_MIN_HEIGHT_PX && kaizenTitle) {
-    kaizenSubLabel = `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`;
-  }
+  //
+  // Phase 3.2 (R3): sub-label wins over chip when h ≥ 56px to avoid dual
+  // representation of the same kaizen title. Chip retained for h < 56px
+  // so kaizen signal is never silently dropped (AC-KZ1/AC-KZ2).
+  const showSubLabel = h >= SECONDARY_LINE_MIN_HEIGHT_PX && !!kaizenTitle;
+  const kaizenSubLabel = showSubLabel
+    ? `<span class="cycle-block-kaizen-sublabel" aria-label="Kaizen: ${esc(kaizenTitle)}">${esc(kaizenTitle)}</span>`
+    : '';
+  // Suppress chip when sub-label is rendered to avoid dual representation.
+  const effectiveKaizenChip = showSubLabel ? '' : kaizenChip;
 
   // Iter 48 Phase 3B (AC5, AC6): unlinked CI indicator for user-added CI without a kaizen link.
   // Conditions for showing: CI block, no linkedKaizenId, NOT a sprint ceremony (protected),
@@ -335,7 +347,7 @@ function renderCIBlock(activity, _catalogEntry, ctx) {
 
   return `${lockOrSacred}${unlinkedIndicator}<span class="cycle-block-time">${esc(timeLabel)}</span>
     <span class="cycle-block-name">${esc(name)}</span>
-    ${kaizenSubLabel}${kaizenChip}${resizeHandle}`;
+    ${kaizenSubLabel}${effectiveKaizenChip}${resizeHandle}`;
 }
 
 /**
