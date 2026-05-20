@@ -61,18 +61,19 @@ describe('entryBindsToProjectType', () => {
 // ---------------------------------------------------------------------------
 
 describe('filterCatalogByProjectType — against the full seeded catalog', () => {
-  test('DMAIC returns exactly 22 entries', () => {
+  test('DMAIC returns exactly 23 entries (Phase 2: +gen_dmaic_control_plan)', () => {
     const out = filterCatalogByProjectType('DMAIC', CATALOG);
-    assert.equal(out.length, 22);
+    assert.equal(out.length, 23);
   });
 
-  test('DMAIC entries are sorted by activityNumber asc', () => {
+  test('DMAIC entries are sorted: numbered #20..#41 asc, then null-numbered gen_dmaic_control_plan last', () => {
     const out = filterCatalogByProjectType('DMAIC', CATALOG);
     const numbers = out.map((e) => e.activityNumber);
-    const sorted = [...numbers].sort((a, b) => a - b);
-    assert.deepEqual(numbers, sorted);
+    // Numbered entries (#20..#41) must come before the null-numbered gen_dmaic_control_plan.
+    // sortDeterministic puts null activityNumbers at Infinity (last).
     assert.equal(numbers[0], 20);
-    assert.equal(numbers[numbers.length - 1], 41);
+    assert.equal(numbers[21], 41);
+    assert.equal(numbers[22], null); // gen_dmaic_control_plan sorts last
   });
 
   test('KAIZEN_EVENT_90D returns 9 entries (#42..#50)', () => {
@@ -240,20 +241,22 @@ describe('getCurrentNext — DMAIC (DAG-driven)', () => {
     assert.ok(r2.remaining.some((c) => c.activityNumber === 39));
   });
 
-  test('all 22 DMAIC rows completed → current=null, next=null', () => {
+  test('all 23 DMAIC rows completed → current=null, next=null (Phase 2: +gen_dmaic_control_plan)', () => {
     const completed = [];
     for (let n = 20; n <= 41; n += 1) completed.push(idForNumber(n));
+    // Phase 2: gen_dmaic_control_plan is now DMAIC-bound (activityNumber:null → sorts after numbered entries)
+    completed.push('gen_dmaic_control_plan');
     const r = getCurrentNext('DMAIC', completed, CATALOG);
     assert.equal(r.current, null);
     assert.equal(r.next, null);
     assert.deepEqual(r.remaining, []);
   });
 
-  test('remaining set decreases as completion grows', () => {
+  test('remaining set decreases as completion grows (Phase 2: DMAIC slice now has 23 entries)', () => {
     const r1 = getCurrentNext('DMAIC', [], CATALOG);
-    assert.equal(r1.remaining.length, 22);
+    assert.equal(r1.remaining.length, 23); // Phase 2: +gen_dmaic_control_plan
     const r2 = getCurrentNext('DMAIC', [idForNumber(20)], CATALOG);
-    assert.equal(r2.remaining.length, 21);
+    assert.equal(r2.remaining.length, 22);
   });
 
   test('deterministic: same input twice → identical output', () => {

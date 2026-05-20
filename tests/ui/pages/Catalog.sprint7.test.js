@@ -124,16 +124,16 @@ describe('Catalog — bucket view preserves functionality', () => {
   });
 });
 
-describe('Catalog — bucket count accuracy against full 65-entry seed (Phase 1: +4 convergent Tier 1)', () => {
+describe('Catalog — bucket count accuracy against full 71-entry seed (Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1)', () => {
   // Defensive test — uses the actual seed pipeline to verify no silent
   // bucket mapping drift per Sprint 7 hard rule.
-  test('seeded catalog has 65 entries total (Iter 26: +1 recovery_lunch; Phase 1: +4)', async () => {
+  test('seeded catalog has 71 entries total (Iter 26: +1 recovery_lunch; Phase 1: +4; Phase 2: +6)', async () => {
     const { buildCatalog } = await import('../../../js/catalog/seed/index.js');
     const cat = buildCatalog();
-    assert.equal(cat.length, 65);
+    assert.equal(cat.length, 71);
   });
 
-  test('bucket counts for PROJECT/COMMUNICATION/CI sum to 64 (recovery_lunch excluded — bucket null)', async () => {
+  test('bucket counts for PROJECT/COMMUNICATION/CI sum to 70 (recovery_lunch excluded — bucket null)', async () => {
     const { buildCatalog } = await import('../../../js/catalog/seed/index.js');
     const cat = buildCatalog();
     const counts = { PROJECT: 0, COMMUNICATION: 0, CI: 0 };
@@ -145,7 +145,7 @@ describe('Catalog — bucket count accuracy against full 65-entry seed (Phase 1:
       }
       counts[e.bucket] += 1;
     }
-    assert.equal(counts.PROJECT + counts.COMMUNICATION + counts.CI, 64);
+    assert.equal(counts.PROJECT + counts.COMMUNICATION + counts.CI, 70);
     assert.ok(counts.PROJECT > 0);
     assert.ok(counts.COMMUNICATION > 0);
     assert.ok(counts.CI > 0);

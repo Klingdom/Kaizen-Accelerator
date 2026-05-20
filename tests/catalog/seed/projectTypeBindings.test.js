@@ -215,11 +215,16 @@ describe('projectTypeBindings — end-to-end via buildCatalog()', () => {
     }
   });
 
-  test('generics (gen_*) are all bound to null', () => {
+  test('generics (gen_*) are all bound to null — except gen_dmaic_control_plan (Phase 2 DMAIC-bound)', () => {
     const generics = catalog.filter((c) => c.id.startsWith('gen_'));
     assert.ok(generics.length >= 5);
     for (const g of generics) {
-      assert.equal(g.projectTypeBinding, null, `${g.id} expected null`);
+      if (g.id === 'gen_dmaic_control_plan') {
+        // Phase 2: intentional DMAIC binding (Control phase artifact)
+        assert.equal(g.projectTypeBinding, 'DMAIC', 'gen_dmaic_control_plan must be DMAIC-bound');
+      } else {
+        assert.equal(g.projectTypeBinding, null, `${g.id} expected null`);
+      }
     }
   });
 
@@ -239,9 +244,9 @@ describe('projectTypeBindings — end-to-end via buildCatalog()', () => {
     }
   });
 
-  test('total count of DMAIC-bound entries equals 22', () => {
+  test('total count of DMAIC-bound entries equals 23 (22 numbered + gen_dmaic_control_plan Phase 2)', () => {
     const dmaic = catalog.filter((c) => c.projectTypeBinding === 'DMAIC');
-    assert.equal(dmaic.length, 22);
+    assert.equal(dmaic.length, 23);
   });
 
   test('total count of Kaizen-bound (array) entries equals 9', () => {

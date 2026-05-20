@@ -2963,6 +2963,275 @@
     "sourceRef": "Toyota Production System — Taiichi Ohno; Lean Thinking (Womack & Jones)"
   },
   {
+    "id": "gen_decision_meeting",
+    "activityNumber": null,
+    "name": "Decision Meeting (Gate / Sign-off)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 45,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "A decision, approval, or escalation cannot be resolved asynchronously",
+    "inputs": [
+      "Pre-read document (1–2 pages max) distributed 24h in advance",
+      "Decision options with trade-offs stated",
+      "RACI or decision authority identified"
+    ],
+    "outputArtifact": {
+      "name": "Decision Record",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Decision Owner",
+      "Project Lead",
+      "Required RACI stakeholders"
+    ],
+    "procedure": [
+      "1. Distribute the pre-read 24 hours before; cancel the meeting if pre-read is not ready.",
+      "2. Open with a 5-minute framing: what decision is needed, what are the options, what is the deadline.",
+      "3. Each stakeholder states their position and key concern — time-boxed to 2 minutes per person.",
+      "4. Decision Owner makes the call; document the decision and its rationale in the meeting.",
+      "5. Record dissenting views if material; assign any follow-up actions with owners and dates.",
+      "6. Publish the Decision Record to the project record within 24 hours of the meeting."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "CHAMPION",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "RACI matrix discipline: Smith & Erwin (2011); Decisive (Heath & Heath) — decision framing"
+  },
+  {
+    "id": "gen_dmaic_control_plan",
+    "activityNumber": null,
+    "name": "DMAIC Control Plan",
+    "focusArea": "DMAIC",
+    "defaultDurationMinutes": 60,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "DMAIC Improve phase complete; before closing to Control phase",
+    "inputs": [
+      "Implemented Improvements (cat_40_dmaic_implemented_improvements)",
+      "FMEA (cat_37_dmaic_failure_modes_effects_analysis)",
+      "Baseline and post-improvement data (cat_28, cat_39)",
+      "Updated SOP drafts"
+    ],
+    "outputArtifact": {
+      "name": "DMAIC Control Plan Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. List each vital X identified in the FMEA/Regression as a monitored parameter.",
+      "2. For each parameter define: control method, spec limit, measurement frequency, owner.",
+      "3. Define the out-of-control response rule (e.g., >2σ shift triggers recheck within 24h).",
+      "4. Confirm updated SOPs are published and Process Owner has signed them.",
+      "5. Link the Control Chart (cat_29) dashboard to the Control Plan as the live monitoring artifact.",
+      "6. Set the 30/60/90-day check-in schedule with Process Owner.",
+      "7. File Control Plan alongside Charter and Results Narrative."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": "DMAIC",
+    "phaseBinding": "PHASE_4",
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "ASQ DMAIC Body of Knowledge — Control Phase; Lean Six Sigma Pocket Toolbook (George et al.)"
+  },
+  {
+    "id": "gen_project_charter",
+    "activityNumber": null,
+    "name": "Project Charter (General)",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 90,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Decision to begin any non-DMAIC, non-Kaizen project or initiative",
+    "inputs": [
+      "Problem or opportunity statement",
+      "Sponsor commitment",
+      "Initial scope hypothesis"
+    ],
+    "outputArtifact": {
+      "name": "Signed Project Charter",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Sponsor",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. Write the problem statement in two sentences: current state pain, desired future state.",
+      "2. Define in-scope and explicitly out-of-scope boundaries.",
+      "3. Identify Sponsor, Project Lead, key contributors, and decision authority.",
+      "4. Set the goal statement: measurable outcome + target date.",
+      "5. List the top 3 risks and initial mitigation approach.",
+      "6. Estimate effort in sprints or weeks with a rough milestone sequence.",
+      "7. Obtain Sponsor signature and register in project portfolio."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "PMBOK 7th Edition — Performance Domains: Stakeholder, Team, Planning"
+  },
+  {
+    "id": "gen_standard_work_update",
+    "activityNumber": null,
+    "name": "Standard Work Creation / Update",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Kaizen close with implemented improvement OR lessons learned session identifies SOP gap",
+    "inputs": [
+      "Implemented improvement description",
+      "Lessons Learned document",
+      "Existing SOP / standard work entry (if updating)"
+    ],
+    "outputArtifact": {
+      "name": "Updated or New Standard Work Procedure",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. Confirm the improvement is stable (held for ≥ 30 days or 30 observation cycles).",
+      "2. Draft the new or revised procedure in alphabetic step format (a–g max).",
+      "3. Specify the trigger, inputs, output artifact, and participants for the activity.",
+      "4. Review with the Process Owner and one practitioner who performs the work.",
+      "5. Publish to the standard work catalog or knowledge wiki.",
+      "6. Communicate the change to all affected roles with the effective date."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Toyota Kata (Rother) — Standardize-Then-Improve; BAM-X authored (CATALOG_GAP_PM.md Tier 1)"
+  },
+  {
+    "id": "gen_time_block_planning",
+    "activityNumber": null,
+    "name": "Weekly Time-Block Plan",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 20,
+    "cadence": "WEEKLY",
+    "trigger": "Sunday evening or Monday morning before first calendar commitment",
+    "inputs": [
+      "Upcoming week's calendar",
+      "Sprint Backlog commitments",
+      "Personal OKR priorities",
+      "Energy forecast"
+    ],
+    "outputArtifact": {
+      "name": "Weekly Time-Block Plan",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the week's calendar view; identify all fixed commitments (meetings, deadlines, travel).",
+      "2. Estimate remaining discretionary hours by day; account for known energy peaks and troughs.",
+      "3. Assign each Sprint Backlog commitment to a specific time block on a specific day; no commitment floats unscheduled.",
+      "4. Reserve at least one 90-minute deep-work block per day before 12:00; mark it as protected.",
+      "5. Write a one-sentence intention for the week (\"This week's win is ___\") at the top of the plan."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Newport, \"Deep Work\" (2016), Ch. 4; Newport \"Time-Block Planner\" companion methodology (2020)"
+  },
+  {
+    "id": "gen_constraint_identification",
+    "activityNumber": null,
+    "name": "Constraint (Bottleneck) Identification",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 60,
+    "cadence": "MONTHLY",
+    "trigger": "Monthly CI review or when throughput variance exceeds 20% of baseline",
+    "inputs": [
+      "Process map",
+      "Throughput data",
+      "WIP aging report",
+      "Team capacity log"
+    ],
+    "outputArtifact": {
+      "name": "Constraint Register",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "CI Champion",
+      "Process Owner",
+      "Team"
+    ],
+    "procedure": [
+      "1. Map the current end-to-end workflow from trigger to output artifact; identify all steps.",
+      "2. For each step, record average cycle time and WIP queue depth from the past sprint.",
+      "3. Identify the step with the longest combined cycle time plus wait time — this is the candidate constraint.",
+      "4. Confirm the constraint by checking whether upstream steps are underutilized while this step is backlogged.",
+      "5. Document the constraint in the Constraint Register: name, location, throughput rate, WIP depth, recommended focus.",
+      "6. Decide exploitation action (maximize output of the constraint before adding capacity elsewhere); add to Improvement Backlog."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Goldratt, \"The Goal\" (1984), Ch. 15 (Five Focusing Steps); \"Theory of Constraints Handbook\" (Cox/Schleier, 2010), Ch. 2"
+  },
+  {
     "id": "recovery_lunch",
     "activityNumber": null,
     "name": "Lunch",

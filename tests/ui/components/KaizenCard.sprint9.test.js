@@ -54,9 +54,12 @@ describe('renderCurrentStandardWorkChip — pure helper', () => {
     assert.equal(renderCurrentStandardWorkChip(k, [], []), '');
   });
 
-  test('returns empty string when all DMAIC rows completed', () => {
+  test('returns empty string when all DMAIC rows completed (incl. gen_dmaic_control_plan Phase 2)', () => {
     const completed = [];
     for (let n = 20; n <= 41; n += 1) completed.push(idForNumber(n));
+    // Phase 2: gen_dmaic_control_plan is now DMAIC-bound (activityNumber:null → sorts last).
+    // "All DMAIC rows completed" must include this unnumbered entry.
+    completed.push('gen_dmaic_control_plan');
     const k = makeDmaicActive();
     assert.equal(renderCurrentStandardWorkChip(k, CATALOG, completed), '');
   });

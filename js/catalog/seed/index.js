@@ -3,7 +3,7 @@
  *
  * Runs the seed pipeline in a deterministic order:
  *   1. Parse 49 numbered rows from the source file           (source50)
- *   2. Add 6 ceremonies + 5 generics                          (ceremoniesAndGenerics)
+ *   2. Add 6 ceremonies + 16 generics                         (ceremoniesAndGenerics)
  *   3. Apply §A–§D content fills                              (fillGaps)
  *   4. Apply §E bulk-fill defaults                            (bulkFill)
  *   5. Apply §H.1 bucket mapping                              (bucketMap)
@@ -32,8 +32,8 @@ import { applyProcedureNormalization } from './normalizeProcedures.js';
  * Build the fully-populated catalog. Accepts the source file path (for
  * tests that want to pin a fixture path).
  *
- * Total output size: 49 (numbered rows, no #17) + 6 ceremonies + 10 generics
- * = **65 entries** (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1).
+ * Total output size: 49 (numbered rows, no #17) + 6 ceremonies + 16 generics
+ * = **71 entries** (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1).
  *
  * @param {{sourceFilePath?: string}} [opts]
  * @returns {import('../../domain/types.js').CatalogEntry[]}
@@ -56,9 +56,9 @@ export function buildCatalog(opts = {}) {
 }
 
 /**
- * Expected row count: 49 numbered (no #17) + 6 ceremonies + 10 generics
- * (incl. Iter 26 recovery_lunch + Phase 1 4 convergent Tier 1 additions).
+ * Expected row count: 49 numbered (no #17) + 6 ceremonies + 16 generics
+ * (incl. Iter 26 recovery_lunch + Phase 1 +4 convergent Tier 1 + Phase 2 +6 lens-unique Tier 1).
  */
-export const EXPECTED_CATALOG_SIZE = 65;
+export const EXPECTED_CATALOG_SIZE = 71;
 
 export default buildCatalog;

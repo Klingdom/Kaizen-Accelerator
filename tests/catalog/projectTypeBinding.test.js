@@ -83,16 +83,17 @@ describe('Catalog — projectTypeBinding integrity', () => {
     assert.deepEqual(bad.map((c) => c.id), []);
   });
 
-  test('generics (gen_*) bind to null', () => {
+  test('generics (gen_*) bind to null — except gen_dmaic_control_plan (Phase 2 DMAIC-bound)', () => {
     const bad = catalog.filter(
       (c) => c.id.startsWith('gen_') && c.projectTypeBinding !== null
+             && c.id !== 'gen_dmaic_control_plan' // Phase 2: intentional DMAIC binding
     );
     assert.deepEqual(bad.map((c) => c.id), []);
   });
 
-  test('DMAIC-bound count equals 22', () => {
+  test('DMAIC-bound count equals 23 (22 numbered + gen_dmaic_control_plan Phase 2)', () => {
     const n = catalog.filter((c) => c.projectTypeBinding === 'DMAIC').length;
-    assert.equal(n, 22);
+    assert.equal(n, 23);
   });
 
   test('AD_HOC-bound count is at least 1 (covers #12)', () => {

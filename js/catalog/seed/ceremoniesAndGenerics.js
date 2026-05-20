@@ -37,7 +37,14 @@ export const GENERIC_IDS = Object.freeze({
   STRUCTURED_ONE_ON_ONE: 'gen_structured_one_on_one',
   STAKEHOLDER_STATUS_REPORT: 'gen_stakeholder_status_report',
   MONTHLY_CI_REVIEW: 'gen_monthly_ci_review',
-  FIVE_WHYS: 'gen_5_whys'
+  FIVE_WHYS: 'gen_5_whys',
+  // Phase 2 — PM-unique + Research-unique Tier 1 additions (CATALOG_GAP_DELTA.md §10 Phase 2)
+  DECISION_MEETING: 'gen_decision_meeting',
+  DMAIC_CONTROL_PLAN: 'gen_dmaic_control_plan',
+  PROJECT_CHARTER: 'gen_project_charter',
+  STANDARD_WORK_UPDATE: 'gen_standard_work_update',
+  TIME_BLOCK_PLANNING: 'gen_time_block_planning',
+  CONSTRAINT_IDENTIFICATION: 'gen_constraint_identification'
 });
 
 /**
@@ -555,6 +562,239 @@ function buildGenerics() {
       enabledByUser: true,
       version: 1,
       sourceRef: 'Toyota Production System — Taiichi Ohno; Lean Thinking (Womack & Jones)'
+    },
+    // --- Phase 2: PM-unique + Research-unique Tier 1 additions (CATALOG_GAP_DELTA.md §10 Phase 2) ---
+    // Source content: CATALOG_GAP_PM.md COMMUNICATION Tier 1 (RACI/RAPID decision protocol)
+    {
+      id: GENERIC_IDS.DECISION_MEETING,
+      activityNumber: null,
+      name: 'Decision Meeting (Gate / Sign-off)',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 45,
+      cadence: 'EVENT_DRIVEN', // SW-Q? — Phil to confirm: PM artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (no 'ad_hoc' in Cadence enum)
+      trigger: 'A decision, approval, or escalation cannot be resolved asynchronously',
+      inputs: [
+        'Pre-read document (1–2 pages max) distributed 24h in advance',
+        'Decision options with trade-offs stated',
+        'RACI or decision authority identified'
+      ],
+      outputArtifact: {
+        name: 'Decision Record',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Decision Owner', 'Project Lead', 'Required RACI stakeholders'],
+      procedure: [
+        'a. Distribute the pre-read 24 hours before; cancel the meeting if pre-read is not ready.',
+        'b. Open with a 5-minute framing: what decision is needed, what are the options, what is the deadline.',
+        'c. Each stakeholder states their position and key concern — time-boxed to 2 minutes per person.',
+        'd. Decision Owner makes the call; document the decision and its rationale in the meeting.',
+        'e. Record dissenting views if material; assign any follow-up actions with owners and dates.',
+        'f. Publish the Decision Record to the project record within 24 hours of the meeting.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [], // Phase 5: add dependsOn edges per CATALOG_GAP_DELTA.md §8
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'CHAMPION', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'RACI matrix discipline: Smith & Erwin (2011); Decisive (Heath & Heath) — decision framing'
+    },
+    // Source content: CATALOG_GAP_PM.md PROJECT Tier 1 (DMAIC Control Phase completion)
+    {
+      id: GENERIC_IDS.DMAIC_CONTROL_PLAN,
+      activityNumber: null,
+      name: 'DMAIC Control Plan',
+      focusArea: 'DMAIC',
+      defaultDurationMinutes: 60,
+      cadence: 'EVENT_DRIVEN', // SW-Q? — Phil to confirm: PM artifact listed 'per_project'; mapped to EVENT_DRIVEN (no 'PER_PROJECT' in Cadence enum)
+      trigger: 'DMAIC Improve phase complete; before closing to Control phase',
+      inputs: [
+        'Implemented Improvements (cat_40_dmaic_implemented_improvements)',
+        'FMEA (cat_37_dmaic_failure_modes_effects_analysis)',
+        'Baseline and post-improvement data (cat_28, cat_39)',
+        'Updated SOP drafts'
+      ],
+      outputArtifact: {
+        name: 'DMAIC Control Plan Document',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Project Lead', 'Process Owner'],
+      procedure: [
+        'a. List each vital X identified in the FMEA/Regression as a monitored parameter.',
+        'b. For each parameter define: control method, spec limit, measurement frequency, owner.',
+        'c. Define the out-of-control response rule (e.g., >2σ shift triggers recheck within 24h).',
+        'd. Confirm updated SOPs are published and Process Owner has signed them.',
+        'e. Link the Control Chart (cat_29) dashboard to the Control Plan as the live monitoring artifact.',
+        'f. Set the 30/60/90-day check-in schedule with Process Owner.',
+        'g. File Control Plan alongside Charter and Results Narrative.'
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [], // Phase 5: wire cat_37 + cat_40 dependsOn edges per DELTA §8
+      projectTypeBinding: 'DMAIC',
+      phaseBinding: 'PHASE_4', // Control phase — types.js comment: 'PHASE_0'..'PHASE_4' (Accelerator)
+      appliesToRoles: ['PRACTITIONER', 'FACILITATOR', 'LEADER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'ASQ DMAIC Body of Knowledge — Control Phase; Lean Six Sigma Pocket Toolbook (George et al.)'
+    },
+    // Source content: CATALOG_GAP_PM.md PROJECT Tier 1 (generic charter for non-DMAIC/non-Kaizen projects)
+    {
+      id: GENERIC_IDS.PROJECT_CHARTER,
+      activityNumber: null,
+      name: 'Project Charter (General)',
+      focusArea: 'DEEP_WORK',
+      defaultDurationMinutes: 90,
+      cadence: 'EVENT_DRIVEN', // SW-Q? — Phil to confirm: PM artifact listed 'per_project'; mapped to EVENT_DRIVEN (no 'PER_PROJECT' in Cadence enum)
+      trigger: 'Decision to begin any non-DMAIC, non-Kaizen project or initiative',
+      inputs: [
+        'Problem or opportunity statement',
+        'Sponsor commitment',
+        'Initial scope hypothesis'
+      ],
+      outputArtifact: {
+        name: 'Signed Project Charter',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Project Lead', 'Sponsor', 'Process Owner'],
+      procedure: [
+        'a. Write the problem statement in two sentences: current state pain, desired future state.',
+        'b. Define in-scope and explicitly out-of-scope boundaries.',
+        'c. Identify Sponsor, Project Lead, key contributors, and decision authority.',
+        'd. Set the goal statement: measurable outcome + target date.',
+        'e. List the top 3 risks and initial mitigation approach.',
+        'f. Estimate effort in sprints or weeks with a rough milestone sequence.',
+        'g. Obtain Sponsor signature and register in project portfolio.'
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null, // SW-Q8 — general projects are not yet a first-class type; Phil to confirm
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'PMBOK 7th Edition — Performance Domains: Stakeholder, Team, Planning'
+    },
+    // Source content: CATALOG_GAP_PM.md CI Tier 1 (meta-practice: SOP update from lessons learned)
+    {
+      id: GENERIC_IDS.STANDARD_WORK_UPDATE,
+      activityNumber: null,
+      name: 'Standard Work Creation / Update',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 30,
+      cadence: 'EVENT_DRIVEN', // SW-Q? — Phil to confirm: PM artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (no 'ad_hoc' in Cadence enum). SW-Q7: trigger set also open.
+      trigger: 'Kaizen close with implemented improvement OR lessons learned session identifies SOP gap',
+      inputs: [
+        'Implemented improvement description',
+        'Lessons Learned document',
+        'Existing SOP / standard work entry (if updating)'
+      ],
+      outputArtifact: {
+        name: 'Updated or New Standard Work Procedure',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self', 'Process Owner'],
+      procedure: [
+        'a. Confirm the improvement is stable (held for ≥ 30 days or 30 observation cycles).',
+        'b. Draft the new or revised procedure in alphabetic step format (a–g max).',
+        'c. Specify the trigger, inputs, output artifact, and participants for the activity.',
+        'd. Review with the Process Owner and one practitioner who performs the work.',
+        'e. Publish to the standard work catalog or knowledge wiki.',
+        'f. Communicate the change to all affected roles with the effective date.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [], // Phase 5: wire gen_lessons_learned dependsOn per DELTA §8; SW-Q7 open on full trigger set
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'FACILITATOR', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Toyota Kata (Rother) — Standardize-Then-Improve; BAM-X authored (CATALOG_GAP_PM.md Tier 1)'
+    },
+    // Source content: CATALOG_GAP_RESEARCH.md §3 Entry 3 (Newport "Deep Work" weekly time-block ritual)
+    {
+      id: GENERIC_IDS.TIME_BLOCK_PLANNING,
+      activityNumber: null,
+      name: 'Weekly Time-Block Plan',
+      focusArea: 'DEEP_WORK',
+      defaultDurationMinutes: 20,
+      cadence: 'WEEKLY',
+      trigger: 'Sunday evening or Monday morning before first calendar commitment',
+      inputs: [
+        "Upcoming week's calendar",
+        'Sprint Backlog commitments',
+        'Personal OKR priorities',
+        'Energy forecast'
+      ],
+      outputArtifact: {
+        name: 'Weekly Time-Block Plan',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        "a. Open the week's calendar view; identify all fixed commitments (meetings, deadlines, travel).",
+        'b. Estimate remaining discretionary hours by day; account for known energy peaks and troughs.',
+        'c. Assign each Sprint Backlog commitment to a specific time block on a specific day; no commitment floats unscheduled.',
+        'd. Reserve at least one 90-minute deep-work block per day before 12:00; mark it as protected.',
+        "e. Write a one-sentence intention for the week (\"This week's win is ___\") at the top of the plan."
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Newport, "Deep Work" (2016), Ch. 4; Newport "Time-Block Planner" companion methodology (2020)'
+    },
+    // Source content: CATALOG_GAP_RESEARCH.md §3 Entry 4 (Goldratt TOC Five Focusing Steps)
+    {
+      id: GENERIC_IDS.CONSTRAINT_IDENTIFICATION,
+      activityNumber: null,
+      name: 'Constraint (Bottleneck) Identification',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 60,
+      cadence: 'MONTHLY',
+      trigger: 'Monthly CI review or when throughput variance exceeds 20% of baseline', // SW-Q? — Phil to calibrate the 20% variance threshold
+      inputs: [
+        'Process map',
+        'Throughput data',
+        'WIP aging report',
+        'Team capacity log'
+      ],
+      outputArtifact: {
+        name: 'Constraint Register',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['CI Champion', 'Process Owner', 'Team'],
+      procedure: [
+        'a. Map the current end-to-end workflow from trigger to output artifact; identify all steps.',
+        'b. For each step, record average cycle time and WIP queue depth from the past sprint.',
+        'c. Identify the step with the longest combined cycle time plus wait time — this is the candidate constraint.',
+        'd. Confirm the constraint by checking whether upstream steps are underutilized while this step is backlogged.',
+        'e. Document the constraint in the Constraint Register: name, location, throughput rate, WIP depth, recommended focus.',
+        'f. Decide exploitation action (maximize output of the constraint before adding capacity elsewhere); add to Improvement Backlog.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Goldratt, "The Goal" (1984), Ch. 15 (Five Focusing Steps); "Theory of Constraints Handbook" (Cox/Schleier, 2010), Ch. 2'
     },
     // --- Iter 26: Lunch block as editable ScheduledActivity (ARCHITECTURE_DELTA_LUNCH_BLOCK.md) ---
     // bucket: null is INTENTIONAL — this entry is capacity-neutral.
