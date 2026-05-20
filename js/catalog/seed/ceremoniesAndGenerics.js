@@ -32,7 +32,12 @@ export const GENERIC_IDS = Object.freeze({
   END_OF_ACTIVITY_REFLECTION: 'gen_end_of_activity_reflection',
   WEEKLY_REFLECTION: 'gen_weekly_reflection',
   LESSONS_LEARNED: 'gen_lessons_learned',
-  LUNCH: 'recovery_lunch'
+  LUNCH: 'recovery_lunch',
+  // Phase 1 — Convergent Tier 1 additions (CATALOG_GAP_DELTA.md §10)
+  STRUCTURED_ONE_ON_ONE: 'gen_structured_one_on_one',
+  STAKEHOLDER_STATUS_REPORT: 'gen_stakeholder_status_report',
+  MONTHLY_CI_REVIEW: 'gen_monthly_ci_review',
+  FIVE_WHYS: 'gen_5_whys'
 });
 
 /**
@@ -395,6 +400,161 @@ function buildGenerics() {
       enabledByUser: true,
       version: 1,
       sourceRef: 'CATALOG_GAPS.md §H.2 v0.3.1'
+    },
+    // --- Phase 1: Convergent Tier 1 additions (CATALOG_GAP_DELTA.md §10 Phase 1) ---
+    // Source content: CATALOG_GAP_RESEARCH.md §3 Entry 1 (Horstman SBI model)
+    {
+      id: GENERIC_IDS.STRUCTURED_ONE_ON_ONE,
+      activityNumber: null,
+      name: 'Structured 1:1 Meeting',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 30,
+      cadence: 'WEEKLY',
+      trigger: 'Recurring calendar hold, same day/time each week per direct report',
+      inputs: [
+        'Prior 1:1 notes',
+        'Open action items from last meeting',
+        'Performance signals and any emerging blockers',
+        "Team member's agenda"
+      ],
+      outputArtifact: {
+        name: '1:1 Notes with Action Items',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Manager', 'Direct Report'],
+      procedure: [
+        'a. Open the shared 1:1 document; both parties review outstanding action items from the prior meeting (5 min).',
+        "b. Give the report the floor first — ask \"What's on your agenda?\" and take notes on their priorities and blockers (10 min).",
+        'c. Deliver any prepared feedback using the Manager Tools SBI model: Situation, Behavior, Impact; pause for response (5 min).',
+        'd. Manager shares any context, org updates, or coaching points the report needs (5 min).',
+        'e. Confirm action items with owners and due dates; record in shared document before the meeting closes (5 min).'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'], // SW-Q1 — Phil to confirm primary persona (manager vs IC)
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Horstman, The Effective Manager (2016), Ch. 4-5; Manager Tools podcast "One-on-Ones" series'
+    },
+    // Source content: CATALOG_GAP_RESEARCH.md §3 Entry 5 (RAG framework, Friday-before-16:00)
+    {
+      id: GENERIC_IDS.STAKEHOLDER_STATUS_REPORT,
+      activityNumber: null,
+      name: 'Stakeholder Status Report',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 30,
+      cadence: 'WEEKLY',
+      trigger: 'Every Friday before end-of-day (16:00), covering the completed sprint week',
+      inputs: [
+        'Sprint Backlog status',
+        'OKR confidence snapshot',
+        'Open risks and blockers log',
+        'Any decisions needed from stakeholders'
+      ],
+      outputArtifact: {
+        name: 'Weekly Status Report',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Open the status report template; set the reporting period and RAG (Red/Amber/Green) status for each workstream.',
+        "b. Write a two-sentence summary of the week's accomplishments — only completed items, no in-flight descriptions.",
+        'c. List the top 1–3 risks or blockers with owner, mitigation, and target resolution date.',
+        'd. Identify any decisions needed from stakeholders this week; frame each as a clear yes/no or option-select question.',
+        'e. Distribute via the agreed channel (email, wiki, or async thread) by 16:00 Friday; do not send on Monday morning.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Manager Tools + PMBOK 7th Ed. Performance Domain: Stakeholders p. 29 + GitLab Remote Playbook "Async Status Updates"'
+    },
+    // Source content: CATALOG_GAP_PM.md CI Tier 1 (broad framing per DELTA §3 C-3)
+    {
+      id: GENERIC_IDS.MONTHLY_CI_REVIEW,
+      activityNumber: null,
+      name: 'Monthly CI Review',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 45,
+      cadence: 'MONTHLY',
+      trigger: 'Last Friday of each month (or first working day of new month)',
+      inputs: [
+        'Past 2 weekly reflections',
+        'Active Kaizen portfolio state',
+        'OKR progress snapshot',
+        'Sprint velocity trend (last 2 sprints)'
+      ],
+      outputArtifact: {
+        name: 'Monthly CI Review Summary',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self', 'CI Champion'], // SW-Q3 — Phil to confirm: self-only for solo practitioners vs CI Champion required
+      procedure: [
+        'a. Review past 2 sprints: goal achievement rate, velocity trend, recurring impediment patterns.',
+        'b. Check Kaizen portfolio: how many open, how many closed with validated benefit, how many stalled.',
+        'c. Review OKR trajectory: on track, at risk, or off track — with a one-line cause for each at-risk key result.',
+        'd. Identify one systemic improvement to the CI process itself (meta-kaizen candidate).',
+        'e. Set 1–2 priority shifts for the coming month.',
+        'f. Publish summary to the team and file in the quarterly planning archive.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: ['gen_weekly_reflection'],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'FACILITATOR', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Lean Management Review discipline; BAM-X authored (CATALOG_GAP_PM.md Tier 1)'
+    },
+    // Source content: CATALOG_GAP_PM.md CI Tier 1 (canonical 5 Whys ritual; Toyota Production System)
+    {
+      id: GENERIC_IDS.FIVE_WHYS,
+      activityNumber: null,
+      name: '5 Whys Root-Cause Analysis',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 30,
+      cadence: 'EVENT_DRIVEN',
+      trigger: 'Recurring friction signal, process defect, or unexpected variance in EoAR or weekly reflection',
+      inputs: [
+        'Problem statement (one sentence)',
+        'Observable evidence of the problem',
+        'Relevant process or system context'
+      ],
+      outputArtifact: {
+        name: '5 Whys Analysis Document',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self', 'Process Owner'],
+      procedure: [
+        'a. Write the problem statement in one sentence using observable facts, not interpretations.',
+        'b. Ask "Why did this happen?" and write the most direct cause.',
+        'c. Repeat the question on each answer until 5 levels are reached or a root cause is confirmed (controllable factor you can act on).',
+        'd. Confirm the root cause by working back up the chain: "If we fix X, do all upstream Whys resolve?"',
+        'e. Define at most 2 countermeasures: one short-term containment, one systemic fix.',
+        'f. Assign owner, due date, and success measure to each countermeasure.',
+        'g. Log in friction tracker; promote systemic fix to Kaizen queue if effort > 2 days.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['PRACTITIONER', 'FACILITATOR', 'LEADER', 'CHAMPION'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Toyota Production System — Taiichi Ohno; Lean Thinking (Womack & Jones)'
     },
     // --- Iter 26: Lunch block as editable ScheduledActivity (ARCHITECTURE_DELTA_LUNCH_BLOCK.md) ---
     // bucket: null is INTENTIONAL — this entry is capacity-neutral.

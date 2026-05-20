@@ -2783,6 +2783,186 @@
     "sourceRef": "CATALOG_GAPS.md §H.2 v0.3.1"
   },
   {
+    "id": "gen_structured_one_on_one",
+    "activityNumber": null,
+    "name": "Structured 1:1 Meeting",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 30,
+    "cadence": "WEEKLY",
+    "trigger": "Recurring calendar hold, same day/time each week per direct report",
+    "inputs": [
+      "Prior 1:1 notes",
+      "Open action items from last meeting",
+      "Performance signals and any emerging blockers",
+      "Team member's agenda"
+    ],
+    "outputArtifact": {
+      "name": "1:1 Notes with Action Items",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Manager",
+      "Direct Report"
+    ],
+    "procedure": [
+      "1. Open the shared 1:1 document; both parties review outstanding action items from the prior meeting (5 min).",
+      "2. Give the report the floor first — ask \"What's on your agenda?\" and take notes on their priorities and blockers (10 min).",
+      "3. Deliver any prepared feedback using the Manager Tools SBI model: Situation, Behavior, Impact; pause for response (5 min).",
+      "4. Manager shares any context, org updates, or coaching points the report needs (5 min).",
+      "5. Confirm action items with owners and due dates; record in shared document before the meeting closes (5 min)."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Horstman, The Effective Manager (2016), Ch. 4-5; Manager Tools podcast \"One-on-Ones\" series"
+  },
+  {
+    "id": "gen_stakeholder_status_report",
+    "activityNumber": null,
+    "name": "Stakeholder Status Report",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 30,
+    "cadence": "WEEKLY",
+    "trigger": "Every Friday before end-of-day (16:00), covering the completed sprint week",
+    "inputs": [
+      "Sprint Backlog status",
+      "OKR confidence snapshot",
+      "Open risks and blockers log",
+      "Any decisions needed from stakeholders"
+    ],
+    "outputArtifact": {
+      "name": "Weekly Status Report",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the status report template; set the reporting period and RAG (Red/Amber/Green) status for each workstream.",
+      "2. Write a two-sentence summary of the week's accomplishments — only completed items, no in-flight descriptions.",
+      "3. List the top 1–3 risks or blockers with owner, mitigation, and target resolution date.",
+      "4. Identify any decisions needed from stakeholders this week; frame each as a clear yes/no or option-select question.",
+      "5. Distribute via the agreed channel (email, wiki, or async thread) by 16:00 Friday; do not send on Monday morning."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Manager Tools + PMBOK 7th Ed. Performance Domain: Stakeholders p. 29 + GitLab Remote Playbook \"Async Status Updates\""
+  },
+  {
+    "id": "gen_monthly_ci_review",
+    "activityNumber": null,
+    "name": "Monthly CI Review",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 45,
+    "cadence": "MONTHLY",
+    "trigger": "Last Friday of each month (or first working day of new month)",
+    "inputs": [
+      "Past 2 weekly reflections",
+      "Active Kaizen portfolio state",
+      "OKR progress snapshot",
+      "Sprint velocity trend (last 2 sprints)"
+    ],
+    "outputArtifact": {
+      "name": "Monthly CI Review Summary",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "CI Champion"
+    ],
+    "procedure": [
+      "1. Review past 2 sprints: goal achievement rate, velocity trend, recurring impediment patterns.",
+      "2. Check Kaizen portfolio: how many open, how many closed with validated benefit, how many stalled.",
+      "3. Review OKR trajectory: on track, at risk, or off track — with a one-line cause for each at-risk key result.",
+      "4. Identify one systemic improvement to the CI process itself (meta-kaizen candidate).",
+      "5. Set 1–2 priority shifts for the coming month.",
+      "6. Publish summary to the team and file in the quarterly planning archive."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [
+      "gen_weekly_reflection"
+    ],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Lean Management Review discipline; BAM-X authored (CATALOG_GAP_PM.md Tier 1)"
+  },
+  {
+    "id": "gen_5_whys",
+    "activityNumber": null,
+    "name": "5 Whys Root-Cause Analysis",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Recurring friction signal, process defect, or unexpected variance in EoAR or weekly reflection",
+    "inputs": [
+      "Problem statement (one sentence)",
+      "Observable evidence of the problem",
+      "Relevant process or system context"
+    ],
+    "outputArtifact": {
+      "name": "5 Whys Analysis Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. Write the problem statement in one sentence using observable facts, not interpretations.",
+      "2. Ask \"Why did this happen?\" and write the most direct cause.",
+      "3. Repeat the question on each answer until 5 levels are reached or a root cause is confirmed (controllable factor you can act on).",
+      "4. Confirm the root cause by working back up the chain: \"If we fix X, do all upstream Whys resolve?\"",
+      "5. Define at most 2 countermeasures: one short-term containment, one systemic fix.",
+      "6. Assign owner, due date, and success measure to each countermeasure.",
+      "7. Log in friction tracker; promote systemic fix to Kaizen queue if effort > 2 days."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "PRACTITIONER",
+      "FACILITATOR",
+      "LEADER",
+      "CHAMPION"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Toyota Production System — Taiichi Ohno; Lean Thinking (Womack & Jones)"
+  },
+  {
     "id": "recovery_lunch",
     "activityNumber": null,
     "name": "Lunch",
