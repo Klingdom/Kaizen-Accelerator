@@ -17,10 +17,10 @@ describe('fullCatalog — Node pipeline path', () => {
     __resetCache();
   });
 
-  test('getFullCatalog returns 71 entries (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1)', async () => {
+  test('getFullCatalog returns 81 entries (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1; Phase 3: +10 Tier 2)', async () => {
     const catalog = await getFullCatalog();
     assert.equal(catalog.length, EXPECTED_CATALOG_SIZE);
-    assert.equal(catalog.length, 71);
+    assert.equal(catalog.length, 81);
   });
 
   test('getFullCatalog is idempotent (returns same instance on second call)', async () => {
@@ -38,7 +38,7 @@ describe('fullCatalog — Node pipeline path', () => {
     await getFullCatalog();
     const cached = getCachedCatalog();
     assert.ok(Array.isArray(cached));
-    assert.equal(cached.length, 71); // Iter 26: +1 recovery_lunch; Phase 1: +4; Phase 2: +6
+    assert.equal(cached.length, 81); // Iter 26: +1 recovery_lunch; Phase 1: +4; Phase 2: +6; Phase 3: +10
   });
 
   test('every entry has a bucket (null allowed for recovery_lunch — capacity-neutral)', async () => {

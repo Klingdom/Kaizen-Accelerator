@@ -44,7 +44,20 @@ export const GENERIC_IDS = Object.freeze({
   PROJECT_CHARTER: 'gen_project_charter',
   STANDARD_WORK_UPDATE: 'gen_standard_work_update',
   TIME_BLOCK_PLANNING: 'gen_time_block_planning',
-  CONSTRAINT_IDENTIFICATION: 'gen_constraint_identification'
+  CONSTRAINT_IDENTIFICATION: 'gen_constraint_identification',
+  // Phase 3 — Tier 2 additions (CATALOG_GAP_DELTA.md §10 Phase 3, 10 entries consolidated from both lenses)
+  // Research-authored (5):
+  PRE_MEETING_PREP: 'gen_pre_meeting_prep',
+  CRUCIAL_CONVERSATION_PREP: 'gen_crucial_conversation_prep',
+  ASYNC_WRITTEN_UPDATE: 'gen_async_written_update',
+  HABIT_STREAK_REVIEW: 'gen_habit_streak_review',
+  HANSEI: 'gen_hansei',
+  // PM-authored (5):
+  EXTERNAL_SYNC: 'gen_external_sync',
+  INCIDENT_COMMS: 'gen_incident_comms',
+  LEARNING_DEBRIEF: 'gen_learning_debrief',
+  PROJECT_CLOSURE: 'gen_project_closure',
+  TECHNICAL_SPEC_AUTHORING: 'gen_technical_spec_authoring'
 });
 
 /**
@@ -795,6 +808,392 @@ function buildGenerics() {
       enabledByUser: true,
       version: 1,
       sourceRef: 'Goldratt, "The Goal" (1984), Ch. 15 (Five Focusing Steps); "Theory of Constraints Handbook" (Cox/Schleier, 2010), Ch. 2'
+    },
+    // --- Phase 3: Tier 2 additions (CATALOG_GAP_DELTA.md §10 Phase 3) ---
+    // 5 Research-authored entries + 5 PM-authored entries (13 originally proposed → 3 dropped per delta §6).
+    // Dropped: gen_weekly_project_status (superseded by gen_stakeholder_status_report, Phase 1),
+    //          gen_annual_reflection (consolidated into gen_hansei below),
+    //          gen_reading_for_synthesis (consolidated into gen_learning_debrief below).
+
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 2 Entry 6 — Lencioni "Death by Meeting" pre-meeting prep
+    {
+      id: GENERIC_IDS.PRE_MEETING_PREP,
+      activityNumber: null,
+      name: 'Pre-Meeting Preparation',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 15,
+      cadence: 'EVENT_DRIVEN', // Research artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (Phase 2 precedent — no 'ad_hoc' in Cadence enum)
+      trigger: 'Any scheduled meeting with duration ≥ 30 min, initiated 24 hours before',
+      inputs: [
+        'Meeting agenda',
+        'Relevant documents and prior decisions log',
+        'Attendee list'
+      ],
+      outputArtifact: {
+        name: 'Pre-Read distributed to attendees',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Meeting Organizer'],
+      procedure: [
+        'a. Confirm the meeting has a written agenda with at least one clear decision or output stated.',
+        'b. Identify the 1–2 documents attendees need to have read before arriving; distribute with 24-hour lead time.',
+        'c. Write a one-sentence "desired outcome" statement at the top of the agenda.',
+        'd. If no agenda or desired outcome can be written, cancel or convert the meeting to an async update.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [], // Phase 5: wire dependsOn edges from long-form ceremonies (≥60 min) per DELTA §8 pattern 2
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Lencioni "Death by Meeting" (2004), Ch. 5; Amazon 6-pager memo practice (Bezos 2018); HBR Perlow et al. (2017)'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 2 Entry 7 — Patterson et al. "Crucial Conversations" STATE model
+    {
+      id: GENERIC_IDS.CRUCIAL_CONVERSATION_PREP,
+      activityNumber: null,
+      name: 'High-Stakes Conversation Preparation',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 20,
+      cadence: 'EVENT_DRIVEN', // Research artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Identified need for a conversation with meaningful disagreement, performance concern, or values conflict',
+      inputs: [
+        'Observable facts of the triggering event',
+        'Description of the desired conversation outcome'
+      ],
+      outputArtifact: {
+        name: 'Conversation Brief',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Write the observable facts of the triggering event in two sentences using neutral language.',
+        'b. Identify your own emotional state and the story you have been telling yourself about the facts — separate these clearly.',
+        'c. Write the outcome you want from this conversation; confirm it is relational and not merely transactional.',
+        'd. Draft your opening sentence: "I want to talk about [observable fact]. My intent is [outcome]. Are you open to that?"',
+        'e. Anticipate the other party\'s likely response; plan your listening posture, not your rebuttal.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Patterson et al., "Crucial Conversations" (4th ed., 2021), Ch. 2 and Ch. 4 — STATE model'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 2 Entry 10 — GitLab Remote Playbook async-first communication
+    // SW-Q4 — Phil to confirm async-first cultural commitment; affects prioritization of this entry
+    {
+      id: GENERIC_IDS.ASYNC_WRITTEN_UPDATE,
+      activityNumber: null,
+      name: 'Async Written Project Update',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 20,
+      cadence: 'WEEKLY',
+      trigger: 'Any recurring team meeting that can be replaced with an async read; minimum Monday AM publication',
+      inputs: [
+        'Completed work since last update (task names + outcomes)',
+        'Plan for the next period',
+        'Any active blockers'
+      ],
+      outputArtifact: {
+        name: 'Async Update Post',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Write the update in a shared, persistent channel (wiki, doc, or project management tool) — not email.',
+        'b. Lead with what was completed since the last update; be specific (task name + outcome, not vague summaries).',
+        'c. State the plan for the next period in the same specificity.',
+        'd. Flag any blocker with: description, who can unblock it, and when a decision is needed.',
+        'e. Close with a single explicit ask, if any — one question, one decision, one approval.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'GitLab Remote Playbook (2022 ed.); Basecamp "Shape Up" (2019) p. 12-14; GitLab employee handbook'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 2 Entry 9 — Clear "Atomic Habits" habit streak tracking
+    // SW-Q5 — Phil to confirm: BAM-X has no native habit-tracking data model.
+    // Default shipped: card serves as guidance text; user maintains their own external tracker.
+    // DELTA §8 pattern 3: chains after gen_weekly_reflection — dependsOn wiring deferred to Phase 5.
+    {
+      id: GENERIC_IDS.HABIT_STREAK_REVIEW,
+      activityNumber: null,
+      name: 'Habit Streak Review',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 10,
+      cadence: 'WEEKLY',
+      trigger: 'Weekly Reflection session (runs immediately after gen_weekly_reflection)',
+      inputs: [
+        'Habit tracker (external tool or log)',
+        'List of active habits with identity statements'
+      ],
+      outputArtifact: {
+        name: 'Habit Streak Update',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Open the habit tracker; mark each day of the past week as complete or missed for each tracked habit.',
+        'b. For any habit with 2+ consecutive misses, write one sentence on the smallest action that would restore consistency.',
+        'c. Confirm the identity statement behind each habit is still true for you — update it if your goals have shifted.',
+        'd. Record the current streak count for each habit; celebrate any streak over 21 days explicitly.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [], // Phase 5: wire dependsOn: ['gen_weekly_reflection'] per DELTA §8 pattern 3; SW-Q5 — habit tracker data model deferred
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Clear "Atomic Habits" (2018), Ch. 16 and Ch. 2'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 2 Entry 8 — Liker "The Toyota Way" Principle 14 hansei
+    // SW-Q3 — Phil to confirm: separate card vs augmenting Sprint Retro with deep-failure conditional branch.
+    // Default shipped: separate card; triggered by significant failure (EVENT_DRIVEN).
+    // Consolidates / absorbs PM's gen_annual_reflection per CATALOG_GAP_DELTA.md §6.
+    {
+      id: GENERIC_IDS.HANSEI,
+      activityNumber: null,
+      name: 'Hansei (Structured Failure Reflection)',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 45,
+      cadence: 'EVENT_DRIVEN', // Research artifact listed 'per_project'; mapped to EVENT_DRIVEN (Phase 2 precedent). SW-Q3 — Phil to confirm boundary with Sprint Retro.
+      trigger: 'Significant project failure, major missed target, or at every project close regardless of outcome',
+      inputs: [
+        'Specific expectation that was not met (with metric gap)',
+        'Sequence of events that occurred',
+        'Prior Lessons Learned document (if applicable)'
+      ],
+      outputArtifact: {
+        name: 'Hansei Document',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self', 'Team (optional)', 'Process Owner'],
+      procedure: [
+        'a. State the specific expectation that was not met in one paragraph — include the metric gap, not just the sentiment.',
+        'b. Describe what actually happened in the sequence it occurred; avoid characterizing individuals.',
+        'c. Identify the root cause using the Five Whys protocol — ask "why" at least five times from the gap back to the systemic condition.',
+        'd. Write one commitment: the specific change to prevent recurrence, with a measurement that will confirm the change worked.',
+        'e. Publish the Hansei Document alongside the project record; do not file it privately.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Liker "The Toyota Way" (2004), Principle 14; Rother "Toyota Kata" (2010), Ch. 7'
+    },
+    // Source: CATALOG_GAP_PM.md COMMUNICATION Tier 2 — customer/vendor/partnership sync standard
+    {
+      id: GENERIC_IDS.EXTERNAL_SYNC,
+      activityNumber: null,
+      name: 'External Stakeholder Sync (Customer / Vendor / Partner)',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 30,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Scheduled check-in with external party (customer, vendor, or partner)',
+      inputs: [
+        'Prior meeting notes and open commitments',
+        'Prepared agenda distributed in advance',
+        'Any deliverables due at this meeting'
+      ],
+      outputArtifact: {
+        name: 'External Sync Notes + Commitment Log',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Account Lead', 'External Contact'],
+      procedure: [
+        'a. Review prior commitments (yours and theirs) at the top of the meeting.',
+        'b. Work through the agenda; time-box each topic.',
+        'c. Capture any new commitments with owner, deliverable, and due date explicitly stated.',
+        'd. Confirm the date and agenda of the next meeting before closing.',
+        'e. Send meeting notes with commitment log to both parties within 4 hours of close.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with account management and vendor management best practices'
+    },
+    // Source: CATALOG_GAP_PM.md COMMUNICATION Tier 2 — crisis/incident response protocol
+    {
+      id: GENERIC_IDS.INCIDENT_COMMS,
+      activityNumber: null,
+      name: 'Incident / Crisis Communication',
+      focusArea: 'COMMUNICATION',
+      defaultDurationMinutes: 30,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Operational incident, quality escape, or crisis event requiring coordinated communication',
+      inputs: [
+        'Incident description and severity classification',
+        'Affected stakeholder list',
+        'Current known facts (do not include speculation)'
+      ],
+      outputArtifact: {
+        name: 'Incident Communication Log',
+        schema: 'LIST',
+        required: true
+      },
+      participants: ['Incident Lead', 'Comms Owner', 'Sponsor'],
+      procedure: [
+        'a. Issue initial notification within 30 minutes of incident declaration: what is known, who is working it, next update ETA.',
+        'b. Send status updates at agreed intervals (e.g., every 2 hours) until resolved — even if the update is "no change."',
+        'c. Keep facts and speculation clearly separated in all communications.',
+        'd. Escalate to Sponsor if resolution exceeds SLA or scope is expanding.',
+        'e. Issue resolution notice: what happened, what was done, what prevents recurrence.',
+        'f. Log all communications with timestamps in the incident record for post-mortem use.'
+      ],
+      bucket: 'COMMUNICATION',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Google SRE Handbook — Incident Management; ITIL 4 — Incident Communication; BAM-X authored (CATALOG_GAP_PM.md Tier 2)'
+    },
+    // Source: CATALOG_GAP_PM.md CI Tier 2 — L&D completion to knowledge application loop closer.
+    // Consolidates / absorbs Research's gen_reading_for_synthesis per CATALOG_GAP_DELTA.md §6.
+    // Uses PM's broader framing (course / conference / book — not reading-only).
+    {
+      id: GENERIC_IDS.LEARNING_DEBRIEF,
+      activityNumber: null,
+      name: 'Learning Debrief (Course / Conference / Book)',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 30,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'ad_hoc'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Completion of a course, attendance at a conference session, or finish of a book',
+      inputs: [
+        'Course / conference / book notes',
+        'L&D goal that motivated the learning',
+        'Current skill inventory'
+      ],
+      outputArtifact: {
+        name: 'Learning Debrief — 1-Page Summary',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Write 3 key insights from the material — specific, actionable, not paraphrase.',
+        'b. For each insight, state how it changes or confirms an existing practice.',
+        'c. Identify 1 experiment to run in the next sprint to apply one insight.',
+        'd. Update the L&D tracker: mark learning complete, record the skill assessed, note gaps remaining.',
+        'e. Publish the 1-pager to the knowledge wiki; share with relevant teammates.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Make It Stick (Brown et al.) — retrieval and application; BAM-X authored (CATALOG_GAP_PM.md Tier 2)'
+    },
+    // Source: CATALOG_GAP_PM.md PROJECT Tier 2 — closure gate for non-DMAIC/non-Kaizen projects
+    {
+      id: GENERIC_IDS.PROJECT_CLOSURE,
+      activityNumber: null,
+      name: 'Project Closure and Handoff',
+      focusArea: 'DEEP_WORK',
+      defaultDurationMinutes: 60,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'per_project'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Final deliverable accepted by Sponsor; project ready to close',
+      inputs: [
+        'Project Charter',
+        'Final deliverable or artifact',
+        'Open items log',
+        'Lessons Learned (if applicable)'
+      ],
+      outputArtifact: {
+        name: 'Project Closure Checklist + Handoff Note',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Project Lead', 'Sponsor', 'Process Owner'],
+      procedure: [
+        'a. Confirm Sponsor acceptance of final deliverable against Charter goal statement.',
+        'b. Close or transfer all open action items to the appropriate owner.',
+        'c. Archive project artifacts (Charter, deliverables, status updates) to the knowledge repository.',
+        'd. Write a one-page handoff note: what was built, who owns it, how to maintain it.',
+        'e. Capture 3 lessons learned (what worked, what didn\'t, what to try next) and add to knowledge wiki.',
+        'f. Remove project from active portfolio; update pipeline view.'
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'PMBOK 7th Edition — Project Closeout; BAM-X authored (CATALOG_GAP_PM.md Tier 2)'
+    },
+    // Source: CATALOG_GAP_PM.md PROJECT Tier 2 — knowledge-work deliverable standard
+    {
+      id: GENERIC_IDS.TECHNICAL_SPEC_AUTHORING,
+      activityNumber: null,
+      name: 'Technical Spec / Design Brief Authoring',
+      focusArea: 'DEEP_WORK',
+      defaultDurationMinutes: 120,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'per_project'; mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'Project or feature requires a written specification before execution begins',
+      inputs: [
+        'Project Charter or feature request',
+        'Stakeholder requirements (VOC/VOB)',
+        'Technical constraints or platform context'
+      ],
+      outputArtifact: {
+        name: 'Technical Specification Document',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Project Lead', 'Technical Lead'],
+      procedure: [
+        'a. State the problem and the proposed solution in plain language (2 paragraphs max).',
+        'b. Define the success criteria: what observable behavior proves this is done.',
+        'c. Enumerate the non-functional requirements (performance, security, compatibility).',
+        'd. List explicitly what is out of scope.',
+        'e. Draft the technical approach at the level of precision needed for implementation.',
+        'f. Identify open questions; assign an owner and a resolution date to each.',
+        'g. Route for review; lock the spec before sprint planning that includes the work.'
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with RFC/ADR patterns in engineering practice'
     },
     // --- Iter 26: Lunch block as editable ScheduledActivity (ARCHITECTURE_DELTA_LUNCH_BLOCK.md) ---
     // bucket: null is INTENTIONAL — this entry is capacity-neutral.

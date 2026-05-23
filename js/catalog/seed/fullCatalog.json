@@ -3232,6 +3232,425 @@
     "sourceRef": "Goldratt, \"The Goal\" (1984), Ch. 15 (Five Focusing Steps); \"Theory of Constraints Handbook\" (Cox/Schleier, 2010), Ch. 2"
   },
   {
+    "id": "gen_pre_meeting_prep",
+    "activityNumber": null,
+    "name": "Pre-Meeting Preparation",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 15,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Any scheduled meeting with duration ≥ 30 min, initiated 24 hours before",
+    "inputs": [
+      "Meeting agenda",
+      "Relevant documents and prior decisions log",
+      "Attendee list"
+    ],
+    "outputArtifact": {
+      "name": "Pre-Read distributed to attendees",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Meeting Organizer"
+    ],
+    "procedure": [
+      "1. Confirm the meeting has a written agenda with at least one clear decision or output stated.",
+      "2. Identify the 1–2 documents attendees need to have read before arriving; distribute with 24-hour lead time.",
+      "3. Write a one-sentence \"desired outcome\" statement at the top of the agenda.",
+      "4. If no agenda or desired outcome can be written, cancel or convert the meeting to an async update."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Lencioni \"Death by Meeting\" (2004), Ch. 5; Amazon 6-pager memo practice (Bezos 2018); HBR Perlow et al. (2017)"
+  },
+  {
+    "id": "gen_crucial_conversation_prep",
+    "activityNumber": null,
+    "name": "High-Stakes Conversation Preparation",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 20,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Identified need for a conversation with meaningful disagreement, performance concern, or values conflict",
+    "inputs": [
+      "Observable facts of the triggering event",
+      "Description of the desired conversation outcome"
+    ],
+    "outputArtifact": {
+      "name": "Conversation Brief",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Write the observable facts of the triggering event in two sentences using neutral language.",
+      "2. Identify your own emotional state and the story you have been telling yourself about the facts — separate these clearly.",
+      "3. Write the outcome you want from this conversation; confirm it is relational and not merely transactional.",
+      "4. Draft your opening sentence: \"I want to talk about [observable fact]. My intent is [outcome]. Are you open to that?\"",
+      "5. Anticipate the other party's likely response; plan your listening posture, not your rebuttal."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Patterson et al., \"Crucial Conversations\" (4th ed., 2021), Ch. 2 and Ch. 4 — STATE model"
+  },
+  {
+    "id": "gen_async_written_update",
+    "activityNumber": null,
+    "name": "Async Written Project Update",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 20,
+    "cadence": "WEEKLY",
+    "trigger": "Any recurring team meeting that can be replaced with an async read; minimum Monday AM publication",
+    "inputs": [
+      "Completed work since last update (task names + outcomes)",
+      "Plan for the next period",
+      "Any active blockers"
+    ],
+    "outputArtifact": {
+      "name": "Async Update Post",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Write the update in a shared, persistent channel (wiki, doc, or project management tool) — not email.",
+      "2. Lead with what was completed since the last update; be specific (task name + outcome, not vague summaries).",
+      "3. State the plan for the next period in the same specificity.",
+      "4. Flag any blocker with: description, who can unblock it, and when a decision is needed.",
+      "5. Close with a single explicit ask, if any — one question, one decision, one approval."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "GitLab Remote Playbook (2022 ed.); Basecamp \"Shape Up\" (2019) p. 12-14; GitLab employee handbook"
+  },
+  {
+    "id": "gen_habit_streak_review",
+    "activityNumber": null,
+    "name": "Habit Streak Review",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 10,
+    "cadence": "WEEKLY",
+    "trigger": "Weekly Reflection session (runs immediately after gen_weekly_reflection)",
+    "inputs": [
+      "Habit tracker (external tool or log)",
+      "List of active habits with identity statements"
+    ],
+    "outputArtifact": {
+      "name": "Habit Streak Update",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the habit tracker; mark each day of the past week as complete or missed for each tracked habit.",
+      "2. For any habit with 2+ consecutive misses, write one sentence on the smallest action that would restore consistency.",
+      "3. Confirm the identity statement behind each habit is still true for you — update it if your goals have shifted.",
+      "4. Record the current streak count for each habit; celebrate any streak over 21 days explicitly."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Clear \"Atomic Habits\" (2018), Ch. 16 and Ch. 2"
+  },
+  {
+    "id": "gen_hansei",
+    "activityNumber": null,
+    "name": "Hansei (Structured Failure Reflection)",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 45,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Significant project failure, major missed target, or at every project close regardless of outcome",
+    "inputs": [
+      "Specific expectation that was not met (with metric gap)",
+      "Sequence of events that occurred",
+      "Prior Lessons Learned document (if applicable)"
+    ],
+    "outputArtifact": {
+      "name": "Hansei Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self",
+      "Team (optional)",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. State the specific expectation that was not met in one paragraph — include the metric gap, not just the sentiment.",
+      "2. Describe what actually happened in the sequence it occurred; avoid characterizing individuals.",
+      "3. Identify the root cause using the Five Whys protocol — ask \"why\" at least five times from the gap back to the systemic condition.",
+      "4. Write one commitment: the specific change to prevent recurrence, with a measurement that will confirm the change worked.",
+      "5. Publish the Hansei Document alongside the project record; do not file it privately."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Liker \"The Toyota Way\" (2004), Principle 14; Rother \"Toyota Kata\" (2010), Ch. 7"
+  },
+  {
+    "id": "gen_external_sync",
+    "activityNumber": null,
+    "name": "External Stakeholder Sync (Customer / Vendor / Partner)",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 30,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Scheduled check-in with external party (customer, vendor, or partner)",
+    "inputs": [
+      "Prior meeting notes and open commitments",
+      "Prepared agenda distributed in advance",
+      "Any deliverables due at this meeting"
+    ],
+    "outputArtifact": {
+      "name": "External Sync Notes + Commitment Log",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Account Lead",
+      "External Contact"
+    ],
+    "procedure": [
+      "1. Review prior commitments (yours and theirs) at the top of the meeting.",
+      "2. Work through the agenda; time-box each topic.",
+      "3. Capture any new commitments with owner, deliverable, and due date explicitly stated.",
+      "4. Confirm the date and agenda of the next meeting before closing.",
+      "5. Send meeting notes with commitment log to both parties within 4 hours of close."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with account management and vendor management best practices"
+  },
+  {
+    "id": "gen_incident_comms",
+    "activityNumber": null,
+    "name": "Incident / Crisis Communication",
+    "focusArea": "COMMUNICATION",
+    "defaultDurationMinutes": 30,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Operational incident, quality escape, or crisis event requiring coordinated communication",
+    "inputs": [
+      "Incident description and severity classification",
+      "Affected stakeholder list",
+      "Current known facts (do not include speculation)"
+    ],
+    "outputArtifact": {
+      "name": "Incident Communication Log",
+      "schema": "LIST",
+      "required": true
+    },
+    "participants": [
+      "Incident Lead",
+      "Comms Owner",
+      "Sponsor"
+    ],
+    "procedure": [
+      "1. Issue initial notification within 30 minutes of incident declaration: what is known, who is working it, next update ETA.",
+      "2. Send status updates at agreed intervals (e.g., every 2 hours) until resolved — even if the update is \"no change.\"",
+      "3. Keep facts and speculation clearly separated in all communications.",
+      "4. Escalate to Sponsor if resolution exceeds SLA or scope is expanding.",
+      "5. Issue resolution notice: what happened, what was done, what prevents recurrence.",
+      "6. Log all communications with timestamps in the incident record for post-mortem use."
+    ],
+    "bucket": "COMMUNICATION",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Google SRE Handbook — Incident Management; ITIL 4 — Incident Communication; BAM-X authored (CATALOG_GAP_PM.md Tier 2)"
+  },
+  {
+    "id": "gen_learning_debrief",
+    "activityNumber": null,
+    "name": "Learning Debrief (Course / Conference / Book)",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 30,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Completion of a course, attendance at a conference session, or finish of a book",
+    "inputs": [
+      "Course / conference / book notes",
+      "L&D goal that motivated the learning",
+      "Current skill inventory"
+    ],
+    "outputArtifact": {
+      "name": "Learning Debrief — 1-Page Summary",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Write 3 key insights from the material — specific, actionable, not paraphrase.",
+      "2. For each insight, state how it changes or confirms an existing practice.",
+      "3. Identify 1 experiment to run in the next sprint to apply one insight.",
+      "4. Update the L&D tracker: mark learning complete, record the skill assessed, note gaps remaining.",
+      "5. Publish the 1-pager to the knowledge wiki; share with relevant teammates."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Make It Stick (Brown et al.) — retrieval and application; BAM-X authored (CATALOG_GAP_PM.md Tier 2)"
+  },
+  {
+    "id": "gen_project_closure",
+    "activityNumber": null,
+    "name": "Project Closure and Handoff",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 60,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Final deliverable accepted by Sponsor; project ready to close",
+    "inputs": [
+      "Project Charter",
+      "Final deliverable or artifact",
+      "Open items log",
+      "Lessons Learned (if applicable)"
+    ],
+    "outputArtifact": {
+      "name": "Project Closure Checklist + Handoff Note",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Sponsor",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. Confirm Sponsor acceptance of final deliverable against Charter goal statement.",
+      "2. Close or transfer all open action items to the appropriate owner.",
+      "3. Archive project artifacts (Charter, deliverables, status updates) to the knowledge repository.",
+      "4. Write a one-page handoff note: what was built, who owns it, how to maintain it.",
+      "5. Capture 3 lessons learned (what worked, what didn't, what to try next) and add to knowledge wiki.",
+      "6. Remove project from active portfolio; update pipeline view."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "PMBOK 7th Edition — Project Closeout; BAM-X authored (CATALOG_GAP_PM.md Tier 2)"
+  },
+  {
+    "id": "gen_technical_spec_authoring",
+    "activityNumber": null,
+    "name": "Technical Spec / Design Brief Authoring",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 120,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Project or feature requires a written specification before execution begins",
+    "inputs": [
+      "Project Charter or feature request",
+      "Stakeholder requirements (VOC/VOB)",
+      "Technical constraints or platform context"
+    ],
+    "outputArtifact": {
+      "name": "Technical Specification Document",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Technical Lead"
+    ],
+    "procedure": [
+      "1. State the problem and the proposed solution in plain language (2 paragraphs max).",
+      "2. Define the success criteria: what observable behavior proves this is done.",
+      "3. Enumerate the non-functional requirements (performance, security, compatibility).",
+      "4. List explicitly what is out of scope.",
+      "5. Draft the technical approach at the level of precision needed for implementation.",
+      "6. Identify open questions; assign an owner and a resolution date to each.",
+      "7. Route for review; lock the spec before sprint planning that includes the work."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with RFC/ADR patterns in engineering practice"
+  },
+  {
     "id": "recovery_lunch",
     "activityNumber": null,
     "name": "Lunch",

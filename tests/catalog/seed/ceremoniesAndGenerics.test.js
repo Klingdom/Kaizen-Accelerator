@@ -14,8 +14,8 @@ import {
 describe('buildCeremoniesAndGenerics — sizes and shape', () => {
   const all = buildCeremoniesAndGenerics();
 
-  test('produces exactly 22 entries (6 ceremonies + 16 generics incl. Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6)', () => {
-    assert.equal(all.length, 22);
+  test('produces exactly 32 entries (6 ceremonies + 26 generics incl. Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6 + Phase 3 +10)', () => {
+    assert.equal(all.length, 32);
   });
 
   test('6 ceremony ids are all present', () => {
@@ -25,7 +25,7 @@ describe('buildCeremoniesAndGenerics — sizes and shape', () => {
     }
   });
 
-  test('16 generic ids are all present (incl. Lessons Learned + Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6)', () => {
+  test('26 generic ids are all present (incl. Lessons Learned + Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6 + Phase 3 +10)', () => {
     const ids = new Set(all.map((e) => e.id));
     for (const id of Object.values(GENERIC_IDS)) {
       assert.ok(ids.has(id), `missing generic id ${id}`);

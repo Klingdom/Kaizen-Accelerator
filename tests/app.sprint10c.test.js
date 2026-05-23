@@ -187,9 +187,9 @@ describe('loadFullCatalogAsync', () => {
   test('no-op if the fetched catalog is not larger than the current seed', async () => {
     const { services } = makeEnv();
     // Pre-seed with a large fake catalog so loadFullCatalogAsync shouldn't
-    // overwrite it. Must be > 71 (Phase 2 full catalog size).
+    // overwrite it. Must be > 81 (Phase 3 full catalog size).
     const big = [];
-    for (let i = 0; i < 72; i++) {
+    for (let i = 0; i < 82; i++) {
       big.push({
         id: `big_${i}`,
         activityNumber: i,
@@ -217,7 +217,7 @@ describe('loadFullCatalogAsync', () => {
     let rerenderCalls = 0;
     await loadFullCatalogAsync(services, () => rerenderCalls++);
     const after = services.catalogService.list(DEFAULT_USER.id);
-    assert.equal(after.length, 72, 'existing larger seed preserved'); // Phase 2: real catalog is 71; 72 > 71
+    assert.equal(after.length, 82, 'existing larger seed preserved'); // Phase 3: real catalog is 81; 82 > 81
     assert.equal(rerenderCalls, 0, 'rerender not called when no upgrade needed');
   });
 
