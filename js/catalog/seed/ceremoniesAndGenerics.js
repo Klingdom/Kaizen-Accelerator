@@ -57,7 +57,14 @@ export const GENERIC_IDS = Object.freeze({
   INCIDENT_COMMS: 'gen_incident_comms',
   LEARNING_DEBRIEF: 'gen_learning_debrief',
   PROJECT_CLOSURE: 'gen_project_closure',
-  TECHNICAL_SPEC_AUTHORING: 'gen_technical_spec_authoring'
+  TECHNICAL_SPEC_AUTHORING: 'gen_technical_spec_authoring',
+  // Phase 4 — Tier 3 additions (CATALOG_GAP_DELTA.md §7 Tier 3, 4 entries; gen_reading_for_synthesis dropped — consolidated into gen_learning_debrief Phase 3)
+  // PROJECT (+1):
+  PROJECT_KICKOFF: 'gen_project_kickoff',
+  // CI (+3):
+  IMPROVEMENT_EXPERIMENT_LOG: 'gen_improvement_experiment_log',
+  FOCUS_METRICS_REVIEW: 'gen_focus_metrics_review',
+  PERSONAL_KANBAN_REVIEW: 'gen_personal_kanban_review'
 });
 
 /**
@@ -1194,6 +1201,162 @@ function buildGenerics() {
       enabledByUser: true,
       version: 1,
       sourceRef: 'BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with RFC/ADR patterns in engineering practice'
+    },
+    // --- Phase 4: Tier 3 additions (CATALOG_GAP_DELTA.md §7 Tier 3) ---
+    // gen_reading_for_synthesis DROPPED — consolidated into gen_learning_debrief (Phase 3).
+
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 3 Entry 11 — PMBOK 7th Ed. Sec. 4.3.2 + Scrum Guide 2020 "Sprint Zero"
+    // Procedure authored from condensed artifact + canonical industry source (no full procedure in artifact).
+    {
+      id: GENERIC_IDS.PROJECT_KICKOFF,
+      activityNumber: null,
+      name: 'Project Kickoff Meeting',
+      focusArea: 'DEEP_WORK',
+      defaultDurationMinutes: 60,
+      cadence: 'EVENT_DRIVEN', // Research artifact listed 'per_project' (triggered by Charter approval); mapped to EVENT_DRIVEN (no PER_PROJECT in Cadence enum — Phase 2 precedent)
+      trigger: 'Project Charter approved; initiate project with all stakeholders before first working sprint',
+      inputs: [
+        'Signed Project Charter',
+        'Scope and success criteria documentation',
+        'Stakeholder list and RACI',
+        'Communication plan draft'
+      ],
+      outputArtifact: {
+        name: 'Project Kickoff Record',
+        schema: 'DOCUMENT',
+        required: true
+      },
+      participants: ['Project Lead', 'Sponsor', 'Team', 'Process Owner'],
+      procedure: [
+        'a. Confirm Charter is signed and distributed to all attendees before the meeting begins.',
+        'b. Review scope and success criteria with all stakeholders — confirm shared understanding and flag any ambiguity.',
+        'c. Walk through role assignments: RACI or Scrum role designations (Product Owner, Scrum Master, Team Members).',
+        'd. Confirm communication cadence and tools: where status updates will be posted, how decisions will be escalated, meeting schedule.',
+        'e. Identify Day-1 risks and initial mitigations; assign an owner to each risk.',
+        'f. Schedule the first working ceremony (Sprint Planning or equivalent) before the meeting closes.'
+      ],
+      bucket: 'PROJECT',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'PMBOK 7th Edition — Performance Domain: Team, Sec. 4.3.2; Scrum Guide 2020 "Sprint Zero" (Sutherland/Schwaber)'
+    },
+    // Source: CATALOG_GAP_PM.md CI Tier 3 — PM-authored PDCA experiment tracking artifact discipline.
+    // Full procedure content was present in CATALOG_GAP_PM.md (Tier 3 condensed entry had full procedure block).
+    {
+      id: GENERIC_IDS.IMPROVEMENT_EXPERIMENT_LOG,
+      activityNumber: null,
+      name: 'Improvement Experiment Log Entry',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 15,
+      cadence: 'EVENT_DRIVEN', // PM artifact listed 'ad_hoc' (PDCA experiment starts or completes); mapped to EVENT_DRIVEN (Phase 2 precedent)
+      trigger: 'PDCA experiment starts (any scope) or a PDCA cycle completes',
+      inputs: [
+        'PDCA Cycle entry (cat_12_pdca_cycle)',
+        'Current-condition measurement',
+        'Hypothesis from weekly reflection or 5 Whys'
+      ],
+      outputArtifact: {
+        name: 'Experiment Log Entry',
+        schema: 'LIST',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Open the active experiment log; locate or create the entry for this PDCA cycle.',
+        'b. Review active experiments: identify any that have passed their planned check-point without a recorded result.',
+        'c. Record results from completed cycles: state the hypothesis, the baseline measurement, and the post-experiment measurement.',
+        'd. Flag stalled experiments: any experiment with no measurement update in > 48 hours is marked stalled and assigned a re-check date.',
+        'e. Queue the next experiment: if this cycle closed with a Keep decision, promote to standard work via gen_standard_work_update; if Pivot, write the revised hypothesis; if Abandon, revert and log the reason.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Toyota Kata (Rother) — Improvement Kata; Lean Startup (Ries) — Build-Measure-Learn; BAM-X authored (CATALOG_GAP_PM.md Tier 3)'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 3 Entry 12 — McChesney "4 Disciplines of Execution" Discipline 2 + Doerr (2018) Ch. 9
+    // Procedure authored from condensed artifact + canonical industry source (no full procedure in artifact).
+    {
+      id: GENERIC_IDS.FOCUS_METRICS_REVIEW,
+      activityNumber: null,
+      name: 'Lead-Indicator Metrics Review',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 20,
+      cadence: 'WEEKLY',
+      trigger: 'Weekly cadence; runs before gen_okr_monthly_check_in when reporting periods coincide',
+      inputs: [
+        'Lead-indicator metrics dashboard',
+        'Lag-indicator (outcome) metrics from prior period',
+        'Active OKR scorecard'
+      ],
+      outputArtifact: {
+        name: 'Lead-Indicator Review Note',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Open the metrics dashboard; record current values for each lead indicator tracked this week.',
+        'b. Compare lead indicator values to lag (outcome) metrics from the prior period — identify any lead indicator moving opposite to its expected lag.',
+        'c. Identify any lead indicator below its weekly target; name the most likely cause in one sentence.',
+        'd. Assign one corrective action to address the at-risk lead indicator: owner, action, and resolution date.',
+        'e. Confirm cadence-aligned escalation: if a lead indicator has been below target for 2+ consecutive weeks, flag for monthly OKR check-in (gen_okr_monthly_check_in).'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'McChesney et al., "The 4 Disciplines of Execution" (2012), Discipline 2 — Act on Lead Measures; Doerr, "Measure What Matters" (2018), Ch. 9'
+    },
+    // Source: CATALOG_GAP_RESEARCH.md §3 Tier 3 Entry 13 — Benson/Barry "Personal Kanban" (2011) Rules 1-2
+    // Procedure authored from condensed artifact + canonical industry source (no full procedure in artifact).
+    {
+      id: GENERIC_IDS.PERSONAL_KANBAN_REVIEW,
+      activityNumber: null,
+      name: 'Personal Kanban Board Review',
+      focusArea: 'CONTINUOUS_IMPROVEMENT',
+      defaultDurationMinutes: 15,
+      cadence: 'DAILY',
+      trigger: 'Start of work day, before first active task — visualize work state before committing to new WIP',
+      inputs: [
+        'Personal Kanban board (Backlog, Today, WIP, Done columns)',
+        'WIP limit (user-defined maximum in-progress items)'
+      ],
+      outputArtifact: {
+        name: 'Personal Kanban Board State',
+        schema: 'TEXT',
+        required: true
+      },
+      participants: ['Self'],
+      procedure: [
+        'a. Open the personal Kanban board; review the WIP column — count items in progress and compare to your WIP limit (Rule 2: Limit WIP).',
+        'b. If WIP count exceeds limit, move excess items back to Today or Backlog before accepting any new work.',
+        'c. Move any completed items from WIP or Today to Done; confirm each is fully resolved (no pending follow-ups).',
+        'd. Confirm today\'s commitment: select from Backlog only items that fit the remaining WIP capacity — do not pull more than your limit allows.',
+        'e. Flag any item that has been in WIP for more than 3 days: note the blocker and decide to escalate, split, or abandon.'
+      ],
+      bucket: 'CI',
+      isNonOptional: false,
+      dependsOn: [],
+      projectTypeBinding: null,
+      phaseBinding: null,
+      appliesToRoles: ['LEADER', 'PRACTITIONER'],
+      enabledByUser: true,
+      version: 1,
+      sourceRef: 'Benson, J. & Barry, T., "Personal Kanban" (2011), Rules 1-2 — Visualize Your Work, Limit Your WIP; Modus Cooperandi Press'
     },
     // --- Iter 26: Lunch block as editable ScheduledActivity (ARCHITECTURE_DELTA_LUNCH_BLOCK.md) ---
     // bucket: null is INTENTIONAL — this entry is capacity-neutral.

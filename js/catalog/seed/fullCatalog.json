@@ -3651,6 +3651,174 @@
     "sourceRef": "BAM-X authored (CATALOG_GAP_PM.md Tier 2); aligned with RFC/ADR patterns in engineering practice"
   },
   {
+    "id": "gen_project_kickoff",
+    "activityNumber": null,
+    "name": "Project Kickoff Meeting",
+    "focusArea": "DEEP_WORK",
+    "defaultDurationMinutes": 60,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "Project Charter approved; initiate project with all stakeholders before first working sprint",
+    "inputs": [
+      "Signed Project Charter",
+      "Scope and success criteria documentation",
+      "Stakeholder list and RACI",
+      "Communication plan draft"
+    ],
+    "outputArtifact": {
+      "name": "Project Kickoff Record",
+      "schema": "DOCUMENT",
+      "required": true
+    },
+    "participants": [
+      "Project Lead",
+      "Sponsor",
+      "Team",
+      "Process Owner"
+    ],
+    "procedure": [
+      "1. Confirm Charter is signed and distributed to all attendees before the meeting begins.",
+      "2. Review scope and success criteria with all stakeholders — confirm shared understanding and flag any ambiguity.",
+      "3. Walk through role assignments: RACI or Scrum role designations (Product Owner, Scrum Master, Team Members).",
+      "4. Confirm communication cadence and tools: where status updates will be posted, how decisions will be escalated, meeting schedule.",
+      "5. Identify Day-1 risks and initial mitigations; assign an owner to each risk.",
+      "6. Schedule the first working ceremony (Sprint Planning or equivalent) before the meeting closes."
+    ],
+    "bucket": "PROJECT",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "PMBOK 7th Edition — Performance Domain: Team, Sec. 4.3.2; Scrum Guide 2020 \"Sprint Zero\" (Sutherland/Schwaber)"
+  },
+  {
+    "id": "gen_improvement_experiment_log",
+    "activityNumber": null,
+    "name": "Improvement Experiment Log Entry",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 15,
+    "cadence": "EVENT_DRIVEN",
+    "trigger": "PDCA experiment starts (any scope) or a PDCA cycle completes",
+    "inputs": [
+      "PDCA Cycle entry (cat_12_pdca_cycle)",
+      "Current-condition measurement",
+      "Hypothesis from weekly reflection or 5 Whys"
+    ],
+    "outputArtifact": {
+      "name": "Experiment Log Entry",
+      "schema": "LIST",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the active experiment log; locate or create the entry for this PDCA cycle.",
+      "2. Review active experiments: identify any that have passed their planned check-point without a recorded result.",
+      "3. Record results from completed cycles: state the hypothesis, the baseline measurement, and the post-experiment measurement.",
+      "4. Flag stalled experiments: any experiment with no measurement update in > 48 hours is marked stalled and assigned a re-check date.",
+      "5. Queue the next experiment: if this cycle closed with a Keep decision, promote to standard work via gen_standard_work_update; if Pivot, write the revised hypothesis; if Abandon, revert and log the reason."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Toyota Kata (Rother) — Improvement Kata; Lean Startup (Ries) — Build-Measure-Learn; BAM-X authored (CATALOG_GAP_PM.md Tier 3)"
+  },
+  {
+    "id": "gen_focus_metrics_review",
+    "activityNumber": null,
+    "name": "Lead-Indicator Metrics Review",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 20,
+    "cadence": "WEEKLY",
+    "trigger": "Weekly cadence; runs before gen_okr_monthly_check_in when reporting periods coincide",
+    "inputs": [
+      "Lead-indicator metrics dashboard",
+      "Lag-indicator (outcome) metrics from prior period",
+      "Active OKR scorecard"
+    ],
+    "outputArtifact": {
+      "name": "Lead-Indicator Review Note",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the metrics dashboard; record current values for each lead indicator tracked this week.",
+      "2. Compare lead indicator values to lag (outcome) metrics from the prior period — identify any lead indicator moving opposite to its expected lag.",
+      "3. Identify any lead indicator below its weekly target; name the most likely cause in one sentence.",
+      "4. Assign one corrective action to address the at-risk lead indicator: owner, action, and resolution date.",
+      "5. Confirm cadence-aligned escalation: if a lead indicator has been below target for 2+ consecutive weeks, flag for monthly OKR check-in (gen_okr_monthly_check_in)."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "McChesney et al., \"The 4 Disciplines of Execution\" (2012), Discipline 2 — Act on Lead Measures; Doerr, \"Measure What Matters\" (2018), Ch. 9"
+  },
+  {
+    "id": "gen_personal_kanban_review",
+    "activityNumber": null,
+    "name": "Personal Kanban Board Review",
+    "focusArea": "CONTINUOUS_IMPROVEMENT",
+    "defaultDurationMinutes": 15,
+    "cadence": "DAILY",
+    "trigger": "Start of work day, before first active task — visualize work state before committing to new WIP",
+    "inputs": [
+      "Personal Kanban board (Backlog, Today, WIP, Done columns)",
+      "WIP limit (user-defined maximum in-progress items)"
+    ],
+    "outputArtifact": {
+      "name": "Personal Kanban Board State",
+      "schema": "TEXT",
+      "required": true
+    },
+    "participants": [
+      "Self"
+    ],
+    "procedure": [
+      "1. Open the personal Kanban board; review the WIP column — count items in progress and compare to your WIP limit (Rule 2: Limit WIP).",
+      "2. If WIP count exceeds limit, move excess items back to Today or Backlog before accepting any new work.",
+      "3. Move any completed items from WIP or Today to Done; confirm each is fully resolved (no pending follow-ups).",
+      "4. Confirm today's commitment: select from Backlog only items that fit the remaining WIP capacity — do not pull more than your limit allows.",
+      "5. Flag any item that has been in WIP for more than 3 days: note the blocker and decide to escalate, split, or abandon."
+    ],
+    "bucket": "CI",
+    "isNonOptional": false,
+    "dependsOn": [],
+    "projectTypeBinding": null,
+    "phaseBinding": null,
+    "appliesToRoles": [
+      "LEADER",
+      "PRACTITIONER"
+    ],
+    "enabledByUser": true,
+    "version": 1,
+    "sourceRef": "Benson, J. & Barry, T., \"Personal Kanban\" (2011), Rules 1-2 — Visualize Your Work, Limit Your WIP; Modus Cooperandi Press"
+  },
+  {
     "id": "recovery_lunch",
     "activityNumber": null,
     "name": "Lunch",

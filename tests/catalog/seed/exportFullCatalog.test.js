@@ -31,12 +31,12 @@ describe('exportFullCatalog — build-script behavior', () => {
     assert.ok(existsSync(JSON_PATH), `expected JSON at ${JSON_PATH}`);
   });
 
-  test('file contents parse as JSON array of 81 entries (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1; Phase 3: +10 Tier 2)', () => {
+  test('file contents parse as JSON array of 85 entries (Iter 26: +1 recovery_lunch; Phase 1: +4 convergent Tier 1; Phase 2: +6 lens-unique Tier 1; Phase 3: +10 Tier 2; Phase 4: +4 Tier 3)', () => {
     const raw = readFileSync(JSON_PATH, 'utf8');
     const parsed = JSON.parse(raw);
     assert.ok(Array.isArray(parsed), 'parsed JSON should be an array');
     assert.equal(parsed.length, EXPECTED_CATALOG_SIZE);
-    assert.equal(parsed.length, 81);
+    assert.equal(parsed.length, 85);
   });
 
   test('every entry has bucket + isNonOptional + dependsOn fields set (bucket null allowed for recovery_lunch)', () => {

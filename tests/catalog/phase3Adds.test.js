@@ -34,10 +34,10 @@
  * Cross-cutting (6 ACs):
  *   AC-CAT-PHASE3-CROSS-1: all 10 new entries have unique IDs
  *   AC-CAT-PHASE3-CROSS-2: no Phase 3 entry has the same ID as a Phase 1 or Phase 2 entry
- *   AC-CAT-PHASE3-CROSS-3: total catalog size is 81
- *   AC-CAT-PHASE3-CROSS-4: COMMUNICATION bucket has 16 entries
- *   AC-CAT-PHASE3-CROSS-5: CI bucket has 27 entries
- *   AC-CAT-PHASE3-CROSS-6: PROJECT bucket has 37 entries
+ *   AC-CAT-PHASE3-CROSS-3: total catalog size is 85 (Phase 4 +4 added after Phase 3)
+ *   AC-CAT-PHASE3-CROSS-4: COMMUNICATION bucket has 16 entries (unchanged in Phase 4)
+ *   AC-CAT-PHASE3-CROSS-5: CI bucket has 30 entries (Phase 4 +3)
+ *   AC-CAT-PHASE3-CROSS-6: PROJECT bucket has 38 entries (Phase 4 +1)
  */
 
 import { test, describe } from 'node:test';
@@ -622,8 +622,8 @@ describe('Phase 3 catalog additions — cross-cutting', () => {
   });
 
   // AC-CAT-PHASE3-CROSS-3
-  test('AC-CROSS-3: total catalog size is 81', () => {
-    assert.equal(catalog.length, 81, `expected 81 entries, got ${catalog.length}`);
+  test('AC-CROSS-3: total catalog size is 85 (Phase 4 +4 Tier 3 added after Phase 3)', () => {
+    assert.equal(catalog.length, 85, `expected 85 entries, got ${catalog.length}`);
   });
 
   // AC-CAT-PHASE3-CROSS-4
@@ -642,31 +642,28 @@ describe('Phase 3 catalog additions — cross-cutting', () => {
   });
 
   // AC-CAT-PHASE3-CROSS-5
-  test('AC-CROSS-5: CI bucket has 27 entries', () => {
-    // Phase 3 adds 3 CI entries:
-    //   gen_habit_streak_review, gen_hansei (Research)
-    //   gen_learning_debrief (PM)
-    // Pre-Phase-3 baseline was 24 (Phase 2 end).
-    // 24 + 3 = 27.
+  test('AC-CROSS-5: CI bucket has 30 entries (Phase 4 +3 Tier 3 added after Phase 3)', () => {
+    // Phase 3 adds 3 CI entries (27 at Phase 3 end).
+    // Phase 4 adds 3 CI entries: gen_improvement_experiment_log, gen_focus_metrics_review, gen_personal_kanban_review.
+    // 27 + 3 = 30.
     const ciEntries = catalog.filter((e) => e.bucket === 'CI');
     assert.equal(
       ciEntries.length,
-      27,
-      `CI bucket should have 27 entries; got ${ciEntries.length}`
+      30,
+      `CI bucket should have 30 entries; got ${ciEntries.length}`
     );
   });
 
   // AC-CAT-PHASE3-CROSS-6
-  test('AC-CROSS-6: PROJECT bucket has 37 entries', () => {
-    // Phase 3 adds 2 PROJECT entries:
-    //   gen_project_closure, gen_technical_spec_authoring (PM)
-    // Pre-Phase-3 baseline was 35 (Phase 2 end).
-    // 35 + 2 = 37.
+  test('AC-CROSS-6: PROJECT bucket has 38 entries (Phase 4 +1 Tier 3 added after Phase 3)', () => {
+    // Phase 3 ends at 37 PROJECT entries.
+    // Phase 4 adds 1 PROJECT entry: gen_project_kickoff.
+    // 37 + 1 = 38.
     const projectEntries = catalog.filter((e) => e.bucket === 'PROJECT');
     assert.equal(
       projectEntries.length,
-      37,
-      `PROJECT bucket should have 37 entries; got ${projectEntries.length}`
+      38,
+      `PROJECT bucket should have 38 entries; got ${projectEntries.length}`
     );
   });
 

@@ -13,9 +13,9 @@ import { buildCatalog, EXPECTED_CATALOG_SIZE } from '../../../js/catalog/seed/in
 describe('buildCatalog — orchestration', () => {
   const catalog = buildCatalog();
 
-  test('produces 81 entries (49 numbered + 6 ceremonies + 26 generics incl. Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6 + Phase 3 +10)', () => {
-    assert.equal(EXPECTED_CATALOG_SIZE, 81);
-    assert.equal(catalog.length, 81);
+  test('produces 85 entries (49 numbered + 6 ceremonies + 30 generics incl. Iter 26 recovery_lunch + Phase 1 +4 + Phase 2 +6 + Phase 3 +10 + Phase 4 +4)', () => {
+    assert.equal(EXPECTED_CATALOG_SIZE, 85);
+    assert.equal(catalog.length, 85);
   });
 
   test('no entry has a null cadence/trigger/inputs/outputArtifact/participants — bucket may be null for recovery_lunch', () => {

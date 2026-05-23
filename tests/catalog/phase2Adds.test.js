@@ -419,8 +419,8 @@ describe('Phase 2 catalog additions — cross-cutting', () => {
   });
 
   // AC-CAT-PHASE2-CROSS-3
-  test('AC-CAT-PHASE2-CROSS-3: total catalog size is 81 (Phase 3 +10 added after Phase 2)', () => {
-    assert.equal(catalog.length, 81, `expected 81 entries; got ${catalog.length}`);
+  test('AC-CAT-PHASE2-CROSS-3: total catalog size is 85 (Phase 3 +10 + Phase 4 +4 added after Phase 2)', () => {
+    assert.equal(catalog.length, 85, `expected 85 entries; got ${catalog.length}`);
   });
 
   test('all catalog IDs remain globally unique after Phase 2 additions', () => {
