@@ -458,11 +458,16 @@ html, body {
 /*
  * PROPOSED state — Iter 33: pale tint gradient fills + dashed border (AC6).
  * Dashed encoding preserved per Iter 29 locked decision.
+ * Phase B B-1: proposedShimmer animation added per preview lines 842-844.
+ * Temporal "pending / not yet ratified" signal — 2.2s brightness pulse.
+ * Reduced-motion guard suppresses animation at app.css Phase A motion block.
  */
 .cycle-block-proposed {
   outline: 2px dashed currentColor;
   outline-offset: -2px;
   opacity: 0.92;
+  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both,
+             proposedShimmer 2.2s ease-in-out 400ms infinite;
 }
 
 /* PROPOSED bucket-specific pale tint gradients. */
@@ -631,9 +636,15 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-/* Kaizen glow-ring ping — fires once 800ms after load on linked blocks (AC10). */
+/* Kaizen glow-ring ping — fires once 900ms after load on linked CI blocks (AC10). */
+/* Phase B B-6: upgraded from single-ring kaizenPing to two-ring kaizenRing.
+ * Preview lines 825-827, 1124-1129. Two concentric expanding rings read as
+ * "linked to something" more clearly than the single 5px pulse.
+ * Delay bumped 800ms→900ms to match preview timing. kaizenPing keyframe retained
+ * for compatibility (no active consumer after this change, but kept for safety). */
 .cycle-block-kaizen-linked {
-  animation: kaizenPing 1200ms ease-in-out 800ms 1 both;
+  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both,
+             kaizenRing 1400ms ease-out 900ms 1 both;
 }
 .cycle-block-lock {
   position: absolute;
@@ -897,6 +908,9 @@ html, body {
 
 /* Dot — left edge, breathes in sync with glow (AC8). */
 /* Iter 43 Item 3: dot border increased 2px → 3px (AC7). */
+/* Phase B B-3: nowPulse replaces dotBreathe on ::before (completes dot+glow system).
+ * nowPulse adds opacity pulse to match the scale — ::after trail has nowGlow,
+ * ::before dot had only scale (dotBreathe). nowPulse is the preview-intended keyframe. */
 .cycle-now-line::before {
   content: '';
   position: absolute;
@@ -907,7 +921,7 @@ html, body {
   background: var(--now-red);
   border-radius: 50%;
   border: 3px solid var(--surface-1);
-  animation: dotBreathe 3s ease-in-out infinite;
+  animation: nowPulse 4s ease-in-out infinite;
 }
 
 /* Glow trail — fades right, breathing opacity. Iter 40: extended trail (AC8, AC10). */
@@ -923,6 +937,10 @@ html, body {
 }
 
 /* Timestamp label — always visible, Geist Mono, red (AC7, AC6). */
+/* Phase B B-4: frosted-glass pill (preview lines 937-952).
+ * Replaces flat opaque white rectangle with backdrop-filter glass pill.
+ * border-radius bumped 2px→4px to match preview. border added for glass edge.
+ * Semi-transparent background lets block content show through. */
 .cycle-now-label {
   position: absolute;
   left: 8px;
@@ -931,9 +949,12 @@ html, body {
   font-size: 10px;
   font-weight: 500;
   color: var(--now-red);
-  background: rgba(255,255,255,0.9);
-  padding: 1px 4px;
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.50);
+  padding: 1px 5px;
+  border-radius: 4px;
   line-height: 1.4;
   pointer-events: none;
   letter-spacing: 0.01em;
@@ -3396,10 +3417,15 @@ html, body {
 }
 
 /* Iter 33: warm-dark scrim matching --ink-900 (AC13). */
+/* Phase B B-5: backdrop-filter blur added (preview line 961).
+ * blur(6px) frosted-glass separation matches preview value exactly.
+ * backdropIn animation alias added; backdropFade retained for compatibility. */
 .bdd-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(17, 16, 9, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
   animation: backdropFade 200ms ease both;
 }
@@ -3654,9 +3680,13 @@ html, body {
  * ========================================================================== */
 
 /* ---- Keyframe: page-load block reveal (AC11) ---- */
+/* Phase B B-2: direction fix translateX(-6px) → translateY(10px) scale(0.98).
+ * Blocks rise up into their time slots — spatially correct for a vertical
+ * calendar. The original left-slide was a list-view holdover. Preview line 1115.
+ * Easing (cubic-bezier spring) unchanged. */
 @keyframes blockReveal {
-  from { opacity: 0; transform: translateX(-6px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ---- Keyframe: now-line glow breathing (AC8) ---- */
@@ -3669,6 +3699,53 @@ html, body {
 @keyframes dotBreathe {
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.3); }
+}
+
+/* ---- Keyframe: now-line dot scale+opacity pulse (Phase B B-3) ---- */
+/* Preview line 1119-1122: nowPulse — completes the dot+glow system.
+ * ::after trail already animated (nowGlow); ::before dot was static.
+ * Scale 1→1.45 + opacity 1→0.75 on a 4s sine gives a living feel. */
+@keyframes nowPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.45); opacity: 0.75; }
+}
+
+/* ---- Keyframe: PROPOSED block shimmer (Phase B B-1) ---- */
+/* Preview lines 1131-1134: proposedShimmer — a gentle brightness pulse
+ * communicating "pending / not yet ratified" without demanding attention.
+ * 2.2s period, 400ms delay to stagger after page reveal (preview-intentional). */
+@keyframes proposedShimmer {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(1.04); }
+}
+
+/* ---- Keyframe: kaizen two-ring block ping (Phase B B-6) ---- */
+/* Preview lines 1124-1129: kaizenRing — two concentric box-shadow rings
+ * expanding from block boundary. Replaces single-ring kaizenPing.
+ * First ring expands to 10px; second follows to 10px as first dissolves to 18px.
+ * Fires once at 900ms (1-shot "surprise and delight" per design notes line 1543). */
+@keyframes kaizenRing {
+  0%   { box-shadow: 0 0 0 0px var(--ci-glow, rgba(147,51,234,0.18)), 0 0 0 0px var(--ci-glow, rgba(147,51,234,0.18)); }
+  30%  { box-shadow: 0 0 0 10px var(--ci-glow, rgba(147,51,234,0.18)), 0 0 0 0px var(--ci-glow, rgba(147,51,234,0.18)); }
+  60%  { box-shadow: 0 0 0 18px rgba(147,51,234,0), 0 0 0 10px var(--ci-glow, rgba(147,51,234,0.18)); }
+  100% { box-shadow: 0 0 0 22px rgba(147,51,234,0), 0 0 0 18px rgba(147,51,234,0); }
+}
+
+/* ---- Keyframe: backdropIn (Phase B B-5) ---- */
+/* Preview line 1136-1138: backdropIn — fade-in for BDD backdrop blur.
+ * Already have backdropFade (opacity 0→1). Adding backdropIn as an alias
+ * matching preview's name (backdropFade is retained for compatibility). */
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Keyframe: dialog scale+translate entrance (Phase B B-5) ---- */
+/* Preview lines 1141-1144: dialogIn — BDD panel enters with Y-translate + scale
+ * on --ease-bounce. Separate from existing dialogEnter which stays for compat. */
+@keyframes dialogIn {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(0.97); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ---- Keyframe: dialog scale-fade entrance (AC13) ---- */
@@ -4267,3 +4344,56 @@ html, body {
     transform: none !important;
   }
 }
+
+/* ==========================================================================
+ * Today Preview Port — Phase B: Motion + Entrance Polish
+ * TODAY_PREVIEW_PORT_DELTA.md §8 Phase B
+ *
+ * Completes the preview's animation system. All new animations have
+ * reduced-motion guards per WCAG 2.3.3. CSS-only, zero §6.5.
+ *
+ * B-1: proposedShimmer on PROPOSED blocks (animation applied at ~line 462)
+ * B-2: blockReveal direction fix: translateX(-6px) → translateY(10px) scale(0.98)
+ *       (keyframe patched at ~line 3657)
+ * B-3: nowPulse on now-line ::before dot (replaces dotBreathe at ~line 900,
+ *       keyframe added after dotBreathe keyframe)
+ * B-4: Now-label glass pill — backdrop-filter added to .cycle-now-label (~line 926)
+ * B-5: BDD backdrop blur — backdrop-filter: blur(6px) on .bdd-backdrop (~line 3399)
+ * B-6: Kaizen ping two-ring upgrade — kaizenRing replaces kaizenPing on
+ *       .cycle-block-kaizen-linked (~line 640)
+ * ========================================================================== */
+
+/* B-4: Dark-mode override for now-label glass pill.
+ * Light: rgba(255,255,255,0.85) background.
+ * Dark: rgba(20,20,23,0.82) background + lighter border (preview UX §3.3). */
+[data-theme="dark"] .cycle-now-label {
+  background: rgba(20, 20, 23, 0.82);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .cycle-now-label {
+    background: rgba(20, 20, 23, 0.82);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* B-1/B-6: Reduced-motion guards for proposedShimmer and kaizenRing.
+ * PROPOSED blocks fall back to static (blockReveal still fires but is brief).
+ * kaizenRing reverts to no animation (block remains at full opacity, no ping). */
+@media (prefers-reduced-motion: reduce) {
+  .cycle-block-proposed {
+    animation: none !important;
+  }
+  .cycle-block-kaizen-linked {
+    animation: none !important;
+  }
+}
+
+/* B-4: Reduced-motion guard for now-label glass pill transition.
+ * backdrop-filter itself is static (no animation) so no guard needed for it.
+ * The ::before dot's nowPulse guard is already at app.css:966 block. */
+
+/* B-2: Reduced-motion guard for blockReveal direction change.
+ * blockReveal animation is already suppressed by [data-motion="reduced"] wildcard
+ * at app.css:3892 and by the existing prefers-reduced-motion block at app.css:966.
+ * No additional guard needed — existing suppression covers the new keyframe values. */

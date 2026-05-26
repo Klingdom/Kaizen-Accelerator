@@ -232,27 +232,34 @@ describe('Phase A — A-3: Hover transform reduced-motion guard', () => {
   });
 
   test('AC-DS-RM1b: reduced-motion hover rule nullifies the transform', () => {
-    // Find the prefers-reduced-motion block that contains .cycle-block-positioned:hover
-    const reducedMotionIdx = css.lastIndexOf('@media (prefers-reduced-motion: reduce)');
-    assert.ok(reducedMotionIdx !== -1, 'prefers-reduced-motion block must exist');
-    const blockStart = css.indexOf('{', reducedMotionIdx);
-    // Find matching close brace
-    let depth = 0;
-    let blockEnd = blockStart;
-    for (let i = blockStart; i < css.length; i++) {
-      if (css[i] === '{') depth++;
-      else if (css[i] === '}') { depth--; if (depth === 0) { blockEnd = i; break; } }
+    // Search through ALL prefers-reduced-motion blocks to find the one containing
+    // .cycle-block-positioned:hover (Phase A may not be the last block).
+    const blocks = [];
+    let searchFrom = 0;
+    while (true) {
+      const idx = css.indexOf('@media (prefers-reduced-motion: reduce)', searchFrom);
+      if (idx === -1) break;
+      const blockStart = css.indexOf('{', idx);
+      let depth = 0;
+      let blockEnd = blockStart;
+      for (let i = blockStart; i < css.length; i++) {
+        if (css[i] === '{') depth++;
+        else if (css[i] === '}') { depth--; if (depth === 0) { blockEnd = i; break; } }
+      }
+      blocks.push(css.slice(blockStart, blockEnd));
+      searchFrom = blockEnd;
     }
-    const block = css.slice(blockStart, blockEnd);
+    // Find the block containing the hover rule
+    const hoverBlock = blocks.find(b => b.includes('.cycle-block-positioned:hover'));
     assert.ok(
-      block.includes('.cycle-block-positioned:hover'),
-      'The reduced-motion @media block must contain .cycle-block-positioned:hover'
+      hoverBlock !== undefined,
+      'A prefers-reduced-motion block must contain .cycle-block-positioned:hover'
     );
-    // Find the hover rule within the block
-    const hoverIdx = block.indexOf('.cycle-block-positioned:hover');
-    const hoverRuleStart = block.indexOf('{', hoverIdx);
-    const hoverRuleEnd = block.indexOf('}', hoverRuleStart);
-    const hoverRule = block.slice(hoverRuleStart, hoverRuleEnd);
+    // Find the hover rule within that block
+    const hoverIdx = hoverBlock.indexOf('.cycle-block-positioned:hover');
+    const hoverRuleStart = hoverBlock.indexOf('{', hoverIdx);
+    const hoverRuleEnd = hoverBlock.indexOf('}', hoverRuleStart);
+    const hoverRule = hoverBlock.slice(hoverRuleStart, hoverRuleEnd);
     assert.ok(
       hoverRule.includes('transform'),
       'Reduced-motion hover rule must explicitly set transform to suppress the lift'
