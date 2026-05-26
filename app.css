@@ -80,6 +80,35 @@
 
   --radius: 8px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  /* ---- Today Preview Port Phase C: Motion easing token vocabulary ----
+   * Extracted from preview HTML lines 32-35.
+   * Easing is luminance-independent; no theme-specific overrides needed.
+   * C-1: --ease-spring  — spring-like overshoot; used in block reveal, hover
+   * C-1: --ease-bounce  — elastic overshoot; used in dialog entrances
+   * C-1: --ease-std     — standard material easing; used in non-dramatic transitions */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-std:    cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- Today Preview Port Phase C: Shadow token vocabulary (light mode) ----
+   * Preview lines 85-87 (Phil's CI light palette).
+   * C-2: 3-level shadow ramp extending the single --shadow token.
+   * --shadow-sm: hairline elevation (tooltips, inline chips)
+   * --shadow-md: card elevation (panels, ring tooltip, active blocks)
+   * --shadow-lg: modal elevation (BDD dialog, high-z overlays) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* ---- Today Preview Port Phase C: Ambient glow tokens ----
+   * Preview lines 60-74 (Phil's CI palette tokens).
+   * C-3: Used by body::before radial gradient for ambient page depth.
+   * Values match preview Phil's CI light palette exactly.
+   * --project-glow: green at 20% opacity (top-left glow)
+   * --ci-glow:      purple at 18% opacity (bottom-right glow) */
+  --project-glow: rgba(22, 163, 74, 0.20);
+  --ci-glow:      rgba(147, 51, 234, 0.18);
 }
 
 * { box-sizing: border-box; }
@@ -93,6 +122,27 @@ html, body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Phase C C-3: Ambient page depth (preview lines 289-304).
+ * Two radial-gradient ellipses — green top-left (project), purple bottom-right (CI).
+ * Fixed, behind all content (z-index: 0), pointer-events: none.
+ * Makes the page feel spatially "warm" — most distinctive unshipped preview element.
+ * Uses --project-glow and --ci-glow tokens; adapts automatically to dark mode
+ * via dark-mode override block in Layer 3 (rgba values increase opacity on dark bg).
+ * No animation needed — static ambient gradient. */
+body {
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% 5%, var(--project-glow) 0%, transparent 100%),
+    radial-gradient(ellipse 50% 40% at 85% 95%, var(--ci-glow) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ---------- App shell + nav ---------- */
@@ -125,10 +175,15 @@ html, body {
   border-radius: 4px;
 }
 
-.nav-item:hover { background: #f5f5f4; color: var(--fg); }
+/* Phase C C-4: Nav chrome luminance hierarchy (Linear 2026 pattern).
+ * Replaces hardcoded hex (#f5f5f4, #e7e5e4) with semantic surface tokens.
+ * --surface-2 for hover, --surface-3 for active — follows the luminance ramp.
+ * In dark mode: --surface-2 and --surface-3 resolve to dark surface values
+ * from the Layer 3 override block (declared at app.css:3840). */
+.nav-item:hover { background: var(--surface-2); color: var(--fg); }
 .nav-item.active {
   color: var(--fg);
-  background: #e7e5e4;
+  background: var(--surface-3);
   font-weight: 500;
 }
 
@@ -442,7 +497,7 @@ html, body {
   transition: transform 160ms ease-out, box-shadow 160ms ease-out;
   box-sizing: border-box;
   /* Page-load reveal — delay set per-block via data-block-index inline style */
-  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: blockReveal 280ms var(--ease-spring) both;
 }
 .cycle-block-positioned:focus-visible {
   outline: 2px solid var(--primary);
@@ -466,7 +521,7 @@ html, body {
   outline: 2px dashed currentColor;
   outline-offset: -2px;
   opacity: 0.92;
-  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both,
+  animation: blockReveal 280ms var(--ease-spring) both,
              proposedShimmer 2.2s ease-in-out 400ms infinite;
 }
 
@@ -643,7 +698,7 @@ html, body {
  * Delay bumped 800ms→900ms to match preview timing. kaizenPing keyframe retained
  * for compatibility (no active consumer after this change, but kept for safety). */
 .cycle-block-kaizen-linked {
-  animation: blockReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both,
+  animation: blockReveal 280ms var(--ease-spring) both,
              kaizenRing 1400ms ease-out 900ms 1 both;
 }
 .cycle-block-lock {
@@ -3448,7 +3503,7 @@ html, body {
   overflow: hidden;
   max-height: 80vh;
   overflow-y: auto;
-  animation: dialogEnter 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: dialogEnter 240ms var(--ease-bounce) both;
 }
 
 /* Dialog color accent bar at top — added per bucket in BlockDetailDialog.js (AC13). */
@@ -3927,6 +3982,17 @@ html, body {
   --ink-400: #57534e;
   --ink-200: #2e2b28;
   --ink-100: #252320;
+
+  /* Phase C: Shadow token dark-mode overrides (preview lines 143-145).
+   * Dark shadows need higher opacity to be visible against dark backgrounds. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.40), 0 1px 4px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  /* Phase C: Ambient glow dark-mode overrides (preview lines 118-134).
+   * Slightly higher opacity for dark bg so the glow reads through. */
+  --project-glow: rgba(34, 197, 94, 0.25);
+  --ci-glow:      rgba(168, 85, 247, 0.25);
 }
 
 /* Layer 4 — system theme (data-theme="system").
@@ -3960,6 +4026,13 @@ html, body {
     --ink-400: #57534e;
     --ink-200: #2e2b28;
     --ink-100: #252320;
+
+    /* Phase C: Shadow + glow dark-mode overrides for system theme */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.20);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.40), 0 1px 4px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --project-glow: rgba(34, 197, 94, 0.25);
+    --ci-glow:      rgba(168, 85, 247, 0.25);
   }
 }
 
@@ -4102,8 +4175,8 @@ html, body {
 .cadence-arc {
   fill: none;
   stroke-linecap: round;
-  transition: stroke-dashoffset 600ms cubic-bezier(0.4, 0, 0.2, 1),
-              stroke-dasharray  600ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: stroke-dashoffset 600ms var(--ease-std),
+              stroke-dasharray  600ms var(--ease-std);
 }
 
 /* Segment colors — use canonical bucket fill tokens (Iter 31). */
@@ -4156,7 +4229,7 @@ html, body {
   color: var(--fg, #111009);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 180ms var(--ease-std), transform 180ms var(--ease-spring);
   z-index: 50;
   white-space: nowrap;
 }
