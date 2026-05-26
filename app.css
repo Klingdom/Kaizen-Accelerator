@@ -4210,3 +4210,60 @@ html, body {
     color: var(--now-red, #f87171);
   }
 }
+
+/* ==========================================================================
+ * Today Preview Port — Phase A: State Bug + Correctness
+ * TODAY_PREVIEW_PORT_DELTA.md §8 Phase A
+ *
+ * Closes the latent data-state styling gap. TodayGrid.js:184 has emitted
+ * data-state="IN_PROGRESS|CLOSED|SKIPPED" since iter 47 but app.css had
+ * zero matching selectors. Users could not visually distinguish the block
+ * they are currently executing from upcoming or past work.
+ *
+ * All selectors scoped to .cycle-block-positioned to avoid collision with
+ * .wk-day[data-state] in WeekGrid (FE cross-cutting concern §4.4).
+ * ========================================================================== */
+
+/* A-1: IN_PROGRESS — double-ring halo (preview lines 864–875).
+ * Makes the currently-executing block scan-visible without animation.
+ * outline at -3px inset + ::before border at 35% white — two distinct rings. */
+.cycle-block-positioned[data-state="IN_PROGRESS"] {
+  outline: 2px solid rgba(255, 255, 255, 0.60);
+  outline-offset: -3px;
+}
+.cycle-block-positioned[data-state="IN_PROGRESS"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+/* A-2a: CLOSED — reduced opacity, matching past-hour-rail convention (opacity 0.45).
+ * Preview line 879: .block-closed { opacity: 0.45 }
+ * UX note: 0.55 chosen over preview's 0.45 per UX §Q2 — compounding dimming
+ * (block inside already-dimmed past-hour rail) would approach near-invisible. */
+.cycle-block-positioned[data-state="CLOSED"] {
+  opacity: 0.55;
+}
+
+/* A-2b: SKIPPED — reduced opacity + red outline (preview lines 881–885).
+ * Communicates "intentionally skipped" with a gentle red signal.
+ * outline-offset: -2px keeps it inside the block boundary. */
+.cycle-block-positioned[data-state="SKIPPED"] {
+  opacity: 0.55;
+  outline: 2px solid rgba(225, 29, 72, 0.50);
+  outline-offset: -2px;
+}
+
+/* A-3: Hover reduced-motion guard (WCAG 2.3.3).
+ * Appended to existing reduced-motion block pattern at app.css:945.
+ * The @media block at :945 covers now-line; this covers block hover transform.
+ * Scoped to .cycle-block-positioned:hover which is the only hover transform
+ * not already covered by the [data-motion="reduced"] wildcard at :3892. */
+@media (prefers-reduced-motion: reduce) {
+  .cycle-block-positioned:hover {
+    transform: none !important;
+  }
+}
